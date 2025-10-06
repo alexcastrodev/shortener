@@ -1,0 +1,21 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV['RAILS_MAX_THREADS'] || 5 %>
+  username: <%= ENV['POSTGRES_USER'] %>
+  password: <%= ENV['POSTGRES_PASSWORD'] %>
+  host: <%= ENV['POSTGRES_HOST'] %>
+  port: <%= ENV['POSTGRES_PORT'] || 5432 %>
+  timeout: 5000
+
+development:
+  <<: *default
+  database: 'development'
+
+test:
+  <<: *default
+  database: 'test'
+
+production:
+  <<: *default
+  database: 'production'

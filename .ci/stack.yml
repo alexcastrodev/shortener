@@ -1,0 +1,70 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    networks:
+      - default
+      - proxy_net
+    ports:
+      - "15672:15672"
+    env_file:
+      - /mnt/ssd/docker/shortner/.env
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    volumes:
+      - /mnt/ssd/docker/shortner/rabbit:/var/lib/rabbitmq
+
+  web: 
+    image: shortner:latest
+    env_file:
+      - /mnt/ssd/docker/shortner/.env
+    networks:
+      - default
+      - proxy_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1024M
+  
+  jobs: 
+    image: shortner:latest
+    command: bundle exec rake consumers:run
+    env_file:
+      - /mnt/ssd/docker/shortner/.env
+    networks:
+      - default
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1024M
+
+  db:
+    image: postgres:17
+    container_name: postgres
+    networks:
+      - default
+    env_file:
+      - /mnt/ssd/docker/shortner/.env
+    volumes:
+      - /mnt/ssd/docker/shortner/postgres:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+networks:
+  default:
+  proxy_net:
+    external: true

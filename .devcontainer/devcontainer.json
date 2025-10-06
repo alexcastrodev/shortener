@@ -1,0 +1,16 @@
+{
+    "name": "Dev Container",
+    "dockerComposeFile": ["docker-compose.devcontainer.yml"],
+    "postCreateCommand": "cd backend && bundle install",
+    "remoteUser": "root",
+    "shutdownAction": "stopCompose",
+    "workspaceFolder": "/workspace",
+    "service": "backend",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "denoland.vscode-deno"
+            ]
+        }
+    }
+}

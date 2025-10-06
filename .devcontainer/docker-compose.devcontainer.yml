@@ -1,0 +1,48 @@
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "15672:15672"
+    env_file:
+      - ../.env.development
+
+  db:
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    env_file:
+      - ../.env.development
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - ../.env.development
+    volumes:
+      - ..:/workspace:cached
+    # Overrides default command so things don't shut down after the process ends.
+    command: /bin/sh -c "while sleep 1000; do :; done"
+  
+  cache:
+    image: valkey/valkey
+    ports:
+      - "${VALKEY_PORT:-6379}:6379"
+    env_file:
+      - ../.env.development
+    networks:
+      - default
+
+  serveless:
+    image: denoland/deno:2.5.3
+    working_dir: /app
+    ports:
+      - "${SERVERLESS_PORT:-8000}:8000"
+    volumes:
+      - ../edge-function:/app
+    env_file:
+      - ../.env.development
+    command: deno run --allow-net --allow-env index.ts
