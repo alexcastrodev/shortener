@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-IMAGE_NAME="shortner:latest"
+IMAGE_NAME="shortener:latest"
 DOCKERFILE=".ci/Dockerfile"
 COMPOSE_FILE=".ci/stack.yml"
-STACK_NAME="shortner"
+STACK_NAME="shortener"
 
 echo "Building Docker image: $IMAGE_NAME"
 if ! docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" .; then
