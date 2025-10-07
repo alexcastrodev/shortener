@@ -1,0 +1,28 @@
+.root {
+  padding: 16px;
+}
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.title {
+  font-weight: 600;
+}
+.domain {
+  color: #6b7280; /* dimmed */
+  font-size: 0.95rem;
+}
+.inputRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.input {
+  flex: 1;
+}
+.button {
+  white-space: nowrap;
+}

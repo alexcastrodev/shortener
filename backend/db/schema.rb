@@ -10,9 +10,35 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_06_235034) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_07_180414) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "events", force: :cascade do |t|
+    t.string "ip_address"
+    t.string "user_agent"
+    t.string "referer"
+    t.string "country_code"
+    t.string "region"
+    t.string "platform"
+    t.string "browser"
+    t.datetime "clicked_at", null: false
+    t.bigint "shortlink_id", null: false
+    t.index ["shortlink_id"], name: "index_events_on_shortlink_id"
+  end
+
+  create_table "shortlinks", force: :cascade do |t|
+    t.string "original_url", null: false
+    t.string "short_code", null: false
+    t.integer "click_count", default: 0, null: false
+    t.datetime "last_accessed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "title"
+    t.bigint "user_id", null: false
+    t.index ["short_code"], name: "index_shortlinks_on_short_code", unique: true
+    t.index ["user_id"], name: "index_shortlinks_on_user_id"
+  end
 
   create_table "solid_cable_messages", force: :cascade do |t|
     t.binary "channel", null: false
@@ -166,6 +192,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_06_235034) do
     t.index ["login_token"], name: "index_users_on_login_token", unique: true
   end
 
+  add_foreign_key "events", "shortlinks"
+  add_foreign_key "shortlinks", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

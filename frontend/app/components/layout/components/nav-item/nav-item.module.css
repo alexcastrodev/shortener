@@ -13,6 +13,7 @@
 /* ----------- Non-Mobile Devices ----------- */
 @media screen and (min-device-width: 768px) {
   .nav-item {
-    --nav-item-size: 40px;
+    --nav-item-size: 200px;
+    width: var(--nav-item-size);
   }
 }

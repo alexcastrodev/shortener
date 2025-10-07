@@ -1,4 +1,5 @@
 .footer {
+  width: 100%;
   display: none;
   grid-area: profile;
 }

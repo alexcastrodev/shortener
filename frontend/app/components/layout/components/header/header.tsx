@@ -1,5 +1,5 @@
-import type { HTMLAttributes, PropsWithChildren } from "react";
-import styles from "./header.module.css";
+import type { HTMLAttributes, PropsWithChildren } from 'react';
+import styles from './header.module.css';
 
 export function Header({
   children,

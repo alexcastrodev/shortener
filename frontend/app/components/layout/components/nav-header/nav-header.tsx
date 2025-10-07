@@ -1,5 +1,5 @@
-import type { PropsWithChildren, HTMLAttributes } from "react";
-import styles from "./nav-header.module.css";
+import type { PropsWithChildren, HTMLAttributes } from 'react';
+import styles from './nav-header.module.css';
 
 export function NavHeader({
   children,

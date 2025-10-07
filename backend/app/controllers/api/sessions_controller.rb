@@ -15,12 +15,14 @@ class Api::SessionsController < ApplicationController
 
   # POST /api/login_verify
   def verify
-    user = User.find_by(login_token: params[:token])
+    user = User.find_by(email: params[:email], login_token: params[:code])
 
     if user&.login_token_valid?
       token = generate_jwt(user)
       user.clear_login_token!
-      render json: { jwt: token, user: { id: user.id, email: user.email } }
+      
+
+      render json: UserSerializer.new(user).serialize(meta: { token: token }), status: :ok
     else
       render json: { error: "Token invalid or expired" }, status: :unauthorized
     end

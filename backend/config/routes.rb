@@ -15,6 +15,7 @@ Rails.application.routes.draw do
     namespace :me do
       resource :users, path: '', only: [:show] do
       end
+      resources :shortlinks, only: [:index, :show, :create, :destroy]
     end
   end
 end

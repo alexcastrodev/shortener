@@ -1,5 +1,5 @@
 class Api::Me::UsersController < ApplicationController
   def show
-    render json: { id: current_user.id, email: current_user.email }
+    render json: UserSerializer.new(current_user).serialize, status: :ok
   end
 end

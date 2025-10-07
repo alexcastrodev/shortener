@@ -8,6 +8,7 @@
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
   grid-template-areas: "menu";
+  border-right: 1px solid var(--mantine-color-gray-8);
 }
 
 /* ----------- Non-Mobile Devices ----------- */
