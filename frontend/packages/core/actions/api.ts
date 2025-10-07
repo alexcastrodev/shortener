@@ -6,9 +6,9 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config: any) => {
-    config.headers.set('Content-Type', 'application/json');
-    const token = useUserState.getState().token
-    if (token) config.headers.set('Authorization', `Bearer ${token}`);
+  config.headers.set('Content-Type', 'application/json');
+  const token = useUserState.getState().token;
+  if (token) config.headers.set('Authorization', `Bearer ${token}`);
 
-    return config;
+  return config;
 });

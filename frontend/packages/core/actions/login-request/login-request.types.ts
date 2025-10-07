@@ -1,3 +1,3 @@
 export interface LoginRequestRequestBody {
-  email: string
+  email: string;
 }

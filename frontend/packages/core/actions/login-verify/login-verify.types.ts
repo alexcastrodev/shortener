@@ -1,11 +1,11 @@
-import type { User } from "../../types/User"
+import type { User } from '../../types/User';
 
 export interface LoginVerifyRequestBody {
-  email: string
-  code: string
+  email: string;
+  code: string;
 }
 
 export interface LoginVerifyResponse {
-  jwt: string
-  user: User
+  jwt: string;
+  user: User;
 }

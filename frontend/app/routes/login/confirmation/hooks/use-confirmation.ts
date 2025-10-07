@@ -8,34 +8,37 @@ import { useEffect } from 'react';
 import { z } from 'zod/v4';
 
 export function useConfirmation() {
-  const router = useNavigate()
-  const { setup } = useUserState()
-  const location = useLocation()
-  const email = location.state?.email
+  const router = useNavigate();
+  const { setup } = useUserState();
+  const location = useLocation();
+  const email = location.state?.email;
   const schema = z.object({
-    code: z.string().min(7, 'Code must be at least 7 characters long').max(7, 'Code must be at most 7 characters long'),
-  })
+    code: z
+      .string()
+      .min(7, 'Code must be at least 7 characters long')
+      .max(7, 'Code must be at most 7 characters long'),
+  });
 
   useEffect(() => {
     if (!email) {
-      router('/login', { replace: true })
+      router('/login', { replace: true });
     }
-  }, [email])
+  }, [email]);
 
-  const { mutate, isPending} = useLoginVerifyRequest({
+  const { mutate, isPending } = useLoginVerifyRequest({
     onSuccess: ({ jwt, user }) => {
-      setup(jwt, user)
-      router('/')
+      setup(jwt, user);
+      router('/');
     },
     onError: () => {
-      form.setFieldValue('code', '')
+      form.setFieldValue('code', '');
       notifications.show({
-          title: 'Error',
-          message: 'Pin code is invalid, please try again.',
-          color: 'red',
-      })
+        title: 'Error',
+        message: 'Pin code is invalid, please try again.',
+        color: 'red',
+      });
     },
-  })
+  });
   const form = useForm({
     mode: 'uncontrolled',
     initialValues: {
@@ -46,16 +49,16 @@ export function useConfirmation() {
   });
 
   function handleRequestLogin(data: typeof form.values) {
-    mutate({ code: data.code, email })
+    mutate({ code: data.code, email });
   }
 
   function handleChange(value: string) {
-    form.getInputProps('code').onChange(value)
+    form.getInputProps('code').onChange(value);
 
     if (value.length === 7) {
-      mutate({ code: value, email })
+      mutate({ code: value, email });
     }
   }
 
-  return { form, handleRequestLogin, email, handleChange, loading: isPending }
+  return { form, handleRequestLogin, email, handleChange, loading: isPending };
 }

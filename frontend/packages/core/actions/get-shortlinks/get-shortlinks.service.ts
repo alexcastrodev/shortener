@@ -5,7 +5,8 @@ import type { Shortlink } from '../../types/Shortlink';
 
 export async function getShortlinks(): Promise<Shortlink[]> {
   try {
-    const response: AxiosResponse<GetShortlinksResponse> = await api.get('/api/me/shortlinks');
+    const response: AxiosResponse<GetShortlinksResponse> =
+      await api.get('/api/me/shortlinks');
 
     return response.data.shortlink;
   } catch (error) {

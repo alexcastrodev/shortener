@@ -22,7 +22,10 @@ export default function Page() {
       <Container fluid>
         <SimpleGrid cols={{ base: 1, sm: 3, lg: 4 }} mb="md">
           {user && (
-            <SummaryCard value={user?.shortlinks_count} label={t('total_links')} />
+            <SummaryCard
+              value={user?.shortlinks_count}
+              label={t('total_links')}
+            />
           )}
         </SimpleGrid>
         <Box my="lg">

@@ -7,23 +7,22 @@ import { z } from 'zod/v4';
 
 const schema = z.object({
   email: z.email(),
-})
+});
 
 export function useLogin() {
-  const router = useNavigate()
+  const router = useNavigate();
   const { mutate } = useLoginRequest({
     onSuccess: () => {
-      router('/login-confirmation', { state: { email: form.values.email }})
+      router('/login-confirmation', { state: { email: form.values.email } });
     },
     onError: () => {
       notifications.show({
-          title: 'Error',
-          message: 'Something went wrong, please try again later.',
-          color: 'red',
-      })
-
+        title: 'Error',
+        message: 'Something went wrong, please try again later.',
+        color: 'red',
+      });
     },
-  })
+  });
 
   const form = useForm({
     mode: 'uncontrolled',
@@ -31,12 +30,12 @@ export function useLogin() {
       email: '',
     },
 
-    validate: zod4Resolver(schema)
+    validate: zod4Resolver(schema),
   });
 
   function handleRequestLogin(data: typeof form.values) {
-    mutate(data)
+    mutate(data);
   }
 
-return { form, handleRequestLogin }
+  return { form, handleRequestLogin };
 }

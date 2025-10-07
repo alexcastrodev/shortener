@@ -35,10 +35,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <MantineProvider defaultColorScheme="dark">
           <Notifications />
-          <ServiceProvider>
-            {children}
-          </ServiceProvider>
-          </MantineProvider>
+          <ServiceProvider>{children}</ServiceProvider>
+        </MantineProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

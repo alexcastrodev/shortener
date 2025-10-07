@@ -58,7 +58,7 @@ export default function LayoutComponent() {
           </Button>
         </Layout.NavFooter>
       </Layout.Nav>
-       <Outlet />
+      <Outlet />
     </Layout>
   );
 }
