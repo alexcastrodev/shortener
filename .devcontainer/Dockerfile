@@ -8,7 +8,7 @@ RUN apt-get update -qq && apt-get install -y \
     unzip
 
 # Install Node.js and Yarn
-RUN curl -fsSL https://deb.nodesource.com/setup_23.x | bash - && \
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
     apt-get install --no-install-recommends -y nodejs && \
     npm install -g yarn && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
