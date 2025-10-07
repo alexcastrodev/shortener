@@ -7,4 +7,14 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
+
+  namespace :api do
+    post "login_request", to: "sessions#create"
+    post "login_verify", to: "sessions#verify"
+    
+    namespace :me do
+      resource :users, path: '', only: [:show] do
+      end
+    end
+  end
 end

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #6b7280;
+            padding: 40px 20px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 32px;
+            margin: 20px 0;
+            background-color: #4b5563;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+        .footer {
+            padding: 20px 30px;
+            background-color: #f3f4f6;
+            color: #6b7280;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="margin: 0; font-size: 28px;">Sign In Request</h1>
+        </div>
+        <div class="content">
+            <p style="font-size: 16px;">Hello!</p>
+            <p style="font-size: 16px;">We received a request to sign in to your account. Click the button below to securely access your account:</p>
+            <div style="text-align: center;">
+                <a href="<%= @url %>" class="button">Sign In Now</a>
+            </div>
+            <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">This link will expire in 15 minutes for security reasons.</p>
+        </div>
+        <div class="footer">
+            <p style="margin: 5px 0;">If you didn't request this email, please ignore it.</p>
+            <p style="margin: 5px 0;">No further action is required.</p>
+        </div>
+    </div>
+</body>
+</html>

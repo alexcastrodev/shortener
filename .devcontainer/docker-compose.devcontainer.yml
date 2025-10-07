@@ -7,21 +7,21 @@ services:
       - "${RABBITMQ_PORT:-5672}:5672"
       - "15672:15672"
     env_file:
-      - ../.env.development
+      - ../.env
 
   db:
     image: postgres:17
     ports:
       - "5432:5432"
     env_file:
-      - ../.env.development
+      - ../.env
 
   backend:
     build:
       context: .
       dockerfile: ./Dockerfile
     env_file:
-      - ../.env.development
+      - ../.env
     volumes:
       - ..:/workspace:cached
     # Overrides default command so things don't shut down after the process ends.
@@ -32,7 +32,7 @@ services:
     ports:
       - "${VALKEY_PORT:-6379}:6379"
     env_file:
-      - ../.env.development
+      - ../.env
     networks:
       - default
 
@@ -44,5 +44,5 @@ services:
     volumes:
       - ../edge-function:/app
     env_file:
-      - ../.env.development
+      - ../.env
     command: deno run --allow-net --allow-env index.ts

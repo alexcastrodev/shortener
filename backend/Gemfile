@@ -66,6 +66,7 @@ gem "dry-validation"
 # Serializer Backend
 gem "oj"
 gem "sneakers"
+gem "jwt"
 
 # =================
 # Caching
