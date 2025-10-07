@@ -50,12 +50,9 @@ export default function Page() {
       <div className="px-6 py-10">
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <button
-              onClick={() => navigate(-1)}
-              className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:underline"
-            >
+            <Button variant="outline" onClick={() => navigate(-1)}>
               ← Back
-            </button>
+            </Button>
           </div>
 
           <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
