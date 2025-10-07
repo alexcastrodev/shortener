@@ -1,0 +1,18 @@
+.nav-item {
+  list-style: none;
+  --nav-item-size: 20px;
+}
+
+.action-icon-nav-item {
+  --ai-bg: transparent;
+  --ai-hover: var(--mantine-color-primary-2, var(--mantine-color-gray-6));
+  --ai-size: var(--nav-item-size);
+}
+
+
+/* ----------- Non-Mobile Devices ----------- */
+@media screen and (min-device-width: 768px) {
+  .nav-item {
+    --nav-item-size: 40px;
+  }
+}

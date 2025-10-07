@@ -1,0 +1,18 @@
+.nav-list {
+  margin: 0;
+  padding: 0;
+  grid-area: menu;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+/* ----------- Non-Mobile Devices ----------- */
+@media screen and (min-device-width: 768px) {
+  .nav-list {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1rem;
+  }
+}

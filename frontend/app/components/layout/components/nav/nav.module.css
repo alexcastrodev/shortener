@@ -1,0 +1,20 @@
+.nav {
+  color: white;
+  grid-area: nav;
+  background-color: var(--mantine-color-primary-9, var(--mantine-color-dark-7));
+  padding: 10px;
+  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "menu";
+}
+
+/* ----------- Non-Mobile Devices ----------- */
+@media screen and (min-device-width: 768px) {
+  .nav {
+    grid-template-rows: min-content 1fr min-content;
+    grid-template-areas: "logo" "menu" "profile";
+    justify-items: center;
+  }
+}

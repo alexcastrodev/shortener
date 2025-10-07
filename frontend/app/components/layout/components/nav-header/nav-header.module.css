@@ -1,0 +1,11 @@
+.header {
+  display: none;
+  grid-area: logo;
+}
+
+/* ----------- Non-Mobile Devices ----------- */
+@media screen and (min-device-width: 768px) {
+  .header {
+    display: block;
+  }
+}

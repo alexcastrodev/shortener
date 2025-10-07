@@ -1,0 +1,17 @@
+.layout {
+  height: 100dvh;
+  width: 100dvw;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: min-content 1fr min-content;
+  grid-template-areas: "header" "main" "nav";
+}
+
+/* ----------- Non-Mobile Devices ----------- */
+@media screen and (min-device-width: 768px) {
+  .layout {
+    grid-template-columns: max-content 1fr;
+    grid-template-rows: min-content 1fr;
+    grid-template-areas: "nav header" "nav main";
+  }
+}

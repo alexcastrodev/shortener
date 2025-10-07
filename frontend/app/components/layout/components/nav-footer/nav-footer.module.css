@@ -1,0 +1,11 @@
+.footer {
+  display: none;
+  grid-area: profile;
+}
+
+/* ----------- Non-Mobile Devices ----------- */
+@media screen and (min-device-width: 768px) {
+  .footer {
+    display: block;
+  }
+}

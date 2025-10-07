@@ -1,0 +1,1 @@
+export { LayoutComponent } from "./layout";
