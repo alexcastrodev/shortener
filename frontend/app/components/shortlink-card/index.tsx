@@ -1,4 +1,4 @@
-import { IconEdit, IconShare } from '@tabler/icons-react';
+import { IconEdit, IconShare, IconTrash } from '@tabler/icons-react';
 import {
   ActionIcon,
   Badge,
@@ -13,6 +13,10 @@ import type { Shortlink } from '@internal/core/types/Shortlink';
 import { useNavigate } from 'react-router';
 import { useClipboard } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
+import { modals } from '@mantine/modals';
+import { useDeleteShortlink } from '@internal/core/actions/delete-shortlink/delete-shortlink.hook';
+import { queryClient } from '@internal/core/service-provider';
+import { getShortlinksKey } from '@internal/core/actions/get-shortlinks/get-shortlinks.hook';
 
 interface ShortLinkCardProps {
   loading?: boolean;
@@ -22,7 +26,22 @@ interface ShortLinkCardProps {
 export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
   const navigate = useNavigate();
   const { copy } = useClipboard({ timeout: 500 });
-
+  const { mutate: deleteShortlink } = useDeleteShortlink({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getShortlinksKey });
+      notifications.show({
+        message: 'Shortlink deleted',
+        color: 'green',
+      });
+    },
+    onError: () => {
+      notifications.show({
+        title: 'Error',
+        message: 'Something went wrong, please try again later.',
+        color: 'red',
+      });
+    },
+  });
   function handleEdit() {
     if (link) navigate(`/links/${link.id}`);
   }
@@ -36,6 +55,21 @@ export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
       copy(link.short_url);
     }
   }
+
+  const handleDelete = () =>
+    modals.openConfirmModal({
+      title: 'Delete shortlink',
+      centered: true,
+      children: (
+        <Text size="sm">
+          Are you sure you want to delete this shortlink? This action is
+          destructive and you will have to create a new link.
+        </Text>
+      ),
+      labels: { confirm: 'Delete shortlink', cancel: "No don't delete it" },
+      confirmProps: { color: 'red' },
+      onConfirm: () => deleteShortlink(link?.id || ''),
+    });
 
   return (
     <Card withBorder padding="lg" radius="md" className={classes.card}>
@@ -77,6 +111,13 @@ export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
             <Skeleton height={20} mb="sm" radius="md" />
           ) : (
             <Group gap={0}>
+              <ActionIcon variant="subtle" color="gray" onClick={handleDelete}>
+                <IconTrash
+                  size={20}
+                  color="var(--mantine-color-red-6)"
+                  stroke={1.5}
+                />
+              </ActionIcon>
               <ActionIcon variant="subtle" color="gray" onClick={handleEdit}>
                 <IconEdit
                   size={20}
