@@ -9,6 +9,7 @@ import './i18n';
 import { MantineProvider } from '@mantine/core';
 import { ServiceProvider } from '@internal/core/service-provider';
 import { Notifications } from '@mantine/notifications';
+import { ModalsProvider } from '@mantine/modals';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -35,7 +36,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <MantineProvider defaultColorScheme="dark">
           <Notifications />
-          <ServiceProvider>{children}</ServiceProvider>
+          <ModalsProvider>
+            <ServiceProvider>{children}</ServiceProvider>
+          </ModalsProvider>
         </MantineProvider>
         <ScrollRestoration />
         <Scripts />

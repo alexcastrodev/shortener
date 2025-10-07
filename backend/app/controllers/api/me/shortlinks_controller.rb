@@ -9,7 +9,9 @@ class Api::Me::ShortlinksController < ApplicationController
   # GET /api/me/shortlinks
   def index
     puts "Current User: #{@current_user.inspect}"
-    render json: ShortlinkSerializer.new(@current_user.shortlinks).serialize, status: :ok
+    render json: ShortlinkSerializer.new(@current_user.shortlinks).serialize(meta: {
+      total: @current_user.shortlinks.count
+    }), status: :ok
   end
 
   # POST /api/me/shortlinks

@@ -1,7 +1,10 @@
 import { Card, Text, Stack, Group, TextInput, Button } from '@mantine/core';
 import styles from './quick-create.module.css';
+import { useQuickCreate } from './use-quick-create';
 
 export function QuickCreate() {
+  const { form, handleSubmit } = useQuickCreate();
+
   return (
     <Card
       shadow="sm"
@@ -15,20 +18,41 @@ export function QuickCreate() {
           <Text className={styles.title}>Quick create</Text>
         </Group>
 
-        <div>
-          <Text size="sm" style={{ marginBottom: 8 }}>
-            Enter your destination URL
-          </Text>
-          <Group className={styles.inputRow}>
-            <TextInput
-              placeholder="https://example.com/my-long-url"
-              className={styles.input}
-            />
-            <Button className={styles.button} color="blue">
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <Stack gap="md">
+            <div>
+              <Text size="sm" style={{ marginBottom: 8 }}>
+                Title (optional)
+              </Text>
+              <TextInput
+                placeholder="My Link Title"
+                key={form.key('title')}
+                {...form.getInputProps('title')}
+              />
+            </div>
+
+            <div>
+              <Text size="sm" style={{ marginBottom: 8 }}>
+                Enter your destination URL
+              </Text>
+              <TextInput
+                placeholder="https://example.com/my-long-url"
+                className={styles.input}
+                key={form.key('original_url')}
+                {...form.getInputProps('original_url')}
+              />
+            </div>
+
+            <Button
+              className={styles.button}
+              type="submit"
+              color="blue"
+              fullWidth
+            >
               Create your Shortener link
             </Button>
-          </Group>
-        </div>
+          </Stack>
+        </form>
       </Stack>
     </Card>
   );
