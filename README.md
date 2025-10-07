@@ -1,8 +1,14 @@
 # Introduction
 
-<img src="./.github/assets/logo-dark.webp" alt="project" width="300px">
+<p align="center">
+    <img src="./.github/assets/logo-dark.webp" alt="project" width="300px">
+</p>
 
-This project is meant to completely replace `bitly.com` for personal use.
+<p align="center">
+    This project is meant to completely replace <code>bitly.com</code> for personal use.
+</p>
+
+------------
 
 The structure is simple: first, the user accesses the Admin, creates the link, and sends it to someone somewhere in the world.
 
