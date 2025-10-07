@@ -40,7 +40,6 @@ class Shortlink < ApplicationRecord
     # Callbacks
     # ===============
     before_validation :generate_short_code, on: :create
-    before_create :set_last_accessed_at
     
     private
 
@@ -50,8 +49,4 @@ class Shortlink < ApplicationRecord
             break code unless Shortlink.exists?(short_code: code)
         end
     end    
-    
-    def set_last_accessed_at
-        self.last_accessed_at ||= Time.current
-    end
 end

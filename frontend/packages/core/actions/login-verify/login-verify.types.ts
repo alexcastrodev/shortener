@@ -6,6 +6,6 @@ export interface LoginVerifyRequestBody {
 }
 
 export interface LoginVerifyResponse {
-  jwt: string;
+  token: string;
   user: User;
 }

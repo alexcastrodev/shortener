@@ -26,8 +26,8 @@ export function useConfirmation() {
   }, [email]);
 
   const { mutate, isPending } = useLoginVerifyRequest({
-    onSuccess: ({ jwt, user }) => {
-      setup(jwt, user);
+    onSuccess: ({ token, user }) => {
+      setup(token, user);
       router('/');
     },
     onError: () => {
