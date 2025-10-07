@@ -16,3 +16,9 @@ We also ensure we have resilient messaging with good performance.
 This project is not too small to use interesting solutions like PGMQ, Solid Queue, or similar. Nor too large to use Apache Kafka.
 
 Data aggregation here doesn't need to be real-time, so it doesn't matter if it's a few seconds delayed. Therefore, the server can be on a VPS, self-hosted, or on any App Service.
+
+# Passwordless Authentication
+
+Let's keep Authentication simple.
+
+![passwordless](./.github/assets/passwordless.png)

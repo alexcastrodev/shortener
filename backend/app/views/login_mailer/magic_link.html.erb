@@ -1,70 +1,75 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #1a1a1a;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background-color: #6b7280;
-            padding: 40px 20px;
-            text-align: center;
-            color: #ffffff;
-        }
-        .content {
-            padding: 40px 30px;
-        }
-        .button {
-            display: inline-block;
-            padding: 14px 32px;
-            margin: 20px 0;
-            background-color: #4b5563;
-            color: #ffffff !important;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-        }
-        .footer {
-            padding: 20px 30px;
-            background-color: #f3f4f6;
-            color: #6b7280;
-            font-size: 14px;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1 style="margin: 0; font-size: 28px;">Sign In Request</h1>
-        </div>
-        <div class="content">
-            <p style="font-size: 16px;">Hello!</p>
-            <p style="font-size: 16px;">We received a request to sign in to your account. Click the button below to securely access your account:</p>
-            <div style="text-align: center;">
-                <a href="<%= @url %>" class="button">Sign In Now</a>
-            </div>
-            <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">This link will expire in 15 minutes for security reasons.</p>
-        </div>
-        <div class="footer">
-            <p style="margin: 5px 0;">If you didn't request this email, please ignore it.</p>
-            <p style="margin: 5px 0;">No further action is required.</p>
-        </div>
-    </div>
-</body>
+<!-- app/views/login_mailer/sudo_code.html.erb -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="x-apple-disable-message-reformatting" content="width=device-width,initial-scale=1" />
+        <title>Please verify your identity</title>
+        <style>
+          @media (prefers-color-scheme: dark) {
+            body { background: #0d1117 !important; color: #c9d1d9 !important; }
+            .card { background: #161b22 !important; border-color: #30363d !important; }
+            .muted { color: #8b949e !important; }
+            h1, p { color: #c9d1d9 !important; }
+            .code-block { background: #21262d !important; }
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; background: #f6f8fa; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #f6f8fa;">
+          <tr>
+            <td align="center" style="padding: 32px 12px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 620px;">
+                <tr>
+                  <td align="center" style="padding: 12px 0 20px;">
+                    <strong style="font-size: 18px; color: #24292f;">Shortener</strong>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td align="left" class="card" style="background: #ffffff; border: 1px solid #d0d7de; border-radius: 6px; padding: 24px;">
+                    <h1 style="margin: 0 0 12px; font: 600 22px/1.3 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #24292f;">
+                      Please verify your identity, <%= @user.email %>
+                    </h1>
+
+                <p style="margin:0 0 16px;font:400 14px/1.6 system-ui,-apple-system,Segoe UI,Roboto;color:#24292f;">
+                  Here is your Shortener authentication code:
+                </p>
+
+                <div style="text-align:center;padding:12px 0 20px;">
+                  <div style="display:inline-block;font:700 28px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; letter-spacing:4px; color:#24292f;">
+                    <%= @code %>
+                  </div>
+                </div>
+
+                <p class="muted" style="margin:0 0 16px;font:400 13px/1.6 system-ui,-apple-system,Segoe UI,Roboto;color:#57606a;">
+                  This code is valid for <strong><%= @valid_minutes || 15 %> minutes</strong> and can only be used once.
+                </p>
+
+                <p style="margin:0 0 12px;font:600 13px/1.6 system-ui,-apple-system,Segoe UI,Roboto;color:#24292f;">
+                  Please don't share this code with anyone:
+                  <span class="muted" style="color:#57606a;font-weight:400;">
+                    we`ll never ask for it on the phone or via email.
+                  </span>
+                </p>
+
+                <p style="margin:16px 0 0;font:400 13px/1.6 system-ui,-apple-system,Segoe UI,Roboto;color:#57606a;">
+                  Thanks,<br/>
+                  Shortener Team
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="muted" style="padding:14px 6px 0;color:#57606a;font:400 12px/1.6 system-ui,-apple-system,Segoe UI,Roboto;text-align:left;">
+                You`re receiving this email because a verification code was requested for your
+                Shortener account. If this wasn`t you, please ignore this email.
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
 </html>

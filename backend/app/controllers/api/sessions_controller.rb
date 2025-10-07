@@ -5,8 +5,8 @@ class Api::SessionsController < ApplicationController
   def create
     if params[:email].present?
       user = User.find_or_create_by(email: params[:email])
-      user.generate_login_token!
-      LoginMailer.with(user:).magic_link.deliver_later
+      user.send_magic_link
+
       render json: { message: "If the email exists, the link has been sent." }
     else
       render json: { error: "Email is required" }, status: :unprocessable_entity

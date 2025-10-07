@@ -3,7 +3,7 @@ class User < ApplicationRecord
 
   def generate_login_token!
     update!(
-      login_token: SecureRandom.urlsafe_base64(32),
+      login_token: SecureRandom.random_number(10**7).to_s.rjust(7, '0'),
       login_token_sent_at: Time.current
     )
   end
@@ -14,5 +14,10 @@ class User < ApplicationRecord
 
   def clear_login_token!
     update!(login_token: nil, login_token_sent_at: nil)
+  end
+
+  def send_magic_link
+    generate_login_token!
+    LoginMailer.with(user: self).magic_link.deliver_later
   end
 end
