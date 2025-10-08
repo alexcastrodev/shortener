@@ -1,6 +1,7 @@
 // deno run --allow-net main.ts
 import { type Channel, connect, type Connection } from "@nashaddams/amqp";
 import { createClient } from "npm:redis@^4.5";
+import { getHeaders } from "./headers.ts";
 
 const RABBITMQ_HOST = Deno.env.get("RABBITMQ_HOST") ?? "127.0.0.1";
 const RABBITMQ_PORT = Number(Deno.env.get("RABBITMQ_PORT") ?? 5672);
@@ -49,7 +50,7 @@ const valkeyClient = await createClient({
 
 await valkeyClient.connect();
 
-Deno.serve({ port: 8000 }, async (req) => {
+Deno.serve({ port: 8000 }, async (req, info) => {
   const url = new URL(req.url);
   const key = url.pathname.substring(1);
   const cache_key = `shortlink:${key}`;
@@ -61,8 +62,14 @@ Deno.serve({ port: 8000 }, async (req) => {
         return Response.redirect("/404", 302);
       }
 
-      publishMessage({ foo: "bar", time: new Date().toISOString() })
+      getHeaders(req, info).then((payload) => {
+        publishMessage({
+          ...payload,
+          shortlink_code: key,
+          timestamp: new Date().toISOString(),
+        })
         .catch((err) => console.error("[AMQP] Background publish error:", err));
+      })
 
       return Response.redirect(value, 302);
     } catch {
