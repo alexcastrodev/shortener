@@ -25,6 +25,7 @@ services:
     container_name: postgres
     networks:
       - default
+      - proxy_net
     env_file:
       - /mnt/ssd/docker/shortener/.env
     volumes:
