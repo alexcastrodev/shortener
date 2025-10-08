@@ -6,11 +6,7 @@ class AnalyticsWorker
 
   def work(msg)
     data = JSON.parse(msg)
-    logger.info "Logged analytics data: #{data}"
-
-    File.open("log/analytics.log", "a") do |f|
-      f.puts("#{Time.now}: #{data}")
-    end
+    Rails.logger.info "Logged analytics data: #{data}"
 
     ack!
   rescue => e
