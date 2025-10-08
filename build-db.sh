@@ -2,7 +2,7 @@
 set -euo pipefail
 
 COMPOSE_FILE=".ci/db-stack.yml"
-STACK_NAME="shortener"
+STACK_NAME="shortenerdb"
 
 echo "Deploying stack: $STACK_NAME (force recreate)"
 if ! docker stack deploy --with-registry-auth -c "$COMPOSE_FILE" "$STACK_NAME"; then
