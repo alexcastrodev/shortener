@@ -76,6 +76,6 @@ gem "solid_cache", "~> 1.0.7"
 gem "solid_queue", "~> 1.2.1"
 gem "solid_cable", "~> 3.0.12"
 # Valkey
-gem 'redis'
+gem "redis"
 # ruby-like syntax for redis objects
-gem 'redis-objects'
+gem "redis-objects"
