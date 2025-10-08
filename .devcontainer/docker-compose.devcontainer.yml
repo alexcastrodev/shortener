@@ -42,4 +42,4 @@ services:
       - ../edge-function:/app
     env_file:
       - ../.env
-    command: deno run --allow-net --allow-env index.ts
+    command: deno run --allow-net --allow-env --allow-read index.ts
