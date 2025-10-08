@@ -1,25 +1,4 @@
 services:
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    networks:
-      - default
-      - proxy_net
-    ports:
-      - "15672:15672"
-    env_file:
-      - /mnt/ssd/docker/shortener/.env
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 1024M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    volumes:
-      - /mnt/ssd/docker/shortener/rabbit:/var/lib/rabbitmq
-
   web: 
     image: shortener:latest
     env_file:
@@ -45,24 +24,6 @@ services:
         limits:
           cpus: '1'
           memory: 1024M
-
-  db:
-    image: postgres:17
-    container_name: postgres
-    networks:
-      - default
-    env_file:
-      - /mnt/ssd/docker/shortener/.env
-    volumes:
-      - /mnt/ssd/docker/shortener/postgres:/var/lib/postgresql/data
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1024M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
 
 networks:
   default:
