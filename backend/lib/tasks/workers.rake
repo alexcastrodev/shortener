@@ -1,4 +1,4 @@
-namespace :consumers do
+namespace :workers do
   desc "Run Sneakers with all workers in app/workers"
   task run: :environment do
     require "sneakers"

@@ -35,7 +35,7 @@ services:
   
   jobs: 
     image: shortener:latest
-    command: bundle exec rake consumers:run
+    command: bundle exec rake workers:run
     env_file:
       - /mnt/ssd/docker/shortener/.env
     networks:
