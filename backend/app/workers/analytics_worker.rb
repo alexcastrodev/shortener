@@ -1,4 +1,4 @@
-require 'sneakers'
+require "sneakers"
 
 class AnalyticsWorker
   include Sneakers::Worker

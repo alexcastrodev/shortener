@@ -1,6 +1,6 @@
 Sneakers.configure(
   amqp: "amqp://#{ENV['RABBITMQ_DEFAULT_USER']}:#{ENV['RABBITMQ_DEFAULT_PASS']}@rabbitmq:#{ENV['RABBITMQ_PORT'] || 5672}/",
-  vhost: '/',
+  vhost: "/",
   threads: 1,
   workers: 5,
   durable: true,

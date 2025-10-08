@@ -1,6 +1,6 @@
 // deno run --allow-net main.ts
 import { type Channel, connect, type Connection } from "@nashaddams/amqp";
-// import { createClient } from "npm:redis@^4.5";
+import { createClient } from "npm:redis@^4.5";
 
 const RABBITMQ_HOST = Deno.env.get("RABBITMQ_HOST") ?? "127.0.0.1";
 const RABBITMQ_PORT = Number(Deno.env.get("RABBITMQ_PORT") ?? 5672);
@@ -43,24 +43,30 @@ addEventListener("unload", async () => {
   }
 });
 
-// const valkeyClient = await createClient({
-//   url: `redis://${Deno.env.get("VALKEY_URL")}:6379`,
-// });
+const valkeyClient = await createClient({
+  url: Deno.env.get("REDIS_URL"),
+});
 
-Deno.serve({ port: 8000 }, (req) => {
+await valkeyClient.connect();
+
+Deno.serve({ port: 8000 }, async (req) => {
   const url = new URL(req.url);
   const key = url.pathname.substring(1);
-
+  const cache_key = `shortlink:${key}`;
   if (key) {
     try {
-      // const value = await valkeyClient.get(key);
-      const value = "https://google.com";
+      const value = await valkeyClient.get(cache_key);
+
+      if (!value) {
+        return Response.redirect("/404", 302);
+      }
+
       publishMessage({ foo: "bar", time: new Date().toISOString() })
         .catch((err) => console.error("[AMQP] Background publish error:", err));
 
       return Response.redirect(value, 302);
     } catch {
-      return Response.redirect("/404", 302);
+      return Response.redirect("/500", 302);
     }
   }
 

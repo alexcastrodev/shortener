@@ -41,7 +41,7 @@ class Event < ApplicationRecord
 
   private
 
-  def set_clicked_at
+    def set_clicked_at
       self.clicked_at ||= Time.current
-  end
+    end
 end

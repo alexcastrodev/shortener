@@ -8,6 +8,6 @@ class ApplicationContract < Dry::Validation::Contract
   end
 
   register_macro(:email_format) do
-    key.failure('must be a valid email') if value.present? && !URI::MailTo::EMAIL_REGEXP.match?(value)
+    key.failure("must be a valid email") if value.present? && !URI::MailTo::EMAIL_REGEXP.match?(value)
   end
 end

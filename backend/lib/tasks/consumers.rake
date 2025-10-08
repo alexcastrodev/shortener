@@ -1,14 +1,14 @@
 namespace :consumers do
   desc "Run Sneakers with all workers in app/workers"
-  task :run => :environment do
+  task run: :environment do
     require "sneakers"
     require "sneakers/runner"
 
     worker_classes = []
 
-    Dir[Rails.root.join('app/workers/**/*_worker.rb')].each do |f|
+    Dir[Rails.root.join("app/workers/**/*_worker.rb")].each do |f|
       require f
-      class_name = File.basename(f, '.rb').camelize
+      class_name = File.basename(f, ".rb").camelize
       worker_classes << Object.const_get(class_name) if Object.const_defined?(class_name)
     end
 

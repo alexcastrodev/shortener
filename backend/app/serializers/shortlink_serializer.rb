@@ -30,9 +30,5 @@ class ShortlinkSerializer < BaseSerializer
   #------------
   # Attributes
   #------------
-  attributes :original_url, :title, :click_count, :last_accessed_at, :short_code
-
-  attribute :short_url do |record|
-    "#{ENV['EDGE_API']}/r/#{record.short_code}"
-  end
+  attributes :original_url, :title, :click_count, :last_accessed_at, :short_code, :short_url
 end

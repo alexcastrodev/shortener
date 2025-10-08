@@ -1,5 +1,5 @@
 class Api::Me::ShortlinksController < ApplicationController
-  before_action :load_link, only: [:destroy, :show]
+  before_action :load_link, only: [ :destroy, :show ]
 
   # GET /api/me/shortlinks/:id
   def show
@@ -33,13 +33,13 @@ class Api::Me::ShortlinksController < ApplicationController
       link.destroy
       head :no_content
     else
-      render json: { error: 'Link not found' }, status: :not_found
+      render json: { error: "Link not found" }, status: :not_found
     end
   end
 
   private
 
-  def load_link
-    @link = @current_user.shortlinks.find(params[:id])
-  end
+    def load_link
+      @link = @current_user.shortlinks.find(params[:id])
+    end
 end

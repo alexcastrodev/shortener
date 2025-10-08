@@ -364,6 +364,12 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
+    redis (5.4.1)
+      redis-client (>= 0.22.0)
+    redis-client (0.26.1)
+      connection_pool
+    redis-objects (1.7.0)
+      redis
     regexp_parser (2.11.3)
     reline (0.6.2)
       io-console (~> 0.5)
@@ -511,6 +517,8 @@ DEPENDENCIES
   puma (>= 5.0)
   rack-cors
   rails (~> 8.0.2)
+  redis
+  redis-objects
   rubocop-erb
   rubocop-performance
   rubocop-rails-omakase

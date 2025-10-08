@@ -19,16 +19,16 @@ class ApplicationController < ActionController::API
 
   private
 
-  def record_not_found(exception)
-    render json: { message: 'Resource not found' }, status: :not_found
-  end
+    def record_not_found(exception)
+      render json: { message: "Resource not found" }, status: :not_found
+    end
 
   def record_not_destroyed(exception)
-    render json: { message: 'Resource could not be destroyed', details: exception.record.errors.full_messages }, status: :unprocessable_entity
+    render json: { message: "Resource could not be destroyed", details: exception.record.errors.full_messages }, status: :unprocessable_entity
   end
 
   def record_invalid(exception)
-    render json: { message: 'Resource is invalid', details: exception.record.errors.full_messages }, status: :unprocessable_entity
+    render json: { message: "Resource is invalid", details: exception.record.errors.full_messages }, status: :unprocessable_entity
   end
 
 
