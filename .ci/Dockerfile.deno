@@ -9,4 +9,4 @@ RUN deno cache index.ts
 FROM denoland/deno:latest
 WORKDIR /app
 COPY --from=builder /app .
-CMD ["deno", "run" "--allow-net", "--allow-env",  "index.ts"]
+CMD ["deno", "run", "--allow-net", "--allow-env", "index.ts"]
