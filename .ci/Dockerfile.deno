@@ -3,7 +3,7 @@
 FROM denoland/deno:latest AS builder
 WORKDIR /app
 COPY ./edge-function .
-RUN deno cache main.ts
+RUN deno cache index.ts
 
 # Production stage
 FROM denoland/deno:latest
