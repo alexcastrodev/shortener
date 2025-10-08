@@ -1,35 +1,3 @@
-async function getGeolocationFromAPI(ip: string): Promise<{ country_code: string; region: string }> {
-  if (!ip) {
-    return { country_code: "", region: "" };
-  }
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    
-    const response = await fetch(
-      `http://ip-api.com/json/${ip}?fields=country,countryCode,regionName`,
-      { signal: controller.signal }
-    );
-    
-    clearTimeout(timeoutId);
-    
-    if (!response.ok) {
-      return { country_code: "", region: "" };
-    }
-    
-    const data = await response.json();
-    console.log("Geolocation data from API:", data);
-    return {
-      country_code: data.countryCode || "",
-      region: data.regionName || "",
-    };
-  } catch {
-    console.error("Failed to fetch geolocation data");
-    return { country_code: "", region: "" };
-  }
-}
-
 function getRemoteIpFromInfo(i: unknown): string | null {
   if (!i || typeof i !== "object") return null;
   const obj = i as Record<string, unknown>;
@@ -109,33 +77,6 @@ function extractIpAddress(req: Request, info: Deno.ServeHandlerInfo): string {
   return ipFromHeaders || ipFromInfo || "";
 }
 
-async function extractGeolocation(req: Request, info: Deno.ServeHandlerInfo, ip: string): Promise<{ country_code: string; region: string }> {
-  const headers = req.headers;
-  
-  let country_code = 
-    headers.get("cf-ipcountry") || 
-    getNestedString(info, ["cf", "country"]) || 
-    getNestedString(info, ["country"]) || 
-    getNestedString(info, ["geo", "country"]) || 
-    "";
-  
-  let region = 
-    headers.get("cf-region") || 
-    getNestedString(info, ["cf", "region"]) || 
-    getNestedString(info, ["region"]) || 
-    getNestedString(info, ["geo", "region"]) || 
-    "";
-  
-  // If no geolocation data from headers/info, use external API
-  if (!country_code && !region && ip) {
-    const geo = await getGeolocationFromAPI(ip);
-    country_code = geo.country_code;
-    region = geo.region;
-  }
-  
-  return { country_code, region };
-}
-
 function detectBrowser(user_agent: string): string {
   if (user_agent.includes("Chrome")) return "Chrome";
   if (user_agent.includes("Firefox")) return "Firefox";
@@ -159,17 +100,14 @@ export async function getHeaders(req: Request, info: Deno.ServeHandlerInfo) {
   const referer = headers.get("referer") || "";
   
   const ip_address = extractIpAddress(req, info);
-  const { country_code, region } = await extractGeolocation(req, info, ip_address);
   const browser = detectBrowser(user_agent);
   const platform = detectPlatform(user_agent);
 
   return {
     browser,
-    country_code,
     ip_address,
     platform,
     referer,
-    region,
     user_agent,
   };
 }

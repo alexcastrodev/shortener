@@ -6,8 +6,6 @@ class AnalyticsWorker
 
   def work(msg)
     data = JSON.parse(msg).with_indifferent_access
-    Rails.logger.info "Logged analytics data: #{data}"
-
     shortlink = Shortlink.find_by(short_code: data[:shortlink_code])
     return reject! unless shortlink
 
