@@ -12,6 +12,12 @@ if ! docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" .; then
     exit 1
 fi
 
+echo "Building Docker image: Edge"
+if ! docker build -t shortener-edge -f .ci/Dockerfile.deno .; then
+    echo "Error: Docker build failed."
+    exit 1
+fi
+
 echo "Removing existing stack: $STACK_NAME"
 if docker stack rm "$STACK_NAME"; then
     echo "Waiting for stack to be removed..."

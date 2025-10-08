@@ -24,6 +24,12 @@ services:
         limits:
           cpus: '1'
           memory: 1024M
+  
+  serveless:
+    image: shortener-edge:latest
+    working_dir: /app
+    env_file:
+      - /mnt/ssd/docker/shortener/.env
 
 networks:
   default:

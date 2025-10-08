@@ -19,7 +19,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_23.x | bash - && \
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BE_FOLDER="./app" \
+    BE_FOLDER="./backend" \
     BUNDLE_WITHOUT="development"
 
 # Throw-away build stage to reduce size of final image
