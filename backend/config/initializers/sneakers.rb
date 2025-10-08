@@ -1,5 +1,7 @@
+require 'uri'
+
 Sneakers.configure(
-  amqp: "amqp://#{ENV['RABBITMQ_DEFAULT_USER']}:#{ENV['RABBITMQ_DEFAULT_PASS']}@rabbitmq:#{ENV['RABBITMQ_PORT'] || 5672}/",
+  amqp: "amqp://#{ENV['RABBITMQ_DEFAULT_USER']}:#{URI.encode_www_form_component(ENV['RABBITMQ_DEFAULT_PASS'])}@#{ENV['RABBITMQ_HOST']}:#{ENV['RABBITMQ_PORT'] || 5672}/",
   vhost: "/",
   threads: 1,
   workers: 5,

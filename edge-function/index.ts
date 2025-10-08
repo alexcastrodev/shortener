@@ -51,9 +51,24 @@ const valkeyClient = await createClient({
 await valkeyClient.connect();
 
 Deno.serve({ port: 8000 }, async (req, info) => {
+  // serve static error pages directly to avoid redirect loops
   const url = new URL(req.url);
+
+  if (["/404", "/".includes(url.pathname)]) {
+    try {
+      const body = await Deno.readTextFile(new URL("./404.html", import.meta.url));
+      return new Response(body, {
+        status: 404,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    } catch {
+      return new Response("404 Not Found", { status: 404 });
+    }
+  }
+
   const key = url.pathname.substring(1);
   const cache_key = `shortlink:${key}`;
+
   if (key) {
     try {
       const value = await valkeyClient.get(cache_key);

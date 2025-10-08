@@ -1,8 +1,22 @@
 services:
   web: 
     image: shortener:latest
-    env_file:
-      - /mnt/ssd/docker/shortener/.env
+    environment:
+      - RAILS_ENV=production
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - REDIS_URL=${REDIS_URL}
+      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+      - EDGE_URL=${EDGE_URL}
+      - GMAIL_USERNAME=${GMAIL_USERNAME}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+      - FRONTEND_URL=${FRONTEND_URL}
     networks:
       - default
       - proxy_net
@@ -19,6 +33,23 @@ services:
       - /mnt/ssd/docker/shortener/.env
     networks:
       - default
+      - proxy_net
+    environment:
+      - RAILS_ENV=production
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - REDIS_URL=${REDIS_URL}
+      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+      - EDGE_URL=${EDGE_URL}
+      - GMAIL_USERNAME=${GMAIL_USERNAME}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+      - FRONTEND_URL=${FRONTEND_URL}
     deploy:
       resources:
         limits:
@@ -28,8 +59,31 @@ services:
   serveless:
     image: shortener-edge:latest
     working_dir: /app
-    env_file:
-      - /mnt/ssd/docker/shortener/.env
+    environment:
+      - RAILS_ENV=production
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - REDIS_URL=${REDIS_URL}
+    networks:
+      - default
+      - proxy_net
+  
+  frontend:
+    image: shortener-frontend:latest
+    environment:
+      - VITE_BASE_URL=${VITE_BASE_URL}
+    ports:
+      - "9002:80"
+    networks:
+      - default
+      - proxy_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
 networks:
   default:

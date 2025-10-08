@@ -7,8 +7,9 @@ services:
       - proxy_net
     ports:
       - "15672:15672"
-    env_file:
-      - /mnt/ssd/docker/shortener/.env
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
     deploy:
       resources:
         limits:
@@ -26,8 +27,10 @@ services:
     networks:
       - default
       - proxy_net
-    env_file:
-      - /mnt/ssd/docker/shortener/.env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - /mnt/ssd/docker/shortener/postgres:/var/lib/postgresql/data
     deploy:
@@ -42,8 +45,6 @@ services:
   cache:
     image: valkey/valkey:8.1.4
     container_name: valkey
-    env_file:
-      - /mnt/ssd/docker/shortener/.env
     volumes:
       - /mnt/ssd/docker/shortener/valkey:/data
     deploy:

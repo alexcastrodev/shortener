@@ -1,19 +1,28 @@
 #!/bin/bash
 set -euo pipefail
 
-IMAGE_NAME="shortener:latest"
-DOCKERFILE=".ci/Dockerfile"
 COMPOSE_FILE=".ci/stack.yml"
 STACK_NAME="shortener"
+ENV_PATH="/mnt/ssd/docker/shortener/.env"
 
-echo "Building Docker image: $IMAGE_NAME"
-if ! docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" .; then
+set -a
+source "$ENV_PATH"
+set +a
+
+echo "Building Docker image: shortener:latest"
+if ! docker build -t shortener:latest -f .ci/Dockerfile .; then
     echo "Error: Docker build failed."
     exit 1
 fi
 
 echo "Building Docker image: Edge"
 if ! docker build -t shortener-edge -f .ci/Dockerfile.deno .; then
+    echo "Error: Docker build failed."
+    exit 1
+fi
+
+echo "Building Docker image: Frontend"
+if ! docker build -t shortener-frontend -f .ci/Dockerfile.frontend .; then
     echo "Error: Docker build failed."
     exit 1
 fi
