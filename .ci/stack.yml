@@ -13,7 +13,7 @@ services:
       - RABBITMQ_PORT=${RABBITMQ_PORT}
       - REDIS_URL=${REDIS_URL}
       - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
-      - EDGE_URL=${EDGE_URL}
+      - EDGE_API=${EDGE_API}
       - GMAIL_USERNAME=${GMAIL_USERNAME}
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
       - FRONTEND_URL=${FRONTEND_URL}
@@ -26,11 +26,9 @@ services:
           cpus: '1'
           memory: 1024M
   
-  jobs: 
+  workers: 
     image: shortener:latest
     command: bundle exec rake workers:run
-    env_file:
-      - /mnt/ssd/docker/shortener/.env
     networks:
       - default
       - proxy_net
@@ -46,7 +44,33 @@ services:
       - RABBITMQ_PORT=${RABBITMQ_PORT}
       - REDIS_URL=${REDIS_URL}
       - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
-      - EDGE_URL=${EDGE_URL}
+      - GMAIL_USERNAME=${GMAIL_USERNAME}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+      - FRONTEND_URL=${FRONTEND_URL}
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1024M
+  
+  jobs: 
+    image: shortener:latest
+    command: bin/jobs
+    networks:
+      - default
+      - proxy_net
+    environment:
+      - RAILS_ENV=production
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - REDIS_URL=${REDIS_URL}
+      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
       - GMAIL_USERNAME=${GMAIL_USERNAME}
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
       - FRONTEND_URL=${FRONTEND_URL}
