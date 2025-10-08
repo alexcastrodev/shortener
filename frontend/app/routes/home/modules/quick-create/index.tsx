@@ -3,7 +3,7 @@ import styles from './quick-create.module.css';
 import { useQuickCreate } from './use-quick-create';
 
 export function QuickCreate() {
-  const { form, handleSubmit } = useQuickCreate();
+  const { form, handleSubmit, loading } = useQuickCreate();
 
   return (
     <Card
@@ -48,6 +48,7 @@ export function QuickCreate() {
               type="submit"
               color="blue"
               fullWidth
+              loading={loading}
             >
               Create your Shortener link
             </Button>

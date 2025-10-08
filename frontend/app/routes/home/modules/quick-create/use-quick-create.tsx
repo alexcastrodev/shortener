@@ -23,7 +23,7 @@ export function useQuickCreate() {
 
     validate: zod4Resolver(schema),
   });
-  const { mutate } = useCreateShortlink({
+  const { mutate, isPending } = useCreateShortlink({
     onSuccess: data => {
       navigate(`/links/${data.id}`);
       queryClient.invalidateQueries({ queryKey: getShortlinksKey });
@@ -42,5 +42,5 @@ export function useQuickCreate() {
     mutate(values);
   }
 
-  return { handleSubmit, form };
+  return { handleSubmit, form, loading: isPending };
 }
