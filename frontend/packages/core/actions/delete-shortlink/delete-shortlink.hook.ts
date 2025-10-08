@@ -3,7 +3,12 @@ import type { ResponseError } from '../../types/ResponseError';
 import { deleteShortlink } from './delete-shortlink.service';
 
 export function useDeleteShortlink(
-  mutationProps?: UseMutationOptions<void, ResponseError, number | string, unknown>
+  mutationProps?: UseMutationOptions<
+    void,
+    ResponseError,
+    number | string,
+    unknown
+  >
 ) {
   return useMutation({
     mutationFn: deleteShortlink,
