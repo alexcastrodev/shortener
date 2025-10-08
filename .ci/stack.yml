@@ -72,8 +72,6 @@ services:
   
   frontend:
     image: shortener-frontend:latest
-    environment:
-      - VITE_BASE_URL=${VITE_BASE_URL}
     ports:
       - "9002:80"
     networks:
