@@ -41,23 +41,23 @@ services:
   cache:
     image: valkey/valkey:8.1.4
     container_name: valkey
-  env_file:
+    env_file:
       - /mnt/ssd/docker/shortener/.env
-  volumes:
+    volumes:
       - /mnt/ssd/docker/shortener/valkey:/data
-  deploy:
-    resources:
-      limits:
-        cpus: '1'
-        memory: 1024M
-      reservations:
-        cpus: '0.5'
-        memory: 256M
-  ports:
-    - "6379:6379"
-  networks:
-    - default
-    - proxy_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    ports:
+      - "6379:6379"
+    networks:
+      - default
+      - proxy_net
 
 networks:
   default:
