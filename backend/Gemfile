@@ -80,3 +80,9 @@ gem "solid_cable", "~> 3.0.12"
 gem "redis"
 # ruby-like syntax for redis objects
 gem "redis-objects"
+
+# =================
+# Monitoring
+# =================
+gem "sentry-ruby"
+gem "sentry-rails"

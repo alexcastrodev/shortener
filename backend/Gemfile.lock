@@ -413,6 +413,12 @@ GEM
       ffi (~> 1.12)
       logger
     securerandom (0.4.1)
+    sentry-rails (5.28.0)
+      railties (>= 5.0)
+      sentry-ruby (~> 5.28.0)
+    sentry-ruby (5.28.0)
+      bigdecimal
+      concurrent-ruby (~> 1.0, >= 1.0.2)
     serverengine (2.0.7)
       sigdump (~> 0.2.2)
     set (1.1.2)
@@ -526,6 +532,8 @@ DEPENDENCIES
   rubocop-erb
   rubocop-performance
   rubocop-rails-omakase
+  sentry-rails
+  sentry-ruby
   sneakers
   solid_cable (~> 3.0.12)
   solid_cache (~> 1.0.7)
