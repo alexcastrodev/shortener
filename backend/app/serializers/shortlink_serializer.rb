@@ -5,7 +5,7 @@
 # Table name: shortlinks
 #
 #  id               :bigint           not null, primary key
-#  click_count      :integer          default(0), not null
+#  events_count     :integer          default(0), not null
 #  last_accessed_at :datetime
 #  original_url     :string           not null
 #  short_code       :string           not null
@@ -30,5 +30,5 @@ class ShortlinkSerializer < BaseSerializer
   #------------
   # Attributes
   #------------
-  attributes :original_url, :title, :click_count, :last_accessed_at, :short_code, :short_url
+  attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url
 end

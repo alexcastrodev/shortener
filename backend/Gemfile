@@ -67,6 +67,7 @@ gem "dry-validation"
 gem "oj"
 gem "sneakers"
 gem "jwt"
+gem "counter_culture", "~> 3.2"
 
 # =================
 # Caching

@@ -104,7 +104,7 @@ export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
             <Skeleton height={20} mb="sm" radius="md" />
           ) : (
             <Text fz="xs" c="dimmed">
-              Clicks: {link?.click_count || 0}
+              Clicks: {link?.events_count || 0}
             </Text>
           )}
           {loading ? (

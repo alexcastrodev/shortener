@@ -62,7 +62,7 @@ export default function Page() {
                   {link.title ?? `Link #${link.id}`}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  ID: {link.id} • Clicks: {link.click_count}
+                  ID: {link.id} • Clicks: {link.events_count}
                 </p>
 
                 <div className="mt-6">

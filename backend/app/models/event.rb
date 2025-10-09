@@ -26,6 +26,7 @@ class Event < ApplicationRecord
   # Associations
   # ===============
   belongs_to :shortlink
+  counter_culture :shortlink
 
   # ===============
   # Validations
@@ -38,10 +39,15 @@ class Event < ApplicationRecord
   # Callbacks
   # ===============
   before_validation :set_clicked_at, on: :create
+  after_commit :update_last_visited, on: :create
 
   private
 
     def set_clicked_at
       self.clicked_at ||= Time.current
     end
+
+  def update_last_visited
+    self.shortlink.update(last_accessed_at: clicked_at)
+  end
 end

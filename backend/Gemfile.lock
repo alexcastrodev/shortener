@@ -97,6 +97,9 @@ GEM
       sorted_set (~> 1, >= 1.0.2)
     concurrent-ruby (1.3.5)
     connection_pool (2.5.4)
+    counter_culture (3.11.2)
+      activerecord (>= 4.2)
+      activesupport (>= 4.2)
     crass (1.0.6)
     csv (3.3.5)
     date (3.4.1)
@@ -503,6 +506,7 @@ DEPENDENCIES
   annotaterb
   bootsnap
   brakeman
+  counter_culture (~> 3.2)
   dry-validation
   httparty
   image_processing (~> 1.2)

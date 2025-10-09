@@ -3,7 +3,7 @@
 # Table name: shortlinks
 #
 #  id               :bigint           not null, primary key
-#  click_count      :integer          default(0), not null
+#  events_count     :integer          default(0), not null
 #  last_accessed_at :datetime
 #  original_url     :string           not null
 #  short_code       :string           not null
@@ -27,7 +27,6 @@ class Shortlink < ApplicationRecord
   # ===============
   validates :original_url, presence: true
     validates :short_code, presence: true, uniqueness: true
-    validates :click_count, numericality: { greater_than_or_equal_to: 0 }
     validates :user_id, presence: true
 
     # ===============

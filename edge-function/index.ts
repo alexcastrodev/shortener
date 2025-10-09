@@ -1,4 +1,3 @@
-// deno run --allow-net main.ts
 import { type Channel, connect, type Connection } from "@nashaddams/amqp";
 import { createClient } from "npm:redis@^4.5";
 import { getHeaders } from "./headers.ts";
