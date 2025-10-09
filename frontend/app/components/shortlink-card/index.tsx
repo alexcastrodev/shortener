@@ -42,6 +42,7 @@ export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
       });
     },
   });
+
   function handleEdit() {
     if (link) navigate(`/links/${link.id}`);
   }

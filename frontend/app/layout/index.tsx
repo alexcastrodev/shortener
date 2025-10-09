@@ -1,11 +1,12 @@
 import { Layout } from '../components/layout';
-import { Button, Image } from '@mantine/core';
+import { Button, Image, LoadingOverlay } from '@mantine/core';
 import { useEffect, type PropsWithChildren } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { IconHome2, IconLink, IconLogout } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import LogoDark from '/logo-dark.webp';
 import { useUserState } from '@internal/core/states/use-user-state';
+import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
 
 export default function LayoutComponent() {
   const { user } = useUserState();
@@ -13,12 +14,21 @@ export default function LayoutComponent() {
   const { t } = useTranslation('menu');
   const router = useLocation();
   const { clear } = useUserState();
+  const { isLoading, isError, data } = useGetLoggedUser();
 
   useEffect(() => {
-    if (!user) navigate('/login');
-  }, []);
+    if (isError) navigate('/login');
+  }, [isError]);
 
-  if (!user) null;
+  if (isLoading || isError) {
+    return (
+      <div style={{ position: 'relative', height: '100vh' }}>
+        <LoadingOverlay visible />
+      </div>
+    );
+  }
+
+  if (!data) null;
 
   return (
     <Layout>
