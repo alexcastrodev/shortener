@@ -43,11 +43,12 @@ export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
     },
   });
 
-  function handleEdit() {
+  function handleEdit(e: React.MouseEvent) {
     if (link) navigate(`/app/links/${link.id}`);
   }
 
-  function handleShare() {
+  function handleShare(e: React.MouseEvent) {
+    e.stopPropagation();
     if (link) {
       notifications.show({
         message: 'Link copied to clipboard',
@@ -57,7 +58,8 @@ export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
     }
   }
 
-  const handleDelete = () =>
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();  
     modals.openConfirmModal({
       title: 'Delete shortlink',
       centered: true,
@@ -71,9 +73,10 @@ export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
       confirmProps: { color: 'red' },
       onConfirm: () => deleteShortlink(link?.id || ''),
     });
+  }
 
   return (
-    <Card withBorder padding="lg" radius="md" className={classes.card}>
+    <Card withBorder padding="lg" radius="md" className={classes.card} onClick={handleEdit}>
       {loading && <Skeleton height={20} mb="sm" radius="md" />}
       {
         <Badge color="green" variant={link?.title ? 'dot' : 'doutlineot'}>
