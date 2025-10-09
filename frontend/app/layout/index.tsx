@@ -1,15 +1,15 @@
 import { Layout } from '../components/layout';
 import { Button, Image, LoadingOverlay } from '@mantine/core';
-import { useEffect, type PropsWithChildren } from 'react';
+import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { IconHome2, IconLink, IconLogout } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import LogoDark from '/logo-dark.webp';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
+import { Providers } from './providers';
 
-export default function LayoutComponent() {
-  const { user } = useUserState();
+function LayoutContent() {
   const navigate = useNavigate();
   const { t } = useTranslation('menu');
   const router = useLocation();
@@ -70,5 +70,13 @@ export default function LayoutComponent() {
       </Layout.Nav>
       <Outlet />
     </Layout>
+  );
+}
+
+export default function LayoutComponent() {
+  return (
+    <Providers>
+      <LayoutContent />
+    </Providers>
   );
 }

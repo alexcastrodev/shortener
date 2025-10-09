@@ -5,6 +5,16 @@ import {
   IconArrowRight,
   IconSparkles,
 } from '@tabler/icons-react';
+import type { MetaFunction } from 'react-router';
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: 'Kurz' },
+    { name: 'description', content: 'Free Forever Short URL Service' },
+  ];
+};
+
+export const ssr = true;
 
 export default function LinkShortenerLanding() {
   return (
