@@ -28,7 +28,7 @@ export function useConfirmation() {
   const { mutate, isPending } = useLoginVerifyRequest({
     onSuccess: ({ token, user }) => {
       setup(token, user);
-      router('/');
+      router('/app');
     },
     onError: () => {
       form.setFieldValue('code', '');

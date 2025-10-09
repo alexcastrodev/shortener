@@ -93,19 +93,6 @@ services:
     networks:
       - default
       - proxy_net
-  
-  frontend:
-    image: shortener-frontend:latest
-    ports:
-      - "9002:80"
-    networks:
-      - default
-      - proxy_net
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
 
 networks:
   default:

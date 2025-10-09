@@ -39,7 +39,7 @@ function LayoutContent() {
         <Layout.NavList>
           <Layout.NavItem
             component={NavLink}
-            to="/"
+            to="/app"
             label={t('dashboard')}
             leftSection={<IconHome2 size={16} stroke={1.5} />}
             active={router.pathname === '/'}
