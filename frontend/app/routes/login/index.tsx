@@ -18,7 +18,7 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Login() {
-  const { form, handleRequestLogin } = useLogin();
+  const { form, handleRequestLogin, loading } = useLogin();
   return (
     <Center style={{ height: '100dvh' }}>
       <Paper radius="md" p="lg" withBorder w={500} maw={500}>
@@ -37,7 +37,7 @@ export default function Login() {
               {...form.getInputProps('email')}
             />
             <Group justify="center" mt="lg">
-              <Button fullWidth type="submit">
+              <Button fullWidth type="submit" loading={loading}>
                 Sign In
               </Button>
             </Group>

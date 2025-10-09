@@ -11,7 +11,7 @@ const schema = z.object({
 
 export function useLogin() {
   const router = useNavigate();
-  const { mutate } = useLoginRequest({
+  const { mutate, isPending } = useLoginRequest({
     onSuccess: () => {
       router('/login-confirmation', { state: { email: form.values.email } });
     },
@@ -37,5 +37,5 @@ export function useLogin() {
     mutate(data);
   }
 
-  return { form, handleRequestLogin };
+  return { form, handleRequestLogin, loading: isPending };
 }

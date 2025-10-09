@@ -25,7 +25,7 @@ export function useQuickCreate() {
   });
   const { mutate, isPending } = useCreateShortlink({
     onSuccess: data => {
-      navigate(`/links/${data.id}`);
+      navigate(`/app/links/${data.id}`);
       queryClient.invalidateQueries({ queryKey: getShortlinksKey });
     },
     onError: error => {

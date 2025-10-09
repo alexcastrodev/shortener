@@ -11,6 +11,8 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
+export const ssr = false;
+
 export default function Page() {
   const { data, isLoading } = useGetShortlinks();
   const shortlinks = data?.shortlink || [];

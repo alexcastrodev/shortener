@@ -44,7 +44,7 @@ export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
   });
 
   function handleEdit() {
-    if (link) navigate(`/links/${link.id}`);
+    if (link) navigate(`/app/links/${link.id}`);
   }
 
   function handleShare() {

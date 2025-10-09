@@ -46,10 +46,10 @@ function LayoutContent() {
           />
           <Layout.NavItem
             component={NavLink}
-            to="/links"
+            to="/app/links"
             label={t('links')}
             leftSection={<IconLink size={16} stroke={1.5} />}
-            active={router.pathname === '/links'}
+            active={router.pathname === '/app/links'}
             variant="subtle"
           />
         </Layout.NavList>
