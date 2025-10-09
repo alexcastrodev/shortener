@@ -6,4 +6,5 @@ Oj.optimize_rails
 
 # Serializer
 # https://github.com/okuramasafumi/alba?tab=readme-ov-file#configuration
-Alba.backend = :oj
+# https://github.com/okuramasafumi/alba/issues/287
+Alba.backend = :oj_rails

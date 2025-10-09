@@ -17,6 +17,7 @@ services:
       - GMAIL_USERNAME=${GMAIL_USERNAME}
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
       - FRONTEND_URL=${FRONTEND_URL}
+      - SENTRY_DSN=${SENTRY_DSN}
     networks:
       - default
       - proxy_net
@@ -47,6 +48,7 @@ services:
       - GMAIL_USERNAME=${GMAIL_USERNAME}
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
       - FRONTEND_URL=${FRONTEND_URL}
+      - SENTRY_DSN=${SENTRY_DSN}
     deploy:
       resources:
         limits:
@@ -74,6 +76,7 @@ services:
       - GMAIL_USERNAME=${GMAIL_USERNAME}
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
       - FRONTEND_URL=${FRONTEND_URL}
+      - SENTRY_DSN=${SENTRY_DSN}
     deploy:
       resources:
         limits:
