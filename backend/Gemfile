@@ -86,3 +86,4 @@ gem "redis-objects"
 # =================
 gem "sentry-ruby"
 gem "sentry-rails"
+gem "stackprof"
