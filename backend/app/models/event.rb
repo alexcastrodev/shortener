@@ -40,6 +40,7 @@ class Event < ApplicationRecord
   # ===============
   before_validation :set_clicked_at, on: :create
   after_commit :update_last_visited, on: :create
+  after_commit :ipaddr_job
 
   private
 
@@ -49,5 +50,9 @@ class Event < ApplicationRecord
 
   def update_last_visited
     self.shortlink.update(last_accessed_at: clicked_at)
+  end
+
+  def ipaddr_job
+    IpaddrJob.perform_later(self.id)
   end
 end
