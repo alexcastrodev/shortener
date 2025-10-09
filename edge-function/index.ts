@@ -53,6 +53,7 @@ await valkeyClient.connect();
 Deno.serve({ port: 8000 }, async (req, info) => {
   // serve static error pages directly to avoid redirect loops
   const url = new URL(req.url);
+  const notFoundUrl = new URL("/404", req.url).href;
 
   if (["/404", "/"].some((path) => url.pathname === path)) {
     try {
@@ -75,7 +76,7 @@ Deno.serve({ port: 8000 }, async (req, info) => {
 
       if (!value) {
         console.log(`[REDIS] Key not found: ${cache_key}`);
-        return Response.redirect("/404", 302);
+        return Response.redirect(notFoundUrl, 302);
       }
 
       getHeaders(req, info).then((payload) => {
@@ -90,9 +91,9 @@ Deno.serve({ port: 8000 }, async (req, info) => {
       return Response.redirect(value, 302);
     } catch (err) {
       console.error("[REDIS] Error fetching key:", err);
-      return Response.redirect("/404", 302);
+      return Response.redirect(notFoundUrl, 302);
     }
   }
 
-  return Response.redirect("/404", 302);
+  return Response.redirect(notFoundUrl, 302);
 });
