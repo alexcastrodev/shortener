@@ -42,15 +42,12 @@ function LayoutContent() {
             to="/app"
             label={t('dashboard')}
             leftSection={<IconHome2 size={16} stroke={1.5} />}
-            active={router.pathname === '/app'}
           />
           <Layout.NavItem
             component={NavLink}
             to="/app/links"
             label={t('links')}
             leftSection={<IconLink size={16} stroke={1.5} />}
-            active={router.pathname === '/app/links'}
-            variant="subtle"
           />
         </Layout.NavList>
         <Layout.NavFooter>

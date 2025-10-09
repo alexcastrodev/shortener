@@ -112,21 +112,36 @@ export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
             <Skeleton height={20} mb="sm" radius="md" />
           ) : (
             <Group gap={0}>
-              <ActionIcon variant="subtle" color="gray" onClick={handleDelete}>
+              <ActionIcon
+                component="button"
+                variant="subtle"
+                color="gray"
+                onClick={handleDelete}
+              >
                 <IconTrash
                   size={20}
                   color="var(--mantine-color-red-6)"
                   stroke={1.5}
                 />
               </ActionIcon>
-              <ActionIcon variant="subtle" color="gray" onClick={handleEdit}>
+              <ActionIcon
+                component="button"
+                variant="subtle"
+                color="gray"
+                onClick={handleEdit}
+              >
                 <IconEdit
                   size={20}
                   color="var(--mantine-color-blue-6)"
                   stroke={1.5}
                 />
               </ActionIcon>
-              <ActionIcon variant="subtle" color="gray" onClick={handleShare}>
+              <ActionIcon
+                component="button"
+                variant="subtle"
+                color="gray"
+                onClick={handleShare}
+              >
                 <IconShare
                   size={20}
                   color="var(--mantine-color-green-6)"
