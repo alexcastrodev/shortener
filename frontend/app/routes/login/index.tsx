@@ -9,6 +9,13 @@ import {
   Title,
 } from '@mantine/core';
 import { useLogin } from './hooks/useLogin';
+import type { MetaFunction } from 'react-router';
+
+export const ssr = false;
+
+export const meta: MetaFunction = () => {
+  return [{ title: 'Kurz Auth' }];
+};
 
 export default function Login() {
   const { form, handleRequestLogin } = useLogin();

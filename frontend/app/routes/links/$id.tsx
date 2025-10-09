@@ -14,6 +14,8 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
+export const ssr = false;
+
 export default function Page() {
   const navigate = useNavigate();
   const params = useParams();

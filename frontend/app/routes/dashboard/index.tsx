@@ -8,10 +8,12 @@ import { useGetShortlinks } from 'packages/core/actions/get-shortlinks/get-short
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: 'Shortener' },
+    { title: 'Dashboard' },
     { name: 'description', content: 'Create shareable links' },
   ];
 }
+
+export const ssr = false;
 
 export default function Page() {
   const { t } = useTranslation('home');

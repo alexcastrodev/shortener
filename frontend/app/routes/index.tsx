@@ -14,8 +14,6 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export const ssr = true;
-
 export default function LinkShortenerLanding() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white overflow-hidden flex flex-col">

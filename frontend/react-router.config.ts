@@ -1,6 +1,6 @@
 import { type Config } from '@react-router/dev/config';
 
 export default {
-  ssr: false,
-  prerender: ['/'],
+  ssr: true,
+  prerender: ['/', '/login', '/login-confirmation'],
 } satisfies Config;
