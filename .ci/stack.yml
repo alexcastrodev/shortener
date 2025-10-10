@@ -18,6 +18,7 @@ services:
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
       - FRONTEND_URL=${FRONTEND_URL}
       - SENTRY_DSN=${SENTRY_DSN}
+      - SENTRY_LOGGER=1
     networks:
       - default
       - proxy_net
