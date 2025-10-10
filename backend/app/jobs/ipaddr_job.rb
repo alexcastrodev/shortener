@@ -1,7 +1,7 @@
 class IpaddrJob < ApplicationJob
   include RetryableJob
   queue_as :default
-  
+
   def perform(event_id, retry_count: 3)
     event = Event.find_by(id: event_id)
     return if event.nil?
@@ -16,8 +16,7 @@ class IpaddrJob < ApplicationJob
       event.country_code = nil
       event.region = nil
     end
-    
+
     event.save!
   end
-
 end

@@ -24,6 +24,6 @@ class AnalyticsWorker
 
     ack!
   rescue => e
-    logger.error "Erro: #{e.message}"
+    logger.error("Erro: #{e.message}")
   end
 end

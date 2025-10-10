@@ -8,9 +8,9 @@ namespace :seed do
     link = Shortlink.create!(
       original_url: "https://kurz.fyi",
       title: "Sample",
-      user: user
+      user: user,
     )
 
-    puts "Test link: #{ENV['EDGE_API']}/#{link.short_code}"
+    puts "Test link: #{ENV["EDGE_API"]}/#{link.short_code}"
   end
 end

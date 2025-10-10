@@ -15,11 +15,11 @@ namespace :workers do
     Rails.application.eager_load!
 
     if worker_classes.empty?
-      Rails.logger.info "❌ No workers found in app/workers"
+      Rails.logger.info("❌ No workers found in app/workers")
       exit 1
     end
 
-    Rails.logger.info "✅ workers found: #{worker_classes.map(&:name).join(', ')}"
+    Rails.logger.info("✅ workers found: #{worker_classes.map(&:name).join(", ")}")
 
     runner = Sneakers::Runner.new(worker_classes)
     runner.run

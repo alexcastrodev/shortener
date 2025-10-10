@@ -26,41 +26,41 @@ class Shortlink < ApplicationRecord
   # Validations
   # ===============
   validates :original_url, presence: true
-    validates :short_code, presence: true, uniqueness: true
-    validates :user_id, presence: true
+  validates :short_code, presence: true, uniqueness: true
+  validates :user_id, presence: true
 
-    # ===============
-    # Associations
-    # ===============
-    belongs_to :user
-    has_many :events, dependent: :destroy
+  # ===============
+  # Associations
+  # ===============
+  belongs_to :user
+  has_many :events, dependent: :destroy
 
-    # ===============
-    # Callbacks
-    # ===============
-    after_commit :save_cache, on: :create
-    before_validation :generate_short_code, on: :create
+  # ===============
+  # Callbacks
+  # ===============
+  after_commit :save_cache, on: :create
+  before_validation :generate_short_code, on: :create
 
-    private
+  private
 
-      def short_url
-        "#{ENV['EDGE_API']}/#{short_code}"
-      end
+  def short_url
+    "#{ENV["EDGE_API"]}/#{short_code}"
+  end
 
-    def save_cache
-      Rails.cache.redis.with do |conn|
-        conn.set(cache_key, original_url)
-      end
+  def save_cache
+    Rails.cache.redis.with do |conn|
+      conn.set(cache_key, original_url)
     end
+  end
 
-    def cache_key
-      "shortlink:#{short_code}"
-    end
+  def cache_key
+    "shortlink:#{short_code}"
+  end
 
-    def generate_short_code
-      self.short_code ||= loop do
-        code = SecureRandom.alphanumeric(6)
-          break code unless Shortlink.exists?(short_code: code)
-      end
+  def generate_short_code
+    self.short_code ||= loop do
+      code = SecureRandom.alphanumeric(6)
+      break code unless Shortlink.exists?(short_code: code)
     end
+  end
 end

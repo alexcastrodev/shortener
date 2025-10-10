@@ -22,7 +22,7 @@ gem "stimulus-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
-gem "brakeman", require: false, group: [ :development, :test ]
+gem "brakeman", require: false, group: [:development, :test]
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
 # Deploy this application anywhere as a Docker container [https://kamal-deploy.org]
@@ -50,16 +50,16 @@ gem "pg", "~> 1.5"
 # Code Quality
 # =================
 # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
-gem "rubocop-rails-omakase", require: false, group: [ :development, :test ]
-gem "rubocop-erb", require: false, group: [ :development, :test ]
-gem "rubocop-performance", require: false, group: [ :development, :test ]
+gem "rubocop-rails-omakase", require: false, group: [:development, :test]
+gem "rubocop-erb", require: false, group: [:development, :test]
+gem "rubocop-performance", require: false, group: [:development, :test]
 
 # =================
 # Tools
 # =================
 gem "metainspector"
-gem "annotaterb", group: [ :development, :test ]
-gem "web-console", group: [ :development, :test ]
+gem "annotaterb", group: [:development, :test]
+gem "web-console", group: [:development, :test]
 gem "httparty"
 # Validation helpers
 gem "dry-validation"

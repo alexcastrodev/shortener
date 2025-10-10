@@ -28,7 +28,7 @@ class User < ApplicationRecord
   def generate_login_token!
     update!(
       login_token: SecureRandom.random_number(10**7).to_s.rjust(7, "0"),
-      login_token_sent_at: Time.current
+      login_token_sent_at: Time.current,
     )
   end
 

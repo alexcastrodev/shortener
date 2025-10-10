@@ -1,5 +1,6 @@
 # Omakase Ruby styling for Rails
-inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+inherit_gem:
+  rubocop-shopify: rubocop.yml
 
 plugins:
   - rubocop-erb
@@ -8,6 +9,8 @@ AllCops:
   Exclude:
     - 'db/schema.rb'
     - 'db/migrate/**/*'
+    - 'Gemfile.lock'
+    - 'bin/*'
 
 Layout/IndentationStyle:
   EnforcedStyle: spaces
@@ -17,3 +20,12 @@ Layout/IndentationStyle:
 Layout/IndentationWidth:
   Width: 2
   Enabled: true
+
+Style/ClassMethodsDefinitions:
+  Enabled: false
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false

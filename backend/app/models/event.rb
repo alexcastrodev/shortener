@@ -44,15 +44,15 @@ class Event < ApplicationRecord
 
   private
 
-    def set_clicked_at
-      self.clicked_at ||= Time.current
-    end
+  def set_clicked_at
+    self.clicked_at ||= Time.current
+  end
 
   def update_last_visited
-    self.shortlink.update(last_accessed_at: clicked_at)
+    shortlink.update(last_accessed_at: clicked_at)
   end
 
   def ipaddr_job
-    IpaddrJob.perform_later(self.id)
+    IpaddrJob.perform_later(id)
   end
 end
