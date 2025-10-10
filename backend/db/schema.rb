@@ -31,9 +31,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_09_004534) do
     t.string "original_url", null: false
     t.string "short_code", null: false
     t.datetime "last_accessed_at"
+    t.string "title"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "title"
     t.bigint "user_id", null: false
     t.integer "events_count", default: 0, null: false
     t.index ["short_code"], name: "index_shortlinks_on_short_code", unique: true

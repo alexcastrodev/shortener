@@ -49,11 +49,9 @@ gem "pg", "~> 1.5"
 # =================
 # Code Quality
 # =================
-# Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
-gem "rubocop-rails-omakase", require: false, group: [:development, :test]
 gem "rubocop-erb", require: false, group: [:development, :test]
 gem "rubocop-performance", require: false, group: [:development, :test]
-
+gem "rubocop-shopify", require: false, group: [:development, :test]
 # =================
 # Tools
 # =================
@@ -87,3 +85,11 @@ gem "redis-objects"
 gem "sentry-ruby"
 gem "sentry-rails"
 gem "stackprof"
+
+# =================
+# Testing
+# =================
+gem "rspec-rails", group: [:development, :test]
+gem "factory_bot_rails", group: [:development, :test]
+gem "faker", group: [:development, :test]
+gem "database_cleaner-active_record", group: [:development, :test]
