@@ -40,7 +40,7 @@ class Event < ApplicationRecord
   # ===============
   before_validation :set_clicked_at, on: :create
   after_commit :update_last_visited, on: :create
-  after_commit :ipaddr_job
+  after_commit :ipaddr_job, on: :create
 
   private
 

@@ -17,6 +17,6 @@ class IpaddrJob < ApplicationJob
       event.region = nil
     end
 
-    event.save!
+    event.save! if event.changed?
   end
 end
