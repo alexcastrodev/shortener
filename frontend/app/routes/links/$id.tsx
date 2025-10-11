@@ -58,7 +58,7 @@ export default function Page() {
             </Button>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 ">
+          <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
