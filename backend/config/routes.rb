@@ -15,7 +15,9 @@ Rails.application.routes.draw do
     namespace :me do
       resource :users, path: "", only: [:show] do
       end
-      resources :shortlinks, only: [:index, :show, :create, :destroy]
+      resources :shortlinks, only: [:index, :show, :create, :destroy] do
+        get "statistics", to: "shortlinks#statistics"
+      end
     end
   end
 end

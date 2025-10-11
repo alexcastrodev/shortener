@@ -6,6 +6,7 @@ import type { Route } from '../../+types/root';
 import { notifications } from '@mantine/notifications';
 import { Button } from '@mantine/core';
 import { useClipboard } from '@mantine/hooks';
+import { Statistics } from './components/statistics';
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -138,6 +139,8 @@ export default function Page() {
               </div>
             </div>
           </div>
+
+          <Statistics />
         </div>
       </div>
     </Layout.Main>
