@@ -59,7 +59,7 @@ export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
   }
 
   const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();  
+    e.stopPropagation();
     modals.openConfirmModal({
       title: 'Delete shortlink',
       centered: true,
@@ -73,10 +73,16 @@ export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
       confirmProps: { color: 'red' },
       onConfirm: () => deleteShortlink(link?.id || ''),
     });
-  }
+  };
 
   return (
-    <Card withBorder padding="lg" radius="md" className={classes.card} onClick={handleEdit}>
+    <Card
+      withBorder
+      padding="lg"
+      radius="md"
+      className={classes.card}
+      onClick={handleEdit}
+    >
       {loading && <Skeleton height={20} mb="sm" radius="md" />}
       {
         <Badge color="green" variant={link?.title ? 'dot' : 'doutlineot'}>

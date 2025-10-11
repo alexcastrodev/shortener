@@ -1,5 +1,5 @@
 class Api::Me::ShortlinksController < ApplicationController
-  before_action :load_link, only: [:destroy, :show]
+  before_action :load_link, only: [:destroy, :show, :statistics]
 
   # GET /api/me/shortlinks/:id
   def show
@@ -39,9 +39,15 @@ class Api::Me::ShortlinksController < ApplicationController
     end
   end
 
+  # GET /api/me/shortlinks/:id/statistics
+  def statistics
+    render(json: @link.event_statistics, status: :ok)
+  end
+
   private
 
   def load_link
-    @link = @current_user.shortlinks.find(params[:id])
+    link_id = params[:id] || params[:shortlink_id]
+    @link = @current_user.shortlinks.find(link_id)
   end
 end

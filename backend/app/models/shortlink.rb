@@ -41,6 +41,10 @@ class Shortlink < ApplicationRecord
   after_commit :save_cache, on: :create
   before_validation :generate_short_code, on: :create
 
+  def event_statistics
+    Events::StatisticsService.call(user: user)
+  end
+
   private
 
   def short_url
