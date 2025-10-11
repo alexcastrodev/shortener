@@ -11,6 +11,9 @@ module Events
     def call
       return unless valid?
 
+      @event_stats ||= fetch_event_statistics
+      @device_stats ||= fetch_device_statistics
+
       {
         browser_statistics: format_browser_statistics,
         country_statistics: format_country_statistics,
@@ -29,11 +32,11 @@ module Events
 
     def fetch_event_statistics
       sql = <<~SQL
-        SELECT country_code, region, platform, browser, COUNT(*) AS count
+        SELECT country_code, region, browser, COUNT(*) AS count
         FROM events
         JOIN shortlinks ON events.shortlink_id = shortlinks.id
         WHERE shortlinks.user_id = ?
-        GROUP BY country_code, region, platform, browser
+        GROUP BY country_code, region, browser
         ORDER BY count DESC
       SQL
 
@@ -54,7 +57,7 @@ module Events
     end
 
     def format_device_statistics
-      fetch_device_statistics.map do |item|
+      @device_stats.map do |item|
         {
           name: item["platform"],
           value: item["count"],
@@ -63,7 +66,7 @@ module Events
     end
 
     def format_browser_statistics
-      browser_data = fetch_event_statistics.each_with_object(Hash.new(0)) do |item, hash|
+      browser_data = @event_stats.each_with_object(Hash.new(0)) do |item, hash|
         browser = item["browser"].presence || "Unknown"
         hash[browser] += item["count"]
       end
@@ -77,7 +80,7 @@ module Events
     end
 
     def format_country_statistics
-      country_data = fetch_event_statistics.each_with_object(Hash.new(0)) do |item, hash|
+      country_data = @event_stats.each_with_object(Hash.new(0)) do |item, hash|
         country = item["country_code"].presence || "Unknown"
         hash[country] += item["count"]
       end
@@ -92,7 +95,7 @@ module Events
     end
 
     def format_region_statistics
-      region_data = fetch_event_statistics.each_with_object(Hash.new(0)) do |item, hash|
+      region_data = @event_stats.each_with_object(Hash.new(0)) do |item, hash|
         region = item["region"].presence || "Unknown"
         hash[region] += item["count"]
       end
