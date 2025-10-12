@@ -1,6 +1,6 @@
 services:
   web: 
-    image: alexandros-macbook-pro:5001/shortener:latest
+    image: shortener:latest
     environment:
       - RAILS_ENV=production
       - POSTGRES_HOST=${POSTGRES_HOST}
@@ -29,7 +29,7 @@ services:
           memory: 1024M
   
   workers: 
-    image: alexandros-macbook-pro:5001/shortener:latest
+    image: shortener:latest
     command: bundle exec rake workers:run
     networks:
       - default
@@ -57,7 +57,7 @@ services:
           memory: 1024M
   
   jobs: 
-    image: alexandros-macbook-pro:5001/shortener:latest
+    image: shortener:latest
     command: bin/jobs
     networks:
       - default
@@ -85,7 +85,7 @@ services:
           memory: 1024M
   
   serveless:
-    image: alexandros-macbook-pro:5001/shortener-edge:latest
+    image: shortener-edge:latest
     working_dir: /app
     environment:
       - RAILS_ENV=production
