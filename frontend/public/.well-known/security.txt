@@ -1,0 +1,7 @@
+Contact: mailto:security@kurz.app
+Expires: 2026-12-31T23:59:59.000Z
+Preferred-Languages: en, pt
+Canonical: https://kurz.fyi/.well-known/security.txt
+
+# This is an open source project
+# Report security issues on GitHub: https://github.com/alexcastrodev/shortner/security

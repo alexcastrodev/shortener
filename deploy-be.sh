@@ -1,17 +1,17 @@
 #!/bin/bash
 set -euo pipefail
 
-COMPOSE_FILE=".ci/fe-stack.yml"
-STACK_NAME="shortenerfe"
+COMPOSE_FILE=".ci/stack.yml"
+STACK_NAME="shortener"
 ENV_PATH="/mnt/ssd/docker/shortener/.env"
 
 set -a
 source "$ENV_PATH"
 set +a
 
-echo "Building Docker image: Frontend"
-if ! docker build -t shortener-frontend -f .ci/Dockerfile.frontend .; then
-    echo "Error: Docker build failed."
+echo "Pulling latest images..."
+if ! docker compose -f "$COMPOSE_FILE" pull; then
+    echo "Error: Image pull failed."
     exit 1
 fi
 

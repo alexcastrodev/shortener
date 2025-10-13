@@ -1,0 +1,46 @@
+# Robots.txt for Kurz - Free Link Shortener
+# https://kurz.fyi
+
+# Allow all bots to crawl everything
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /app/
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 0.5
+
+# Sitemap location (update with your actual domain)
+Sitemap: https://kurz.fyi/sitemap.xml
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /app/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /app/
+
+User-agent: Slurp
+Allow: /
+Disallow: /api/
+Disallow: /app/
+
+# Block AI crawlers that don't respect content
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
