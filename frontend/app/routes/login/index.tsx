@@ -21,7 +21,7 @@ export default function Login() {
   const { form, handleRequestLogin, loading } = useLogin();
   return (
     <Center style={{ height: '100dvh' }}>
-      <Paper radius="md" p="lg" withBorder w={500} maw={500}>
+      <Paper radius="md" p="lg" withBorder w={500} maw={500} m="sm">
         <form onSubmit={form.onSubmit(handleRequestLogin)}>
           <Stack>
             <Title ta="center">Welcome</Title>

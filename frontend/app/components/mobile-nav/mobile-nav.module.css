@@ -1,0 +1,54 @@
+.mobileNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+  border-top: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-5));
+  padding: 0.5rem 0;
+  z-index: 100;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+@media (min-width: 640px) {
+  .mobileNav {
+    display: none;
+  }
+}
+
+.navItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  color: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-5));
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex: 1;
+  max-width: 120px;
+  border-radius: 0.5rem;
+}
+
+.navItem:hover {
+  color: light-dark(var(--mantine-color-blue-6), var(--mantine-color-blue-4));
+  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-6));
+}
+
+.navItem.active {
+  color: light-dark(var(--mantine-color-blue-7), var(--mantine-color-blue-3));
+  font-weight: 600;
+}
+
+.label {
+  font-size: 0.75rem;
+  line-height: 1;
+}

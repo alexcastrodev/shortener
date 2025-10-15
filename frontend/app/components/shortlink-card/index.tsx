@@ -1,166 +1,199 @@
-import { IconEdit, IconShare, IconTrash } from '@tabler/icons-react';
+import { ActionIcon, Menu, Badge, Text, Button } from '@mantine/core';
 import {
-  ActionIcon,
-  Badge,
-  Card,
-  Group,
-  Skeleton,
-  Stack,
-  Text,
-} from '@mantine/core';
-import classes from './shortlink-card.module.css';
-import type { Shortlink } from '@internal/core/types/Shortlink';
+  IconCopy,
+  IconDotsVertical,
+  IconTrash,
+  IconExternalLink,
+  IconClick,
+  IconShare,
+  IconChartBar,
+} from '@tabler/icons-react';
+import type { Shortlink } from 'packages/core/types/Shortlink';
 import { useNavigate } from 'react-router';
 import { useClipboard } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
-import { useDeleteShortlink } from '@internal/core/actions/delete-shortlink/delete-shortlink.hook';
-import { queryClient } from '@internal/core/service-provider';
-import { getShortlinksKey } from '@internal/core/actions/get-shortlinks/get-shortlinks.hook';
+import { useDeleteShortlink } from 'packages/core/actions/delete-shortlink/delete-shortlink.hook';
+import { queryClient } from 'packages/core/service-provider';
+import { getShortlinksKey } from 'packages/core/actions/get-shortlinks/get-shortlinks.hook';
+import { useTranslation } from 'react-i18next';
 
-interface ShortLinkCardProps {
-  loading?: boolean;
-  link?: Shortlink;
+interface ShortlinkCardListItemProps {
+  shortlink: Shortlink;
 }
 
-export function ShortLinkCard({ link, loading = false }: ShortLinkCardProps) {
+export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
   const navigate = useNavigate();
   const { copy } = useClipboard({ timeout: 500 });
+  const { t } = useTranslation('dashboard');
+
   const { mutate: deleteShortlink } = useDeleteShortlink({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: getShortlinksKey });
       notifications.show({
-        message: 'Shortlink deleted',
+        message: t('shortlink_deleted'),
         color: 'green',
       });
     },
     onError: () => {
       notifications.show({
-        title: 'Error',
-        message: 'Something went wrong, please try again later.',
+        title: t('error_title'),
+        message: t('error_message'),
         color: 'red',
       });
     },
   });
 
-  function handleEdit(e: React.MouseEvent) {
-    if (link) navigate(`/app/links/${link.id}`);
-  }
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
 
-  function handleShare(e: React.MouseEvent) {
+  const formattedDate = shortlink.last_accessed_at
+    ? formatDate(shortlink.last_accessed_at)
+    : t('never_accessed');
+
+  const handleViewDetails = () => {
+    navigate(`/app/links/${shortlink.id}`);
+  };
+
+  const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (link) {
-      notifications.show({
-        message: 'Link copied to clipboard',
-        color: 'green',
-      });
-      copy(link.short_url);
-    }
-  }
+    notifications.show({
+      message: t('link_copied'),
+      color: 'green',
+    });
+    copy(shortlink.short_url);
+  };
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     modals.openConfirmModal({
-      title: 'Delete shortlink',
+      title: t('delete_confirm_title'),
       centered: true,
-      children: (
-        <Text size="sm">
-          Are you sure you want to delete this shortlink? This action is
-          destructive and you will have to create a new link.
-        </Text>
-      ),
-      labels: { confirm: 'Delete shortlink', cancel: "No don't delete it" },
+      children: <Text size="sm">{t('delete_confirm_message')}</Text>,
+      labels: {
+        confirm: t('delete_confirm_button'),
+        cancel: t('delete_cancel_button'),
+      },
       confirmProps: { color: 'red' },
-      onConfirm: () => deleteShortlink(link?.id || ''),
+      onConfirm: () => deleteShortlink(shortlink.id.toString()),
     });
   };
 
   return (
-    <Card
-      withBorder
-      padding="lg"
-      radius="md"
-      className={classes.card}
-      onClick={handleEdit}
-    >
-      {loading && <Skeleton height={20} mb="sm" radius="md" />}
-      {
-        <Badge color="green" variant={link?.title ? 'dot' : 'doutlineot'}>
-          {link?.title || 'untitled'}
-        </Badge>
-      }
-
-      <Stack mt="lg">
-        {link && (
-          <Text fz="xs" c="dimmed">
-            Redirect to: {link.short_url}
-          </Text>
-        )}
-
-        <div>
-          {loading ? (
-            <Skeleton height={20} mb="sm" radius="md" />
-          ) : (
-            <Text fz="xs" c="dimmed">
-              Last visit: {link?.last_accessed_at || 'Never'}
-            </Text>
-          )}
-        </div>
-      </Stack>
-
-      <Card.Section className={classes.footer}>
-        <Group justify="space-between">
-          {loading ? (
-            <Skeleton height={20} mb="sm" radius="md" />
-          ) : (
-            <Text fz="xs" c="dimmed">
-              Clicks: {link?.events_count || 0}
-            </Text>
-          )}
-          {loading ? (
-            <Skeleton height={20} mb="sm" radius="md" />
-          ) : (
-            <Group gap={0}>
-              <ActionIcon
-                component="button"
-                variant="subtle"
-                color="gray"
-                onClick={handleDelete}
+    <div className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200">
+      <div className="space-y-4">
+        {/* Header with title and actions */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate mb-2">
+              {shortlink.title || t('untitled')}
+            </h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <a
+                href={shortlink.short_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium hover:underline transition-colors"
               >
-                <IconTrash
-                  size={20}
-                  color="var(--mantine-color-red-6)"
-                  stroke={1.5}
-                />
-              </ActionIcon>
+                {shortlink.short_url}
+              </a>
               <ActionIcon
-                component="button"
-                variant="subtle"
-                color="gray"
-                onClick={handleEdit}
-              >
-                <IconEdit
-                  size={20}
-                  color="var(--mantine-color-blue-6)"
-                  stroke={1.5}
-                />
-              </ActionIcon>
-              <ActionIcon
-                component="button"
+                size="sm"
                 variant="subtle"
                 color="gray"
                 onClick={handleShare}
+                className="hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                <IconShare
-                  size={20}
-                  color="var(--mantine-color-green-6)"
-                  stroke={1.5}
-                />
+                <IconCopy size={16} />
               </ActionIcon>
-            </Group>
-          )}
-        </Group>
-      </Card.Section>
-    </Card>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="light"
+              size="sm"
+              leftSection={<IconChartBar size={16} />}
+              onClick={handleViewDetails}
+            >
+              {t('view_details')}
+            </Button>
+
+            <Menu position="bottom-end" shadow="md" withinPortal>
+              <Menu.Target>
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="md"
+                  className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <IconDotsVertical size={18} />
+                </ActionIcon>
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<IconShare size={16} />}
+                  onClick={handleShare}
+                >
+                  {t('copy_link')}
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item
+                  color="red"
+                  leftSection={<IconTrash size={16} />}
+                  onClick={handleDelete}
+                >
+                  {t('delete')}
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-sm">
+          <IconExternalLink
+            size={14}
+            className="text-gray-400 dark:text-gray-500 shrink-0"
+          />
+          <p className="text-gray-600 dark:text-gray-400 truncate text-xs break-all">
+            {shortlink.original_url}
+          </p>
+        </div>
+
+        <div className="border-t border-gray-100 dark:border-gray-700"></div>
+
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              {t('clicks')}
+            </span>
+            <Badge
+              size="lg"
+              variant="light"
+              color="blue"
+              leftSection={<IconClick size={14} />}
+              className="font-semibold"
+            >
+              {shortlink.events_count}
+            </Badge>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              {t('last_accessed')}
+            </span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
+              {formattedDate}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

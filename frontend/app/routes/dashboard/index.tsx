@@ -1,12 +1,8 @@
-import { Layout } from '../../components/layout';
-import { Box, Container, SimpleGrid } from '@mantine/core';
-import { QuickCreate } from './modules/quick-create';
-import { SummaryCard } from '~/components/summary-card';
-import { useTranslation } from 'react-i18next';
 import type { Route } from './+types';
 import { useGetShortlinks } from 'packages/core/actions/get-shortlinks/get-shortlinks.hook';
-import { useQuery } from '@tanstack/react-query';
-import axios, { type AxiosResponse } from 'axios';
+import { LinksList, TotalLinksCard } from './components';
+import { QuickCreate } from '../../modules/quick-create';
+import { Container } from '@mantine/core';
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -18,23 +14,18 @@ export function meta({}: Route.MetaArgs) {
 export const ssr = false;
 
 export default function Page() {
-  const { t } = useTranslation('home');
   const { data, isLoading } = useGetShortlinks();
 
   return (
-    <Layout.Main>
-      <Container fluid>
-        <SimpleGrid cols={{ base: 1, sm: 3, lg: 4 }} mb="md">
-          <SummaryCard
-            loading={isLoading}
-            value={data?.total || 0}
-            label={t('total_links')}
-          />
-        </SimpleGrid>
-        <Box my="lg">
+    <Container size="xl" my="lg">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+        <LinksList links={data?.shortlink || []} isLoading={isLoading} />
+
+        <div className="space-y-4 lg:sticky lg:top-24">
+          <TotalLinksCard total={data?.total || 0} isLoading={isLoading} />
           <QuickCreate />
-        </Box>
-      </Container>
-    </Layout.Main>
+        </div>
+      </div>
+    </Container>
   );
 }
