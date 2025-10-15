@@ -39,10 +39,23 @@ class Shortlink < ApplicationRecord
   # Callbacks
   # ===============
   after_commit :save_cache, on: :create
+  after_destroy :remove_cache, if: -> { short_code.present? }
   before_validation :generate_short_code, on: :create
 
   def event_statistics
     Events::StatisticsService.call(user: user)
+  end
+
+  def remove_cache
+    Rails.cache.redis.with do |conn|
+      conn.del(cache_key)
+    end
+  end
+
+  def save_cache
+    Rails.cache.redis.with do |conn|
+      conn.set(cache_key, original_url)
+    end
   end
 
   private
@@ -51,11 +64,6 @@ class Shortlink < ApplicationRecord
     "#{ENV["EDGE_API"]}/#{short_code}"
   end
 
-  def save_cache
-    Rails.cache.redis.with do |conn|
-      conn.set(cache_key, original_url)
-    end
-  end
 
   def cache_key
     "shortlink:#{short_code}"
