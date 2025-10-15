@@ -1,7 +1,7 @@
 import { Layout } from '../components/layout';
 import { Button, Image, LoadingOverlay } from '@mantine/core';
 import { useEffect } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
+import { NavLink, Outlet, useNavigate } from 'react-router';
 import { IconHome2, IconLink, IconLogout } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import LogoDark from '/logo-dark.webp';
@@ -12,7 +12,6 @@ import { Providers } from './providers';
 function LayoutContent() {
   const navigate = useNavigate();
   const { t } = useTranslation('menu');
-  const router = useLocation();
   const { clear } = useUserState();
   const { isLoading, isError, data } = useGetLoggedUser();
 

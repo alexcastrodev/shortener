@@ -19,12 +19,11 @@
 #  index_shortlinks_on_short_code  (short_code) UNIQUE
 #  index_shortlinks_on_user_id     (user_id)
 #
-class ShortlinkSerializer < BaseSerializer
-  with_id
-  root_key_for_collection :shortlink
+class PublicShortlinkSerializer < BaseSerializer
+  root_key_for_collection :public_shortlink
 
   #------------
   # Attributes
   #------------
-  attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url
+  attributes :original_url, :short_url
 end

@@ -40,6 +40,7 @@ gem "rack-cors"
 # =================
 # Serializer [https://github.com/okuramasafumi/alba]
 gem "alba"
+gem "pundit"
 
 # =================
 # Database

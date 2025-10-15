@@ -15,16 +15,8 @@
 #  index_users_on_email        (email) UNIQUE
 #  index_users_on_login_token  (login_token) UNIQUE
 #
-class UserSerializer < BaseSerializer
-  with_id
-  root_key_for_collection :user
-
-  #------------
-  # Attributes
-  #------------
-  attributes :email, :admin
-
-  attribute :shortlinks_count do |record|
-    record.shortlinks.count
+FactoryBot.define do
+  factory :user do
+    email { Faker::Internet.unique.email }
   end
 end

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # == Schema Information
 #
 # Table name: shortlinks
@@ -19,12 +17,14 @@
 #  index_shortlinks_on_short_code  (short_code) UNIQUE
 #  index_shortlinks_on_user_id     (user_id)
 #
-class ShortlinkSerializer < BaseSerializer
-  with_id
-  root_key_for_collection :shortlink
+FactoryBot.define do
+  factory :shortlink do
+    original_url { "https://example.com" }
+    title { "Example Shortlink" }
+    last_accessed_at { nil }
 
-  #------------
-  # Attributes
-  #------------
-  attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url
+    trait :with_user do
+      user { association :user }
+    end
+  end
 end

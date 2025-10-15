@@ -8,6 +8,7 @@ import {
 
 export default [
   index('routes/index.tsx'),
+  route('status/success', 'routes/status/success.tsx'),
   layout('layout/index.tsx', [
     ...prefix('app', [
       index('routes/dashboard/index.tsx'),

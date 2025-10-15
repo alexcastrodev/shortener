@@ -10,29 +10,29 @@
 #  title            :string
 #  created_at       :datetime         not null
 #  updated_at       :datetime         not null
-#  user_id          :bigint           not null
+#  user_id          :bigint
 #
 # Indexes
 #
 #  index_shortlinks_on_short_code  (short_code) UNIQUE
 #  index_shortlinks_on_user_id     (user_id)
 #
-# Foreign Keys
-#
-#  fk_rails_...  (user_id => users.id)
-#
 class Shortlink < ApplicationRecord
+  # ===============
+  # Scopes
+  # ===============
+  scope :without_user, -> { where(user_id: nil) }
+
   # ===============
   # Validations
   # ===============
   validates :original_url, presence: true
   validates :short_code, presence: true, uniqueness: true
-  validates :user_id, presence: true
 
   # ===============
   # Associations
   # ===============
-  belongs_to :user
+  belongs_to :user, optional: true
   has_many :events, dependent: :destroy
 
   # ===============

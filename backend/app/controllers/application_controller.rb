@@ -1,9 +1,12 @@
 class ApplicationController < ActionController::API
+  include Pundit::Authorization
+
   before_action :authenticate_user!
 
   rescue_from ::ActiveRecord::RecordNotFound, with: :record_not_found
   rescue_from ::ActiveRecord::RecordNotDestroyed, with: :record_not_destroyed
   rescue_from ::ActiveRecord::RecordInvalid, with: :record_invalid
+  rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
   attr_reader :current_user
 
@@ -29,6 +32,10 @@ class ApplicationController < ActionController::API
 
   def record_invalid(exception)
     render(json: { message: "Resource is invalid", details: exception.record.errors.full_messages }, status: :unprocessable_entity)
+  end
+
+  def user_not_authorized
+    render(json: { message: "You are not authorized to perform this action" }, status: :forbidden)
   end
 
   def authenticate_user!

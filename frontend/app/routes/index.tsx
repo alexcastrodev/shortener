@@ -6,6 +6,10 @@ import {
   IconSparkles,
 } from '@tabler/icons-react';
 import type { MetaFunction } from 'react-router';
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { useCreatePublicShortlink } from '@internal/core/actions/create-public-shortlink/create-public-shortlink.hook';
+import type { Shortlink } from '@internal/core/types/Shortlink';
 
 export const meta: MetaFunction = () => {
   const title = 'Kurz - Free Link Shortener | Encurtador de Link Grátis';
@@ -44,6 +48,31 @@ export const meta: MetaFunction = () => {
 };
 
 export default function LinkShortenerLanding() {
+  const navigate = useNavigate();
+  const [url, setUrl] = useState('');
+
+  const { mutate: createShortlink, isPending } = useCreatePublicShortlink({
+    onSuccess: (data: Shortlink) => {
+      navigate('/status/success', { state: { shortlink: data } });
+    },
+    onError: () => {
+      alert('Failed to create short link. Please try again.');
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!url.trim()) return;
+
+    createShortlink({ original_url: url.trim() });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isPending) {
+      handleSubmit(e as any);
+    }
+  };
+
   // Structured Data for SEO
   const structuredData = {
     '@context': 'https://schema.org',
@@ -140,6 +169,53 @@ export default function LinkShortenerLanding() {
                 forever.
               </p>
 
+              {/* Shortlink Creation Form */}
+              <div className="mb-8 sm:mb-10 max-w-2xl mx-auto px-4">
+                <form onSubmit={handleSubmit} className="relative">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="url"
+                      value={url}
+                      onChange={e => setUrl(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Paste your long URL here..."
+                      className="flex-1 px-4 sm:px-6 py-3 sm:py-4 rounded-lg bg-zinc-900/50 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-all"
+                      disabled={isPending}
+                      required
+                    />
+                    <button
+                      type="submit"
+                      disabled={isPending || !url.trim()}
+                      className="px-6 sm:px-8 py-3 sm:py-4 bg-violet-600 hover:bg-violet-500 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:scale-105 transform disabled:hover:scale-100"
+                    >
+                      {isPending ? (
+                        <>
+                          <span className="animate-spin">⏳</span>
+                          Shortening...
+                        </>
+                      ) : (
+                        <>
+                          Short Link
+                          <IconArrowRight size={20} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
+                <p className="text-sm text-zinc-500 italic">
+                  💡 Want to track links and view analytics? Please{' '}
+                  <a
+                    href="/app"
+                    className="text-violet-400 hover:text-violet-300 underline"
+                  >
+                    sign in
+                  </a>{' '}
+                  to access advanced features.
+                </p>
+              </div>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
                 <a
                   href="/app"
