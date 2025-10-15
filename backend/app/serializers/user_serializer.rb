@@ -12,8 +12,8 @@
 #
 # Indexes
 #
-#  index_users_on_email        (email) UNIQUE
 #  index_users_on_login_token  (login_token) UNIQUE
+#  index_users_on_lower_email  (lower((email)::text)) UNIQUE
 #
 class UserSerializer < BaseSerializer
   with_id
