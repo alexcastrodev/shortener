@@ -12,7 +12,6 @@ export default [
   layout('layout/index.tsx', [
     ...prefix('app', [
       index('routes/dashboard/index.tsx'),
-      route('links', 'routes/links.tsx'),
       route('links/:id', 'routes/links/$id.tsx'),
     ]),
   ]),

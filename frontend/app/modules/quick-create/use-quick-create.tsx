@@ -3,7 +3,6 @@ import { notifications } from '@mantine/notifications';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { z } from 'zod/v4';
-import { useNavigate } from 'react-router';
 import { queryClient } from '@internal/core/service-provider';
 import { getShortlinksKey } from '@internal/core/actions/get-shortlinks/get-shortlinks.hook';
 
@@ -13,7 +12,6 @@ const schema = z.object({
 });
 
 export function useQuickCreate() {
-  const navigate = useNavigate();
   const form = useForm({
     mode: 'uncontrolled',
     initialValues: {
@@ -25,8 +23,8 @@ export function useQuickCreate() {
   });
   const { mutate, isPending } = useCreateShortlink({
     onSuccess: data => {
-      navigate(`/app/links/${data.id}`);
       queryClient.invalidateQueries({ queryKey: getShortlinksKey });
+      form.reset();
     },
     onError: error => {
       notifications.show({

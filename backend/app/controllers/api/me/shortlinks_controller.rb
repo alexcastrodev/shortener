@@ -9,7 +9,7 @@ class Api::Me::ShortlinksController < ApplicationController
   # GET /api/me/shortlinks
   def index
     render(
-      json: ShortlinkSerializer.new(@current_user.shortlinks).serialize(meta: {
+      json: ShortlinkSerializer.new(@current_user.shortlinks.order(created_at: :desc)).serialize(meta: {
         total: @current_user.shortlinks.count,
       }),
       status: :ok,
