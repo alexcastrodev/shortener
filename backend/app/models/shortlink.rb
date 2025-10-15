@@ -64,7 +64,6 @@ class Shortlink < ApplicationRecord
     "#{ENV["EDGE_API"]}/#{short_code}"
   end
 
-
   def cache_key
     "shortlink:#{short_code}"
   end
