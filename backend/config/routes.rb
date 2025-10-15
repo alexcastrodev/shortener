@@ -13,10 +13,9 @@ Rails.application.routes.draw do
     post "login_verify", to: "sessions#verify"
     resources :shortlinks, only: [:create]
 
-    # TODO: Implement frontend
-    # namespace :admin do
-    #   resources :users, only: [:index]
-    # end
+    namespace :admin do
+      resources :users, only: [:index]
+    end
 
     namespace :me do
       resource :users, path: "", only: [:show] do
