@@ -14,6 +14,7 @@ export default [
       index('routes/dashboard/index.tsx'),
       route('links/:id', 'routes/links/$id.tsx'),
     ]),
+    ...prefix('admin', [route('users', 'routes/admin/users.tsx')]),
   ]),
   layout('layout/guest.tsx', [
     route('login', 'routes/login/index.tsx'),

@@ -1,18 +1,15 @@
 import { Layout } from '../components/layout';
-import { Button, Image, LoadingOverlay } from '@mantine/core';
+import { AppHeader } from '../components/app-header';
+import { MobileNav } from '../components/mobile-nav';
+import { LoadingOverlay } from '@mantine/core';
 import { useEffect } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router';
-import { IconHome2, IconLink, IconLogout } from '@tabler/icons-react';
-import { useTranslation } from 'react-i18next';
-import LogoDark from '/logo-dark.webp';
+import { Outlet, useNavigate } from 'react-router';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
 import { Providers } from './providers';
 
 function LayoutContent() {
   const navigate = useNavigate();
-  const { t } = useTranslation('menu');
-  const { clear } = useUserState();
   const { isLoading, isError, data } = useGetLoggedUser();
 
   useEffect(() => {
@@ -30,36 +27,17 @@ function LayoutContent() {
   if (!data) null;
 
   return (
-    <Layout>
-      <Layout.Nav>
-        <Layout.NavHeader>
-          <Image mb="md" src={LogoDark} w={80} />
-        </Layout.NavHeader>
-        <Layout.NavList>
-          <Layout.NavItem
-            component={NavLink}
-            to="/app"
-            label={t('dashboard')}
-            leftSection={<IconHome2 size={16} stroke={1.5} />}
-          />
-        </Layout.NavList>
-        <Layout.NavFooter>
-          <Button
-            variant="subtle"
-            onClick={() => {
-              clear();
-              navigate('/login');
-            }}
-            color="red"
-            leftSection={<IconLogout size={16} stroke={1.5} />}
-            fullWidth
-          >
-            {t('logout')}
-          </Button>
-        </Layout.NavFooter>
-      </Layout.Nav>
-      <Outlet />
-    </Layout>
+    <div
+      style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
+    >
+      <AppHeader />
+      <Layout.Main>
+        <div className="pb-20 sm:pb-0">
+          <Outlet />
+        </div>
+      </Layout.Main>
+      <MobileNav />
+    </div>
   );
 }
 
