@@ -93,3 +93,6 @@ gem "rspec-rails", group: [:development, :test]
 gem "factory_bot_rails", group: [:development, :test]
 gem "faker", group: [:development, :test]
 gem "database_cleaner-active_record", group: [:development, :test]
+gem "vcr", group: [:development, :test]
+gem "webmock", group: [:development, :test]
+gem "google-protobuf", "~> 3.19"
