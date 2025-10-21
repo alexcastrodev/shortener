@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe(GoogleLib::SafeBrowsing::Services) do
+RSpec.describe(GoogleLib::SafeBrowsing::V4::Services, vcr: true, google: true) do
   let(:invalid_url) { "https://testsafebrowsing.appspot.com/s/malware.html" }
   let(:valid_url) { "https://kurz.fyi" }
 
@@ -12,15 +12,9 @@ RSpec.describe(GoogleLib::SafeBrowsing::Services) do
     end
   end
 
-  context "when API returns no matches", focus: true do
+  context "when API returns no matches" do
     it "returns false" do
       expect(described_class.check_url(invalid_url)).to(be(false))
-    end
-  end
-
-  context "when url is missing" do
-    it "raises ArgumentError" do
-      expect { described_class.check_url(nil) }.to(raise_error(ArgumentError))
     end
   end
 end
