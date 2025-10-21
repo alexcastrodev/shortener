@@ -50,14 +50,18 @@ class Shortlink < ApplicationRecord
   end
 
   def remove_cache
-    Rails.cache.delete(cache_key)
+    Rails.cache.redis.with do |conn|
+      conn.del(cache_key)
+    end
   rescue => e
     Rails.logger.error("Failed to remove shortlink cache: #{e.class}: #{e.message}")
     false
   end
 
   def save_cache
-    Rails.cache.write(cache_key, original_url)
+    Rails.cache.redis.with do |conn|
+      conn.set(cache_key, original_url)
+    end
   rescue => e
     Rails.logger.error("Failed to save shortlink cache: #{e.class}: #{e.message}")
     false

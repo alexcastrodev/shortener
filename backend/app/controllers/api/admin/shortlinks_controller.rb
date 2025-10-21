@@ -1,7 +1,7 @@
 class Api::Admin::ShortlinksController < ApplicationController
   # GET /api/admin/shortlinks
   def index
-    authorize Shortlink, :list_all?
+    authorize(Shortlink, :list_all?)
 
     render(json: ShortlinkSerializer.new(Shortlink.all.order(id: :desc), params: { admin: true }).serialize, status: :ok)
   end
@@ -11,9 +11,11 @@ class Api::Admin::ShortlinksController < ApplicationController
     shortlink = Shortlink.find(params[:id])
     authorize(shortlink, :modify_shortlink_safety?)
 
-    shortlink.safe = !shortlink.safe
-    shortlink.safe_checked_at = Time.current
-    shortlink.save!
+    if shortlink.safe?
+      shortlink.mark_as_dangerous!
+    else
+      shortlink.mark_as_safe!
+    end
 
     render(json: ShortlinkSerializer.new(shortlink, params: { admin: true }).serialize, status: :ok)
   end
