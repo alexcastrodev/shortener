@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe("Admin Users", type: :request) do
+RSpec.describe("Admin Users", type: :request, vcr: true) do
   include_context "authenticated user"
 
   before do

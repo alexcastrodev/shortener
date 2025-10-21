@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe("GET /api/me/shortlinks/:id/statistics", type: :request) do
+RSpec.describe("GET /api/me/shortlinks/:id/statistics", type: :request, vcr: true) do
   include_context "authenticated user"
 
   let(:shortlink) { current_user.shortlinks.create!(original_url: "https://example.com") }

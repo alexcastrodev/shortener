@@ -6,6 +6,8 @@
 #  events_count     :integer          default(0), not null
 #  last_accessed_at :datetime
 #  original_url     :string           not null
+#  safe             :boolean          default(TRUE), not null
+#  safe_checked_at  :datetime
 #  short_code       :string           not null
 #  title            :string
 #  created_at       :datetime         not null
@@ -22,6 +24,7 @@ class Shortlink < ApplicationRecord
   # Scopes
   # ===============
   scope :without_user, -> { where(user_id: nil) }
+  scope :safe, -> { where(safe: true) }
 
   # ===============
   # Validations
@@ -38,7 +41,7 @@ class Shortlink < ApplicationRecord
   # ===============
   # Callbacks
   # ===============
-  after_commit :save_cache, on: :create
+  after_commit :save_cache, :verify_safety, on: :create
   after_destroy :remove_cache, if: -> { short_code.present? }
   before_validation :generate_short_code, on: :create
 
@@ -47,15 +50,31 @@ class Shortlink < ApplicationRecord
   end
 
   def remove_cache
-    Rails.cache.redis.with do |conn|
-      conn.del(cache_key)
-    end
+    Rails.cache.delete(cache_key)
+  rescue => e
+    Rails.logger.error("Failed to remove shortlink cache: #{e.class}: #{e.message}")
+    false
   end
 
   def save_cache
-    Rails.cache.redis.with do |conn|
-      conn.set(cache_key, original_url)
-    end
+    Rails.cache.write(cache_key, original_url)
+  rescue => e
+    Rails.logger.error("Failed to save shortlink cache: #{e.class}: #{e.message}")
+    false
+  end
+
+  def mark_as_dangerous!
+    remove_cache
+    update!(safe: false, safe_checked_at: Time.current)
+  end
+
+  def mark_as_safe!
+    save_cache
+    update!(safe: true, safe_checked_at: Time.current)
+  end
+
+  def cache_key
+    "shortlink:#{short_code}"
   end
 
   private
@@ -64,8 +83,8 @@ class Shortlink < ApplicationRecord
     "#{ENV["EDGE_API"]}/#{short_code}"
   end
 
-  def cache_key
-    "shortlink:#{short_code}"
+  def verify_safety
+    SafetyUrlJob.perform_later(id) if ENV["ENABLE_GOOGLE_SAFE_LINK"].present?
   end
 
   def generate_short_code

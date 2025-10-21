@@ -22,7 +22,7 @@ module GoogleLib
         def self.body(url)
           {
             "client": {
-              "clientId": "yourcompanyname",
+              "clientId": "kurz",
               "clientVersion": "1.5.2",
             },
             "threatInfo": {

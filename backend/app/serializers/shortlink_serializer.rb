@@ -8,6 +8,8 @@
 #  events_count     :integer          default(0), not null
 #  last_accessed_at :datetime
 #  original_url     :string           not null
+#  safe             :boolean          default(TRUE), not null
+#  safe_checked_at  :datetime
 #  short_code       :string           not null
 #  title            :string
 #  created_at       :datetime         not null
@@ -27,4 +29,6 @@ class ShortlinkSerializer < BaseSerializer
   # Attributes
   #------------
   attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url
+
+  attributes :safe, :safe_checked_at, if: proc { |_s| params[:admin] }
 end
