@@ -24,6 +24,7 @@
 class ShortlinkSerializer < BaseSerializer
   with_id
   root_key_for_collection :shortlink
+  maybe_one :user, resource: UserSerializer, if: proc { |_s| params[:admin] }
 
   #------------
   # Attributes

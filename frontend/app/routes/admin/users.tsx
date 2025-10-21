@@ -4,15 +4,21 @@ import {
   Text,
   Paper,
   Alert,
-  Table,
   Badge,
   Group,
   Loader,
   Center,
+  ScrollArea,
 } from '@mantine/core';
 import { IconUsers, IconLock } from '@tabler/icons-react';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
 import { useGetManageUsers } from '@internal/core/actions/get-manage-users/get-manage-users.hook';
+import { useMemo } from 'react';
+import {
+  type MRT_ColumnDef,
+  MRT_Table,
+  useMantineReactTable,
+} from 'mantine-react-table';
 
 export const ssr = false;
 
@@ -26,6 +32,50 @@ export function meta() {
 export default function UsersPage() {
   const { data } = useGetLoggedUser();
   const { data: usersData, isLoading, error } = useGetManageUsers();
+
+  const columns = useMemo<MRT_ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: 'id',
+        header: 'ID',
+      },
+      {
+        accessorKey: 'email',
+        header: 'Email',
+      },
+      {
+        accessorKey: 'admin',
+        header: 'Role',
+        enableSorting: false,
+        Cell: ({ row }) => (
+          <Badge color={row.original.admin ? 'blue' : 'gray'} variant="light">
+            {row.original.admin ? 'Admin' : 'User'}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: 'shortlinks_count',
+        header: 'Shortlinks',
+      },
+    ],
+    []
+  );
+
+  const table = useMantineReactTable({
+    columns,
+    data: usersData?.user || [],
+    enableColumnActions: false,
+    enableColumnFilters: true,
+    enablePagination: true,
+    enableSorting: true,
+    mantineTableProps: {
+      highlightOnHover: false,
+      striped: 'odd',
+      withColumnBorders: true,
+      withRowBorders: true,
+      withTableBorder: true,
+    },
+  });
 
   if (data && !data.user?.admin) {
     return (
@@ -58,19 +108,6 @@ export default function UsersPage() {
     );
   }
 
-  const rows = (usersData?.user || []).map(user => (
-    <Table.Tr key={user.id}>
-      <Table.Td>{user.id}</Table.Td>
-      <Table.Td>{user.email}</Table.Td>
-      <Table.Td>
-        <Badge color={user.admin ? 'blue' : 'gray'} variant="light">
-          {user.admin ? 'Admin' : 'User'}
-        </Badge>
-      </Table.Td>
-      <Table.Td>{user.shortlinks_count}</Table.Td>
-    </Table.Tr>
-  ));
-
   return (
     <Container size="xl" py="xl">
       <Paper shadow="sm" p="xl" radius="md" withBorder>
@@ -86,29 +123,9 @@ export default function UsersPage() {
           </div>
         </Group>
 
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Id</Table.Th>
-              <Table.Th>Email</Table.Th>
-              <Table.Th>Role</Table.Th>
-              <Table.Th>Shortlinks</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {rows && rows.length > 0 ? (
-              rows
-            ) : (
-              <Table.Tr>
-                <Table.Td colSpan={4}>
-                  <Text ta="center" c="dimmed">
-                    No users found
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            )}
-          </Table.Tbody>
-        </Table>
+        <ScrollArea>
+          <MRT_Table table={table} />
+        </ScrollArea>
       </Paper>
     </Container>
   );

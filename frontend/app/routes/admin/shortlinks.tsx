@@ -9,6 +9,7 @@ import {
   Loader,
   Center,
   Switch,
+  ScrollArea,
 } from '@mantine/core';
 import { IconLock } from '@tabler/icons-react';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
@@ -19,6 +20,12 @@ import {
 import { useToggleShortlinkSafe } from '@internal/core/actions/admin-shortlink-toggle-safe/admin-shortlink-toggle-safe.hook';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Shortlink } from '@internal/core/types/Shortlink';
+import { useMemo } from 'react';
+import {
+  type MRT_ColumnDef,
+  MRT_Table,
+  useMantineReactTable,
+} from 'mantine-react-table';
 
 export const ssr = false;
 
@@ -38,6 +45,69 @@ export default function AdminShortlinksPage() {
   const toggleMutation = useToggleShortlinkSafe({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminGetShortlinksKey });
+    },
+  });
+
+  const columns = useMemo<MRT_ColumnDef<Shortlink>[]>(
+    () => [
+      {
+        accessorKey: 'id',
+        header: 'ID',
+      },
+      {
+        accessorKey: 'title',
+        header: 'Title',
+        Cell: ({ row }) => (
+          <Text maw={300} className="truncate whitespace-pre-wrap break-words">
+            {row.original.title || row.original.original_url}
+          </Text>
+        ),
+      },
+      {
+        accessorKey: 'short_code',
+        header: 'Short Code',
+      },
+      {
+        accessorKey: 'events_count',
+        header: 'Events',
+      },
+      {
+        accessorKey: 'user.email',
+        header: 'User Email',
+        Cell: ({ row }) => row.original.user?.email ?? '',
+      },
+      {
+        accessorKey: 'safe',
+        header: 'Safe',
+        enableSorting: false,
+        Cell: ({ row }) => (
+          <Group>
+            <Switch
+              checked={Boolean(row.original.safe)}
+              onChange={() => toggleMutation.mutate(row.original.id)}
+              size="sm"
+              aria-label={`toggle-safe-${row.original.id}`}
+            />
+          </Group>
+        ),
+      },
+    ],
+    [toggleMutation, shortlinksData]
+  );
+
+  const table = useMantineReactTable({
+    columns,
+    data: shortlinksData?.shortlink || [],
+    enableColumnActions: false,
+    enableColumnFilters: true,
+    enablePagination: true,
+    enableSorting: true,
+    mantineTableProps: {
+      highlightOnHover: false,
+      striped: 'odd',
+      withColumnBorders: true,
+      withRowBorders: true,
+      withTableBorder: true,
     },
   });
 
@@ -72,25 +142,6 @@ export default function AdminShortlinksPage() {
     );
   }
 
-  const rows = (shortlinksData?.shortlink || []).map((s: Shortlink) => (
-    <Table.Tr key={s.id}>
-      <Table.Td>{s.id}</Table.Td>
-      <Table.Td>{s.title || s.original_url}</Table.Td>
-      <Table.Td>{s.short_code}</Table.Td>
-      <Table.Td>{s.events_count}</Table.Td>
-      <Table.Td>
-        <Group>
-          <Switch
-            checked={Boolean(s.safe)}
-            onChange={() => toggleMutation.mutate(s.id)}
-            size="sm"
-            aria-label={`toggle-safe-${s.id}`}
-          />
-        </Group>
-      </Table.Td>
-    </Table.Tr>
-  ));
-
   return (
     <Container size="xl" py="xl">
       <Paper shadow="sm" p="xl" radius="md" withBorder>
@@ -106,30 +157,9 @@ export default function AdminShortlinksPage() {
           </div>
         </Group>
 
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Id</Table.Th>
-              <Table.Th>Title / URL</Table.Th>
-              <Table.Th>Code</Table.Th>
-              <Table.Th>Events</Table.Th>
-              <Table.Th>Safe</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {rows && rows.length > 0 ? (
-              rows
-            ) : (
-              <Table.Tr>
-                <Table.Td colSpan={5}>
-                  <Text ta="center" c="dimmed">
-                    No shortlinks found
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            )}
-          </Table.Tbody>
-        </Table>
+        <ScrollArea>
+          <MRT_Table table={table} />
+        </ScrollArea>
       </Paper>
     </Container>
   );
