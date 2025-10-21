@@ -1,9 +1,9 @@
 import {
   IconLink,
-  IconBolt,
   IconChartBar,
   IconArrowRight,
   IconSparkles,
+  IconShield,
 } from '@tabler/icons-react';
 import type { MetaFunction } from 'react-router';
 import { useState } from 'react';
@@ -240,13 +240,8 @@ export default function LinkShortenerLanding() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-16">
+            <div className="grid grid-cols-1   sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-16">
               {[
-                {
-                  icon: IconBolt,
-                  title: 'Lightning Fast URL Shortener',
-                  desc: 'Create short links in milliseconds with our free link shortener',
-                },
                 {
                   icon: IconChartBar,
                   title: 'Real-Time Analytics',
@@ -256,6 +251,11 @@ export default function LinkShortenerLanding() {
                   icon: IconLink,
                   title: 'Free Forever',
                   desc: 'No credit card required. 100% free link shortening service',
+                },
+                {
+                  icon: IconShield,
+                  title: 'Safety First',
+                  desc: 'Protected by Google Safe Browsing Service',
                 },
               ].map((feature, idx) => (
                 <div

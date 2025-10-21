@@ -4,7 +4,6 @@ import { MobileNav } from '../components/mobile-nav';
 import { LoadingOverlay } from '@mantine/core';
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router';
-import { useUserState } from '@internal/core/states/use-user-state';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
 import { Providers } from './providers';
 

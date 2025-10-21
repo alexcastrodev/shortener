@@ -15,6 +15,11 @@ Rails.application.routes.draw do
 
     namespace :admin do
       resources :users, only: [:index]
+      resources :shortlinks, only: [:index] do
+        member do
+          post "toggle_safe", to: "shortlinks#toggle_safe"
+        end
+      end
     end
 
     namespace :me do

@@ -1,0 +1,37 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://safebrowsing.googleapis.com/v4/threatMatches:find?key=<GOOGLE_SAFE_LINK_KEY>
+    body:
+      encoding: UTF-8
+      string: '{"client":{"clientId":"yourcompanyname","clientVersion":"1.5.2"},"threatInfo":{"threatTypes":["MALWARE","SOCIAL_ENGINEERING"],"platformTypes":["WINDOWS"],"threatEntryTypes":["URL"],"threatEntries":[{"url":"https://kurz.fyi"}]}}'
+    headers:
+      Content-Type:
+      - application/json
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+      Date:
+      - Tue, 21 Oct 2025 11:48:17 GMT
+      Server:
+      - scaffolding on HTTPServer2
+      Content-Length:
+      - '3'
+      X-Xss-Protection:
+      - '0'
+      X-Content-Type-Options:
+      - nosniff
+    body:
+      encoding: UTF-8
+      string: "{}"
+  recorded_at: Tue, 21 Oct 2025 11:48:17 GMT
+recorded_with: VCR 6.3.1
