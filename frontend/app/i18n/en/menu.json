@@ -5,5 +5,7 @@
     "users": "Users",
     "logout": "Logout",
     "home_subtitle": "Manage and track all your shortened links",
-    "manage_users": "Manage application users"
+    "manage_users": "Manage application users",
+    "shortlinks": "Shortlinks",
+    "manage_shortlinks": "Manage Shortlinks"
 }

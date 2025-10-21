@@ -41,6 +41,11 @@ export function AppHeader() {
       subtitle: t('manage_users'),
       showTitle: true,
     },
+    '/admin/shortlinks': {
+      title: t('shortlinks'),
+      subtitle: t('manage_shortlinks'),
+      showTitle: true,
+    },
   };
 
   return (

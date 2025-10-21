@@ -1,5 +1,10 @@
 import { NavLink } from 'react-router';
-import { IconHome2, IconUsers, IconLogout } from '@tabler/icons-react';
+import {
+  IconHome2,
+  IconUsers,
+  IconLogout,
+  IconLink,
+} from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useUserState } from '@internal/core/states/use-user-state';
@@ -38,6 +43,15 @@ export function MobileNav() {
         >
           <IconUsers size={22} stroke={1.5} />
           <span className={styles.label}>{t('users')}</span>
+        </NavLink>
+        <NavLink
+          to="/admin/shortlinks"
+          className={({ isActive }) =>
+            `${styles.navItem} ${isActive ? styles.active : ''}`
+          }
+        >
+          <IconLink size={22} stroke={1.5} />
+          <span className={styles.label}>{t('shortlinks')}</span>
         </NavLink>
       </AdminGuard>
 
