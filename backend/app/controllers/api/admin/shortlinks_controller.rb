@@ -1,7 +1,7 @@
 class Api::Admin::ShortlinksController < ApplicationController
   # GET /api/admin/shortlinks
   def index
-    authorize(@current_user, :list_all?)
+    authorize Shortlink, :list_all?
 
     render(json: ShortlinkSerializer.new(Shortlink.all.order(id: :desc), params: { admin: true }).serialize, status: :ok)
   end
