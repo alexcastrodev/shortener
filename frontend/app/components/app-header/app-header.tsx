@@ -4,16 +4,14 @@ import {
   Image,
   Container,
   Group,
-  Burger,
-  Drawer,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
 import { NavLink, useLocation, useNavigate } from 'react-router';
 import {
   IconHome2,
   IconLogout,
   IconChevronDown,
   IconUsers,
+  IconLink,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import LogoDark from '/logo-dark.webp';
@@ -94,6 +92,13 @@ export function AppHeader() {
                     leftSection={<IconUsers size={16} stroke={1.5} />}
                   >
                     {t('users')}
+                  </Menu.Item>
+                  <Menu.Item
+                    component={NavLink}
+                    to="/admin/shortlinks"
+                    leftSection={<IconLink size={16} stroke={1.5} />}
+                  >
+                    {t('shortlinks')}
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
