@@ -1,10 +1,4 @@
-import {
-  Button,
-  Menu,
-  Image,
-  Container,
-  Group,
-} from '@mantine/core';
+import { Button, Menu, Image, Container, Group } from '@mantine/core';
 import { NavLink, useLocation, useNavigate } from 'react-router';
 import {
   IconHome2,

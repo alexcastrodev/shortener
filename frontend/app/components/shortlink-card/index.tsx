@@ -7,6 +7,7 @@ import {
   IconClick,
   IconShare,
   IconChartBar,
+  IconAlertTriangle,
 } from '@tabler/icons-react';
 import type { Shortlink } from 'packages/core/types/Shortlink';
 import { useNavigate } from 'react-router';
@@ -166,6 +167,12 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
             {shortlink.original_url}
           </p>
         </div>
+        {!shortlink.is_active && (
+          <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded text-sm flex items-center gap-3">
+            <IconAlertTriangle size={14} />
+            <span>{t('unsafe_shortlink_message')}</span>
+          </div>
+        )}
 
         <div className="border-t border-gray-100 dark:border-gray-700"></div>
 

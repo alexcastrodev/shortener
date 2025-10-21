@@ -30,5 +30,9 @@ class ShortlinkSerializer < BaseSerializer
   #------------
   attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url
 
+  attribute :is_active do |shortlink|
+    shortlink.safe?
+  end
+
   attributes :safe, :safe_checked_at, if: proc { |_s| params[:admin] }
 end
