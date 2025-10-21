@@ -29,3 +29,6 @@ Style/ClassAndModuleChildren:
 
 Style/FrozenStringLiteralComment:
   Enabled: false
+
+Style/SymbolProc:
+  Enabled: false

@@ -1,3 +1,5 @@
+import type { User } from './User';
+
 export type Shortlink = {
   id: number;
   original_url: string;
@@ -9,4 +11,5 @@ export type Shortlink = {
   is_active: boolean;
   safe?: boolean;
   safe_checked_at?: string | null;
+  user?: User | null;
 };
