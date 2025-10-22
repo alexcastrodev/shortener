@@ -4,17 +4,9 @@ services:
     environment:
       - PORT=80
     ports:
-      - "9002:80"
-    networks:
-      - default
-      - proxy_net
+      - "8083:80"
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 512M
-
-networks:
-  default:
-  proxy_net:
-    external: true
