@@ -2,9 +2,8 @@ services:
   frontend:
     image: alexandros-macbook-pro:5001/shortener-frontend:latest
     environment:
-      - PORT=80
-    ports:
-      - "8083:80"
+      - PORT=8083
+    network_mode: host
     deploy:
       resources:
         limits:
