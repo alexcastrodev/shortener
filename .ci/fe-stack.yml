@@ -10,3 +10,6 @@ services:
         limits:
           cpus: '0.5'
           memory: 512M
+      placement:
+        constraints:
+          - node.hostname == pifive
