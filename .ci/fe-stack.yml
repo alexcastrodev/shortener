@@ -2,13 +2,17 @@ services:
   frontend:
     image: alexandros-macbook-pro:5001/shortener-frontend:latest
     environment:
-      - PORT=8083
-    network_mode: host
+      - PORT=80
+    ports:
+      - "9002:80"
+    networks:
+      - proxy_net
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 512M
-      placement:
-        constraints:
-          - node.hostname == pifive
+
+networks:
+  proxy_net:
+    external: true
