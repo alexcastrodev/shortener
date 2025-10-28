@@ -15,7 +15,7 @@ class Api::ShortlinksController < ApplicationController
       if link.save
         render(json: PublicShortlinkSerializer.new(link).serialize, status: :created)
       else
-        render(json: { errors: link.errors.full_messages }, status: :unprocessable_entity)
+        render(json: { error: I18n.t("errors.form_error"), errors: link.errors.full_messages }, status: :unprocessable_content)
       end
     end
   end

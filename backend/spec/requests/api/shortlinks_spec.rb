@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe("POST /api/shortlinks", type: :request, vcr: true, focus: true) do
+RSpec.describe("POST /api/shortlinks", type: :request, vcr: true) do
   before do
     host! "localhost"
   end
@@ -26,6 +26,15 @@ RSpec.describe("POST /api/shortlinks", type: :request, vcr: true, focus: true) d
     expect(response).to(have_http_status(:created))
     expect(Shortlink.last.user.email).to(eq(target_email))
     expect(Shortlink.last.created_by_guest).to(be_truthy)
+  end
+
+  it "Cannot create invalid email" do
+    Faker::Internet.email
+    post "/api/shortlinks",
+      params: { original_url: "https://example.com", title: "Example", email: "bogus" },
+      as: :json
+
+    expect(response).to(have_http_status(:unprocessable_content))
   end
 
   it "Cannot create public shortlink for user that already has link" do
