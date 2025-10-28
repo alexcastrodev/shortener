@@ -54,8 +54,8 @@ export default function LinkShortenerLanding() {
         state: { shortlink: data, email: email || undefined },
       });
     },
-    onError: () => {
-      alert('Failed to create short link. Please try again.');
+    onError: response => {
+      alert(response.error);
     },
   });
 

@@ -28,4 +28,5 @@
 #       enabled: "ON"
 
 en:
-  hello: "Hello world"
+  errors:
+    guest_email_with_shortlinks: "Cannot create with this email, please login"

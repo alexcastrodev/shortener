@@ -1,4 +1,4 @@
-import { ActionIcon, Menu, Badge, Text, Button } from '@mantine/core';
+import { ActionIcon, Menu, Badge, Text, Tooltip } from '@mantine/core';
 import {
   IconCopy,
   IconDotsVertical,
@@ -87,118 +87,95 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
   };
 
   return (
-    <div className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200">
-      <div className="space-y-4">
-        {/* Header with title and actions */}
+    <div
+      className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200 cursor-pointer"
+      onClick={handleViewDetails}
+    >
+      <div className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate mb-2">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate mb-1">
               {shortlink.title || t('untitled')}
             </h3>
-            <div className="flex items-center gap-2 flex-wrap">
-              <a
-                href={shortlink.short_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium hover:underline transition-colors"
-              >
-                {shortlink.short_url}
-              </a>
+            <a
+              href={shortlink.short_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium hover:underline transition-colors inline-flex items-center gap-1"
+            >
+              {shortlink.short_url}
+              <IconExternalLink size={12} />
+            </a>
+          </div>
+
+          <Menu position="bottom-end" shadow="md" withinPortal>
+            <Menu.Target>
               <ActionIcon
-                size="sm"
                 variant="subtle"
                 color="gray"
-                onClick={handleShare}
+                size="md"
+                onClick={e => e.stopPropagation()}
                 className="hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                <IconCopy size={16} />
+                <IconDotsVertical size={18} />
               </ActionIcon>
-            </div>
-          </div>
+            </Menu.Target>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="light"
-              size="sm"
-              leftSection={<IconChartBar size={16} />}
-              onClick={handleViewDetails}
-            >
-              {t('view_details')}
-            </Button>
-
-            <Menu position="bottom-end" shadow="md" withinPortal>
-              <Menu.Target>
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  size="md"
-                  className="hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  <IconDotsVertical size={18} />
-                </ActionIcon>
-              </Menu.Target>
-
-              <Menu.Dropdown>
-                <Menu.Item
-                  leftSection={<IconShare size={16} />}
-                  onClick={handleShare}
-                >
-                  {t('copy_link')}
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item
-                  color="red"
-                  leftSection={<IconTrash size={16} />}
-                  onClick={handleDelete}
-                >
-                  {t('delete')}
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
-          </div>
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={<IconShare size={16} />}
+                onClick={handleShare}
+              >
+                {t('copy_link')}
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item
+                color="red"
+                leftSection={<IconTrash size={16} />}
+                onClick={handleDelete}
+              >
+                {t('delete')}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         </div>
 
-        <div className="flex items-center gap-2 text-sm">
-          <IconExternalLink
-            size={14}
-            className="text-gray-400 dark:text-gray-500 shrink-0"
-          />
-          <p className="text-gray-600 dark:text-gray-400 truncate text-xs break-all">
-            {shortlink.original_url}
-          </p>
-        </div>
+        <p className="text-gray-500 dark:text-gray-400 truncate text-xs">
+          {shortlink.original_url}
+        </p>
+
         {!shortlink.is_active && (
-          <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded text-sm flex items-center gap-3">
+          <div className="p-2 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded text-xs flex items-center gap-2">
             <IconAlertTriangle size={14} />
             <span>{t('unsafe_shortlink_message')}</span>
           </div>
         )}
 
-        <div className="border-t border-gray-100 dark:border-gray-700"></div>
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-4">
+            <Tooltip label="Click count">
+              <Badge
+                size="md"
+                variant="light"
+                color="blue"
+                leftSection={<IconClick size={14} />}
+              >
+                {shortlink.events_count}
+              </Badge>
+            </Tooltip>
 
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-              {t('clicks')}
-            </span>
-            <Badge
-              size="lg"
-              variant="light"
-              color="blue"
-              leftSection={<IconClick size={14} />}
-              className="font-semibold"
-            >
-              {shortlink.events_count}
-            </Badge>
+            {shortlink.created_by_guest && (
+              <Tooltip label="This shortlink generated on the homepage without Authentication">
+                <Badge size="sm" variant="dot" color="yellow">
+                  Guest
+                </Badge>
+              </Tooltip>
+            )}
           </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              {t('last_accessed')}
-            </span>
-            <span className="text-xs text-gray-600 dark:text-gray-400">
-              {formattedDate}
-            </span>
-          </div>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {formattedDate}
+          </span>
         </div>
       </div>
     </div>

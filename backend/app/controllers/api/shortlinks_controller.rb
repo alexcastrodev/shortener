@@ -4,6 +4,12 @@ class Api::ShortlinksController < ApplicationController
   # POST /api/shortlinks
   def create
     validate_contract(ShortlinkContract) do |validated_params|
+      existent_user = User.find_by(email: validated_params[:email]) if validated_params.key?(:email)
+      if existent_user && existent_user.shortlinks.count > 0
+        render(json: { error: I18n.t("errors.guest_email_with_shortlinks") }, status: :forbidden)
+        return
+      end
+
       link = Shortlink.new(validated_params.merge({ created_by_guest: @current_user.blank?, user: @current_user }))
 
       if link.save
