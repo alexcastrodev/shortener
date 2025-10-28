@@ -53,4 +53,5 @@ Rails.application.configure do
 
   # Jobs
   config.active_job.queue_adapter = :test
+  config.action_dispatch.show_exceptions = true
 end

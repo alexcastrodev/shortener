@@ -3,6 +3,7 @@
 # Table name: shortlinks
 #
 #  id               :bigint           not null, primary key
+#  created_by_guest :boolean          default(FALSE)
 #  events_count     :integer          default(0), not null
 #  last_accessed_at :datetime
 #  original_url     :string           not null
@@ -20,6 +21,11 @@
 #  index_shortlinks_on_user_id     (user_id)
 #
 class Shortlink < ApplicationRecord
+  # ===============
+  # Attributes
+  # ===============
+  attribute :email, :string
+
   # ===============
   # Scopes
   # ===============
@@ -41,6 +47,7 @@ class Shortlink < ApplicationRecord
   # ===============
   # Callbacks
   # ===============
+  before_create :associate_user_by_email, if: -> { email.present? && user.blank? }
   after_commit :save_cache, :verify_safety, on: :create
   after_destroy :remove_cache, if: -> { short_code.present? }
   before_validation :generate_short_code, on: :create
@@ -87,6 +94,9 @@ class Shortlink < ApplicationRecord
     "#{ENV["EDGE_API"]}/#{short_code}"
   end
 
+  # ============
+  # Callbacks
+  # ============
   def verify_safety
     SafetyUrlJob.perform_later(id) if ENV["ENABLE_GOOGLE_SAFE_LINK"].present?
   end
@@ -96,5 +106,9 @@ class Shortlink < ApplicationRecord
       code = SecureRandom.alphanumeric(6)
       break code unless Shortlink.exists?(short_code: code)
     end
+  end
+
+  def associate_user_by_email
+    self.user = User.find_or_create_by(email: email)
   end
 end

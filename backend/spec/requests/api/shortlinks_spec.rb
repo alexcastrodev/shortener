@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe("POST /api/shortlinks", type: :request, vcr: true) do
+RSpec.describe("POST /api/shortlinks", type: :request, vcr: true, focus: true) do
   before do
     host! "localhost"
   end
@@ -13,11 +13,22 @@ RSpec.describe("POST /api/shortlinks", type: :request, vcr: true) do
     expect(response).to(have_http_status(:created))
     json_response = JSON.parse(response.body)
     expect(json_response["public_shortlink"]).to(include("original_url", "short_url"))
+    expect(Shortlink.last.user).to(be_nil)
+    expect(Shortlink.last.created_by_guest).to(be_truthy)
+  end
+
+  it "creates a new public shortlink with not registered email" do
+    target_email = Faker::Internet.email
+    post "/api/shortlinks",
+      params: { original_url: "https://example.com", title: "Example", email: target_email },
+      as: :json
+
+    expect(response).to(have_http_status(:created))
+    expect(Shortlink.last.user.email).to(eq(target_email))
+    expect(Shortlink.last.created_by_guest).to(be_truthy)
   end
 
   context "when the original URL is unsafe" do
-    include_context "authenticated user"
-
     it "Validate URL safety" do
       post "/api/shortlinks",
         params: { original_url: UNSAFE_URL, title: "Malicious" },
@@ -58,6 +69,22 @@ RSpec.describe("POST /api/shortlinks", type: :request, vcr: true) do
         cached_url = conn.get(shortlink.cache_key)
         expect(cached_url).to(be_nil)
       end
+    end
+  end
+
+  context "When user pass email - Authenticated" do
+    include_context "authenticated user"
+
+    it "creates a new public shortlink with not registered email" do
+      post "/api/shortlinks",
+        params: { original_url: "https://example.com", title: "Example" },
+        headers: auth_headers,
+        as: :json
+
+      expect(response).to(have_http_status(:created))
+      expect(Shortlink.last.user.id).to(eq(current_user.id))
+      expect(Shortlink.last.user.email).to(eq(current_user.email))
+      expect(Shortlink.last.created_by_guest).to(be_falsey)
     end
   end
 end

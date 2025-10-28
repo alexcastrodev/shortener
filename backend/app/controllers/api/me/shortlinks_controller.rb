@@ -1,4 +1,5 @@
 class Api::Me::ShortlinksController < ApplicationController
+  before_action :authenticate_user!
   before_action :load_link, only: [:destroy, :show, :statistics]
 
   # GET /api/me/shortlinks/:id

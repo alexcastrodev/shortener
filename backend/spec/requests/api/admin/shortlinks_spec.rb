@@ -26,7 +26,7 @@ RSpec.describe("Admin Shortlinks", type: :request, vcr: true) do
       expect(json_response["shortlink"].first).to(include("original_url", "short_code"))
     end
 
-    it "includes associated user when present", dev: true do
+    it "includes associated user when present" do
       user = FactoryBot.create(:user)
       shortlink = FactoryBot.create(:shortlink, user: user)
 

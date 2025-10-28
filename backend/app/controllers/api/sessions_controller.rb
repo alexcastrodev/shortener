@@ -1,6 +1,4 @@
 class Api::SessionsController < ApplicationController
-  skip_before_action :authenticate_user!, only: [:create, :verify]
-
   # POST /api/login_request
   def create
     if params[:email].present?

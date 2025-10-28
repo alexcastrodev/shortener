@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_21_150410) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_28_164656) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -38,6 +38,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_21_150410) do
     t.integer "events_count", default: 0, null: false
     t.boolean "safe", default: true, null: false
     t.datetime "safe_checked_at"
+    t.boolean "created_by_guest", default: false
     t.index ["short_code"], name: "index_shortlinks_on_short_code", unique: true
     t.index ["user_id"], name: "index_shortlinks_on_user_id"
   end
