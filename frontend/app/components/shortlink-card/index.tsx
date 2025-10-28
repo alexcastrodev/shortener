@@ -173,9 +173,14 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
               </Tooltip>
             )}
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {formattedDate}
-          </span>
+          <div className="text-right">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Last access
+            </p>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {formattedDate}
+            </span>
+          </div>
         </div>
       </div>
     </div>
