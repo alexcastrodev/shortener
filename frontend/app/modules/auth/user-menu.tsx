@@ -24,7 +24,7 @@ export function UserMenu() {
         Home
       </a>
       <a
-        href="/dashboard"
+        href="/app"
         className="text-sm text-zinc-400 hover:text-white transition-colors"
       >
         Dashboard
