@@ -1,3 +1,6 @@
 export type ResponseError = {
-  message: string;
+  error: string;
+  errors?: {
+    [key: string]: string;
+  };
 };

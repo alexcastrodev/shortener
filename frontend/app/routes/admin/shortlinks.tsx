@@ -9,6 +9,7 @@ import {
   Center,
   Switch,
   ScrollArea,
+  Badge,
 } from '@mantine/core';
 import { IconLock } from '@tabler/icons-react';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
@@ -74,6 +75,20 @@ export default function AdminShortlinksPage() {
         accessorKey: 'user.email',
         header: 'User Email',
         Cell: ({ row }) => row.original.user?.email ?? '',
+      },
+      {
+        accessorKey: 'created_by_guest',
+        header: 'Source',
+        Cell: ({ row }) =>
+          row.original.created_by_guest ? (
+            <Badge size="sm" variant="dot" color="yellow">
+              Guest
+            </Badge>
+          ) : (
+            <Badge size="sm" variant="dot" color="blue">
+              Authenticated
+            </Badge>
+          ),
       },
       {
         accessorKey: 'safe',

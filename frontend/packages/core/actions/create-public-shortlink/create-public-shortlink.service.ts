@@ -1,4 +1,4 @@
-import type { AxiosResponse } from 'axios';
+import { AxiosError, type AxiosResponse } from 'axios';
 import { api } from '../api';
 import type {
   CreatePublicShortlinkRequestBody,
@@ -14,6 +14,9 @@ export async function createPublicShortlink(
       await api.post('/api/shortlinks', data);
     return response.data.public_shortlink;
   } catch (error) {
+    if (error instanceof AxiosError) {
+      throw error.response?.data;
+    }
     throw error;
   }
 }

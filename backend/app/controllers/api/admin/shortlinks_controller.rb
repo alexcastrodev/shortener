@@ -1,4 +1,6 @@
 class Api::Admin::ShortlinksController < ApplicationController
+  before_action :authenticate_user!
+
   # GET /api/admin/shortlinks
   def index
     authorize(Shortlink, :list_all?)

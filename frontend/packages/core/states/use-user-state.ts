@@ -18,7 +18,10 @@ export const useUserState = create<UserState>()(
       user: null,
       setToken: (token: string) => set({ token }),
       setUser: (user: User) => set({ user }),
-      clear: () => set({ token: null, user: null }),
+      clear: () => {
+        localStorage.removeItem('token');
+        set({ token: null, user: null });
+      },
       setup: (token: string, user: User) => set({ token, user }),
     }),
     {

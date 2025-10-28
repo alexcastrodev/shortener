@@ -12,4 +12,5 @@ export type Shortlink = {
   safe?: boolean;
   safe_checked_at?: string | null;
   user?: User | null;
+  created_by_guest: boolean;
 };

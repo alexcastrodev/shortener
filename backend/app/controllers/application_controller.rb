@@ -1,8 +1,6 @@
 class ApplicationController < ActionController::API
   include Pundit::Authorization
 
-  before_action :authenticate_user!
-
   rescue_from ::ActiveRecord::RecordNotFound, with: :record_not_found
   rescue_from ::ActiveRecord::RecordNotDestroyed, with: :record_not_destroyed
   rescue_from ::ActiveRecord::RecordInvalid, with: :record_invalid
@@ -38,15 +36,25 @@ class ApplicationController < ActionController::API
     render(json: { message: "You are not authorized to perform this action" }, status: :forbidden)
   end
 
+  def authenticate_user
+    auth_header = request.headers["Authorization"]
+    return if auth_header.blank?
+
+    @current_user = User.find_by(id: jwt_user_id(auth_header))
+  end
+
   def authenticate_user!
     auth_header = request.headers["Authorization"]
     return render(json: { message: "Missing token" }, status: :unauthorized) unless auth_header
 
-    token = auth_header.split(" ").last
-    decoded = JWT.decode(token, Rails.application.secret_key_base, true, algorithm: "HS256")
-    user_id = decoded.first["sub"]
-    @current_user = User.find(user_id)
+    @current_user = User.find(jwt_user_id(auth_header))
   rescue JWT::ExpiredSignature, JWT::DecodeError
     render(json: { message: "Invalid or expired token" }, status: :unauthorized)
+  end
+
+  def jwt_user_id(auth_header)
+    token = auth_header.split(" ").last
+    decoded = JWT.decode(token, Rails.application.secret_key_base, true, algorithm: "HS256")
+    decoded.first["sub"]
   end
 end

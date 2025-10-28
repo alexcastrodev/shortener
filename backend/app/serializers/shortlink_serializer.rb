@@ -5,6 +5,7 @@
 # Table name: shortlinks
 #
 #  id               :bigint           not null, primary key
+#  created_by_guest :boolean          default(FALSE)
 #  events_count     :integer          default(0), not null
 #  last_accessed_at :datetime
 #  original_url     :string           not null
@@ -29,7 +30,7 @@ class ShortlinkSerializer < BaseSerializer
   #------------
   # Attributes
   #------------
-  attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url
+  attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url, :created_by_guest
 
   attribute :is_active do |shortlink|
     shortlink.safe?

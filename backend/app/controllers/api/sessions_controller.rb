@@ -1,6 +1,4 @@
 class Api::SessionsController < ApplicationController
-  skip_before_action :authenticate_user!, only: [:create, :verify]
-
   # POST /api/login_request
   def create
     if params[:email].present?
@@ -30,7 +28,7 @@ class Api::SessionsController < ApplicationController
   private
 
   def generate_jwt(user)
-    payload = { sub: user.id, exp: 1.hour.from_now.to_i }
+    payload = { sub: user.id, exp: 2.days.from_now.to_i }
     JWT.encode(payload, Rails.application.secret_key_base, "HS256")
   end
 end

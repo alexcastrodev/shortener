@@ -28,4 +28,6 @@
 #       enabled: "ON"
 
 en:
-  hello: "Hello world"
+  errors:
+    form_error: 'Fields are not valid'
+    guest_email_with_shortlinks: "Cannot create with this email, please login"

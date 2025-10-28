@@ -1,15 +1,14 @@
-import {
-  IconCheck,
-  IconCopy,
-  IconExternalLink,
-  IconHome,
-  IconAlertTriangle,
-} from '@tabler/icons-react';
+import { IconCheck, IconCopy, IconExternalLink } from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router';
 import { useClipboard } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
 import type { Shortlink } from '@internal/core/types/Shortlink';
 import type { MetaFunction } from 'react-router';
+import { EmailAlert } from '../../modules/success-alerts/email-alert';
+import { ExpirationAlert } from '../../modules/success-alerts/expiration-alert';
+import { SignInCTA } from '../../modules/success-alerts/sign-in-cta';
+import { Layout } from '../../layout/web-layout';
+import { useAuth } from '../../modules/auth/use-auth';
 
 export const meta: MetaFunction = () => {
   return [
@@ -25,11 +24,17 @@ export default function StatusSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
   const { copy, copied } = useClipboard({ timeout: 2000 });
+  const { user } = useAuth();
   const [shortlink, setShortlink] = useState<Shortlink | null>(null);
+  const [email, setEmail] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (location.state?.shortlink) {
+      // This could be a single usage of variable
+      // but it's on stupid setState because of Hydration
+      // https://react.dev/link/hydration-mismatch
       setShortlink(location.state.shortlink);
+      setEmail(location.state.email);
     } else {
       // Redirect to home if no shortlink data
       navigate('/');
@@ -41,48 +46,7 @@ export default function StatusSuccess() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white overflow-hidden flex flex-col">
-      <div className="fixed inset-0 opacity-10">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(124,58,237,0.3) 1px, transparent 0)`,
-            backgroundSize: '40px 40px',
-          }}
-        />
-      </div>
-
-      <div className="fixed inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/50 pointer-events-none" />
-
-      <nav className="relative z-50 px-4 sm:px-6 py-4 sm:py-5 border-b border-zinc-800 bg-black/50 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-violet-600 rounded-lg flex items-center justify-center">
-              <IconHome size={18} className="sm:hidden" stroke={2.5} />
-              <IconHome size={20} className="hidden sm:block" stroke={2.5} />
-            </div>
-            <span className="text-lg sm:text-xl font-semibold">Kurz</span>
-          </a>
-
-          <div className="flex items-center gap-3">
-            <a
-              href="/"
-              className="text-sm px-4 sm:px-5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 transition-all border border-zinc-800 hover:border-zinc-700 flex items-center gap-2"
-            >
-              <IconHome size={16} />
-              <span className="hidden sm:inline">Back to Home</span>
-              <span className="sm:hidden">Home</span>
-            </a>
-            <a
-              href="/app"
-              className="text-sm px-4 sm:px-5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 transition-all border border-zinc-800 hover:border-zinc-700"
-            >
-              Sign in
-            </a>
-          </div>
-        </div>
-      </nav>
-
+    <Layout>
       <div className="relative z-10 flex-1 flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12">
         <div className="max-w-2xl w-full">
           <div className="text-center mb-8">
@@ -168,63 +132,40 @@ export default function StatusSuccess() {
               </a>
             </div>
           </div>
-
           <div className="text-center space-y-4">
             <div className="space-y-4">
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 backdrop-blur-sm">
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0">
-                    <IconAlertTriangle size={20} className="text-yellow-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-yellow-400 mb-1">
-                      Link Expiration Policy
-                    </h3>
-                    <p className="text-sm text-yellow-200/80">
-                      Links will be automatically deleted after 30 days without
-                      access
-                    </p>
-
-                    <p className="text-sm text-yellow-200/80 mt-3">
-                      All links are checked by Google Safe Browsing, if your
-                      link does not work, MAYBE was blocked by Safety Service.
-                    </p>
+              {user ? (
+                <div className="bg-violet-500/10 border border-violet-500/30 rounded-lg p-4 backdrop-blur-sm">
+                  <div className="flex gap-3">
+                    <div className="flex-1 text-left">
+                      <h3 className="text-sm font-semibold text-violet-400 mb-2">
+                        Link Created Successfully!
+                      </h3>
+                      <p className="text-sm text-violet-200/90 mb-3">
+                        Your link is now available in your dashboard. Access it
+                        to view analytics and manage your links.
+                      </p>
+                      <a
+                        href="/app"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg font-semibold text-sm transition-all"
+                      >
+                        Go to Dashboard
+                        <IconExternalLink size={16} />
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="text-sm text-zinc-500">
-                <p>
-                  Want to track clicks and manage your links?{' '}
-                  <a
-                    href="/app"
-                    className="text-violet-400 hover:text-violet-300 transition-colors"
-                  >
-                    Sign in for free
-                  </a>
-                </p>
-              </div>
+              ) : (
+                <>
+                  {email && <EmailAlert email={email} />}
+                  <ExpirationAlert />
+                  {!email && <SignInCTA />}
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
-
-      <footer className="relative z-10 border-t border-zinc-800 bg-black/50 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-violet-600 rounded flex items-center justify-center">
-                <IconHome size={16} stroke={2.5} />
-              </div>
-              <span className="font-semibold">Kurz - Free Link Shortener</span>
-            </div>
-
-            <div className="text-sm text-zinc-500 text-center sm:text-right">
-              © 2025 Kurz. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </Layout>
   );
 }
