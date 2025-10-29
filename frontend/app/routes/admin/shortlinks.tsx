@@ -59,7 +59,16 @@ export default function AdminShortlinksPage() {
         header: 'Title',
         Cell: ({ row }) => (
           <Text maw={300} className="truncate whitespace-pre-wrap break-words">
-            {row.original.title || row.original.original_url}
+            {row.original.title || 'untitled'}
+          </Text>
+        ),
+      },
+      {
+        accessorKey: 'original_url',
+        header: 'URL',
+        Cell: ({ row }) => (
+          <Text maw={300} className="truncate whitespace-pre-wrap break-words">
+            {row.original.original_url}
           </Text>
         ),
       },
