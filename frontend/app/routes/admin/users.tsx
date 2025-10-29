@@ -16,7 +16,7 @@ import { useGetManageUsers } from '@internal/core/actions/get-manage-users/get-m
 import { useMemo } from 'react';
 import {
   type MRT_ColumnDef,
-  MRT_Table,
+  MantineReactTable,
   useMantineReactTable,
 } from 'mantine-react-table';
 
@@ -66,7 +66,7 @@ export default function UsersPage() {
     data: usersData?.user || [],
     enableColumnActions: false,
     enableColumnFilters: true,
-    enablePagination: true,
+    paginationDisplayMode: 'pages',
     enableSorting: true,
     mantineTableProps: {
       highlightOnHover: false,
@@ -124,7 +124,7 @@ export default function UsersPage() {
         </Group>
 
         <ScrollArea>
-          <MRT_Table table={table} />
+          <MantineReactTable table={table} />
         </ScrollArea>
       </Paper>
     </Container>

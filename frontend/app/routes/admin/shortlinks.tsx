@@ -23,7 +23,7 @@ import type { Shortlink } from '@internal/core/types/Shortlink';
 import { useMemo } from 'react';
 import {
   type MRT_ColumnDef,
-  MRT_Table,
+  MantineReactTable,
   useMantineReactTable,
 } from 'mantine-react-table';
 
@@ -114,8 +114,8 @@ export default function AdminShortlinksPage() {
     data: shortlinksData?.shortlink || [],
     enableColumnActions: false,
     enableColumnFilters: true,
-    enablePagination: true,
     enableSorting: true,
+    paginationDisplayMode: 'pages',
     mantineTableProps: {
       highlightOnHover: false,
       striped: 'odd',
@@ -172,7 +172,7 @@ export default function AdminShortlinksPage() {
         </Group>
 
         <ScrollArea>
-          <MRT_Table table={table} />
+          <MantineReactTable table={table} />
         </ScrollArea>
       </Paper>
     </Container>
