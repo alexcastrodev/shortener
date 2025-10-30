@@ -5,6 +5,7 @@ RUN npm ci --legacy-peer-deps
 
 FROM node:20-bookworm AS production-dependencies-env
 COPY ./frontend/package.json ./frontend/package-lock.json /app/
+COPY ./frontend/packages /app/packages
 WORKDIR /app
 RUN npm ci --omit=dev --legacy-peer-deps
 
