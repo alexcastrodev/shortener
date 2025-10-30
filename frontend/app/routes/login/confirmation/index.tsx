@@ -23,7 +23,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white relative overflow-hidden">
-      {/* Background Effects - Same as home page */}
       <div className="fixed inset-0 opacity-10">
         <div
           className="absolute inset-0"
@@ -38,7 +37,6 @@ export default function Login() {
 
       <Center style={{ minHeight: '100vh' }} className="relative z-10">
         <div className="w-full max-w-md mx-4">
-          {/* Logo */}
           <div className="flex items-center justify-center gap-2 mb-8">
             <div className="w-10 h-10 bg-violet-600 rounded-lg flex items-center justify-center">
               <IconLink size={24} stroke={2.5} />
@@ -46,7 +44,6 @@ export default function Login() {
             <span className="text-2xl font-semibold">Kurz</span>
           </div>
 
-          {/* Card */}
           <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-8 backdrop-blur-xl shadow-2xl">
             <form
               onSubmit={form.onSubmit(handleRequestLogin)}

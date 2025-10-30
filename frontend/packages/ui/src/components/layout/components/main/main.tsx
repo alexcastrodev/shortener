@@ -3,7 +3,6 @@ import type { PropsWithChildren } from 'react';
 export function Main({ children }: PropsWithChildren) {
   return (
     <main className="flex-1 w-full overflow-auto bg-gradient-to-br from-black via-gray-900 to-black relative">
-      {/* Background Effects - Same as dashboard */}
       <div className="fixed inset-0 opacity-10 pointer-events-none">
         <div
           className="absolute inset-0"

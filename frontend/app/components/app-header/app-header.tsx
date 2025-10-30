@@ -60,7 +60,6 @@ export function AppHeader() {
             </span>
           </a>
 
-          {/* Desktop navigation */}
           <Group gap="sm" visibleFrom="sm" className="ml-4">
             <Button
               component={NavLink}
@@ -151,7 +150,6 @@ export function AppHeader() {
             {t('logout')}
           </Button>
 
-          {/* Mobile logout button */}
           <Button
             variant="subtle"
             onClick={handleLogout}

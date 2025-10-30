@@ -35,7 +35,6 @@ export default function Login() {
 
       <Center style={{ minHeight: '100vh' }} className="relative z-10">
         <div className="w-full max-w-md mx-4">
-          {/* Logo */}
           <div className="flex items-center justify-center gap-2 mb-8">
             <div className="w-10 h-10 bg-violet-600 rounded-lg flex items-center justify-center">
               <IconLink size={24} stroke={2.5} />

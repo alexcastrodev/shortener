@@ -112,7 +112,6 @@ export function LinksList({ links, isLoading }: LinksListProps) {
         </Tooltip>
       </div>
 
-      {/* Lista de links filtrados */}
       {filteredLinks.length === 0 && links.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-zinc-900/30 rounded-lg border-2 border-dashed border-zinc-700">
           <div className="p-4 bg-violet-600/20 rounded-full mb-4">
