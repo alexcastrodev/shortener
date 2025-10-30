@@ -15,7 +15,7 @@ export function Main({ children }: PropsWithChildren) {
 
       <div className="fixed inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/50 pointer-events-none" />
 
-      <div className="relative z-10">{children}</div>
+      <div className="relative z-10 px-4 sm:px-0">{children}</div>
     </main>
   );
 }

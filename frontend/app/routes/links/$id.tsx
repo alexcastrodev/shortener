@@ -10,7 +10,7 @@ import { Statistics } from './components/statistics';
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: 'Link - Shortener' },
+    { title: 'Link - Kurz' },
     { name: 'description', content: 'Show link details' },
   ];
 }
@@ -28,8 +28,8 @@ export default function Page() {
   if (error) {
     return (
       <Layout.Main>
-        <div className="px-6 py-8">
-          <div className="max-w-3xl mx-auto">
+        <div className="py-8">
+          <div className="max-w-7xl mx-auto sm:px-6">
             <div className="bg-red-900/30 border border-red-800 rounded-lg p-4 text-red-300">
               Failed to load link
             </div>
@@ -42,8 +42,8 @@ export default function Page() {
   if (isLoading || !link) {
     return (
       <Layout.Main>
-        <div className="px-6 py-8">
-          <div className="max-w-3xl mx-auto animate-pulse">
+        <div className="py-8">
+          <div className="max-w-7xl mx-auto sm:px-6 animate-pulse">
             <div className="h-6 bg-zinc-800 rounded w-1/3 mb-4" />
             <div className="h-40 bg-zinc-800 rounded" />
           </div>
@@ -54,8 +54,8 @@ export default function Page() {
 
   return (
     <Layout.Main>
-      <div className="px-6 py-10">
-        <div className="max-w-3xl mx-auto">
+      <div className="py-10">
+        <div className="max-w-7xl mx-auto sm:px-6">
           <div className="flex items-center justify-between mb-6">
             <Button
               variant="outline"

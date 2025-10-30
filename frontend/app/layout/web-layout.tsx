@@ -18,7 +18,7 @@ export function Layout({ children }: PropsWithChildren) {
       <div className="fixed inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/50 pointer-events-none" />
 
       <nav className="relative z-50 px-4 sm:px-6 py-4 sm:py-5 border-b border-zinc-800 bg-black/50 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">
             <div className="w-7 h-7 sm:w-8 sm:h-8 bg-violet-600 rounded-lg flex items-center justify-center">
               <IconLink size={18} className="sm:hidden" stroke={2.5} />
@@ -36,7 +36,7 @@ export function Layout({ children }: PropsWithChildren) {
       {children}
 
       <footer className="relative z-10 border-t border-zinc-800 bg-black/50 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6 pb-6 border-b border-zinc-800">
             <div>
               <div className="flex items-center gap-2 mb-3">

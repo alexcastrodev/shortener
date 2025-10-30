@@ -29,8 +29,8 @@ export default function Page() {
 
       <div className="fixed inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/50 pointer-events-none" />
 
-      <div className="relative z-10 max-w-7xl mx-auto sm:px-6 py-8 sm:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+      <div className="relative z-10 max-w-7xl mx-auto py-8 sm:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 px-4 sm:px-6">
           <LinksList links={data?.shortlink || []} isLoading={isLoading} />
 
           <div className="space-y-4 lg:sticky lg:top-24 h-fit">
