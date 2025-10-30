@@ -1,4 +1,4 @@
-import { Layout } from '../components/layout';
+import { Layout } from '@internal/ui';
 import { AppHeader } from '../components/app-header';
 import { MobileNav } from '../components/mobile-nav';
 import { LoadingOverlay } from '@mantine/core';

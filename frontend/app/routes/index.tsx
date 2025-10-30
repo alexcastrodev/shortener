@@ -132,7 +132,6 @@ export default function LinkShortenerLanding() {
               Transform long URLs into short, easy-to-share links in seconds
             </p>
 
-            {/* Shortlink Creation Form */}
             <div className="max-w-2xl mx-auto">
               <form onSubmit={handleSubmit} className="space-y-3">
                 <div className="flex flex-col sm:flex-row gap-3">

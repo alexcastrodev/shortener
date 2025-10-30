@@ -1,9 +1,6 @@
 import {
   Container,
-  Title,
   Text,
-  Paper,
-  Alert,
   Badge,
   Group,
   Loader,
@@ -11,6 +8,7 @@ import {
   ScrollArea,
 } from '@mantine/core';
 import { IconUsers, IconLock } from '@tabler/icons-react';
+import { Card, CardTitle, CardDescription, Alert } from '@internal/ui';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
 import { useGetManageUsers } from '@internal/core/actions/get-manage-users/get-manage-users.hook';
 import { useMemo } from 'react';
@@ -80,7 +78,11 @@ export default function UsersPage() {
   if (data && !data.user?.admin) {
     return (
       <Container size="xl" py="xl">
-        <Alert icon={<IconLock size={24} />} title="Access Denied" color="red">
+        <Alert
+          variant="error"
+          icon={<IconLock size={24} />}
+          title="Access Denied"
+        >
           You don't have permission to access this page. This area is restricted
           to administrators only.
         </Alert>
@@ -92,7 +94,7 @@ export default function UsersPage() {
     return (
       <Container size="xl" py="xl">
         <Center>
-          <Loader size="lg" />
+          <Loader size="lg" color="violet" />
         </Center>
       </Container>
     );
@@ -101,7 +103,7 @@ export default function UsersPage() {
   if (error) {
     return (
       <Container size="xl" py="xl">
-        <Alert icon={<IconLock size={24} />} title="Error" color="red">
+        <Alert variant="error" icon={<IconLock size={24} />} title="Error">
           Failed to load users. Please try again later.
         </Alert>
       </Container>
@@ -110,23 +112,20 @@ export default function UsersPage() {
 
   return (
     <Container size="xl" py="xl">
-      <Paper shadow="sm" p="xl" radius="md" withBorder>
+      <Card className="p-6">
         <Group justify="space-between" mb="lg">
           <div>
-            <Title order={2}>
-              <IconUsers size={28} style={{ marginRight: '0.5rem' }} />
+            <CardTitle icon={<IconUsers size={28} />}>
               Users Management
-            </Title>
-            <Text c="dimmed" size="sm">
-              Manage all users in the system
-            </Text>
+            </CardTitle>
+            <CardDescription>Manage all users in the system</CardDescription>
           </div>
         </Group>
 
         <ScrollArea>
           <MantineReactTable table={table} />
         </ScrollArea>
-      </Paper>
+      </Card>
     </Container>
   );
 }
