@@ -70,4 +70,4 @@ export default function App() {
   return <Outlet />;
 }
 
-export { ErrorBoundary } from './components/error-boundary';
+export { ErrorBoundary } from '@internal/ui';

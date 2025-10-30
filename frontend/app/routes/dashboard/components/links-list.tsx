@@ -46,10 +46,8 @@ export function LinksList({ links, isLoading }: LinksListProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Loader size="lg" />
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
-          {t('loading_links')}
-        </p>
+        <Loader size="lg" color="violet" />
+        <p className="text-sm text-zinc-400 mt-4">{t('loading_links')}</p>
       </div>
     );
   }
@@ -80,9 +78,14 @@ export function LinksList({ links, isLoading }: LinksListProps) {
           className="flex-1"
           styles={{
             input: {
-              borderColor: 'var(--mantine-color-gray-3)',
+              backgroundColor: 'rgba(39, 39, 42, 0.5)',
+              borderColor: '#3f3f46',
+              color: '#ffffff',
+              '&::placeholder': {
+                color: '#71717a',
+              },
               '&:focus': {
-                borderColor: 'var(--mantine-color-blue-5)',
+                borderColor: '#7c3aed',
               },
             },
           }}
@@ -91,10 +94,18 @@ export function LinksList({ links, isLoading }: LinksListProps) {
         <Tooltip label={t('refresh_links') || 'Atualizar lista'}>
           <ActionIcon
             variant="light"
-            color="blue"
             size="lg"
             onClick={handleRefresh}
             loading={isLoading}
+            styles={{
+              root: {
+                backgroundColor: 'rgba(124, 58, 237, 0.2)',
+                color: '#a78bfa',
+                '&:hover': {
+                  backgroundColor: 'rgba(124, 58, 237, 0.3)',
+                },
+              },
+            }}
           >
             <IconRefresh size={20} />
           </ActionIcon>
@@ -103,27 +114,24 @@ export function LinksList({ links, isLoading }: LinksListProps) {
 
       {/* Lista de links filtrados */}
       {filteredLinks.length === 0 && links.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800/50 dark:to-blue-900/10 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-          <div className="p-4 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-4">
-            <IconLink size={48} className="text-blue-600 dark:text-blue-400" />
+        <div className="flex flex-col items-center justify-center py-16 bg-zinc-900/30 rounded-lg border-2 border-dashed border-zinc-700">
+          <div className="p-4 bg-violet-600/20 rounded-full mb-4">
+            <IconLink size={48} className="text-violet-400" />
           </div>
-          <p className="text-base text-gray-700 dark:text-gray-300 font-semibold">
+          <p className="text-base text-white font-semibold">
             {t('no_links_title')}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-sm text-center">
+          <p className="text-sm text-zinc-400 mt-2 max-w-sm text-center">
             {t('no_links_description')}
           </p>
         </div>
       ) : filteredLinks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
-          <IconSearch
-            size={48}
-            className="text-gray-400 dark:text-gray-500 mb-4"
-          />
-          <p className="text-base text-gray-700 dark:text-gray-300 font-semibold">
+        <div className="flex flex-col items-center justify-center py-12 bg-zinc-900/30 rounded-lg border border-zinc-800">
+          <IconSearch size={48} className="text-zinc-500 mb-4" />
+          <p className="text-base text-white font-semibold">
             {t('no_results_found') || 'Nenhum resultado encontrado'}
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-sm text-zinc-400 mt-2">
             {t('try_different_search') || 'Tente uma busca diferente'}
           </p>
         </div>

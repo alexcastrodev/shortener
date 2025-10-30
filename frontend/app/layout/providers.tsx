@@ -9,10 +9,11 @@ import { ServiceProvider } from '@internal/core/service-provider';
 import { Notifications } from '@mantine/notifications';
 import { ModalsProvider } from '@mantine/modals';
 import type { PropsWithChildren } from 'react';
+import { mantineTheme } from '@internal/ui';
 
 export function Providers({ children }: PropsWithChildren) {
   return (
-    <MantineProvider defaultColorScheme="dark">
+    <MantineProvider theme={mantineTheme} defaultColorScheme="dark">
       <Notifications />
       <ModalsProvider>
         <ServiceProvider>{children}</ServiceProvider>

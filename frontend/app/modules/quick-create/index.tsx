@@ -2,16 +2,17 @@ import { TextInput, Button } from '@mantine/core';
 import { useQuickCreate } from './use-quick-create';
 import { IconLink, IconPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
+import { Card } from '@internal/ui';
 
 export function QuickCreate() {
   const { form, handleSubmit, loading } = useQuickCreate();
   const { t } = useTranslation('dashboard');
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
+    <Card className="p-4">
       <div className="flex items-center gap-2 mb-3">
-        <IconPlus size={18} className="text-blue-600 dark:text-blue-400" />
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <IconPlus size={18} className="text-violet-400" />
+        <h3 className="text-sm font-semibold text-white">
           {t('quick_create_title')}
         </h3>
       </div>
@@ -34,15 +35,15 @@ export function QuickCreate() {
 
         <Button
           type="submit"
-          color="blue"
           fullWidth
           loading={loading}
           size="sm"
+          color="violet"
         >
           {t('create_button')}
         </Button>
       </form>
-    </div>
+    </Card>
   );
 }
 

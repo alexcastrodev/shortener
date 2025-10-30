@@ -1,4 +1,4 @@
-import { Button, Menu, Image, Container, Group } from '@mantine/core';
+import { Button, Menu, Group } from '@mantine/core';
 import { NavLink, useLocation, useNavigate } from 'react-router';
 import {
   IconHome2,
@@ -8,10 +8,8 @@ import {
   IconLink,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import LogoDark from '/logo-dark.webp';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { AdminGuard } from '../admin-guard';
-import styles from './app-header.module.css';
 
 interface HeaderState {
   title?: string;
@@ -49,25 +47,39 @@ export function AppHeader() {
   };
 
   return (
-    <header className={styles.header}>
-      <Container size="xl" className={styles.container}>
-        <Group justify="space-between" h="100%">
-          <Group gap="lg">
-            <Image src={LogoDark} w={60} h={40} fit="contain" />
-
-            <div className={styles.titleSection}>
-              <h1 className={styles.title}>{titles[pathname]?.title}</h1>
-              <p className={styles.subtitle}>{titles[pathname]?.subtitle}</p>
+    <nav className="sticky top-0 z-50 px-4 sm:px-6 py-4 sm:py-5 border-b border-zinc-800 bg-black/50 backdrop-blur-xl">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <a href="/app" className="flex items-center gap-2">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-violet-600 rounded-lg flex items-center justify-center">
+              <IconLink size={18} className="sm:hidden" stroke={2.5} />
+              <IconLink size={20} className="hidden sm:block" stroke={2.5} />
             </div>
-          </Group>
+            <span className="text-lg sm:text-xl font-semibold text-white">
+              Kurz
+            </span>
+          </a>
 
-          <Group gap="md" visibleFrom="sm">
+          {/* Desktop navigation */}
+          <Group gap="sm" visibleFrom="sm" className="ml-4">
             <Button
               component={NavLink}
               to="/app"
               variant="subtle"
               leftSection={<IconHome2 size={18} stroke={1.5} />}
-              className={styles.navButton}
+              styles={{
+                root: {
+                  color: '#a1a1aa',
+                  '&:hover': {
+                    backgroundColor: 'rgba(63, 63, 70, 0.5)',
+                    color: '#ffffff',
+                  },
+                  '&[data-active]': {
+                    color: '#a78bfa',
+                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                  },
+                },
+              }}
             >
               {t('dashboard')}
             </Button>
@@ -78,17 +90,31 @@ export function AppHeader() {
                   <Button
                     variant="subtle"
                     rightSection={<IconChevronDown size={18} stroke={1.5} />}
-                    className={styles.navButton}
+                    styles={{
+                      root: {
+                        color: '#a1a1aa',
+                        '&:hover': {
+                          backgroundColor: 'rgba(63, 63, 70, 0.5)',
+                          color: '#ffffff',
+                        },
+                      },
+                    }}
                   >
                     {t('administration')}
                   </Button>
                 </Menu.Target>
 
-                <Menu.Dropdown>
+                <Menu.Dropdown
+                  style={{
+                    backgroundColor: '#27272a',
+                    borderColor: '#3f3f46',
+                  }}
+                >
                   <Menu.Item
                     component={NavLink}
                     to="/admin/users"
                     leftSection={<IconUsers size={16} stroke={1.5} />}
+                    style={{ color: '#ffffff' }}
                   >
                     {t('users')}
                   </Menu.Item>
@@ -96,24 +122,56 @@ export function AppHeader() {
                     component={NavLink}
                     to="/admin/shortlinks"
                     leftSection={<IconLink size={16} stroke={1.5} />}
+                    style={{ color: '#ffffff' }}
                   >
                     {t('shortlinks')}
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
             </AdminGuard>
-
-            <Button
-              variant="subtle"
-              onClick={handleLogout}
-              color="red"
-              leftSection={<IconLogout size={18} stroke={1.5} />}
-            >
-              {t('logout')}
-            </Button>
           </Group>
+        </div>
+
+        <Group gap="md">
+          <Button
+            variant="subtle"
+            onClick={handleLogout}
+            leftSection={<IconLogout size={18} stroke={1.5} />}
+            styles={{
+              root: {
+                color: '#fca5a5',
+                '&:hover': {
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#ef4444',
+                },
+              },
+            }}
+            visibleFrom="sm"
+          >
+            {t('logout')}
+          </Button>
+
+          {/* Mobile logout button */}
+          <Button
+            variant="subtle"
+            onClick={handleLogout}
+            hiddenFrom="sm"
+            styles={{
+              root: {
+                color: '#fca5a5',
+                padding: '0.5rem',
+                minWidth: 'auto',
+                '&:hover': {
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#ef4444',
+                },
+              },
+            }}
+          >
+            <IconLogout size={18} stroke={1.5} />
+          </Button>
         </Group>
-      </Container>
-    </header>
+      </div>
+    </nav>
   );
 }
