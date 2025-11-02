@@ -11,6 +11,9 @@ services:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
     deploy:
+      placement:
+        constraints:
+          - node.role == manager
       resources:
         limits:
           cpus: '2'
@@ -34,6 +37,9 @@ services:
     volumes:
       - /mnt/ssd/docker/shortener/postgres:/var/lib/postgresql/data
     deploy:
+      placement:
+        constraints:
+          - node.role == manager
       resources:
         limits:
           cpus: '1'
@@ -48,6 +54,9 @@ services:
     volumes:
       - /mnt/ssd/docker/shortener/valkey:/data
     deploy:
+      placement:
+        constraints:
+          - node.role == manager
       resources:
         limits:
           cpus: '1'
