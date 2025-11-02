@@ -3,7 +3,6 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     networks:
-      - default
       - proxy_net
     ports:
       - "15672:15672"
@@ -28,7 +27,6 @@ services:
     image: postgres:17
     container_name: postgres
     networks:
-      - default
       - proxy_net
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -67,10 +65,8 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - default
       - proxy_net
 
 networks:
-  default:
   proxy_net:
     external: true
