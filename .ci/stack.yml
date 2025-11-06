@@ -20,7 +20,6 @@ services:
       - SENTRY_DSN=${SENTRY_DSN}
       - SENTRY_LOGGER=1
     networks:
-      - default
       - proxy_net
     deploy:
       resources:
@@ -32,7 +31,6 @@ services:
     image: alexandros-macbook-pro:5001/shortener:latest
     command: bundle exec rake workers:run
     networks:
-      - default
       - proxy_net
     environment:
       - RAILS_ENV=production
@@ -95,10 +93,8 @@ services:
       - RABBITMQ_PORT=${RABBITMQ_PORT}
       - REDIS_URL=${REDIS_URL}
     networks:
-      - default
       - proxy_net
 
 networks:
-  default:
   proxy_net:
     external: true
