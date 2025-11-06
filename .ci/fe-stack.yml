@@ -3,8 +3,6 @@ services:
     image: alexandros-macbook-pro:5001/shortener-frontend:latest
     environment:
       - PORT=80
-    ports:
-      - "9002:80"
     networks:
       - proxy_net
     deploy:
