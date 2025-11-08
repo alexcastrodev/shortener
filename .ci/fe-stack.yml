@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: pifive:5001/shortener-frontend:latest
+    image: pifive:5002/shortener-frontend:latest
     environment:
       - PORT=80
     networks:

@@ -1,6 +1,6 @@
 services:
   web:
-    image: pifive:5001/shortener:latest
+    image: pifive:5002/shortener:latest
     environment:
       - RAILS_ENV=production
       - POSTGRES_HOST=${POSTGRES_HOST}
@@ -28,7 +28,7 @@ services:
           memory: 1024M
   
   workers:
-    image: pifive:5001/shortener:latest
+    image: pifive:5002/shortener:latest
     command: bundle exec rake workers:run
     networks:
       - proxy_net
@@ -55,7 +55,7 @@ services:
           memory: 1024M
   
   jobs:
-    image: pifive:5001/shortener:latest
+    image: pifive:5002/shortener:latest
     command: bin/jobs
     networks:
       - default
@@ -83,7 +83,7 @@ services:
           memory: 1024M
   
   serveless:
-    image: pifive:5001/shortener-edge:latest
+    image: pifive:5002/shortener-edge:latest
     working_dir: /app
     environment:
       - RAILS_ENV=production
