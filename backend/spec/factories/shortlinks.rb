@@ -3,6 +3,7 @@
 # Table name: shortlinks
 #
 #  id               :bigint           not null, primary key
+#  created_by_guest :boolean          default(FALSE)
 #  events_count     :integer          default(0), not null
 #  last_accessed_at :datetime
 #  original_url     :string           not null
