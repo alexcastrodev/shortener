@@ -214,7 +214,7 @@ RSpec.describe("GET /api/me/shortlinks/:id/statistics", type: :request, vcr: tru
   end
 
   describe "user scope" do
-    it "aggregates statistics across all user's shortlinks" do
+    it "does not aggregate statistics across all user's shortlinks" do
       link1 = current_user.shortlinks.create!(original_url: "https://example1.com")
       2.times do
         link1.events.create!(
@@ -240,11 +240,11 @@ RSpec.describe("GET /api/me/shortlinks/:id/statistics", type: :request, vcr: tru
       body = JSON.parse(response.body)
 
       browser_stats = body["browser_statistics"]
-      expect(browser_stats.size).to(be >= 2)
+      expect(browser_stats.size).to(eq(1))
 
       device_stats = body["device_statistics"]
       web_count = device_stats.find { |s| s["name"] == "web" }&.dig("value").to_i
-      expect(web_count).to(eq(3))
+      expect(web_count).to(eq(2))
     end
 
     it "does not include events from other users' shortlinks" do

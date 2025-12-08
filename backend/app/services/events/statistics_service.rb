@@ -4,8 +4,9 @@ module Events
   class StatisticsService
     include Callable
 
-    def initialize(user:)
+    def initialize(user:, shortlink:)
       @user = user
+      @shortlink = shortlink
     end
 
     def call
@@ -28,7 +29,7 @@ module Events
 
     private
 
-    attr_reader :user
+    attr_reader :user, :shortlink
 
     def fetch_event_statistics
       sql = <<~SQL
@@ -36,6 +37,7 @@ module Events
         FROM events
         JOIN shortlinks ON events.shortlink_id = shortlinks.id
         WHERE shortlinks.user_id = ?
+        AND shortlinks.id = ?
         GROUP BY country_code, region, browser
         ORDER BY count DESC
       SQL
@@ -49,6 +51,7 @@ module Events
         FROM events
         JOIN shortlinks ON events.shortlink_id = shortlinks.id
         WHERE shortlinks.user_id = ?
+        AND shortlinks.id = ?
         GROUP BY platform
         ORDER BY count DESC
       SQL
@@ -111,7 +114,7 @@ module Events
 
     def execute_query(sql)
       ActiveRecord::Base.connection.exec_query(
-        ActiveRecord::Base.sanitize_sql_array([sql, user.id]),
+        ActiveRecord::Base.sanitize_sql_array([sql, user.id, shortlink.id]),
       ).to_a
     end
   end

@@ -53,7 +53,7 @@ class Shortlink < ApplicationRecord
   before_validation :generate_short_code, on: :create
 
   def event_statistics
-    Events::StatisticsService.call(user: user)
+    Events::StatisticsService.call(user: user, shortlink: self)
   end
 
   def remove_cache
