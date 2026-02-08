@@ -24,8 +24,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
-          memory: 1024M
+          cpus: '2'
+          memory: 2048M
+      constraints:
+        - node.role == worker
   
   workers:
     image: pifive:5002/shortener:latest
@@ -51,7 +53,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: '2'
           memory: 1024M
   
   jobs:
