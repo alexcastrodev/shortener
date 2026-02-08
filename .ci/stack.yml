@@ -27,9 +27,6 @@ services:
         limits:
           cpus: '2'
           memory: 2048M
-      placement:
-        constraints:
-          - node.role == worker
   
   workers:
     image: pifive:5002/shortener:latest
