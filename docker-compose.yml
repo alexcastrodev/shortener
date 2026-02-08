@@ -1,0 +1,46 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "15672:15672"
+    env_file:
+      - .env
+
+  db:
+    image: postgres:17
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_HOST_AUTH_METHOD=trust
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.development
+  
+  cache:
+    image: valkey/valkey:8.1.4
+    ports:
+      - "${VALKEY_PORT:-6379}:6379"
+    env_file:
+      - .env
+    networks:
+      - default
+
+  serveless:
+    image: denoland/deno:2.5.3
+    working_dir: /app
+    ports:
+      - "${SERVERLESS_PORT:-8000}:8000"
+    volumes:
+      - ./edge-function:/app
+    env_file:
+      - .env
+    command: deno run --allow-net --allow-env --allow-read index.ts

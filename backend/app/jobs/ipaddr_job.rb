@@ -1,6 +1,6 @@
 class IpaddrJob < ApplicationJob
   include RetryableJob
-  queue_as :default
+  queue_as :analytics
 
   def perform(event_id, retry_count: 3)
     event = Event.find_by(id: event_id)

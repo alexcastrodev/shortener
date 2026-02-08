@@ -1,5 +1,5 @@
 class SafetyUrlJob < ApplicationJob
-  queue_as :default
+  queue_as :safety
 
   def perform(shortlink_id)
     shortlink = Shortlink.find_by(id: shortlink_id)
