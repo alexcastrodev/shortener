@@ -9,10 +9,12 @@ default: &default
       polling_interval: 0.1
     - queues: "safety"
       threads: 1
+      batch_size: 500
       processes: 1
       polling_interval: 1
     - queues: "analytics"
       threads: 2
+      batch_size: 500
       processes: 1
       polling_interval: 0.5
 
