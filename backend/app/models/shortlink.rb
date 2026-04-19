@@ -3,8 +3,8 @@
 # Table name: shortlinks
 #
 #  id               :bigint           not null, primary key
-#  created_by_guest :boolean          default(FALSE)
 #  events_count     :integer          default(0), not null
+#  inactive_at      :datetime
 #  last_accessed_at :datetime
 #  original_url     :string           not null
 #  safe             :boolean          default(TRUE), not null
@@ -31,6 +31,7 @@ class Shortlink < ApplicationRecord
   # ===============
   scope :without_user, -> { where(user_id: nil) }
   scope :safe, -> { where(safe: true) }
+  scope :active, -> { where(inactive_at: nil) }
 
   # ===============
   # Validations
@@ -76,12 +77,12 @@ class Shortlink < ApplicationRecord
 
   def mark_as_dangerous!
     remove_cache
-    update!(safe: false, safe_checked_at: Time.current)
+    update!(safe: false, safe_checked_at: Time.current, inactive_at: Time.current)
   end
 
   def mark_as_safe!
     save_cache
-    update!(safe: true, safe_checked_at: Time.current)
+    update!(safe: true, safe_checked_at: Time.current, inactive_at: nil)
   end
 
   def cache_key

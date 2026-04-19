@@ -5,8 +5,8 @@
 # Table name: shortlinks
 #
 #  id               :bigint           not null, primary key
-#  created_by_guest :boolean          default(FALSE)
 #  events_count     :integer          default(0), not null
+#  inactive_at      :datetime
 #  last_accessed_at :datetime
 #  original_url     :string           not null
 #  safe             :boolean          default(TRUE), not null
@@ -30,10 +30,14 @@ class ShortlinkSerializer < BaseSerializer
   #------------
   # Attributes
   #------------
-  attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url, :created_by_guest
+  attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url
+
+  attribute :created_by_guest do |shortlink|
+    shortlink.user_id.nil?
+  end
 
   attribute :is_active do |shortlink|
-    shortlink.safe?
+    shortlink.inactive_at.nil?
   end
 
   attributes :safe, :safe_checked_at, if: proc { |_s| params[:admin] }

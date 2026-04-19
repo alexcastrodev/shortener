@@ -10,7 +10,7 @@ class Api::ShortlinksController < ApplicationController
         return
       end
 
-      link = Shortlink.new(validated_params.merge({ created_by_guest: @current_user.blank?, user: @current_user }))
+      link = Shortlink.new(validated_params.merge({ user: @current_user }))
 
       if link.save
         render(json: PublicShortlinkSerializer.new(link).serialize, status: :created)

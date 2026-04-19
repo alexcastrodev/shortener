@@ -14,7 +14,6 @@ RSpec.describe("POST /api/shortlinks", type: :request, vcr: true) do
     json_response = JSON.parse(response.body)
     expect(json_response["public_shortlink"]).to(include("original_url", "short_url"))
     expect(Shortlink.last.user).to(be_nil)
-    expect(Shortlink.last.created_by_guest).to(be_truthy)
   end
 
   it "creates a new public shortlink with not registered email" do
@@ -25,7 +24,6 @@ RSpec.describe("POST /api/shortlinks", type: :request, vcr: true) do
 
     expect(response).to(have_http_status(:created))
     expect(Shortlink.last.user.email).to(eq(target_email))
-    expect(Shortlink.last.created_by_guest).to(be_truthy)
   end
 
   it "Cannot create invalid email" do
@@ -40,7 +38,7 @@ RSpec.describe("POST /api/shortlinks", type: :request, vcr: true) do
   it "Cannot create public shortlink for user that already has link" do
     target_email = Faker::Internet.email
     user = User.create!(email: target_email)
-    user.shortlinks.create!(original_url: "https://example.com", created_by_guest: true)
+    user.shortlinks.create!(original_url: "https://example.com")
 
     post "/api/shortlinks",
       params: { original_url: "https://example.com", title: "Example", email: target_email },
@@ -106,7 +104,6 @@ RSpec.describe("POST /api/shortlinks", type: :request, vcr: true) do
       expect(response).to(have_http_status(:created))
       expect(Shortlink.last.user.id).to(eq(current_user.id))
       expect(Shortlink.last.user.email).to(eq(current_user.email))
-      expect(Shortlink.last.created_by_guest).to(be_falsey)
     end
   end
 end

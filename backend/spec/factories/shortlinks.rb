@@ -3,8 +3,8 @@
 # Table name: shortlinks
 #
 #  id               :bigint           not null, primary key
-#  created_by_guest :boolean          default(FALSE)
 #  events_count     :integer          default(0), not null
+#  inactive_at      :datetime
 #  last_accessed_at :datetime
 #  original_url     :string           not null
 #  safe             :boolean          default(TRUE), not null
