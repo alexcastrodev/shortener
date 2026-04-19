@@ -59,7 +59,6 @@ services:
     image: pifive:5002/shortener:latest
     command: bin/jobs
     networks:
-      - default
       - proxy_net
     environment:
       - RAILS_ENV=production
