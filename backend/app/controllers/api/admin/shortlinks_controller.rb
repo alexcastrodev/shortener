@@ -21,4 +21,20 @@ class Api::Admin::ShortlinksController < ApplicationController
 
     render(json: ShortlinkSerializer.new(shortlink, params: { admin: true }).serialize, status: :ok)
   end
+
+  # POST /api/admin/shortlinks/:id/toggle_active
+  def toggle_active
+    shortlink = Shortlink.find(params[:id])
+    authorize(shortlink, :modify_shortlink_active?)
+
+    if shortlink.inactive_at.nil?
+      shortlink.remove_cache
+      shortlink.update!(inactive_at: Time.current)
+    else
+      shortlink.save_cache if shortlink.safe?
+      shortlink.update!(inactive_at: nil)
+    end
+
+    render(json: ShortlinkSerializer.new(shortlink, params: { admin: true }).serialize, status: :ok)
+  end
 end

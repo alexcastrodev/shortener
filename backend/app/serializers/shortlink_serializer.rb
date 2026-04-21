@@ -40,5 +40,5 @@ class ShortlinkSerializer < BaseSerializer
     shortlink.inactive_at.nil?
   end
 
-  attributes :safe, :safe_checked_at, if: proc { |_s| params[:admin] }
+  attributes :safe, :safe_checked_at, :inactive_at, if: proc { |_s| params[:admin] }
 end

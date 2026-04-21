@@ -6,4 +6,8 @@ class ShortlinkPolicy < ApplicationPolicy
   def modify_shortlink_safety?
     user.admin?
   end
+
+  def modify_shortlink_active?
+    user.admin?
+  end
 end

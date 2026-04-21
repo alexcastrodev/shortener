@@ -18,6 +18,7 @@ Rails.application.routes.draw do
       resources :shortlinks, only: [:index] do
         member do
           post "toggle_safe", to: "shortlinks#toggle_safe"
+          post "toggle_active", to: "shortlinks#toggle_active"
         end
       end
     end

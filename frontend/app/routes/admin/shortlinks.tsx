@@ -16,8 +16,10 @@ import {
   adminGetShortlinksKey,
 } from '@internal/core/actions/admin-shortlink/admin-shortlink.hook';
 import { useToggleShortlinkSafe } from '@internal/core/actions/admin-shortlink-toggle-safe/admin-shortlink-toggle-safe.hook';
+import { useToggleShortlinkActive } from '@internal/core/actions/admin-shortlink-toggle-active/admin-shortlink-toggle-active.hook';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Shortlink } from '@internal/core/types/Shortlink';
+import type { AdminGetShortlinksResponse } from '@internal/core/actions/admin-shortlink/admin-shortlink.types';
 import { useMemo } from 'react';
 import {
   type MRT_ColumnDef,
@@ -40,10 +42,27 @@ export default function AdminShortlinksPage() {
 
   const { data: shortlinksData, isLoading, error } = useAdminGetShortlinks();
 
-  const toggleMutation = useToggleShortlinkSafe({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminGetShortlinksKey });
-    },
+  const patchShortlink = (updated: Shortlink) => {
+    queryClient.setQueryData<AdminGetShortlinksResponse>(
+      adminGetShortlinksKey,
+      (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          shortlink: prev.shortlink.map((s) =>
+            s.id === updated.id ? updated : s
+          ),
+        };
+      }
+    );
+  };
+
+  const toggleSafeMutation = useToggleShortlinkSafe({
+    onSuccess: (data) => patchShortlink(data.shortlink),
+  });
+
+  const toggleActiveMutation = useToggleShortlinkActive({
+    onSuccess: (data) => patchShortlink(data.shortlink),
   });
 
   const columns = useMemo<MRT_ColumnDef<Shortlink>[]>(
@@ -105,15 +124,30 @@ export default function AdminShortlinksPage() {
           <Group>
             <Switch
               checked={Boolean(row.original.safe)}
-              onChange={() => toggleMutation.mutate(row.original.id)}
+              onChange={() => toggleSafeMutation.mutate(row.original.id)}
               size="sm"
               aria-label={`toggle-safe-${row.original.id}`}
             />
           </Group>
         ),
       },
+      {
+        accessorKey: 'is_active',
+        header: 'Active',
+        enableSorting: false,
+        Cell: ({ row }) => (
+          <Group>
+            <Switch
+              checked={row.original.inactive_at == null}
+              onChange={() => toggleActiveMutation.mutate(row.original.id)}
+              size="sm"
+              aria-label={`toggle-active-${row.original.id}`}
+            />
+          </Group>
+        ),
+      },
     ],
-    [toggleMutation, shortlinksData]
+    [toggleSafeMutation, toggleActiveMutation]
   );
 
   const table = useMantineReactTable({
