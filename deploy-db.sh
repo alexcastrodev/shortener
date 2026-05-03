@@ -3,7 +3,7 @@ set -euo pipefail
 
 COMPOSE_FILE=".ci/db-stack.yml"
 STACK_NAME="shortenerdb"
-ENV_PATH="/mnt/ssd/docker/shortener/.env"
+ENV_PATH="/mnt/ssd/@docker/shortener/.env"
 
 set -a
 source "$ENV_PATH"
