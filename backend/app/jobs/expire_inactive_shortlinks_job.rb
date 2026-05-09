@@ -7,7 +7,7 @@ class ExpireInactiveShortlinksJob < ApplicationJob
     cutoff = INACTIVITY_PERIOD.ago
     inactivity_condition = "COALESCE(last_accessed_at, created_at) < ?"
 
-    deleted = Shortlink.without_user.where(inactivity_condition, cutoff).in_batches(of: 500).destroy_all.count
+    deleted = Shortlink.without_user.where(inactivity_condition, cutoff).in_batches(of: 500).destroy_all
 
     deactivated = Shortlink.where.not(user_id: nil)
       .where(inactive_at: nil)
