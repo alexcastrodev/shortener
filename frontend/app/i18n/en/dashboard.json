@@ -29,5 +29,6 @@
   "refresh_links": "Refresh list",
   "no_results_found": "No results found",
   "try_different_search": "Try a different search",
-  "unsafe_shortlink_message": "This shortlink was marked as unsafe by Google Safe Browsing. We will review the link soon."
+  "unsafe_shortlink_message": "This shortlink was marked as unsafe by Google Safe Browsing. We will review the link soon.",
+  "inactive_shortlink_message": "This shortlink was deactivated due to inactivity."
 }

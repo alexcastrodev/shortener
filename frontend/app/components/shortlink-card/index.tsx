@@ -160,7 +160,7 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
         {!shortlink.is_active && (
           <div className="p-2 bg-red-900/30 border border-red-800 rounded text-xs flex items-center gap-2 text-red-300">
             <IconAlertTriangle size={14} />
-            <span>{t('unsafe_shortlink_message')}</span>
+            <span>{shortlink.inactive_at && shortlink.safe ? t('inactive_shortlink_message') : t('unsafe_shortlink_message')}</span>
           </div>
         )}
 
