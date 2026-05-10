@@ -30,7 +30,7 @@ class ShortlinkSerializer < BaseSerializer
   #------------
   # Attributes
   #------------
-  attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url
+  attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url, :inactive_at, :safe
 
   attribute :created_by_guest do |shortlink|
     shortlink.user_id.nil?
@@ -39,9 +39,6 @@ class ShortlinkSerializer < BaseSerializer
   attribute :is_active do |shortlink|
     shortlink.inactive_at.nil?
   end
-
-  attribute :inactive_at
-  attribute :safe
 
   attributes :safe_checked_at, if: proc { |_s| params[:admin] }
 end
