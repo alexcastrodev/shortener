@@ -1,46 +1,95 @@
 @import "tailwindcss";
 
-@theme {
+@custom-variant dark (&:where([data-mantine-color-scheme="dark"], [data-mantine-color-scheme="dark"] *));
+
+@theme inline {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --color-background: var(--app-background);
+  --color-foreground: var(--app-foreground);
+  --color-card: var(--app-card);
+  --color-card-foreground: var(--app-card-foreground);
+  --color-muted: var(--app-muted);
+  --color-muted-foreground: var(--app-muted-foreground);
+  --color-border: var(--app-border);
+  --color-primary: var(--app-primary);
+  --color-primary-foreground: var(--app-primary-foreground);
+  --color-secondary: var(--app-secondary);
+  --color-secondary-foreground: var(--app-secondary-foreground);
+  --color-accent: var(--app-accent);
+  --color-accent-foreground: var(--app-accent-foreground);
+  --color-destructive: var(--app-destructive);
+  --color-destructive-foreground: var(--app-destructive-foreground);
+  --color-ring: var(--app-ring);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
 }
 
-:root {
-  /* Cores principais */
-  --color-primary: #7c3aed;
-  --color-primary-hover: #6d28d9;
-  --color-primary-light: rgba(124, 58, 237, 0.1);
+html,
+[data-mantine-color-scheme="light"] {
+  --app-background: #f7f8fa;
+  --app-foreground: #111827;
+  --app-card: #ffffff;
+  --app-card-foreground: #111827;
+  --app-muted: #eef2f5;
+  --app-muted-foreground: #5d6675;
+  --app-border: #d9e0e7;
+  --app-primary: #116d6e;
+  --app-primary-foreground: #ffffff;
+  --app-secondary: #e9eef3;
+  --app-secondary-foreground: #172033;
+  --app-accent: #e7f3f3;
+  --app-accent-foreground: #0e4f51;
+  --app-destructive: #b4232f;
+  --app-destructive-foreground: #ffffff;
+  --app-ring: #158083;
+  --app-shell: #eef2f5;
+  --app-subtle: #f2f5f7;
+  --app-shadow: 0 18px 45px rgb(15 23 42 / 0.08);
+}
 
-  /* Backgrounds */
-  --color-bg-dark: #000000;
-  --color-bg-gray-dark: #18181b;
-  --color-bg-gray: #27272a;
-  --color-bg-card: rgba(39, 39, 42, 0.5);
-  --color-bg-card-solid: #27272a;
+[data-mantine-color-scheme="dark"] {
+  --app-background: #101418;
+  --app-foreground: #eef2f5;
+  --app-card: #151b20;
+  --app-card-foreground: #eef2f5;
+  --app-muted: #1d252c;
+  --app-muted-foreground: #a7b0bc;
+  --app-border: #29333c;
+  --app-primary: #4fb5b3;
+  --app-primary-foreground: #061819;
+  --app-secondary: #1f2932;
+  --app-secondary-foreground: #e5ebf0;
+  --app-accent: #183436;
+  --app-accent-foreground: #b7eeee;
+  --app-destructive: #ff6b73;
+  --app-destructive-foreground: #24090c;
+  --app-ring: #6ac7c5;
+  --app-shell: #0b0f12;
+  --app-subtle: #111820;
+  --app-shadow: 0 18px 45px rgb(0 0 0 / 0.3);
+}
 
-  /* Borders */
-  --color-border: #3f3f46;
-  --color-border-light: #52525b;
-
-  /* Text */
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #a1a1aa;
-  --color-text-muted: #71717a;
-
-  /* Effects */
-  --blur-amount: 12px;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+@layer base {
+  * {
+    border-color: var(--app-border);
+  }
 }
 
 html,
 body {
   margin: 0;
-  background: var(--color-bg-dark);
-  color: var(--color-text-primary);
+  min-height: 100%;
+  background: var(--app-background);
+  color: var(--app-foreground);
+  font-family: var(--font-sans);
 }
 
 button {
   cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }

@@ -1,175 +1,65 @@
-import { Button, Menu, Group } from '@mantine/core';
-import { NavLink, useLocation, useNavigate } from 'react-router';
-import {
-  IconHome2,
-  IconLogout,
-  IconChevronDown,
-  IconUsers,
-  IconLink,
-} from '@tabler/icons-react';
+import { NavLink, useNavigate } from 'react-router';
+import { IconHome2, IconLogout, IconUsers, IconLink } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { AdminGuard } from '../admin-guard';
+import { BrandMark, ThemeToggle } from '@internal/ui';
 
-interface HeaderState {
-  title?: string;
-  subtitle?: string;
-  showTitle?: boolean;
-}
+const navClass = ({ isActive }: { isActive: boolean }) =>
+  [
+    'inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+    isActive
+      ? 'bg-accent text-accent-foreground'
+      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+  ].join(' ');
 
 export function AppHeader() {
   const navigate = useNavigate();
   const { t } = useTranslation('menu');
   const { clear } = useUserState();
-  const { pathname } = useLocation();
 
   const handleLogout = () => {
     clear();
     navigate('/login');
   };
 
-  const titles: Record<string, HeaderState> = {
-    '/app': {
-      title: t('dashboard'),
-      subtitle: t('home_subtitle'),
-      showTitle: true,
-    },
-    '/admin/users': {
-      title: t('users'),
-      subtitle: t('manage_users'),
-      showTitle: true,
-    },
-    '/admin/shortlinks': {
-      title: t('shortlinks'),
-      subtitle: t('manage_shortlinks'),
-      showTitle: true,
-    },
-  };
-
   return (
-    <nav className="sticky top-0 z-50 px-4 sm:px-6 py-4 sm:py-5 border-b border-zinc-800 bg-black/50 backdrop-blur-xl">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-6">
-          <a href="/app" className="flex items-center gap-2">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-violet-600 rounded-lg flex items-center justify-center">
-              <IconLink size={18} className="sm:hidden" stroke={2.5} />
-              <IconLink size={20} className="hidden sm:block" stroke={2.5} />
-            </div>
-            <span className="text-lg sm:text-xl font-semibold text-white">
-              Kurz
-            </span>
-          </a>
+          <BrandMark href="/app" />
 
-          <Group gap="sm" visibleFrom="sm" className="ml-4">
-            <Button
-              component={NavLink}
-              to="/app"
-              variant="subtle"
-              leftSection={<IconHome2 size={18} stroke={1.5} />}
-              styles={{
-                root: {
-                  color: '#a1a1aa',
-                  '&:hover': {
-                    backgroundColor: 'rgba(63, 63, 70, 0.5)',
-                    color: '#ffffff',
-                  },
-                  '&[data-active]': {
-                    color: '#a78bfa',
-                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
-                  },
-                },
-              }}
-            >
+          <nav className="hidden items-center gap-1 sm:flex">
+            <NavLink to="/app" end className={navClass}>
+              <IconHome2 size={17} stroke={1.8} />
               {t('dashboard')}
-            </Button>
+            </NavLink>
 
             <AdminGuard>
-              <Menu shadow="md" width={200}>
-                <Menu.Target>
-                  <Button
-                    variant="subtle"
-                    rightSection={<IconChevronDown size={18} stroke={1.5} />}
-                    styles={{
-                      root: {
-                        color: '#a1a1aa',
-                        '&:hover': {
-                          backgroundColor: 'rgba(63, 63, 70, 0.5)',
-                          color: '#ffffff',
-                        },
-                      },
-                    }}
-                  >
-                    {t('administration')}
-                  </Button>
-                </Menu.Target>
-
-                <Menu.Dropdown
-                  style={{
-                    backgroundColor: '#27272a',
-                    borderColor: '#3f3f46',
-                  }}
-                >
-                  <Menu.Item
-                    component={NavLink}
-                    to="/admin/users"
-                    leftSection={<IconUsers size={16} stroke={1.5} />}
-                    style={{ color: '#ffffff' }}
-                  >
-                    {t('users')}
-                  </Menu.Item>
-                  <Menu.Item
-                    component={NavLink}
-                    to="/admin/shortlinks"
-                    leftSection={<IconLink size={16} stroke={1.5} />}
-                    style={{ color: '#ffffff' }}
-                  >
-                    {t('shortlinks')}
-                  </Menu.Item>
-                </Menu.Dropdown>
-              </Menu>
+              <NavLink to="/admin/users" className={navClass}>
+                <IconUsers size={17} stroke={1.8} />
+                {t('users')}
+              </NavLink>
+              <NavLink to="/admin/shortlinks" className={navClass}>
+                <IconLink size={17} stroke={1.8} />
+                {t('shortlinks')}
+              </NavLink>
             </AdminGuard>
-          </Group>
+          </nav>
         </div>
 
-        <Group gap="md">
-          <Button
-            variant="subtle"
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            type="button"
             onClick={handleLogout}
-            leftSection={<IconLogout size={18} stroke={1.5} />}
-            styles={{
-              root: {
-                color: '#fca5a5',
-                '&:hover': {
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  color: '#ef4444',
-                },
-              },
-            }}
-            visibleFrom="sm"
+            className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10"
           >
-            {t('logout')}
-          </Button>
-
-          <Button
-            variant="subtle"
-            onClick={handleLogout}
-            hiddenFrom="sm"
-            styles={{
-              root: {
-                color: '#fca5a5',
-                padding: '0.5rem',
-                minWidth: 'auto',
-                '&:hover': {
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  color: '#ef4444',
-                },
-              },
-            }}
-          >
-            <IconLogout size={18} stroke={1.5} />
-          </Button>
-        </Group>
+            <IconLogout size={17} stroke={1.8} />
+            <span className="hidden sm:inline">{t('logout')}</span>
+          </button>
+        </div>
       </div>
-    </nav>
+    </header>
   );
 }

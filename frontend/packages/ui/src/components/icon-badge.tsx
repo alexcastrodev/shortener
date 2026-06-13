@@ -19,11 +19,11 @@ export function IconBadge({
   className,
 }: IconBadgeProps) {
   const variantStyles = {
-    violet: 'bg-violet-600/20 text-violet-400',
-    blue: 'bg-blue-600/20 text-blue-400',
-    red: 'bg-red-600/20 text-red-400',
-    yellow: 'bg-yellow-600/20 text-yellow-400',
-    green: 'bg-green-600/20 text-green-400',
+    violet: 'bg-primary/10 text-primary',
+    blue: 'bg-sky-500/10 text-sky-700 dark:text-sky-300',
+    red: 'bg-destructive/10 text-destructive',
+    yellow: 'bg-yellow-500/10 text-yellow-900 dark:text-yellow-100',
+    green: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-200',
   };
 
   const sizeStyles = {

@@ -11,12 +11,14 @@ export function Card({
   variant = 'default',
   ...props
 }: CardProps) {
-  const baseStyles = 'rounded-lg backdrop-blur-xl shadow-lg';
+  const baseStyles = 'rounded-lg border shadow-sm';
 
   const variantStyles = {
-    default: 'bg-zinc-900/50 border border-zinc-800',
-    error: 'bg-red-900/30 border border-red-800',
-    warning: 'bg-yellow-900/30 border border-yellow-800',
+    default: 'border-border bg-card text-card-foreground',
+    error:
+      'border-destructive/30 bg-destructive/10 text-destructive dark:text-red-200',
+    warning:
+      'border-yellow-500/30 bg-yellow-500/10 text-yellow-900 dark:text-yellow-100',
   };
 
   return (
@@ -66,8 +68,8 @@ export function CardTitle({
 }: CardTitleProps) {
   return (
     <div className={cn('flex items-center gap-3', className)}>
-      {icon && <div className="text-violet-400">{icon}</div>}
-      <h2 className="text-xl font-semibold text-white" {...props}>
+      {icon && <div className="text-primary">{icon}</div>}
+      <h2 className="text-xl font-semibold text-foreground" {...props}>
         {children}
       </h2>
     </div>
@@ -80,7 +82,7 @@ export function CardDescription({
   ...props
 }: PropsWithChildren<HTMLAttributes<HTMLParagraphElement>>) {
   return (
-    <p className={cn('text-sm text-zinc-400 mt-2', className)} {...props}>
+    <p className={cn('mt-2 text-sm text-muted-foreground', className)} {...props}>
       {children}
     </p>
   );

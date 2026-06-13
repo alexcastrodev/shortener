@@ -1,7 +1,6 @@
 import '@mantine/core/styles.css';
 import '@mantine/charts/styles.css';
 import '@mantine/notifications/styles.css';
-import 'mantine-react-table/styles.css';
 import '../i18n';
 
 import { MantineProvider } from '@mantine/core';
@@ -13,7 +12,7 @@ import { mantineTheme } from '@internal/ui';
 
 export function Providers({ children }: PropsWithChildren) {
   return (
-    <MantineProvider theme={mantineTheme} defaultColorScheme="dark">
+    <MantineProvider theme={mantineTheme} defaultColorScheme="auto">
       <Notifications />
       <ModalsProvider>
         <ServiceProvider>{children}</ServiceProvider>

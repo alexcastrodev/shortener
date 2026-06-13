@@ -30,7 +30,7 @@ export function useQuickCreate() {
       notifications.show({
         title: 'Error',
         message:
-          error.message || 'Something went wrong, please try again later.',
+          error.error || 'Something went wrong, please try again later.',
         color: 'red',
       });
     },

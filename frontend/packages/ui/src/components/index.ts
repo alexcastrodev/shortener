@@ -14,6 +14,8 @@ export {
 export { PageBackground, PageContainer } from './background';
 export { Alert } from './alert';
 export { IconBadge } from './icon-badge';
+export { BrandMark } from './brand-mark';
+export { ThemeToggle } from './theme-toggle';
 
 // Statistical Components
 export { StatCard } from './stat-card';

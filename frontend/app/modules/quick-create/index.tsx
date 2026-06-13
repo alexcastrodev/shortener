@@ -11,8 +11,8 @@ export function QuickCreate() {
   return (
     <Card className="p-4">
       <div className="flex items-center gap-2 mb-3">
-        <IconPlus size={18} className="text-violet-400" />
-        <h3 className="text-sm font-semibold text-white">
+        <IconPlus size={18} className="text-primary" />
+        <h3 className="text-sm font-semibold text-foreground">
           {t('quick_create_title')}
         </h3>
       </div>
@@ -38,7 +38,7 @@ export function QuickCreate() {
           fullWidth
           loading={loading}
           size="sm"
-          color="violet"
+          color="brand"
         >
           {t('create_button')}
         </Button>

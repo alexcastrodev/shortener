@@ -19,7 +19,7 @@
 #
 # Foreign Keys
 #
-#  fk_rails_...  (shortlink_id => shortlinks.id)
+#  fk_rails_...  (shortlink_id => shortlinks.id) ON DELETE => cascade
 #
 class Event < ApplicationRecord
   # ===============

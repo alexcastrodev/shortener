@@ -1,15 +1,6 @@
-import {
-  Container,
-  Text,
-  Group,
-  Loader,
-  Center,
-  Switch,
-  ScrollArea,
-  Badge,
-} from '@mantine/core';
-import { IconLock } from '@tabler/icons-react';
-import { Card, CardTitle, CardDescription, Alert } from '@internal/ui';
+import { Badge, Center, Group, Loader, Switch } from '@mantine/core';
+import { IconLink, IconLock } from '@tabler/icons-react';
+import { Alert, Card, PageContainer } from '@internal/ui';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
 import {
   useAdminGetShortlinks,
@@ -20,12 +11,6 @@ import { useToggleShortlinkActive } from '@internal/core/actions/admin-shortlink
 import { useQueryClient } from '@tanstack/react-query';
 import type { Shortlink } from '@internal/core/types/Shortlink';
 import type { AdminGetShortlinksResponse } from '@internal/core/actions/admin-shortlink/admin-shortlink.types';
-import { useMemo } from 'react';
-import {
-  type MRT_ColumnDef,
-  MantineReactTable,
-  useMantineReactTable,
-} from 'mantine-react-table';
 
 export const ssr = false;
 
@@ -39,17 +24,17 @@ export function meta() {
 export default function AdminShortlinksPage() {
   const { data } = useGetLoggedUser();
   const queryClient = useQueryClient();
-
   const { data: shortlinksData, isLoading, error } = useAdminGetShortlinks();
+  const shortlinks = shortlinksData?.shortlink || [];
 
   const patchShortlink = (updated: Shortlink) => {
     queryClient.setQueryData<AdminGetShortlinksResponse>(
       adminGetShortlinksKey,
-      (prev) => {
+      prev => {
         if (!prev) return prev;
         return {
           ...prev,
-          shortlink: prev.shortlink.map((s) =>
+          shortlink: prev.shortlink.map(s =>
             s.id === updated.id ? updated : s
           ),
         };
@@ -58,167 +43,157 @@ export default function AdminShortlinksPage() {
   };
 
   const toggleSafeMutation = useToggleShortlinkSafe({
-    onSuccess: (data) => patchShortlink(data.shortlink),
+    onSuccess: response => patchShortlink(response.shortlink),
   });
 
   const toggleActiveMutation = useToggleShortlinkActive({
-    onSuccess: (data) => patchShortlink(data.shortlink),
-  });
-
-  const columns = useMemo<MRT_ColumnDef<Shortlink>[]>(
-    () => [
-      {
-        accessorKey: 'id',
-        header: 'ID',
-      },
-      {
-        accessorKey: 'title',
-        header: 'Title',
-        Cell: ({ row }) => (
-          <Text maw={300} className="truncate whitespace-pre-wrap break-words">
-            {row.original.title || 'untitled'}
-          </Text>
-        ),
-      },
-      {
-        accessorKey: 'original_url',
-        header: 'URL',
-        Cell: ({ row }) => (
-          <Text maw={300} className="truncate whitespace-pre-wrap break-words">
-            {row.original.original_url}
-          </Text>
-        ),
-      },
-      {
-        accessorKey: 'short_code',
-        header: 'Short Code',
-      },
-      {
-        accessorKey: 'events_count',
-        header: 'Events',
-      },
-      {
-        accessorKey: 'user.email',
-        header: 'User Email',
-        Cell: ({ row }) => row.original.user?.email ?? '',
-      },
-      {
-        accessorKey: 'created_by_guest',
-        header: 'Source',
-        Cell: ({ row }) =>
-          row.original.created_by_guest ? (
-            <Badge size="sm" variant="dot" color="yellow">
-              Guest
-            </Badge>
-          ) : (
-            <Badge size="sm" variant="dot" color="blue">
-              Authenticated
-            </Badge>
-          ),
-      },
-      {
-        accessorKey: 'safe',
-        header: 'Safe',
-        enableSorting: false,
-        Cell: ({ row }) => (
-          <Group>
-            <Switch
-              checked={Boolean(row.original.safe)}
-              onChange={() => toggleSafeMutation.mutate(row.original.id)}
-              size="sm"
-              aria-label={`toggle-safe-${row.original.id}`}
-            />
-          </Group>
-        ),
-      },
-      {
-        accessorKey: 'is_active',
-        header: 'Active',
-        enableSorting: false,
-        Cell: ({ row }) => (
-          <Group>
-            <Switch
-              checked={row.original.inactive_at == null}
-              onChange={() => toggleActiveMutation.mutate(row.original.id)}
-              size="sm"
-              aria-label={`toggle-active-${row.original.id}`}
-            />
-          </Group>
-        ),
-      },
-    ],
-    [toggleSafeMutation, toggleActiveMutation]
-  );
-
-  const table = useMantineReactTable({
-    columns,
-    data: shortlinksData?.shortlink || [],
-    enableColumnActions: false,
-    enableColumnFilters: true,
-    enableSorting: true,
-    paginationDisplayMode: 'pages',
-    mantineTableProps: {
-      highlightOnHover: false,
-      striped: 'odd',
-      withColumnBorders: true,
-      withRowBorders: true,
-      withTableBorder: true,
-    },
+    onSuccess: response => patchShortlink(response.shortlink),
   });
 
   if (data && !data.user?.admin) {
     return (
-      <Container size="xl" py="xl">
+      <PageContainer>
         <Alert
           variant="error"
           icon={<IconLock size={24} />}
-          title="Access Denied"
+          title="Access denied"
         >
-          You don't have permission to access this page. This area is restricted
-          to administrators only.
+          You do not have permission to access this page.
         </Alert>
-      </Container>
+      </PageContainer>
     );
   }
 
   if (isLoading) {
     return (
-      <Container size="xl" py="xl">
-        <Center>
-          <Loader size="lg" color="violet" />
+      <PageContainer>
+        <Center py="xl">
+          <Loader size="lg" color="brand" />
         </Center>
-      </Container>
+      </PageContainer>
     );
   }
 
   if (error) {
     return (
-      <Container size="xl" py="xl">
+      <PageContainer>
         <Alert variant="error" icon={<IconLock size={24} />} title="Error">
           Failed to load shortlinks. Please try again later.
         </Alert>
-      </Container>
+      </PageContainer>
     );
   }
 
   return (
-    <Container size="xl" py="xl">
-      <Card className="p-6">
-        <Group justify="space-between" mb="lg">
-          <div>
-            <CardTitle icon={<IconLock size={28} />}>
-              Shortlinks Management
-            </CardTitle>
-            <CardDescription>
-              Manage all shortlinks in the system
-            </CardDescription>
+    <PageContainer className="pb-24 sm:pb-10">
+      <div className="mb-6">
+        <div className="flex items-center gap-3">
+          <div className="inline-flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
+            <IconLink size={21} stroke={1.8} />
           </div>
-        </Group>
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">
+              Administration
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Shortlinks
+            </h1>
+          </div>
+        </div>
+      </div>
 
-        <ScrollArea>
-          <MantineReactTable table={table} />
-        </ScrollArea>
-      </Card>
-    </Container>
+      {shortlinks.length === 0 ? (
+        <Card className="p-8 text-center">
+          <p className="font-semibold text-foreground">No shortlinks found</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Shortlinks will appear here when they exist in the system.
+          </p>
+        </Card>
+      ) : (
+        <div className="grid gap-4 xl:grid-cols-2">
+          {shortlinks.map(shortlink => (
+            <Card key={shortlink.id} className="p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="max-w-full truncate text-base font-semibold text-foreground">
+                      {shortlink.title || 'Untitled'}
+                    </h2>
+                    <Badge
+                      size="sm"
+                      variant="light"
+                      color={shortlink.created_by_guest ? 'yellow' : 'brand'}
+                    >
+                      {shortlink.created_by_guest ? 'Guest' : 'Authenticated'}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 break-all text-sm text-muted-foreground">
+                    {shortlink.original_url}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-primary">
+                    {shortlink.short_code}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 sm:min-w-64">
+                  <div className="rounded-md border border-border bg-muted p-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Events
+                    </p>
+                    <p className="mt-1 text-xl font-semibold text-foreground">
+                      {shortlink.events_count}
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-border bg-muted p-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      User
+                    </p>
+                    <p className="mt-1 truncate text-sm font-semibold text-foreground">
+                      {shortlink.user?.email || 'Guest'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
+                <Group justify="space-between" wrap="nowrap">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      Safe
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Google Safe Browsing state
+                    </p>
+                  </div>
+                  <Switch
+                    checked={Boolean(shortlink.safe)}
+                    onChange={() => toggleSafeMutation.mutate(shortlink.id)}
+                    size="sm"
+                    aria-label={`toggle-safe-${shortlink.id}`}
+                  />
+                </Group>
+
+                <Group justify="space-between" wrap="nowrap">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      Active
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Redirect availability
+                    </p>
+                  </div>
+                  <Switch
+                    checked={shortlink.inactive_at == null}
+                    onChange={() => toggleActiveMutation.mutate(shortlink.id)}
+                    size="sm"
+                    aria-label={`toggle-active-${shortlink.id}`}
+                  />
+                </Group>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </PageContainer>
   );
 }

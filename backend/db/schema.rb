@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_19_130000) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_13_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -39,6 +39,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_130000) do
     t.boolean "safe", default: true, null: false
     t.datetime "safe_checked_at"
     t.datetime "inactive_at"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_shortlinks_on_deleted_at"
     t.index ["short_code"], name: "index_shortlinks_on_short_code", unique: true
     t.index ["user_id"], name: "index_shortlinks_on_user_id"
   end
@@ -196,7 +198,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_130000) do
     t.index ["login_token"], name: "index_users_on_login_token", unique: true
   end
 
-  add_foreign_key "events", "shortlinks"
+  add_foreign_key "events", "shortlinks", on_delete: :cascade
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

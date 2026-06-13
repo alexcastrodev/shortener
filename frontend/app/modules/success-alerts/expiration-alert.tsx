@@ -9,22 +9,25 @@ export function ExpirationAlert() {
   }
 
   return (
-    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 backdrop-blur-sm">
+    <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
       <div className="flex gap-3">
         <div className="flex-shrink-0">
-          <IconAlertTriangle size={20} className="text-yellow-400" />
+          <IconAlertTriangle
+            size={20}
+            className="text-yellow-800 dark:text-yellow-100"
+          />
         </div>
         <div className="flex-1">
-          <h3 className="text-sm font-semibold text-yellow-400 mb-1">
+          <h3 className="mb-1 text-sm font-semibold text-foreground">
             Link Expiration Policy
           </h3>
-          <p className="text-sm text-yellow-200/80">
+          <p className="text-sm text-muted-foreground">
             Links will be automatically deleted after 30 days without access
           </p>
 
-          <p className="text-sm text-yellow-200/80 mt-3">
-            All links are checked by Google Safe Browsing, if your link does not
-            work, MAYBE was blocked by Safety Service.
+          <p className="mt-3 text-sm text-muted-foreground">
+            Links are checked by Google Safe Browsing. If a link does not work,
+            it may have been blocked by the safety service.
           </p>
         </div>
       </div>

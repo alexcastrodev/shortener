@@ -13,9 +13,12 @@ class Api::SessionsController < ApplicationController
 
   # POST /api/login_verify
   def verify
-    user = User.find_by(email: params[:email], login_token: params[:code])
+    find_params = { email: params[:email], login_token: params[:code] }
+    find_params.delete(:login_token) if dev_bypass?
 
-    if user&.login_token_valid?
+    user = User.find_by(find_params)
+
+    if user && (dev_bypass? || user.login_token_valid?)
       token = generate_jwt(user)
       user.clear_login_token!
 
@@ -26,6 +29,12 @@ class Api::SessionsController < ApplicationController
   end
 
   private
+
+  # Development-only bypass: accept the fixed code "0000000" so the magic-link
+  # flow can be exercised locally without a real email round-trip.
+  def dev_bypass?
+    Rails.env.development? && params[:code] == "0000000"
+  end
 
   def generate_jwt(user)
     payload = { sub: user.id, exp: 2.days.from_now.to_i }

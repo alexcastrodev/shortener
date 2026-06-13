@@ -19,15 +19,18 @@ export function Alert({
   className,
 }: AlertProps) {
   const variantStyles = {
-    error: 'bg-red-900/30 border-red-800 text-red-300',
-    warning: 'bg-yellow-900/30 border-yellow-800 text-yellow-300',
-    info: 'bg-blue-900/30 border-blue-800 text-blue-300',
-    success: 'bg-green-900/30 border-green-800 text-green-300',
+    error:
+      'border-destructive/30 bg-destructive/10 text-destructive dark:text-red-200',
+    warning:
+      'border-yellow-500/30 bg-yellow-500/10 text-yellow-900 dark:text-yellow-100',
+    info: 'border-primary/25 bg-primary/10 text-primary',
+    success:
+      'border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200',
   };
 
   return (
     <div
-      className={cn('border rounded-lg p-6', variantStyles[variant], className)}
+      className={cn('rounded-lg border p-5', variantStyles[variant], className)}
     >
       <div className="flex items-center gap-3">
         {icon && <div className="flex-shrink-0">{icon}</div>}

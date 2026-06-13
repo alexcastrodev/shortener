@@ -10,7 +10,7 @@ export function Statistics() {
 
   if (!data) {
     return (
-      <Alert title="No Data Yet" color="blue" variant="light" my="lg">
+      <Alert title="No data yet" color="brand" variant="light" my="lg">
         Your link is ready to go! Statistics will appear here once people start
         accessing it.
       </Alert>
@@ -18,8 +18,8 @@ export function Statistics() {
   }
 
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }} mt="lg">
-      <Card h={400}>
+    <SimpleGrid cols={{ base: 1, md: 2 }} mt="lg" spacing="md">
+      <Card h={420} p="lg">
         <DonutChart
           chartLabel="Device Statistics"
           withLabelsLine
@@ -35,10 +35,8 @@ export function Statistics() {
               key={item.name}
               className="flex items-center justify-between text-sm"
             >
-              <span className="text-gray-700 dark:text-gray-300">
-                {item.name}:
-              </span>
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
+              <span className="text-muted-foreground">{item.name}:</span>
+              <span className="font-semibold text-foreground">
                 {item.value}
               </span>
             </div>
@@ -46,7 +44,7 @@ export function Statistics() {
         </div>
       </Card>
 
-      <Card h={400}>
+      <Card h={420} p="lg">
         <DonutChart
           chartLabel="Browser Statistics"
           withLabelsLine
@@ -62,10 +60,8 @@ export function Statistics() {
               key={item.name}
               className="flex items-center justify-between text-sm"
             >
-              <span className="text-gray-700 dark:text-gray-300">
-                {item.name}:
-              </span>
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
+              <span className="text-muted-foreground">{item.name}:</span>
+              <span className="font-semibold text-foreground">
                 {item.value}
               </span>
             </div>
@@ -73,12 +69,12 @@ export function Statistics() {
         </div>
       </Card>
 
-      <Card h={400}>
+      <Card h={420} p="lg">
         <BarChart
           h="100%"
           data={data.region_statistics || []}
           dataKey="region"
-          series={[{ name: 'count', label: 'Regions', color: 'teal.6' }]}
+          series={[{ name: 'count', label: 'Regions', color: 'brand.6' }]}
           withTooltip
           withLegend
         />
@@ -89,10 +85,8 @@ export function Statistics() {
               key={item.region}
               className="flex items-center justify-between text-sm"
             >
-              <span className="text-gray-700 dark:text-gray-300">
-                {item.region}:
-              </span>
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
+              <span className="text-muted-foreground">{item.region}:</span>
+              <span className="font-semibold text-foreground">
                 {item.count}
               </span>
             </div>
@@ -100,12 +94,12 @@ export function Statistics() {
         </div>
       </Card>
 
-      <Card h={400}>
+      <Card h={420} p="lg">
         <BarChart
           h="100%"
           data={data.country_statistics || []}
           dataKey="country"
-          series={[{ name: 'count', label: 'Countries', color: 'violet.6' }]}
+          series={[{ name: 'count', label: 'Countries', color: 'indigo.6' }]}
           withTooltip
           withLegend
         />
@@ -116,10 +110,8 @@ export function Statistics() {
               key={item.country}
               className="flex items-center justify-between text-sm"
             >
-              <span className="text-gray-700 dark:text-gray-300">
-                {item.country}:
-              </span>
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
+              <span className="text-muted-foreground">{item.country}:</span>
+              <span className="font-semibold text-foreground">
                 {item.count}
               </span>
             </div>

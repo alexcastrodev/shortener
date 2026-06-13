@@ -48,7 +48,7 @@ class Api::Me::ShortlinksController < ApplicationController
   def destroy
     link = @current_user.shortlinks.find_by(id: params[:id])
     if link
-      link.destroy
+      link.soft_delete!
       head(:no_content)
     else
       render(json: { error: "Link not found" }, status: :not_found)

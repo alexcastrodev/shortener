@@ -1,152 +1,92 @@
-/**
- * Mantine Component Style Presets
- * Reusable style configurations for Mantine components
- */
-
 import type { ButtonProps, TextInputProps } from '@mantine/core';
 
-/**
- * Button Styles
- */
 export const buttonStyles = {
-  // Primary violet button
-  violet: {
+  brand: {
     root: {
-      backgroundColor: '#7c3aed',
-      '&:hover': {
-        backgroundColor: '#6d28d9',
-      },
+      backgroundColor: 'var(--app-primary)',
+      color: 'var(--app-primary-foreground)',
     },
   } satisfies ButtonProps['styles'],
 
-  // Outline button with dark theme
+  violet: {
+    root: {
+      backgroundColor: 'var(--app-primary)',
+      color: 'var(--app-primary-foreground)',
+    },
+  } satisfies ButtonProps['styles'],
+
   outline: {
     root: {
-      borderColor: '#3f3f46',
-      color: '#a1a1aa',
-      '&:hover': {
-        backgroundColor: 'rgba(63, 63, 70, 0.5)',
-        color: '#ffffff',
-      },
+      borderColor: 'var(--app-border)',
+      color: 'var(--app-foreground)',
     },
   } satisfies ButtonProps['styles'],
 
-  // Subtle button for navigation
   subtle: {
     root: {
-      color: '#a1a1aa',
-      '&:hover': {
-        backgroundColor: 'rgba(63, 63, 70, 0.5)',
-        color: '#ffffff',
-      },
+      color: 'var(--app-muted-foreground)',
     },
   } satisfies ButtonProps['styles'],
 
-  // Red button for destructive actions
   danger: {
     root: {
-      color: '#fca5a5',
-      '&:hover': {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        color: '#ef4444',
-      },
+      color: 'var(--app-destructive)',
     },
   } satisfies ButtonProps['styles'],
 };
 
-/**
- * TextInput Styles
- */
 export const inputStyles = {
-  // Dark themed input
   dark: {
     input: {
-      backgroundColor: 'rgba(24, 24, 27, 0.5)',
-      borderColor: '#3f3f46',
-      color: '#ffffff',
-      '&::placeholder': {
-        color: '#71717a',
-      },
-      '&:focus': {
-        borderColor: '#7c3aed',
-      },
+      backgroundColor: 'var(--app-card)',
+      borderColor: 'var(--app-border)',
+      color: 'var(--app-foreground)',
     },
   } satisfies TextInputProps['styles'],
 
-  // Dark input with violet focus
   violet: {
     input: {
-      backgroundColor: 'rgba(39, 39, 42, 0.5)',
-      borderColor: '#3f3f46',
-      color: '#ffffff',
-      '&::placeholder': {
-        color: '#71717a',
-      },
-      '&:focus': {
-        borderColor: '#7c3aed',
-      },
+      backgroundColor: 'var(--app-card)',
+      borderColor: 'var(--app-border)',
+      color: 'var(--app-foreground)',
     },
   } satisfies TextInputProps['styles'],
 };
 
-/**
- * Action Icon Styles
- */
 export const actionIconStyles = {
   dark: {
     root: {
-      color: '#a1a1aa',
-      '&:hover': {
-        backgroundColor: 'rgba(63, 63, 70, 0.5)',
-      },
+      color: 'var(--app-muted-foreground)',
     },
   },
 
   violet: {
     root: {
-      backgroundColor: 'rgba(124, 58, 237, 0.2)',
-      color: '#a78bfa',
-      '&:hover': {
-        backgroundColor: 'rgba(124, 58, 237, 0.3)',
-      },
+      backgroundColor: 'var(--app-accent)',
+      color: 'var(--app-accent-foreground)',
     },
   },
 };
 
-/**
- * Menu Dropdown Styles
- */
 export const menuDropdownStyles = {
   dark: {
-    backgroundColor: '#27272a',
-    borderColor: '#3f3f46',
+    backgroundColor: 'var(--app-card)',
+    borderColor: 'var(--app-border)',
   },
 };
 
-/**
- * Menu Item Styles
- */
 export const menuItemStyles = {
   dark: {
-    color: '#ffffff',
-    '&:hover': {
-      backgroundColor: 'rgba(63, 63, 70, 0.5)',
-    },
+    color: 'var(--app-card-foreground)',
   },
 };
 
-/**
- * PinInput Styles
- */
 export const pinInputStyles = {
   dark: {
     input: {
-      backgroundColor: 'rgba(24, 24, 27, 0.5)',
-      borderColor: '#3f3f46',
-      color: '#ffffff',
-      '&:focus': {
-        borderColor: '#7c3aed',
-      },
+      backgroundColor: 'var(--app-card)',
+      borderColor: 'var(--app-border)',
+      color: 'var(--app-foreground)',
     },
   },
 };

@@ -18,7 +18,6 @@ export function LinksList({ links, isLoading }: LinksListProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredLinks = useMemo(() => {
-    // TODO: Move this crap to backend
     if (!searchQuery.trim()) return links;
 
     const query = searchQuery.toLowerCase();
@@ -46,15 +45,17 @@ export function LinksList({ links, isLoading }: LinksListProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Loader size="lg" color="violet" />
-        <p className="text-sm text-zinc-400 mt-4">{t('loading_links')}</p>
+        <Loader size="lg" color="brand" />
+        <p className="mt-4 text-sm text-muted-foreground">
+          {t('loading_links')}
+        </p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 items-center">
+      <div className="flex items-center gap-2">
         <TextInput
           placeholder={
             t('search_links_placeholder') ||
@@ -76,19 +77,6 @@ export function LinksList({ links, isLoading }: LinksListProps) {
             )
           }
           className="flex-1"
-          styles={{
-            input: {
-              backgroundColor: 'rgba(39, 39, 42, 0.5)',
-              borderColor: '#3f3f46',
-              color: '#ffffff',
-              '&::placeholder': {
-                color: '#71717a',
-              },
-              '&:focus': {
-                borderColor: '#7c3aed',
-              },
-            },
-          }}
         />
 
         <Tooltip label={t('refresh_links') || 'Atualizar lista'}>
@@ -97,15 +85,7 @@ export function LinksList({ links, isLoading }: LinksListProps) {
             size="lg"
             onClick={handleRefresh}
             loading={isLoading}
-            styles={{
-              root: {
-                backgroundColor: 'rgba(124, 58, 237, 0.2)',
-                color: '#a78bfa',
-                '&:hover': {
-                  backgroundColor: 'rgba(124, 58, 237, 0.3)',
-                },
-              },
-            }}
+            color="brand"
           >
             <IconRefresh size={20} />
           </ActionIcon>
@@ -113,24 +93,24 @@ export function LinksList({ links, isLoading }: LinksListProps) {
       </div>
 
       {filteredLinks.length === 0 && links.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 bg-zinc-900/30 rounded-lg border-2 border-dashed border-zinc-700">
-          <div className="p-4 bg-violet-600/20 rounded-full mb-4">
-            <IconLink size={48} className="text-violet-400" />
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card px-6 py-16 text-center">
+          <div className="mb-4 rounded-lg bg-accent p-4 text-accent-foreground">
+            <IconLink size={40} />
           </div>
-          <p className="text-base text-white font-semibold">
+          <p className="text-base font-semibold text-foreground">
             {t('no_links_title')}
           </p>
-          <p className="text-sm text-zinc-400 mt-2 max-w-sm text-center">
+          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
             {t('no_links_description')}
           </p>
         </div>
       ) : filteredLinks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 bg-zinc-900/30 rounded-lg border border-zinc-800">
-          <IconSearch size={48} className="text-zinc-500 mb-4" />
-          <p className="text-base text-white font-semibold">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card px-6 py-12 text-center">
+          <IconSearch size={40} className="mb-4 text-muted-foreground" />
+          <p className="text-base font-semibold text-foreground">
             {t('no_results_found') || 'Nenhum resultado encontrado'}
           </p>
-          <p className="text-sm text-zinc-400 mt-2">
+          <p className="mt-2 text-sm text-muted-foreground">
             {t('try_different_search') || 'Tente uma busca diferente'}
           </p>
         </div>

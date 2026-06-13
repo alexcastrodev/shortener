@@ -8,14 +8,14 @@ export function SignInCTA() {
   }
 
   return (
-    <div className="text-sm text-zinc-500">
+    <div className="text-center text-sm text-muted-foreground">
       <p>
         Want to track clicks and manage your links?{' '}
         <a
           href="/app"
-          className="text-violet-400 hover:text-violet-300 transition-colors"
+          className="font-medium text-primary transition-colors hover:underline"
         >
-          Sign in for free
+          Sign in
         </a>
       </p>
     </div>

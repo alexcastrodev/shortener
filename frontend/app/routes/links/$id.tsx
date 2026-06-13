@@ -1,5 +1,8 @@
-import { Layout } from '@internal/ui';
-import { IconExternalLink, IconClipboard } from '@tabler/icons-react';
+import {
+  IconArrowLeft,
+  IconClipboard,
+  IconExternalLink,
+} from '@tabler/icons-react';
 import { useNavigate, useParams } from 'react-router';
 import { useGetShortlinkDetails } from '@internal/core/actions/get-shortlink-details/get-shortlink-details.hook';
 import type { Route } from '../../+types/root';
@@ -7,6 +10,7 @@ import { notifications } from '@mantine/notifications';
 import { Button } from '@mantine/core';
 import { useClipboard } from '@mantine/hooks';
 import { Statistics } from './components/statistics';
+import { Alert, Card, PageContainer } from '@internal/ui';
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -27,149 +31,121 @@ export default function Page() {
 
   if (error) {
     return (
-      <Layout.Main>
-        <div className="py-8">
-          <div className="max-w-7xl mx-auto sm:px-6">
-            <div className="bg-red-900/30 border border-red-800 rounded-lg p-4 text-red-300">
-              Failed to load link
-            </div>
-          </div>
-        </div>
-      </Layout.Main>
+      <PageContainer>
+        <Alert title="Failed to load link">
+          We could not load this link. Please try again later.
+        </Alert>
+      </PageContainer>
     );
   }
 
   if (isLoading || !link) {
     return (
-      <Layout.Main>
-        <div className="py-8">
-          <div className="max-w-7xl mx-auto sm:px-6 animate-pulse">
-            <div className="h-6 bg-zinc-800 rounded w-1/3 mb-4" />
-            <div className="h-40 bg-zinc-800 rounded" />
-          </div>
+      <PageContainer>
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-48 rounded-md bg-muted" />
+          <div className="h-48 rounded-lg bg-muted" />
         </div>
-      </Layout.Main>
+      </PageContainer>
     );
   }
 
   return (
-    <Layout.Main>
-      <div className="py-10">
-        <div className="max-w-7xl mx-auto sm:px-6">
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="outline"
-              onClick={() => navigate(-1)}
-              styles={{
-                root: {
-                  borderColor: '#3f3f46',
-                  color: '#a1a1aa',
-                  '&:hover': {
-                    backgroundColor: 'rgba(63, 63, 70, 0.5)',
-                    color: '#ffffff',
-                  },
-                },
-              }}
-            >
-              ← Back
-            </Button>
-          </div>
+    <PageContainer className="pb-24 sm:pb-10">
+      <div className="mb-6 flex items-center justify-between">
+        <Button
+          variant="subtle"
+          color="gray"
+          leftSection={<IconArrowLeft size={16} />}
+          onClick={() => navigate(-1)}
+        >
+          Back
+        </Button>
+      </div>
 
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6 backdrop-blur-xl shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card className="p-5 sm:p-6">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold text-foreground">
+              {link.title ?? `Link #${link.id}`}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              ID: {link.id} | Clicks: {link.events_count}
+            </p>
+
+            <div className="mt-6 space-y-4">
               <div>
-                <h3 className="text-2xl font-semibold text-white">
-                  {link.title ?? `Link #${link.id}`}
-                </h3>
-                <p className="text-sm text-zinc-400 mt-1">
-                  ID: {link.id} • Clicks: {link.events_count}
+                <p className="text-sm font-semibold text-muted-foreground">
+                  Destination
                 </p>
-
-                <div className="mt-6">
-                  <p className="text-sm font-semibold text-zinc-300">
-                    Destination:
-                  </p>
-                  <a
-                    href={link.original_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-violet-400 hover:text-violet-300 break-words"
-                  >
-                    {link.original_url}
-                  </a>
-                </div>
-
-                <div className="mt-4">
-                  <p className="text-sm font-semibold text-zinc-300">
-                    Short URL:
-                  </p>
-                  <a
-                    href={link.short_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-violet-400 hover:text-violet-300 break-words"
-                  >
-                    {link.short_url}
-                  </a>
-                </div>
-
-                <div className="mt-4">
-                  <p className="text-sm font-semibold text-zinc-300">
-                    Last accessed:
-                  </p>
-                  <div className="text-sm text-zinc-400">
-                    {link.last_accessed_at
-                      ? new Date(link.last_accessed_at).toLocaleString()
-                      : 'Never'}
-                  </div>
-                </div>
+                <a
+                  href={link.original_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="break-words text-sm font-medium text-primary hover:underline"
+                >
+                  {link.original_url}
+                </a>
               </div>
 
-              <div className="flex flex-col justify-between">
-                <div className="flex items-center justify-end gap-3">
-                  <a
-                    href={link.short_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-zinc-800 text-sm font-medium text-zinc-300 hover:bg-zinc-800/50"
-                  >
-                    <IconExternalLink size={16} />
-                    Open
-                  </a>
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground">
+                  Short URL
+                </p>
+                <a
+                  href={link.short_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="break-words text-sm font-medium text-primary hover:underline"
+                >
+                  {link.short_url}
+                </a>
+              </div>
 
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      copy(link.short_url);
-                      notifications.show({
-                        title: 'Copied',
-                        message: 'Short URL copied to clipboard',
-                        color: 'green',
-                      });
-                    }}
-                    styles={{
-                      root: {
-                        borderColor: '#3f3f46',
-                        color: '#a1a1aa',
-                        backgroundColor: 'rgba(39, 39, 42, 0.5)',
-                        '&:hover': {
-                          backgroundColor: 'rgba(63, 63, 70, 0.5)',
-                          color: '#ffffff',
-                        },
-                      },
-                    }}
-                    aria-label="Copy short url"
-                  >
-                    <IconClipboard size={18} />
-                  </Button>
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground">
+                  Last accessed
+                </p>
+                <div className="text-sm text-muted-foreground">
+                  {link.last_accessed_at
+                    ? new Date(link.last_accessed_at).toLocaleString()
+                    : 'Never'}
                 </div>
               </div>
             </div>
           </div>
 
-          <Statistics />
+          <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
+            <a
+              href={link.short_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <IconExternalLink size={16} />
+              Open
+            </a>
+
+            <Button
+              variant="filled"
+              color="brand"
+              leftSection={<IconClipboard size={16} />}
+              onClick={async () => {
+                copy(link.short_url);
+                notifications.show({
+                  title: 'Copied',
+                  message: 'Short URL copied to clipboard',
+                  color: 'green',
+                });
+              }}
+            >
+              Copy
+            </Button>
+          </div>
         </div>
-      </div>
-    </Layout.Main>
+      </Card>
+
+      <Statistics />
+    </PageContainer>
   );
 }

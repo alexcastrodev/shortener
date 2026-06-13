@@ -8,7 +8,7 @@ export function UserMenu() {
     return (
       <a
         href="/app"
-        className="text-sm px-4 sm:px-5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 transition-all border border-zinc-800 hover:border-zinc-700"
+        className="rounded-md border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:px-4"
       >
         Sign in
       </a>
@@ -19,19 +19,19 @@ export function UserMenu() {
     <>
       <a
         href="/"
-        className="text-sm text-zinc-400 hover:text-white transition-colors"
+        className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
       >
         Home
       </a>
       <a
         href="/app"
-        className="text-sm text-zinc-400 hover:text-white transition-colors"
+        className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         Dashboard
       </a>
       <button
         onClick={handleLogout}
-        className="text-sm px-4 sm:px-5 py-2 rounded-lg bg-red-900/20 hover:bg-red-900/30 transition-all border border-red-800/50 hover:border-red-700 flex items-center gap-2 text-red-400 hover:text-red-300"
+        className="flex items-center gap-2 rounded-md border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/15 sm:px-4"
       >
         <IconLogout size={16} />
         <span className="hidden sm:inline">Logout</span>

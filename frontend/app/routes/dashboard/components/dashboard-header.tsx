@@ -5,15 +5,15 @@ export function DashboardHeader() {
   const { t } = useTranslation('dashboard');
 
   return (
-    <div className="flex items-center gap-3 mb-8 pb-4 border-b-2 border-blue-500 dark:border-blue-600">
-      <div className="p-2.5 bg-blue-600 dark:bg-blue-500 rounded-xl shadow-lg">
-        <IconLink size={28} className="text-white" />
+    <div className="mb-8 flex items-center gap-3 border-b border-border pb-4">
+      <div className="rounded-md bg-accent p-2.5 text-accent-foreground">
+        <IconLink size={28} />
       </div>
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="text-3xl font-semibold text-foreground">
           {t('title')}
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+        <p className="mt-0.5 text-sm text-muted-foreground">
           {t('subtitle')}
         </p>
       </div>

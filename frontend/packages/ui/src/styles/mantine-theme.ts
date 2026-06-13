@@ -1,78 +1,99 @@
 import { createTheme, type MantineThemeOverride } from '@mantine/core';
 
-/**
- * Custom Mantine Theme
- * Centralizes theme configuration with violet primary color
- */
 export const mantineTheme: MantineThemeOverride = createTheme({
-  primaryColor: 'violet',
+  primaryColor: 'brand',
+  primaryShade: { light: 7, dark: 4 },
+  defaultRadius: 'md',
+  fontFamily:
+    'Inter, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
 
   colors: {
-    violet: [
-      '#f5f3ff',
-      '#ede9fe',
-      '#ddd6fe',
-      '#c4b5fd',
-      '#a78bfa',
-      '#8b5cf6',
-      '#7c3aed', // Main violet
-      '#6d28d9',
-      '#5b21b6',
-      '#4c1d95',
+    brand: [
+      '#e8fbfb',
+      '#d6f4f3',
+      '#ace6e4',
+      '#7fd6d3',
+      '#5ac6c3',
+      '#3bb7b4',
+      '#239895',
+      '#167875',
+      '#0e5d5b',
+      '#063c3b',
     ],
   },
-
-  defaultRadius: 'md',
 
   components: {
     Button: {
       defaultProps: {
         radius: 'md',
       },
-      styles: (_: any, props: { variant: string; color: string }) => ({
+      styles: {
         root: {
-          // Violet primary button
-          ...(props.variant === 'filled' &&
-            props.color === 'violet' && {
-              backgroundColor: '#7c3aed',
-              '&:hover': {
-                backgroundColor: '#6d28d9',
-              },
-            }),
-          // Outline dark theme
-          ...(props.variant === 'outline' && {
-            borderColor: '#3f3f46',
-            color: '#a1a1aa',
-            '&:hover': {
-              backgroundColor: 'rgba(63, 63, 70, 0.5)',
-              color: '#ffffff',
-              borderColor: '#3f3f46',
-            },
-          }),
-          // Subtle navigation button
-          ...(props.variant === 'subtle' && {
-            color: '#a1a1aa',
-            '&:hover': {
-              backgroundColor: 'rgba(63, 63, 70, 0.5)',
-              color: '#ffffff',
-            },
-          }),
+          fontWeight: 600,
         },
-      }),
+      },
+    },
+
+    ActionIcon: {
+      defaultProps: {
+        radius: 'md',
+      },
+    },
+
+    Card: {
+      defaultProps: {
+        radius: 'md',
+        withBorder: true,
+      },
+      styles: {
+        root: {
+          backgroundColor: 'var(--app-card)',
+          borderColor: 'var(--app-border)',
+          color: 'var(--app-card-foreground)',
+        },
+      },
+    },
+
+    Paper: {
+      defaultProps: {
+        radius: 'md',
+        withBorder: true,
+      },
+      styles: {
+        root: {
+          backgroundColor: 'var(--app-card)',
+          borderColor: 'var(--app-border)',
+          color: 'var(--app-card-foreground)',
+        },
+      },
     },
 
     TextInput: {
+      defaultProps: {
+        radius: 'md',
+      },
+      styles: {
+        label: {
+          color: 'var(--app-foreground)',
+          fontWeight: 600,
+        },
+        input: {
+          backgroundColor: 'var(--app-card)',
+          borderColor: 'var(--app-border)',
+          color: 'var(--app-foreground)',
+        },
+      },
+    },
+
+    PinInput: {
+      defaultProps: {
+        radius: 'md',
+      },
       styles: {
         input: {
-          backgroundColor: 'rgba(24, 24, 27, 0.5)',
-          borderColor: '#3f3f46',
-          color: '#ffffff',
-          '&::placeholder': {
-            color: '#71717a',
-          },
-          '&:focus': {
-            borderColor: '#7c3aed',
-          },
+          backgroundColor: 'var(--app-card)',
+          borderColor: 'var(--app-border)',
+          color: 'var(--app-foreground)',
         },
       },
     },
@@ -80,54 +101,19 @@ export const mantineTheme: MantineThemeOverride = createTheme({
     Menu: {
       styles: {
         dropdown: {
-          backgroundColor: '#27272a',
-          borderColor: '#3f3f46',
+          backgroundColor: 'var(--app-card)',
+          borderColor: 'var(--app-border)',
+          color: 'var(--app-card-foreground)',
         },
         item: {
-          color: '#ffffff',
-          '&:hover': {
-            backgroundColor: 'rgba(63, 63, 70, 0.5)',
-          },
-        },
-      },
-    },
-
-    ActionIcon: {
-      styles: (_: any, props: { variant: string }) => ({
-        root: {
-          ...(props.variant === 'subtle' && {
-            color: '#a1a1aa',
-            '&:hover': {
-              backgroundColor: 'rgba(63, 63, 70, 0.5)',
-            },
-          }),
-          ...(props.variant === 'light' && {
-            backgroundColor: 'rgba(124, 58, 237, 0.2)',
-            color: '#a78bfa',
-            '&:hover': {
-              backgroundColor: 'rgba(124, 58, 237, 0.3)',
-            },
-          }),
-        },
-      }),
-    },
-
-    PinInput: {
-      styles: {
-        input: {
-          backgroundColor: 'rgba(24, 24, 27, 0.5)',
-          borderColor: '#3f3f46',
-          color: '#ffffff',
-          '&:focus': {
-            borderColor: '#7c3aed',
-          },
+          color: 'var(--app-card-foreground)',
         },
       },
     },
 
     Loader: {
       defaultProps: {
-        color: 'violet',
+        color: 'brand',
       },
     },
   },

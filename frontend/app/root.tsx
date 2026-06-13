@@ -1,7 +1,8 @@
 import './app.css';
+import { ColorSchemeScript } from '@mantine/core';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import type { Route } from './+types/root';
-import { ServiceProvider } from '@internal/core/service-provider';
+import { Providers } from './layout/providers';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -46,15 +47,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="apple-mobile-web-app-title" content="Kurz" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#7c3aed" />
+        <meta
+          name="theme-color"
+          media="(prefers-color-scheme: light)"
+          content="#f7f8fa"
+        />
+        <meta
+          name="theme-color"
+          media="(prefers-color-scheme: dark)"
+          content="#101418"
+        />
 
         <link rel="canonical" href="https://kurz.fyi" />
 
+        <ColorSchemeScript defaultColorScheme="auto" />
         <Meta />
         <Links />
       </head>
       <body>
-        <ServiceProvider>{children}</ServiceProvider>
+        <Providers>{children}</Providers>
         <ScrollRestoration />
         <Scripts />
       </body>

@@ -3,6 +3,7 @@
 # Table name: shortlinks
 #
 #  id               :bigint           not null, primary key
+#  deleted_at       :datetime
 #  events_count     :integer          default(0), not null
 #  inactive_at      :datetime
 #  last_accessed_at :datetime
@@ -17,6 +18,7 @@
 #
 # Indexes
 #
+#  index_shortlinks_on_deleted_at  (deleted_at)
 #  index_shortlinks_on_short_code  (short_code) UNIQUE
 #  index_shortlinks_on_user_id     (user_id)
 #
@@ -29,6 +31,8 @@ class Shortlink < ApplicationRecord
   # ===============
   # Scopes
   # ===============
+  default_scope { where(deleted_at: nil) }
+  scope :with_deleted, -> { unscope(where: :deleted_at) }
   scope :without_user, -> { where(user_id: nil) }
   scope :safe, -> { where(safe: true) }
   scope :active, -> { where(inactive_at: nil) }
@@ -43,7 +47,7 @@ class Shortlink < ApplicationRecord
   # Associations
   # ===============
   belongs_to :user, optional: true
-  has_many :events, dependent: :destroy
+  has_many :events
 
   # ===============
   # Callbacks
@@ -73,6 +77,15 @@ class Shortlink < ApplicationRecord
   rescue => e
     Rails.logger.error("Failed to save shortlink cache: #{e.class}: #{e.message}")
     false
+  end
+
+  # Marks the link as deleted and returns immediately. The actual removal of
+  # the link and its (potentially thousands of) events happens in the
+  # background via PurgeShortlinkJob.
+  def soft_delete!
+    remove_cache
+    update!(deleted_at: Time.current)
+    PurgeShortlinkJob.perform_later(id)
   end
 
   def mark_as_dangerous!
@@ -105,7 +118,7 @@ class Shortlink < ApplicationRecord
   def generate_short_code
     self.short_code ||= loop do
       code = SecureRandom.alphanumeric(6)
-      break code unless Shortlink.exists?(short_code: code)
+      break code unless Shortlink.with_deleted.exists?(short_code: code)
     end
   end
 

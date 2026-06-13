@@ -12,8 +12,8 @@ export function EmailField({ email, onChange, disabled }: EmailFieldProps) {
 
   if (user) {
     return (
-      <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg p-3 text-center">
-        <p className="text-sm text-violet-300">
+      <div className="rounded-md border border-primary/20 bg-primary/10 p-3 text-center">
+        <p className="text-sm text-primary">
           Your link will be accessible in your dashboard after creation
         </p>
       </div>
@@ -28,15 +28,15 @@ export function EmailField({ email, onChange, disabled }: EmailFieldProps) {
           value={email}
           onChange={e => onChange(e.target.value)}
           placeholder="your@email.com (optional - for analytics)"
-          className="w-full px-5 py-3 rounded-lg bg-zinc-900/50 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-transparent transition-all"
+          className="min-h-11 w-full rounded-md border border-border bg-card px-4 pr-10 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
           disabled={disabled}
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-          <IconMail size={18} className="text-zinc-600" />
+          <IconMail size={18} className="text-muted-foreground" />
         </div>
       </div>
-      <p className="text-xs text-zinc-500 mt-1.5 text-center">
-        Want to track clicks? Add your email to create a free account later
+      <p className="mt-1.5 text-center text-xs text-muted-foreground">
+        Want to track clicks? Add your email to create an account later
       </p>
     </div>
   );

@@ -2,6 +2,7 @@ import type { Route } from './+types';
 import { useGetShortlinks } from 'packages/core/actions/get-shortlinks/get-shortlinks.hook';
 import { LinksList, TotalLinksCard } from './components';
 import { QuickCreate } from '../../modules/quick-create';
+import { PageContainer } from '@internal/ui';
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -16,29 +17,22 @@ export default function Page() {
   const { data, isLoading } = useGetShortlinks();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white relative overflow-hidden">
-      <div className="fixed inset-0 opacity-10">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(124,58,237,0.3) 1px, transparent 0)`,
-            backgroundSize: '40px 40px',
-          }}
-        />
+    <PageContainer className="pb-24 sm:pb-10">
+      <div className="mb-6">
+        <p className="text-sm font-medium text-muted-foreground">Dashboard</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Links
+        </h1>
       </div>
 
-      <div className="fixed inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/50 pointer-events-none" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <LinksList links={data?.shortlink || []} isLoading={isLoading} />
 
-      <div className="relative z-10 max-w-7xl mx-auto py-8 sm:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 px-4 sm:px-6">
-          <LinksList links={data?.shortlink || []} isLoading={isLoading} />
-
-          <div className="space-y-4 lg:sticky lg:top-24 h-fit">
-            <TotalLinksCard total={data?.total || 0} isLoading={isLoading} />
-            <QuickCreate />
-          </div>
+        <div className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
+          <TotalLinksCard total={data?.total || 0} isLoading={isLoading} />
+          <QuickCreate />
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

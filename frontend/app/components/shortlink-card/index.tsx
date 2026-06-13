@@ -1,13 +1,12 @@
 import { ActionIcon, Menu, Badge, Text, Tooltip } from '@mantine/core';
 import {
-  IconCopy,
   IconDotsVertical,
   IconTrash,
   IconExternalLink,
   IconClick,
   IconShare,
-  IconChartBar,
   IconAlertTriangle,
+  IconPencil,
 } from '@tabler/icons-react';
 import type { Shortlink } from 'packages/core/types/Shortlink';
 import { useNavigate } from 'react-router';
@@ -18,6 +17,7 @@ import { useDeleteShortlink } from 'packages/core/actions/delete-shortlink/delet
 import { queryClient } from 'packages/core/service-provider';
 import { getShortlinksKey } from 'packages/core/actions/get-shortlinks/get-shortlinks.hook';
 import { useTranslation } from 'react-i18next';
+import { EditShortlinkForm } from './edit-shortlink-form';
 
 interface ShortlinkCardListItemProps {
   shortlink: Shortlink;
@@ -71,6 +71,17 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
     copy(shortlink.short_url);
   };
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const modalId = `edit-shortlink-${shortlink.id}`;
+    modals.open({
+      modalId,
+      title: t('edit_link'),
+      centered: true,
+      children: <EditShortlinkForm shortlink={shortlink} modalId={modalId} />,
+    });
+  };
+
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     modals.openConfirmModal({
@@ -88,13 +99,13 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
 
   return (
     <div
-      className="group bg-zinc-900/50 border border-zinc-800 rounded-lg p-5 hover:shadow-lg hover:border-violet-600 transition-all duration-200 cursor-pointer backdrop-blur-xl"
+      className="group cursor-pointer rounded-lg border border-border bg-card p-5 text-card-foreground shadow-sm transition-colors hover:border-primary/40"
       onClick={handleViewDetails}
     >
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-white truncate mb-1">
+            <h3 className="mb-1 truncate text-base font-semibold text-foreground">
               {shortlink.title || t('untitled')}
             </h3>
             <a
@@ -102,7 +113,7 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={e => e.stopPropagation()}
-              className="text-violet-400 hover:text-violet-300 text-sm font-medium hover:underline transition-colors inline-flex items-center gap-1"
+              className="inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:underline"
             >
               {shortlink.short_url}
               <IconExternalLink size={12} />
@@ -115,33 +126,25 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
                 variant="subtle"
                 size="md"
                 onClick={e => e.stopPropagation()}
-                styles={{
-                  root: {
-                    color: '#a1a1aa',
-                    '&:hover': {
-                      backgroundColor: 'rgba(63, 63, 70, 0.5)',
-                    },
-                  },
-                }}
+                color="gray"
               >
                 <IconDotsVertical size={18} />
               </ActionIcon>
             </Menu.Target>
-
-            <Menu.Dropdown
-              style={{
-                backgroundColor: '#27272a',
-                borderColor: '#3f3f46',
-              }}
-            >
+            <Menu.Dropdown>
               <Menu.Item
                 leftSection={<IconShare size={16} />}
                 onClick={handleShare}
-                style={{ color: '#ffffff' }}
               >
                 {t('copy_link')}
               </Menu.Item>
-              <Menu.Divider style={{ borderColor: '#3f3f46' }} />
+              <Menu.Item
+                leftSection={<IconPencil size={16} />}
+                onClick={handleEdit}
+              >
+                {t('edit_link')}
+              </Menu.Item>
+              <Menu.Divider />
               <Menu.Item
                 color="red"
                 leftSection={<IconTrash size={16} />}
@@ -153,31 +156,29 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
           </Menu>
         </div>
 
-        <p className="text-zinc-400 truncate text-xs">
+        <p className="truncate text-xs text-muted-foreground">
           {shortlink.original_url}
         </p>
 
         {!shortlink.is_active && (
-          <div className="p-2 bg-red-900/30 border border-red-800 rounded text-xs flex items-center gap-2 text-red-300">
+          <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
             <IconAlertTriangle size={14} />
-            <span>{shortlink.inactive_at && shortlink.safe ? t('inactive_shortlink_message') : t('unsafe_shortlink_message')}</span>
+            <span>
+              {shortlink.inactive_at && shortlink.safe
+                ? t('inactive_shortlink_message')
+                : t('unsafe_shortlink_message')}
+            </span>
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+        <div className="flex items-center justify-between border-t border-border pt-2">
           <div className="flex items-center gap-4">
             <Tooltip label="Click count">
               <Badge
                 size="md"
                 variant="light"
+                color="brand"
                 leftSection={<IconClick size={14} />}
-                styles={{
-                  root: {
-                    backgroundColor: 'rgba(124, 58, 237, 0.2)',
-                    color: '#a78bfa',
-                    borderColor: 'transparent',
-                  },
-                }}
               >
                 {shortlink.events_count}
               </Badge>
@@ -192,8 +193,10 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
             )}
           </div>
           <div className="text-right">
-            <p className="text-xs text-zinc-500">Last access</p>
-            <span className="text-xs text-zinc-400">{formattedDate}</span>
+            <p className="text-xs text-muted-foreground">Last access</p>
+            <span className="text-xs text-muted-foreground">
+              {formattedDate}
+            </span>
           </div>
         </div>
       </div>

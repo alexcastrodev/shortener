@@ -5,9 +5,8 @@ import { LoadingOverlay } from '@mantine/core';
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
-import { Providers } from './providers';
 
-function LayoutContent() {
+export default function LayoutComponent() {
   const navigate = useNavigate();
   const { isLoading, isError, data } = useGetLoggedUser();
 
@@ -37,13 +36,5 @@ function LayoutContent() {
       </Layout.Main>
       <MobileNav />
     </div>
-  );
-}
-
-export default function LayoutComponent() {
-  return (
-    <Providers>
-      <LayoutContent />
-    </Providers>
   );
 }

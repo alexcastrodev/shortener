@@ -5,6 +5,7 @@
 # Table name: shortlinks
 #
 #  id               :bigint           not null, primary key
+#  deleted_at       :datetime
 #  events_count     :integer          default(0), not null
 #  inactive_at      :datetime
 #  last_accessed_at :datetime
@@ -19,6 +20,7 @@
 #
 # Indexes
 #
+#  index_shortlinks_on_deleted_at  (deleted_at)
 #  index_shortlinks_on_short_code  (short_code) UNIQUE
 #  index_shortlinks_on_user_id     (user_id)
 #
