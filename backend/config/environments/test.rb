@@ -26,7 +26,16 @@ Rails.application.configure do
 
   # Show full error reports.
   config.consider_all_requests_local = true
-  config.cache_store = :null_store
+
+  # Use a real Redis cache store when REDIS_URL is configured so specs can
+  # exercise the shortlink redirect cache (add/remove). Falls back to the
+  # null store otherwise. The cache is flushed between examples in rails_helper.
+  config.cache_store =
+    if ENV["REDIS_URL"].present?
+      [:redis_cache_store, { url: ENV["REDIS_URL"] }]
+    else
+      :null_store
+    end
 
   # Render exception templates for rescuable exceptions and raise for other exceptions.
   config.action_dispatch.show_exceptions = :rescuable
