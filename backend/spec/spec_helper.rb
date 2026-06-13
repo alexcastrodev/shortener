@@ -9,6 +9,10 @@ UNSAFE_URL = "https://testsafebrowsing.appspot.com/s/malware.html"
 # so the actual value is irrelevant for playback.
 ENV["GOOGLE_SAFE_LINK_KEY"] = "test-safe-browsing-key" if ENV["GOOGLE_SAFE_LINK_KEY"].to_s.empty?
 
+# Enable the Safe Browsing flow in the test suite so the after_create callback
+# enqueues SafetyUrlJob. Without it, the safety specs never see the job.
+ENV["ENABLE_GOOGLE_SAFE_LINK"] = "true" if ENV["ENABLE_GOOGLE_SAFE_LINK"].to_s.empty?
+
 VCR.configure do |config|
   config.cassette_library_dir = "spec/vcr_cassettes"
   config.hook_into(:webmock)

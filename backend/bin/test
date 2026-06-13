@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Run the RSpec suite against the local Docker services (db + cache).
+#
+# Defaults assume you reached Postgres/Valkey through the ports the
+# docker-compose stack exposes on the host (localhost). Anything already set in
+# the environment wins, so CI — where POSTGRES_HOST=db / REDIS_URL=redis://cache
+# come from .env — is left untouched.
+#
+# Usage:
+#   bin/test                       # whole suite
+#   bin/test spec/jobs             # a directory or file
+#   bin/test spec/foo_spec.rb:42   # a single example
+set -euo pipefail
+
+export RAILS_ENV="${RAILS_ENV:-test}"
+export POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
+export POSTGRES_USER="${POSTGRES_USER:-postgres}"
+export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-}"
+export POSTGRES_DB="${POSTGRES_DB:-development}"
+export REDIS_URL="${REDIS_URL:-redis://localhost:6379/0}"
+
+cd "$(dirname "$0")/.."
+
+exec bundle exec rspec "$@"
