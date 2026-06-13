@@ -3,6 +3,12 @@ require "webmock/rspec"
 
 UNSAFE_URL = "https://testsafebrowsing.appspot.com/s/malware.html"
 
+# Ensure a Safe Browsing API key is always present in the test suite so the
+# Google client issues the request (and VCR replays the cassette) instead of
+# raising KeyError on ENV.fetch. The real key is filtered out of cassettes,
+# so the actual value is irrelevant for playback.
+ENV["GOOGLE_SAFE_LINK_KEY"] = "test-safe-browsing-key" if ENV["GOOGLE_SAFE_LINK_KEY"].to_s.empty?
+
 VCR.configure do |config|
   config.cassette_library_dir = "spec/vcr_cassettes"
   config.hook_into(:webmock)
