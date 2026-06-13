@@ -7,13 +7,13 @@ RSpec.describe(GoogleLib::SafeBrowsing::V4::Services, vcr: true, google: true) d
   let(:valid_url) { "https://kurz.fyi" }
 
   context "when API returns no matches" do
-    it "returns true (url is safe)" do
+    it "returns true because the url is safe" do
       expect(described_class.check_url(valid_url)).to(be(true))
     end
   end
 
   context "when API returns matches" do
-    it "returns false (url is unsafe)" do
+    it "returns false because the url is unsafe" do
       expect(described_class.check_url(invalid_url)).to(be(false))
     end
   end
