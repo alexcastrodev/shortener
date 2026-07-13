@@ -6,13 +6,9 @@ import type { Shortlink } from '../../types/Shortlink';
 export async function getShortlinkDetails(
   id: number | string
 ): Promise<Shortlink> {
-  try {
-    const response: AxiosResponse<GetShortlinkDetailsResponse> = await api.get(
-      `/api/me/shortlinks/${id}`
-    );
+  const response: AxiosResponse<GetShortlinkDetailsResponse> = await api.get(
+    `/api/me/shortlinks/${id}`
+  );
 
-    return response.data.shortlink;
-  } catch (error) {
-    throw error;
-  }
+  return response.data.shortlink;
 }

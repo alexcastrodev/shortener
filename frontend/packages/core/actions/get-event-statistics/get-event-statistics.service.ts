@@ -8,13 +8,9 @@ import type {
 export async function getEventStatistics(
   id: number | string
 ): Promise<EventStatistics> {
-  try {
-    const response: AxiosResponse<GetEventStatisticsResponse> = await api.get(
-      `/api/me/shortlinks/${id}/statistics`
-    );
+  const response: AxiosResponse<GetEventStatisticsResponse> = await api.get(
+    `/api/me/shortlinks/${id}/statistics`
+  );
 
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  return response.data;
 }

@@ -7,7 +7,7 @@ import { getLoggedUserPublic } from '@internal/core/actions/get-logged-user/get-
 export function useAuth() {
   const navigate = useNavigate();
   const { user, clear } = useUserState();
-  // Only used here, if it changes, move to a new action folder
+
   const { error } = useQuery({
     queryKey: ['public', 'user'],
     enabled: !!user,
@@ -15,12 +15,11 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    error && clear();
-  }, [error]);
+    if (error) clear();
+  }, [error, clear]);
 
   const handleLogout = () => {
     clear();
-    localStorage.removeItem('token');
     navigate('/');
   };
 

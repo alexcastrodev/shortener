@@ -24,6 +24,7 @@ Rails.application.routes.draw do
           post "toggle_active", to: "shortlinks#toggle_active"
         end
       end
+      resources :audits, only: [:index]
     end
 
     namespace :me do

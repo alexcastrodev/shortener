@@ -4,4 +4,5 @@ export type User = {
   shortlinks_count: number;
   admin: boolean;
   deactivated_at: string | null;
+  created_at: string;
 };

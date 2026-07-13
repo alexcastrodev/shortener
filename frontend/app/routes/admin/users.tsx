@@ -1,3 +1,4 @@
+import { Breadcrumb } from '../../components/breadcrumb';
 import { Badge, Button, Center, Loader, SegmentedControl, TextInput } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconLock, IconSearch, IconUsers } from '@tabler/icons-react';
@@ -10,8 +11,9 @@ import {
 import type { GetManageUsersParams } from '@internal/core/actions/get-manage-users/get-manage-users.types';
 import { useToggleUserActive } from '@internal/core/actions/admin-user-toggle-active/admin-user-toggle-active.hook';
 import { useQueryClient } from '@tanstack/react-query';
-import { notifications } from '@mantine/notifications';
+import { notifyError } from '@internal/core/utils/notify';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const ssr = false;
 
@@ -27,6 +29,7 @@ type StatusFilter = 'active' | 'inactive' | 'all';
 export default function UsersPage() {
   const { data } = useGetLoggedUser();
   const queryClient = useQueryClient();
+  const { t } = useTranslation('admin');
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [search, setSearch] = useState('');
@@ -48,11 +51,7 @@ export default function UsersPage() {
       queryClient.invalidateQueries({ queryKey: ['get-manage-users'] });
     },
     onError: () => {
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to update user status.',
-        color: 'red',
-      });
+      notifyError(t('failed_update_user'));
     },
   });
 
@@ -62,9 +61,9 @@ export default function UsersPage() {
         <Alert
           variant="error"
           icon={<IconLock size={24} />}
-          title="Access denied"
+          title={t('access_denied')}
         >
-          You do not have permission to access this page.
+          {t('access_denied_message')}
         </Alert>
       </PageContainer>
     );
@@ -73,8 +72,8 @@ export default function UsersPage() {
   if (error) {
     return (
       <PageContainer>
-        <Alert variant="error" icon={<IconLock size={24} />} title="Error">
-          Failed to load users. Please try again later.
+        <Alert variant="error" icon={<IconLock size={24} />} title={t('error')}>
+          {t('failed_load_users')}
         </Alert>
       </PageContainer>
     );
@@ -84,6 +83,11 @@ export default function UsersPage() {
 
   return (
     <PageContainer className="pb-24 sm:pb-10">
+      <Breadcrumb items={[
+        { label: 'Dashboard', href: '/app' },
+        { label: t('administration') },
+        { label: t('users') },
+      ]} />
       <div className="mb-6">
         <div className="flex items-center gap-3">
           <div className="inline-flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
@@ -91,16 +95,16 @@ export default function UsersPage() {
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">
-              Administration
+              {t('administration')}
             </p>
-            <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('users')}</h1>
           </div>
         </div>
       </div>
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <TextInput
-          placeholder="Search by email..."
+          placeholder={t('search_by_email')}
           leftSection={<IconSearch size={16} />}
           value={search}
           onChange={e => setSearch(e.currentTarget.value)}
@@ -110,13 +114,15 @@ export default function UsersPage() {
           value={statusFilter}
           onChange={v => setStatusFilter(v as StatusFilter)}
           data={[
-            { label: 'Active', value: 'active' },
-            { label: 'Inactive', value: 'inactive' },
-            { label: 'All', value: 'all' },
+            { label: t('active'), value: 'active' },
+            { label: t('inactive'), value: 'inactive' },
+            { label: `All (${total})`, value: 'all' },
           ]}
         />
         <p className="text-sm text-muted-foreground sm:ml-auto">
-          {users.length} of {total} users
+          {statusFilter === 'all' && !debouncedSearch.trim()
+            ? `${users.length} users`
+            : `${users.length} of ${total} users`}
         </p>
       </div>
 
@@ -126,11 +132,11 @@ export default function UsersPage() {
         </Center>
       ) : users.length === 0 ? (
         <Card className="p-8 text-center">
-          <p className="font-semibold text-foreground">No users found</p>
+          <p className="font-semibold text-foreground">{t('no_users_found')}</p>
           <p className="mt-2 text-sm text-muted-foreground">
             {total > 0
-              ? 'Try adjusting your filters.'
-              : 'Users will appear here when they exist in the system.'}
+              ? t('adjust_filters')
+              : t('users_empty')}
           </p>
         </Card>
       ) : (
@@ -146,8 +152,8 @@ export default function UsersPage() {
                     <p className="truncate text-base font-semibold text-foreground">
                       {user.email}
                     </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      ID: {user.id}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Joined {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-col gap-1">
@@ -155,36 +161,31 @@ export default function UsersPage() {
                       color={user.admin ? 'brand' : 'gray'}
                       variant="light"
                     >
-                      {user.admin ? 'Admin' : 'User'}
+                      {user.admin ? t('admin') : t('user')}
                     </Badge>
                     {isDeactivated && (
                       <Badge color="red" variant="light">
-                        Deactivated
+                        {t('deactivated')}
                       </Badge>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-md border border-border bg-muted p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Shortlinks
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold text-foreground">
-                    {user.shortlinks_count}
-                  </p>
+                <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>{user.shortlinks_count} shortlinks</span>
                 </div>
 
                 {!isSelf && (
                   <div className="mt-4">
                     <Button
                       fullWidth
-                      variant="light"
+                      variant="subtle"
                       color={isDeactivated ? 'green' : 'red'}
                       size="sm"
                       loading={isPending}
                       onClick={() => toggleActive(user.id)}
                     >
-                      {isDeactivated ? 'Reactivate' : 'Deactivate'}
+                      {isDeactivated ? t('reactivate') : t('deactivate')}
                     </Button>
                   </div>
                 )}

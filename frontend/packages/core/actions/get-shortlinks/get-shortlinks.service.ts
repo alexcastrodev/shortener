@@ -1,14 +1,12 @@
 import type { AxiosResponse } from 'axios';
 import { api } from '../api';
-import type { GetShortlinksResponse } from './get-shortlinks.types';
+import type { GetShortlinksParams, GetShortlinksResponse } from './get-shortlinks.types';
 
-export async function getShortlinks(): Promise<GetShortlinksResponse> {
-  try {
-    const response: AxiosResponse<GetShortlinksResponse> =
-      await api.get('/api/me/shortlinks');
+export async function getShortlinks(
+  params?: GetShortlinksParams
+): Promise<GetShortlinksResponse> {
+  const response: AxiosResponse<GetShortlinksResponse> =
+    await api.get('/api/me/shortlinks', { params });
 
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  return response.data;
 }

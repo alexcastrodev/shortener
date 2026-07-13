@@ -1,11 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Loader, TextInput, ActionIcon, Tooltip } from '@mantine/core';
-import { IconLink, IconSearch, IconRefresh, IconX } from '@tabler/icons-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { Loader, TextInput } from '@mantine/core';
+import { IconLink, IconSearch, IconX } from '@tabler/icons-react';
 import { ShortlinkCard } from '~/components/shortlink-card';
 import type { Shortlink } from 'packages/core/types/Shortlink';
 import { useTranslation } from 'react-i18next';
-import { getShortlinksKey } from 'packages/core/actions/get-shortlinks/get-shortlinks.hook';
 
 interface LinksListProps {
   links: Shortlink[];
@@ -14,7 +12,6 @@ interface LinksListProps {
 
 export function LinksList({ links, isLoading }: LinksListProps) {
   const { t } = useTranslation('dashboard');
-  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredLinks = useMemo(() => {
@@ -34,14 +31,6 @@ export function LinksList({ links, isLoading }: LinksListProps) {
     });
   }, [links, searchQuery]);
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: getShortlinksKey });
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery('');
-  };
-
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -55,45 +44,37 @@ export function LinksList({ links, isLoading }: LinksListProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <TextInput
-          placeholder={
-            t('search_links_placeholder') ||
-            'Buscar por título, link ou código...'
-          }
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.currentTarget.value)}
-          leftSection={<IconSearch size={16} />}
-          rightSection={
-            searchQuery && (
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                onClick={handleClearSearch}
-                size="sm"
-              >
-                <IconX size={16} />
-              </ActionIcon>
-            )
-          }
-          className="flex-1"
-        />
+      {links.length > 0 && (
+        <div>
+          <TextInput
+            placeholder={
+              t('search_links_placeholder') ||
+              'Search by title, link or code...'
+            }
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.currentTarget.value)}
+            leftSection={<IconSearch size={16} />}
+            rightSection={
+              searchQuery ? (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="flex items-center text-muted-foreground hover:text-foreground"
+                >
+                  <IconX size={16} />
+                </button>
+              ) : null
+            }
+          />
+          {searchQuery && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              {filteredLinks.length} of {links.length} links
+            </p>
+          )}
+        </div>
+      )}
 
-        <Tooltip label={t('refresh_links') || 'Atualizar lista'}>
-          <ActionIcon
-            variant="light"
-            size="lg"
-            onClick={handleRefresh}
-            loading={isLoading}
-            color="brand"
-          >
-            <IconRefresh size={20} />
-          </ActionIcon>
-        </Tooltip>
-      </div>
-
-      {filteredLinks.length === 0 && links.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card px-6 py-16 text-center">
+      {links.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 py-16 text-center">
           <div className="mb-4 rounded-lg bg-accent p-4 text-accent-foreground">
             <IconLink size={40} />
           </div>
@@ -101,17 +82,17 @@ export function LinksList({ links, isLoading }: LinksListProps) {
             {t('no_links_title')}
           </p>
           <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            {t('no_links_description')}
+            Use the Quick Create form to shorten your first link.
           </p>
         </div>
       ) : filteredLinks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card px-6 py-12 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-border px-6 py-12 text-center">
           <IconSearch size={40} className="mb-4 text-muted-foreground" />
           <p className="text-base font-semibold text-foreground">
-            {t('no_results_found') || 'Nenhum resultado encontrado'}
+            No results found
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            {t('try_different_search') || 'Tente uma busca diferente'}
+            Try a different search term.
           </p>
         </div>
       ) : (

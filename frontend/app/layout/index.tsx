@@ -12,7 +12,7 @@ export default function LayoutComponent() {
 
   useEffect(() => {
     if (isError) navigate('/login');
-  }, [isError]);
+  }, [isError, navigate]);
 
   if (isLoading || isError) {
     return (
@@ -22,7 +22,7 @@ export default function LayoutComponent() {
     );
   }
 
-  if (!data) null;
+  if (!data) return null;
 
   return (
     <div

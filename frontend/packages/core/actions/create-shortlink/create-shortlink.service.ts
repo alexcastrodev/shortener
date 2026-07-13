@@ -9,14 +9,10 @@ import type { Shortlink } from '../../types/Shortlink';
 export async function createShortlink(
   data: CreateShortlinkRequestBody
 ): Promise<Shortlink> {
-  try {
-    const response: AxiosResponse<CreateShortlinkResponse> = await api.post(
-      '/api/me/shortlinks',
-      data
-    );
+  const response: AxiosResponse<CreateShortlinkResponse> = await api.post(
+    '/api/me/shortlinks',
+    data
+  );
 
-    return response.data.shortlink;
-  } catch (error) {
-    throw error;
-  }
+  return response.data.shortlink;
 }

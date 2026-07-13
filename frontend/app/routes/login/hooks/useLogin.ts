@@ -1,6 +1,6 @@
 import { useLoginRequest } from '@internal/core/actions/login-request/login-request.hook';
 import { useForm } from '@mantine/form';
-import { notifications } from '@mantine/notifications';
+import { notifyError } from '@internal/core/utils/notify';
 import { useNavigate } from 'react-router';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { z } from 'zod/v4';
@@ -16,11 +16,7 @@ export function useLogin() {
       router('/login-confirmation', { state: { email: form.values.email } });
     },
     onError: () => {
-      notifications.show({
-        title: 'Error',
-        message: 'Something went wrong, please try again later.',
-        color: 'red',
-      });
+      notifyError('Something went wrong, please try again later.');
     },
   });
 

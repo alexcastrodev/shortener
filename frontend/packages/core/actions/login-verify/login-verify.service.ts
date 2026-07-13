@@ -8,14 +8,10 @@ import type {
 export async function loginVerifyRequest(
   data: LoginVerifyRequestBody
 ): Promise<LoginVerifyResponse> {
-  try {
-    const response: AxiosResponse<LoginVerifyResponse> = await api.post(
-      '/api/login_verify',
-      data
-    );
+  const response: AxiosResponse<LoginVerifyResponse> = await api.post(
+    '/api/login_verify',
+    data
+  );
 
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  return response.data;
 }

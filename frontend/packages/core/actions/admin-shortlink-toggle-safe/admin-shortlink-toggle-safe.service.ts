@@ -5,13 +5,9 @@ import type { AdminToggleSafeResponse } from './admin-shortlink-toggle-safe.type
 export async function toggleShortlinkSafe(
   id: number | string
 ): Promise<AdminToggleSafeResponse> {
-  try {
-    const response: AxiosResponse<AdminToggleSafeResponse> = await api.post(
-      `/api/admin/shortlinks/${id}/toggle_safe`
-    );
+  const response: AxiosResponse<AdminToggleSafeResponse> = await api.post(
+    `/api/admin/shortlinks/${id}/toggle_safe`
+  );
 
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  return response.data;
 }

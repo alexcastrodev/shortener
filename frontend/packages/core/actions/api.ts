@@ -10,7 +10,7 @@ export const publicApi = axios.create({
 });
 
 [api, publicApi].forEach(i =>
-  i.interceptors.request.use((config: any) => {
+  i.interceptors.request.use(config => {
     config.headers.set('Content-Type', 'application/json');
     const token = useUserState.getState().token;
     if (token) config.headers.set('Authorization', `Bearer ${token}`);
@@ -24,15 +24,13 @@ api.interceptors.response.use(
   error => {
     if (error.response?.status === 401) {
       useUserState.getState().clear();
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.location.replace('/login');
     }
     if (error.response?.status === 403) {
       const message = error.response?.data?.message;
       if (message === 'Your account has been deactivated') {
         useUserState.getState().clear();
-        localStorage.removeItem('token');
-        window.location.href = '/login?deactivated=true';
+        window.location.replace('/login?deactivated=true');
       }
     }
     return Promise.reject(error);

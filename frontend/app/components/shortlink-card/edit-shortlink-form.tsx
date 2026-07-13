@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next';
 import type { Shortlink } from 'packages/core/types/Shortlink';
 import { useUpdateShortlink } from 'packages/core/actions/update-shortlink/update-shortlink.hook';
 import { queryClient } from 'packages/core/service-provider';
-import { getShortlinksKey } from 'packages/core/actions/get-shortlinks/get-shortlinks.hook';
 
 const schema = z.object({
   title: z.string().optional(),
@@ -38,7 +37,7 @@ export function EditShortlinkForm({
   const { mutate, isPending } = useUpdateShortlink(
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getShortlinksKey });
+        queryClient.invalidateQueries({ queryKey: ['get-shortlinks'] });
         notifications.show({
           message: t('shortlink_updated'),
           color: 'green',

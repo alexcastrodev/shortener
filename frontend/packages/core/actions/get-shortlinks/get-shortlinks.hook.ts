@@ -1,16 +1,19 @@
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import type { ResponseError } from '../../types/ResponseError';
 import { getShortlinks } from './get-shortlinks.service';
-import type { GetShortlinksResponse } from './get-shortlinks.types';
+import type { GetShortlinksParams, GetShortlinksResponse } from './get-shortlinks.types';
 
-export const getShortlinksKey = ['get-shortlinks'];
+export function getShortlinksKey(params?: GetShortlinksParams) {
+  return ['get-shortlinks', params ?? {}];
+}
 
 export function useGetShortlinks(
+  params?: GetShortlinksParams,
   queryProps?: UseQueryOptions<GetShortlinksResponse, ResponseError>
 ) {
   return useQuery<GetShortlinksResponse, ResponseError>({
-    queryKey: getShortlinksKey,
-    queryFn: getShortlinks,
+    queryKey: getShortlinksKey(params),
+    queryFn: () => getShortlinks(params),
     ...queryProps,
   });
 }

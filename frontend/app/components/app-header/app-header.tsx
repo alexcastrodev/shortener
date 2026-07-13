@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router';
-import { IconHome2, IconLogout, IconUsers, IconLink } from '@tabler/icons-react';
+import { IconHome2, IconLogout, IconUsers, IconLink, IconHistory } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { AdminGuard } from '../admin-guard';
@@ -16,7 +16,7 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
 export function AppHeader() {
   const navigate = useNavigate();
   const { t } = useTranslation('menu');
-  const { clear } = useUserState();
+  const { clear, user } = useUserState();
 
   const handleLogout = () => {
     clear();
@@ -44,12 +44,21 @@ export function AppHeader() {
                 <IconLink size={17} stroke={1.8} />
                 {t('shortlinks')}
               </NavLink>
+              <NavLink to="/admin/audit-logs" className={navClass}>
+                <IconHistory size={17} stroke={1.8} />
+                {t('audit_logs')}
+              </NavLink>
             </AdminGuard>
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <ThemeToggle />
+          {user && (
+            <span className="hidden text-sm text-muted-foreground lg:inline">
+              {user.email}
+            </span>
+          )}
           <button
             type="button"
             onClick={handleLogout}

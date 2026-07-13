@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import menu from './en/menu.json';
 import home from './en/home.json';
 import dashboard from './en/dashboard.json';
+import admin from './en/admin.json';
 
 i18n.use(initReactI18next).init({
   resources: {
@@ -10,6 +11,7 @@ i18n.use(initReactI18next).init({
       menu,
       home,
       dashboard,
+      admin,
     },
   },
   lng: 'en',

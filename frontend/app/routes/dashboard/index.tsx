@@ -3,6 +3,7 @@ import { useGetShortlinks } from 'packages/core/actions/get-shortlinks/get-short
 import { LinksList, TotalLinksCard } from './components';
 import { QuickCreate } from '../../modules/quick-create';
 import { PageContainer } from '@internal/ui';
+import { useState } from 'react';
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -13,8 +14,14 @@ export function meta({}: Route.MetaArgs) {
 
 export const ssr = false;
 
+const PER_PAGE = 20;
+
 export default function Page() {
-  const { data, isLoading } = useGetShortlinks();
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useGetShortlinks({ page, per_page: PER_PAGE });
+
+  const total = data?.meta?.total ?? 0;
+  const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
     <PageContainer className="pb-24 sm:pb-10">
@@ -26,10 +33,34 @@ export default function Page() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <LinksList links={data?.shortlink || []} isLoading={isLoading} />
+        <div className="space-y-4">
+          <LinksList links={data?.shortlink || []} isLoading={isLoading} />
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-40 disabled:pointer-events-none"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-40 disabled:pointer-events-none"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
-          <TotalLinksCard total={data?.total || 0} isLoading={isLoading} />
+          <TotalLinksCard total={total} isLoading={isLoading} />
           <QuickCreate />
         </div>
       </div>

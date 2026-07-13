@@ -4,8 +4,13 @@ import type { PropsWithChildren } from 'react';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: false,
+      retry: (failureCount, error: any) => {
+        const status = error?.response?.status;
+        if (status && status < 500) return false;
+        return failureCount < 2;
+      },
       refetchOnWindowFocus: false,
+      staleTime: 30_000,
     },
   },
 });

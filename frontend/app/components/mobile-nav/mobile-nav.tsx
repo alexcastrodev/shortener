@@ -4,6 +4,7 @@ import {
   IconUsers,
   IconLogout,
   IconLink,
+  IconHistory,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
@@ -52,6 +53,15 @@ export function MobileNav() {
         >
           <IconLink size={22} stroke={1.5} />
           <span className={styles.label}>{t('shortlinks')}</span>
+        </NavLink>
+        <NavLink
+          to="/admin/audit-logs"
+          className={({ isActive }) =>
+            `${styles.navItem} ${isActive ? styles.active : ''}`
+          }
+        >
+          <IconHistory size={22} stroke={1.5} />
+          <span className={styles.label}>{t('audit_logs')}</span>
         </NavLink>
       </AdminGuard>
 

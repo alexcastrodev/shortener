@@ -19,6 +19,7 @@ export default [
     ...prefix('admin', [
       route('users', 'routes/admin/users.tsx'),
       route('shortlinks', 'routes/admin/shortlinks.tsx'),
+      route('audit-logs', 'routes/admin/audit-logs.tsx'),
     ]),
   ]),
   layout('layout/guest.tsx', [

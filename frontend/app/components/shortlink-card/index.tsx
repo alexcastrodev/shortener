@@ -15,7 +15,6 @@ import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import { useDeleteShortlink } from 'packages/core/actions/delete-shortlink/delete-shortlink.hook';
 import { queryClient } from 'packages/core/service-provider';
-import { getShortlinksKey } from 'packages/core/actions/get-shortlinks/get-shortlinks.hook';
 import { useTranslation } from 'react-i18next';
 import { EditShortlinkForm } from './edit-shortlink-form';
 
@@ -30,7 +29,7 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
 
   const { mutate: deleteShortlink } = useDeleteShortlink({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getShortlinksKey });
+      queryClient.invalidateQueries({ queryKey: ['get-shortlinks'] });
       notifications.show({
         message: t('shortlink_deleted'),
         color: 'green',
@@ -173,7 +172,7 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
 
         <div className="flex items-center justify-between border-t border-border pt-2">
           <div className="flex items-center gap-4">
-            <Tooltip label="Click count">
+            <Tooltip label={t('click_count') || 'Click count'}>
               <Badge
                 size="md"
                 variant="light"
@@ -186,7 +185,7 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
 
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">Last access</p>
+            <p className="text-xs text-muted-foreground">{t('last_access') || 'Last access'}</p>
             <span className="text-xs text-muted-foreground">
               {formattedDate}
             </span>

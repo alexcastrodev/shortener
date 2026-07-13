@@ -4,14 +4,17 @@ import { notifications } from '@mantine/notifications';
 import { useLocation, useNavigate } from 'react-router';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useUserState } from '@internal/core/states/use-user-state';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { z } from 'zod/v4';
+import type { ResponseError } from '@internal/core/types/ResponseError';
 
 export function useConfirmation() {
   const router = useNavigate();
   const { setup } = useUserState();
   const location = useLocation();
   const email = location.state?.email;
+  const autoSubmitted = useRef(false);
+
   const schema = z.object({
     code: z
       .string()
@@ -23,17 +26,18 @@ export function useConfirmation() {
     if (!email) {
       router('/login', { replace: true });
     }
-  }, [email]);
+  }, [email, router]);
 
   const { mutate, isPending } = useLoginVerifyRequest({
     onSuccess: ({ token, user }) => {
       setup(token, user);
       router('/app');
     },
-    onError: (error: any) => {
+    onError: (error: ResponseError & { response?: { status?: number } }) => {
       form.setFieldValue('code', '');
+      autoSubmitted.current = false;
 
-      const status = error?.response?.status ?? error?.status;
+      const status = error?.response?.status;
       if (status === 403) {
         notifications.show({
           title: 'Account deactivated',
@@ -52,23 +56,25 @@ export function useConfirmation() {
       });
     },
   });
+
   const form = useForm({
     mode: 'uncontrolled',
     initialValues: {
       code: '',
     },
-
     validate: zod4Resolver(schema),
   });
 
   function handleRequestLogin(data: typeof form.values) {
+    if (autoSubmitted.current) return;
     mutate({ code: data.code, email });
   }
 
   function handleChange(value: string) {
     form.getInputProps('code').onChange(value);
 
-    if (value.length === 7) {
+    if (value.length === 7 && !isPending) {
+      autoSubmitted.current = true;
       mutate({ code: value, email });
     }
   }

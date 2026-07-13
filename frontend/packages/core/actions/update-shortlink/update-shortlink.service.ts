@@ -10,14 +10,10 @@ export async function updateShortlink({
   id,
   data,
 }: UpdateShortlinkParams): Promise<Shortlink> {
-  try {
-    const response: AxiosResponse<UpdateShortlinkResponse> = await api.patch(
-      `/api/me/shortlinks/${id}`,
-      data
-    );
+  const response: AxiosResponse<UpdateShortlinkResponse> = await api.patch(
+    `/api/me/shortlinks/${id}`,
+    data
+  );
 
-    return response.data.shortlink;
-  } catch (error) {
-    throw error;
-  }
+  return response.data.shortlink;
 }

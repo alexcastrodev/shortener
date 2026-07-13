@@ -1,10 +1,9 @@
 import { useCreateShortlink } from '@internal/core/actions/create-shortlink/create-shortlink.hook';
-import { notifications } from '@mantine/notifications';
 import { useForm } from '@mantine/form';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { z } from 'zod/v4';
 import { queryClient } from '@internal/core/service-provider';
-import { getShortlinksKey } from '@internal/core/actions/get-shortlinks/get-shortlinks.hook';
+import { notifySuccess, notifyError } from '@internal/core/utils/notify';
 
 const schema = z.object({
   title: z.string().optional(),
@@ -22,17 +21,13 @@ export function useQuickCreate() {
     validate: zod4Resolver(schema),
   });
   const { mutate, isPending } = useCreateShortlink({
-    onSuccess: data => {
-      queryClient.invalidateQueries({ queryKey: getShortlinksKey });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['get-shortlinks'] });
       form.reset();
+      notifySuccess('Link created successfully');
     },
     onError: error => {
-      notifications.show({
-        title: 'Error',
-        message:
-          error.error || 'Something went wrong, please try again later.',
-        color: 'red',
-      });
+      notifyError(error.error || 'Something went wrong, please try again later.');
     },
   });
 

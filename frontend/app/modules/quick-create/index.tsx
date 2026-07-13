@@ -10,11 +10,16 @@ export function QuickCreate() {
 
   return (
     <Card className="p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <IconPlus size={18} className="text-primary" />
-        <h3 className="text-sm font-semibold text-foreground">
-          {t('quick_create_title')}
-        </h3>
+      <div className="mb-4">
+        <div className="flex items-center gap-2">
+          <IconPlus size={18} className="text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">
+            {t('quick_create_title')}
+          </h3>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Paste a URL to generate a short link.
+        </p>
       </div>
 
       <form onSubmit={form.onSubmit(handleSubmit)} className="space-y-3">
