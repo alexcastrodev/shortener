@@ -24,16 +24,15 @@
 #
 class Shortlink < ApplicationRecord
   # ===============
-  # Attributes
+  # Audit
   # ===============
-  attribute :email, :string
+  audited except: [:short_code, :events_count, :last_accessed_at, :deleted_at]
 
   # ===============
   # Scopes
   # ===============
   default_scope { where(deleted_at: nil) }
   scope :with_deleted, -> { unscope(where: :deleted_at) }
-  scope :without_user, -> { where(user_id: nil) }
   scope :safe, -> { where(safe: true) }
   scope :active, -> { where(inactive_at: nil) }
 
@@ -46,13 +45,13 @@ class Shortlink < ApplicationRecord
   # ===============
   # Associations
   # ===============
-  belongs_to :user, optional: true
+  belongs_to :user
+  counter_culture :user
   has_many :events
 
   # ===============
   # Callbacks
   # ===============
-  before_create :associate_user_by_email, if: -> { email.present? && user.blank? }
   after_commit :save_cache, :verify_safety, on: :create
   after_destroy :remove_cache, if: -> { short_code.present? }
   before_validation :generate_short_code, on: :create
@@ -122,7 +121,4 @@ class Shortlink < ApplicationRecord
     end
   end
 
-  def associate_user_by_email
-    self.user = User.find_or_create_by(email: email)
-  end
 end

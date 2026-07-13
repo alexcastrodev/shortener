@@ -184,13 +184,6 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
               </Badge>
             </Tooltip>
 
-            {shortlink.created_by_guest && (
-              <Tooltip label="This shortlink generated on the homepage without Authentication">
-                <Badge size="sm" variant="dot" color="yellow">
-                  Guest
-                </Badge>
-              </Tooltip>
-            )}
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Last access</p>

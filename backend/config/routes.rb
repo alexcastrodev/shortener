@@ -11,10 +11,13 @@ Rails.application.routes.draw do
   namespace :api do
     post "login_request", to: "sessions#create"
     post "login_verify", to: "sessions#verify"
-    resources :shortlinks, only: [:create]
 
     namespace :admin do
-      resources :users, only: [:index]
+      resources :users, only: [:index] do
+        member do
+          post "toggle_active", to: "users#toggle_active"
+        end
+      end
       resources :shortlinks, only: [:index] do
         member do
           post "toggle_safe", to: "shortlinks#toggle_safe"

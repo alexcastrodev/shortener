@@ -1,11 +1,6 @@
 import { IconArrowRight, IconLink } from '@tabler/icons-react';
 import type { MetaFunction } from 'react-router';
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
-import { useCreatePublicShortlink } from '@internal/core/actions/create-public-shortlink/create-public-shortlink.hook';
-import type { Shortlink } from '@internal/core/types/Shortlink';
 import { Layout } from '../layout/web-layout';
-import { EmailField } from '../modules/shortlink-form/email-field';
 
 export const meta: MetaFunction = () => {
   const title = 'Kurz - Link Shortener';
@@ -38,37 +33,6 @@ export const meta: MetaFunction = () => {
 };
 
 export default function LinkShortenerLanding() {
-  const navigate = useNavigate();
-  const [url, setUrl] = useState('');
-  const [email, setEmail] = useState('');
-
-  const { mutate: createShortlink, isPending } = useCreatePublicShortlink({
-    onSuccess: (data: Shortlink) => {
-      navigate('/status/success', {
-        state: { shortlink: data, email: email || undefined },
-      });
-    },
-    onError: response => {
-      alert(response.error);
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!url.trim()) return;
-
-    createShortlink({
-      original_url: url.trim(),
-      email: email.trim() || undefined,
-    });
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isPending) {
-      handleSubmit(e as unknown as React.FormEvent);
-    }
-  };
-
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
@@ -114,34 +78,21 @@ export default function LinkShortenerLanding() {
             from one simple dashboard.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 max-w-2xl space-y-3">
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <input
-                type="url"
-                value={url}
-                onChange={e => setUrl(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Paste your long URL here..."
-                className="min-h-12 flex-1 rounded-md border border-border bg-card px-4 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
-                disabled={isPending}
-                required
-              />
-              <button
-                type="submit"
-                disabled={isPending || !url.trim()}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50 sm:px-6"
-              >
-                {isPending ? 'Creating...' : 'Shorten link'}
-                {!isPending && <IconArrowRight size={18} />}
-              </button>
-            </div>
-
-            <EmailField
-              email={email}
-              onChange={setEmail}
-              disabled={isPending}
-            />
-          </form>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a
+              href="/login"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Get started
+              <IconArrowRight size={18} />
+            </a>
+            <a
+              href="/about"
+              className="inline-flex min-h-12 items-center justify-center rounded-md border border-border bg-card px-6 text-sm font-semibold text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              Learn more
+            </a>
+          </div>
         </div>
 
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">

@@ -80,6 +80,9 @@ GEM
       activerecord (>= 6.0.0)
       activesupport (>= 6.0.0)
     ast (2.4.3)
+    audited (5.8.0)
+      activerecord (>= 5.2, < 8.2)
+      activesupport (>= 5.2, < 8.2)
     base64 (0.3.0)
     bcrypt_pbkdf (1.1.2)
     benchmark (0.4.1)
@@ -542,6 +545,7 @@ PLATFORMS
 DEPENDENCIES
   alba
   annotaterb
+  audited (~> 5.7)
   bootsnap
   brakeman
   bullet

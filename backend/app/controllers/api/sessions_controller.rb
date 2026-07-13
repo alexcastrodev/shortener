@@ -19,6 +19,11 @@ class Api::SessionsController < ApplicationController
     user = User.find_by(find_params)
 
     if user && (dev_bypass? || user.login_token_valid?)
+      if user.deactivated?
+        render(json: { error: I18n.t("errors.account_deactivated") }, status: :forbidden)
+        return
+      end
+
       token = generate_jwt(user)
       user.clear_login_token!
 

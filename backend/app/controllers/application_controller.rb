@@ -48,6 +48,10 @@ class ApplicationController < ActionController::API
     return render(json: { message: "Missing token" }, status: :unauthorized) unless auth_header
 
     @current_user = User.find(jwt_user_id(auth_header))
+
+    if @current_user.deactivated?
+      render(json: { message: I18n.t("errors.account_deactivated") }, status: :forbidden)
+    end
   rescue JWT::ExpiredSignature, JWT::DecodeError
     render(json: { message: "Invalid or expired token" }, status: :unauthorized)
   end

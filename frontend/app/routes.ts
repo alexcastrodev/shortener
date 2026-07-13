@@ -9,6 +9,7 @@ import {
 export default [
   index('routes/index.tsx'),
   route('about', 'routes/about.tsx'),
+  route('report', 'routes/report.tsx'),
   route('status/success', 'routes/status/success.tsx'),
   layout('layout/index.tsx', [
     ...prefix('app', [

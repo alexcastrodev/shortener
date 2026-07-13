@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe(PurgeShortlinkJob, type: :job) do
-  let(:shortlink) { Shortlink.create!(original_url: "https://example.com") }
+  let(:shortlink) { FactoryBot.create(:shortlink) }
 
   it "deletes the shortlink and all of its events" do
     3.times { Event.create!(shortlink: shortlink, clicked_at: Time.current) }

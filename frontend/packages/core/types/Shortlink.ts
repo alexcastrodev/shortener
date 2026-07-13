@@ -13,5 +13,4 @@ export type Shortlink = {
   safe_checked_at?: string | null;
   inactive_at?: string | null;
   user?: User | null;
-  created_by_guest: boolean;
 };

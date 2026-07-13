@@ -1,7 +1,8 @@
-import { Button, Stack, Text, TextInput, Title } from '@mantine/core';
-import { IconMail } from '@tabler/icons-react';
+import { Alert, Button, Stack, Text, TextInput, Title } from '@mantine/core';
+import { IconAlertTriangle, IconMail } from '@tabler/icons-react';
 import { useLogin } from './hooks/useLogin';
 import type { MetaFunction } from 'react-router';
+import { useSearchParams } from 'react-router';
 import { BrandMark, Card, ThemeToggle } from '@internal/ui';
 
 export const ssr = false;
@@ -12,6 +13,8 @@ export const meta: MetaFunction = () => {
 
 export default function Login() {
   const { form, handleRequestLogin, loading } = useLogin();
+  const [searchParams] = useSearchParams();
+  const deactivated = searchParams.get('deactivated') === 'true';
 
   return (
     <main className="min-h-screen bg-background px-4 py-6 text-foreground">
@@ -22,6 +25,24 @@ export default function Login() {
 
       <div className="mx-auto flex min-h-[calc(100vh-88px)] max-w-md items-center">
         <Card className="w-full p-6 sm:p-8">
+          {deactivated && (
+            <Alert
+              icon={<IconAlertTriangle size={18} />}
+              title="Account deactivated"
+              color="red"
+              className="mb-6"
+            >
+              Your account has been deactivated. If you believe this is a
+              mistake, please contact support at{' '}
+              <a
+                href="mailto:kurz.fyi@gmail.com"
+                className="font-semibold underline"
+              >
+                kurz.fyi@gmail.com
+              </a>
+              .
+            </Alert>
+          )}
           <form onSubmit={form.onSubmit(handleRequestLogin)}>
             <Stack gap="lg">
               <div className="text-center">

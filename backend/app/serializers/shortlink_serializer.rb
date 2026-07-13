@@ -34,10 +34,6 @@ class ShortlinkSerializer < BaseSerializer
   #------------
   attributes :original_url, :title, :events_count, :last_accessed_at, :short_code, :short_url, :inactive_at, :safe
 
-  attribute :created_by_guest do |shortlink|
-    shortlink.user_id.nil?
-  end
-
   attribute :is_active do |shortlink|
     shortlink.inactive_at.nil?
   end

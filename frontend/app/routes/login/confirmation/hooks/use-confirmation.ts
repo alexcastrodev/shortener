@@ -30,8 +30,21 @@ export function useConfirmation() {
       setup(token, user);
       router('/app');
     },
-    onError: () => {
+    onError: (error: any) => {
       form.setFieldValue('code', '');
+
+      const status = error?.response?.status ?? error?.status;
+      if (status === 403) {
+        notifications.show({
+          title: 'Account deactivated',
+          message:
+            'Your account has been deactivated. Contact support if you believe this is a mistake.',
+          color: 'red',
+          autoClose: false,
+        });
+        return;
+      }
+
       notifications.show({
         title: 'Error',
         message: 'Pin code is invalid, please try again.',

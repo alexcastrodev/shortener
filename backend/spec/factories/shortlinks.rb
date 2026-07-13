@@ -27,9 +27,6 @@ FactoryBot.define do
     original_url { "https://example.com" }
     title { "Example Shortlink" }
     last_accessed_at { nil }
-
-    trait :with_user do
-      user { association :user }
-    end
+    user { association :user }
   end
 end

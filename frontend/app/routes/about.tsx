@@ -35,9 +35,9 @@ const items = [
   },
   {
     icon: IconUser,
-    title: 'Optional account',
+    title: 'Account required',
     description:
-      'Create a link from the homepage, or sign in when you want a dashboard for management and analytics.',
+      'Sign in with your email to create and manage links from your dashboard with full analytics.',
   },
 ];
 

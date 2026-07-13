@@ -17,6 +17,11 @@
 #
 class User < ApplicationRecord
   # ===============
+  # Audit
+  # ===============
+  audited only: [:email, :admin, :deactivated_at]
+
+  # ===============
   # Validations
   # ===============
   normalizes :email, with: ->(email) { email.strip.downcase }
@@ -26,6 +31,31 @@ class User < ApplicationRecord
   # Associations
   # ===============
   has_many :shortlinks, dependent: :destroy
+
+  # ===============
+  # Scopes
+  # ===============
+  scope :active, -> { where(deactivated_at: nil) }
+
+  def active?
+    deactivated_at.nil?
+  end
+
+  def deactivated?
+    deactivated_at.present?
+  end
+
+  def deactivate!
+    update!(deactivated_at: Time.current)
+    shortlinks.active.find_each do |shortlink|
+      shortlink.remove_cache
+      shortlink.update!(inactive_at: Time.current)
+    end
+  end
+
+  def reactivate!
+    update!(deactivated_at: nil)
+  end
 
   def generate_login_token!
     update!(

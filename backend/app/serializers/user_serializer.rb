@@ -22,9 +22,7 @@ class UserSerializer < BaseSerializer
   #------------
   # Attributes
   #------------
-  attributes :email, :admin
+  attributes :email, :admin, :deactivated_at
 
-  attribute :shortlinks_count do |record|
-    record.shortlinks.count
-  end
+  attributes :shortlinks_count
 end

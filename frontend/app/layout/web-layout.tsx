@@ -40,6 +40,12 @@ export function Layout({ children }: PropsWithChildren) {
               About
             </a>
             <a
+              href="/report"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Report Abuse
+            </a>
+            <a
               href="https://github.com/alexcastrodev/shortner"
               target="_blank"
               rel="noopener noreferrer"

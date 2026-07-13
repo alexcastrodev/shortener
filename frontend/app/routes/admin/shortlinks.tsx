@@ -122,9 +122,9 @@ export default function AdminShortlinksPage() {
                     <Badge
                       size="sm"
                       variant="light"
-                      color={shortlink.created_by_guest ? 'yellow' : 'brand'}
+                      color={shortlink.is_active ? 'brand' : 'red'}
                     >
-                      {shortlink.created_by_guest ? 'Guest' : 'Authenticated'}
+                      {shortlink.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                   <p className="mt-2 break-all text-sm text-muted-foreground">
