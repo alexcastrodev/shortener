@@ -1,15 +1,17 @@
 import type { AxiosResponse } from 'axios';
 import { api } from '../api';
-import type { AdminGetShortlinksResponse } from './admin-shortlink.types';
+import type {
+  AdminGetShortlinksParams,
+  AdminGetShortlinksResponse,
+} from './admin-shortlink.types';
 
-export async function getAdminShortlinks(): Promise<AdminGetShortlinksResponse> {
-  try {
-    const response: AxiosResponse<AdminGetShortlinksResponse> = await api.get(
-      '/api/admin/shortlinks'
-    );
+export async function getAdminShortlinks(
+  params?: AdminGetShortlinksParams
+): Promise<AdminGetShortlinksResponse> {
+  const response: AxiosResponse<AdminGetShortlinksResponse> = await api.get(
+    '/api/admin/shortlinks',
+    { params }
+  );
 
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+  return response.data;
 }

@@ -67,6 +67,7 @@ gem "sneakers"
 gem "jwt"
 gem "counter_culture", "~> 3.2"
 gem "audited", "~> 5.7"
+gem "pg_search"
 
 # =================
 # Caching

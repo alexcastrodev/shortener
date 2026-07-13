@@ -4,7 +4,9 @@ class Api::Admin::UsersController < ApplicationController
   def index
     authorize(@current_user, :list_all?)
 
-    render(json: UserSerializer.new(User.all.order(id: :desc)).serialize, status: :ok)
+    users = Admin::UserSearchService.call(status: params[:status], q: params[:q])
+
+    render(json: UserSerializer.new(users).serialize(meta: { total: User.count }), status: :ok)
   end
 
   # POST /api/admin/users/:id/toggle_active

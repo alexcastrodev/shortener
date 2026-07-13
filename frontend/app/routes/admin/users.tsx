@@ -1,14 +1,17 @@
-import { Badge, Button, Center, Loader } from '@mantine/core';
-import { IconLock, IconUsers } from '@tabler/icons-react';
+import { Badge, Button, Center, Loader, SegmentedControl, TextInput } from '@mantine/core';
+import { useDebouncedValue } from '@mantine/hooks';
+import { IconLock, IconSearch, IconUsers } from '@tabler/icons-react';
 import { Alert, Card, PageContainer } from '@internal/ui';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
 import {
   useGetManageUsers,
   getManageUsersKey,
 } from '@internal/core/actions/get-manage-users/get-manage-users.hook';
+import type { GetManageUsersParams } from '@internal/core/actions/get-manage-users/get-manage-users.types';
 import { useToggleUserActive } from '@internal/core/actions/admin-user-toggle-active/admin-user-toggle-active.hook';
 import { useQueryClient } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
+import { useMemo, useState } from 'react';
 
 export const ssr = false;
 
@@ -19,15 +22,30 @@ export function meta() {
   ];
 }
 
+type StatusFilter = 'active' | 'inactive' | 'all';
+
 export default function UsersPage() {
   const { data } = useGetLoggedUser();
-  const { data: usersData, isLoading, error } = useGetManageUsers();
-  const users = usersData?.user || [];
   const queryClient = useQueryClient();
+
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch] = useDebouncedValue(search, 300);
+
+  const queryParams = useMemo<GetManageUsersParams>(() => {
+    const p: GetManageUsersParams = {};
+    if (statusFilter !== 'all') p.status = statusFilter;
+    if (debouncedSearch.trim()) p.q = debouncedSearch.trim();
+    return p;
+  }, [statusFilter, debouncedSearch]);
+
+  const { data: usersData, isLoading, error } = useGetManageUsers(queryParams);
+  const users = usersData?.user || [];
+  const total = usersData?.meta?.total ?? users.length;
 
   const { mutate: toggleActive, isPending } = useToggleUserActive({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: getManageUsersKey });
+      queryClient.invalidateQueries({ queryKey: ['get-manage-users'] });
     },
     onError: () => {
       notifications.show({
@@ -48,16 +66,6 @@ export default function UsersPage() {
         >
           You do not have permission to access this page.
         </Alert>
-      </PageContainer>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <PageContainer>
-        <Center py="xl">
-          <Loader size="lg" color="brand" />
-        </Center>
       </PageContainer>
     );
   }
@@ -90,11 +98,39 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {users.length === 0 ? (
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <TextInput
+          placeholder="Search by email..."
+          leftSection={<IconSearch size={16} />}
+          value={search}
+          onChange={e => setSearch(e.currentTarget.value)}
+          className="sm:max-w-xs"
+        />
+        <SegmentedControl
+          value={statusFilter}
+          onChange={v => setStatusFilter(v as StatusFilter)}
+          data={[
+            { label: 'Active', value: 'active' },
+            { label: 'Inactive', value: 'inactive' },
+            { label: 'All', value: 'all' },
+          ]}
+        />
+        <p className="text-sm text-muted-foreground sm:ml-auto">
+          {users.length} of {total} users
+        </p>
+      </div>
+
+      {isLoading ? (
+        <Center py="xl">
+          <Loader size="lg" color="brand" />
+        </Center>
+      ) : users.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="font-semibold text-foreground">No users found</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Users will appear here when they exist in the system.
+            {total > 0
+              ? 'Try adjusting your filters.'
+              : 'Users will appear here when they exist in the system.'}
           </p>
         </Card>
       ) : (
@@ -142,7 +178,7 @@ export default function UsersPage() {
                   <div className="mt-4">
                     <Button
                       fullWidth
-                      variant={isDeactivated ? 'light' : 'light'}
+                      variant="light"
                       color={isDeactivated ? 'green' : 'red'}
                       size="sm"
                       loading={isPending}

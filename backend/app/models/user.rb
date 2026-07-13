@@ -16,10 +16,19 @@
 #  index_users_on_lower_email  (lower((email)::text)) UNIQUE
 #
 class User < ApplicationRecord
+  include PgSearch::Model
+
   # ===============
   # Audit
   # ===============
   audited only: [:email, :admin, :deactivated_at]
+
+  # ===============
+  # Search
+  # ===============
+  pg_search_scope :search_by_term,
+    against: :email,
+    using: { tsearch: { prefix: true } }
 
   # ===============
   # Validations

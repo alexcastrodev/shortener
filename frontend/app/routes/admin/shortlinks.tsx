@@ -1,14 +1,17 @@
-import { Badge, Center, Group, Loader, Switch } from '@mantine/core';
-import { IconLink, IconLock } from '@tabler/icons-react';
+import { Badge, Center, Group, Loader, SegmentedControl, Switch, TextInput } from '@mantine/core';
+import { useDebouncedValue } from '@mantine/hooks';
+import { IconLink, IconLock, IconSearch } from '@tabler/icons-react';
 import { Alert, Card, PageContainer } from '@internal/ui';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
 import {
   useAdminGetShortlinks,
   adminGetShortlinksKey,
 } from '@internal/core/actions/admin-shortlink/admin-shortlink.hook';
+import type { AdminGetShortlinksParams } from '@internal/core/actions/admin-shortlink/admin-shortlink.types';
 import { useToggleShortlinkSafe } from '@internal/core/actions/admin-shortlink-toggle-safe/admin-shortlink-toggle-safe.hook';
 import { useToggleShortlinkActive } from '@internal/core/actions/admin-shortlink-toggle-active/admin-shortlink-toggle-active.hook';
 import { useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 import type { Shortlink } from '@internal/core/types/Shortlink';
 import type { AdminGetShortlinksResponse } from '@internal/core/actions/admin-shortlink/admin-shortlink.types';
 
@@ -21,15 +24,34 @@ export function meta() {
   ];
 }
 
+type StatusFilter = 'active' | 'inactive' | 'all';
+
 export default function AdminShortlinksPage() {
   const { data } = useGetLoggedUser();
   const queryClient = useQueryClient();
-  const { data: shortlinksData, isLoading, error } = useAdminGetShortlinks();
+
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch] = useDebouncedValue(search, 300);
+
+  const queryParams = useMemo<AdminGetShortlinksParams>(() => {
+    const p: AdminGetShortlinksParams = {};
+    if (statusFilter !== 'all') p.status = statusFilter;
+    if (debouncedSearch.trim()) p.q = debouncedSearch.trim();
+    return p;
+  }, [statusFilter, debouncedSearch]);
+
+  const {
+    data: shortlinksData,
+    isLoading,
+    error,
+  } = useAdminGetShortlinks(queryParams);
   const shortlinks = shortlinksData?.shortlink || [];
+  const total = shortlinksData?.meta?.total ?? shortlinks.length;
 
   const patchShortlink = (updated: Shortlink) => {
-    queryClient.setQueryData<AdminGetShortlinksResponse>(
-      adminGetShortlinksKey,
+    queryClient.setQueriesData<AdminGetShortlinksResponse>(
+      { queryKey: ['admin-get-shortlinks'] },
       prev => {
         if (!prev) return prev;
         return {
@@ -64,16 +86,6 @@ export default function AdminShortlinksPage() {
     );
   }
 
-  if (isLoading) {
-    return (
-      <PageContainer>
-        <Center py="xl">
-          <Loader size="lg" color="brand" />
-        </Center>
-      </PageContainer>
-    );
-  }
-
   if (error) {
     return (
       <PageContainer>
@@ -102,11 +114,39 @@ export default function AdminShortlinksPage() {
         </div>
       </div>
 
-      {shortlinks.length === 0 ? (
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <TextInput
+          placeholder="Search by title, URL, code or email..."
+          leftSection={<IconSearch size={16} />}
+          value={search}
+          onChange={e => setSearch(e.currentTarget.value)}
+          className="sm:max-w-xs"
+        />
+        <SegmentedControl
+          value={statusFilter}
+          onChange={v => setStatusFilter(v as StatusFilter)}
+          data={[
+            { label: 'Active', value: 'active' },
+            { label: 'Inactive', value: 'inactive' },
+            { label: 'All', value: 'all' },
+          ]}
+        />
+        <p className="text-sm text-muted-foreground sm:ml-auto">
+          {shortlinks.length} of {total} shortlinks
+        </p>
+      </div>
+
+      {isLoading ? (
+        <Center py="xl">
+          <Loader size="lg" color="brand" />
+        </Center>
+      ) : shortlinks.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="font-semibold text-foreground">No shortlinks found</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Shortlinks will appear here when they exist in the system.
+            {total > 0
+              ? 'Try adjusting your filters.'
+              : 'Shortlinks will appear here when they exist in the system.'}
           </p>
         </Card>
       ) : (
@@ -149,7 +189,7 @@ export default function AdminShortlinksPage() {
                       User
                     </p>
                     <p className="mt-1 truncate text-sm font-semibold text-foreground">
-                      {shortlink.user?.email || 'Guest'}
+                      {shortlink.user?.email || '—'}
                     </p>
                   </div>
                 </div>

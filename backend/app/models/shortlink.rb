@@ -23,10 +23,20 @@
 #  index_shortlinks_on_user_id     (user_id)
 #
 class Shortlink < ApplicationRecord
+  include PgSearch::Model
+
   # ===============
   # Audit
   # ===============
   audited except: [:short_code, :events_count, :last_accessed_at, :deleted_at]
+
+  # ===============
+  # Search
+  # ===============
+  pg_search_scope :search_by_term,
+    against: [:title, :original_url, :short_code],
+    associated_against: { user: :email },
+    using: { tsearch: { prefix: true } }
 
   # ===============
   # Scopes

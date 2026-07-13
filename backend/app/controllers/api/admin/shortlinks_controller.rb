@@ -4,8 +4,10 @@ class Api::Admin::ShortlinksController < ApplicationController
   # GET /api/admin/shortlinks
   def index
     authorize(Shortlink, :list_all?)
-    shortlinks = Shortlink.all.includes(:user).order(id: :desc)
-    render(json: ShortlinkSerializer.new(shortlinks, params: { admin: true }).serialize, status: :ok)
+
+    shortlinks = Admin::ShortlinkSearchService.call(status: params[:status], q: params[:q])
+
+    render(json: ShortlinkSerializer.new(shortlinks, params: { admin: true }).serialize(meta: { total: Shortlink.count }), status: :ok)
   end
 
   # POST /api/admin/shortlinks/:id/toggle_safe
