@@ -24,6 +24,7 @@ module Shell
     validate_image_config!(image)
     
     cmd = "docker build " \
+          "--platform linux/amd64 " \
           "-f #{Shellwords.escape(image[:dockerfile])} " \
           "-t #{image[:name]}:#{image[:tag]} " \
           "#{Shellwords.escape(image[:context])}"
