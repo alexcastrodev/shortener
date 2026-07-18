@@ -25,6 +25,7 @@ module Shell
     
     cmd = "docker build " \
           "--platform linux/amd64 " \
+          "--platform linux/arm64 " \
           "-f #{Shellwords.escape(image[:dockerfile])} " \
           "-t #{image[:name]}:#{image[:tag]} " \
           "#{Shellwords.escape(image[:context])}"
