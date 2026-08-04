@@ -1,6 +1,35 @@
-import { IconArrowRight, IconLink } from '@tabler/icons-react';
+import {
+  IconArrowRight,
+  IconChartBar,
+  IconClick,
+  IconCode,
+  IconLink,
+  IconShieldCheck,
+} from '@tabler/icons-react';
 import type { MetaFunction } from 'react-router';
+import { Card } from '@internal/ui';
 import { Layout } from '../layout/web-layout';
+
+const features = [
+  {
+    icon: IconChartBar,
+    title: 'Analytics included',
+    description:
+      'Review click data for your links, including location, device, and browser.',
+  },
+  {
+    icon: IconShieldCheck,
+    title: 'Safety checks',
+    description:
+      'Links are checked with Google Safe Browsing before they are kept active.',
+  },
+  {
+    icon: IconCode,
+    title: 'Open source',
+    description:
+      'Transparent and available on GitHub for review, contribution, or self-hosting.',
+  },
+];
 
 export const meta: MetaFunction = () => {
   const title = 'Kurz - Link Shortener';
@@ -71,11 +100,11 @@ export default function LinkShortenerLanding() {
             Link shortener
           </div>
           <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
-            Kurz
+            Shorten links. Track every click.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-            Turn long URLs into concise links you can share, manage, and review
-            from one simple dashboard.
+            Kurz turns long URLs into short, shareable links and shows you who
+            clicked, from where, and on what device.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -97,20 +126,58 @@ export default function LinkShortenerLanding() {
 
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <div className="space-y-3">
-            <div className="h-10 rounded-md border border-border bg-muted" />
+            <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
+              <IconLink size={16} className="shrink-0" />
+              <span className="truncate">
+                https://example.com/campaigns/summer-launch/2026
+              </span>
+            </div>
+
             <div className="rounded-md border border-border bg-background p-4">
-              <div className="mb-3 h-3 w-20 rounded bg-muted" />
-              <div className="h-4 w-4/5 rounded bg-muted" />
+              <p className="text-xs font-medium text-muted-foreground">
+                Your short link
+              </p>
+              <p className="mt-1 truncate text-base font-semibold text-foreground">
+                kurz.fyi/x7f2A
+              </p>
               <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
-                <div className="h-3 w-24 rounded bg-muted" />
-                <div className="h-7 w-20 rounded-md bg-accent" />
+                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <IconClick size={14} />
+                  128 clicks
+                </span>
+                <span className="rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground">
+                  Active
+                </span>
               </div>
             </div>
-            <div className="rounded-md border border-border bg-background p-4 opacity-70">
-              <div className="mb-3 h-3 w-16 rounded bg-muted" />
-              <div className="h-4 w-3/5 rounded bg-muted" />
+
+            <div className="rounded-md border border-border bg-background p-4 opacity-60">
+              <p className="text-xs font-medium text-muted-foreground">
+                Your short link
+              </p>
+              <p className="mt-1 truncate text-base font-semibold text-foreground">
+                kurz.fyi/9kLpr
+              </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+        <div className="grid gap-4 sm:grid-cols-3">
+          {features.map(({ icon: Icon, title, description }) => (
+            <Card key={title} className="p-5">
+              <div className="mb-4 inline-flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
+                <Icon size={20} stroke={1.8} />
+              </div>
+              <h2 className="text-base font-semibold text-foreground">
+                {title}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {description}
+              </p>
+            </Card>
+          ))}
         </div>
       </section>
     </Layout>
