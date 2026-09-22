@@ -4,9 +4,12 @@
 #
 #  id                  :bigint           not null, primary key
 #  admin               :boolean          default(FALSE), not null
+#  deactivated_at      :datetime
 #  email               :string           not null
+#  login_attempts      :integer          default(0), not null
 #  login_token         :string
 #  login_token_sent_at :datetime
+#  shortlinks_count    :integer          default(0), not null
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
 #

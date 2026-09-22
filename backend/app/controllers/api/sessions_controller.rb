@@ -1,4 +1,19 @@
 class Api::SessionsController < ApplicationController
+  # Keyed by email rather than IP: the API sits behind a proxy, and the threats
+  # are per account (guessing a code, flooding an inbox).
+  rate_limit to: 5,
+    within: 10.minutes,
+    only: :create,
+    name: "login_request",
+    by: -> { normalized_email },
+    with: -> { too_many_requests }
+  rate_limit to: 10,
+    within: 15.minutes,
+    only: :verify,
+    name: "login_verify",
+    by: -> { normalized_email },
+    with: -> { too_many_requests }
+
   # POST /api/login_request
   def create
     if params[:email].present?
@@ -13,12 +28,9 @@ class Api::SessionsController < ApplicationController
 
   # POST /api/login_verify
   def verify
-    find_params = { email: params[:email], login_token: params[:code] }
-    find_params.delete(:login_token) if dev_bypass?
+    user = User.find_by(email: normalized_email)
 
-    user = User.find_by(find_params)
-
-    if user && (dev_bypass? || user.login_token_valid?)
+    if user && (dev_bypass? || user.verify_login_token(params[:code]))
       if user.deactivated?
         render(json: { error: I18n.t("errors.account_deactivated") }, status: :forbidden)
         return
@@ -34,6 +46,14 @@ class Api::SessionsController < ApplicationController
   end
 
   private
+
+  def normalized_email
+    params[:email].to_s.strip.downcase
+  end
+
+  def too_many_requests
+    render(json: { error: "Too many attempts, please try again later" }, status: :too_many_requests)
+  end
 
   # Development-only bypass: accept the fixed code "0000000" so the magic-link
   # flow can be exercised locally without a real email round-trip.

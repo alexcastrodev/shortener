@@ -2,7 +2,9 @@
   "version": "5",
   "specifiers": {
     "jsr:@nashaddams/amqp@^1.1.1": "1.1.1",
+    "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/bytes@^1.0.2": "1.0.6",
+    "jsr:@std/internal@^1.0.12": "1.0.14",
     "jsr:@std/io@0.225.0": "0.225.0",
     "npm:redis@^4.5.0": "4.7.1_@redis+client@1.6.1"
   },
@@ -13,8 +15,17 @@
         "jsr:@std/io"
       ]
     },
+    "@std/assert@1.0.19": {
+      "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
     "@std/bytes@1.0.6": {
       "integrity": "f6ac6adbd8ccd99314045f5703e23af0a68d7f7e58364b47d2c7f408aeb5820a"
+    },
+    "@std/internal@1.0.14": {
+      "integrity": "291516b3d4c35024d6ffbc0a9df5bf4c64116e05b50012cf846710152d2ffdf7"
     },
     "@std/io@0.225.0": {
       "integrity": "c1db7c5e5a231629b32d64b9a53139445b2ca640d828c26bf23e1c55f8c079b3",
@@ -85,7 +96,8 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@nashaddams/amqp@^1.1.1"
+      "jsr:@nashaddams/amqp@^1.1.1",
+      "jsr:@std/assert@1"
     ]
   }
 }

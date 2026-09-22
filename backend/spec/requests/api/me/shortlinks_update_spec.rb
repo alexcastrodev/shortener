@@ -97,6 +97,18 @@ RSpec.describe("PATCH /api/me/shortlinks/:id", type: :request, vcr: true) do
     end
   end
 
+  describe "invalid destination URL" do
+    it "rejects non-http schemes" do
+      patch "/api/me/shortlinks/#{shortlink.id}",
+        params: { original_url: "javascript:alert(1)" },
+        headers: auth_headers,
+        as: :json
+
+      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(shortlink.reload.original_url).to(eq("https://google.com"))
+    end
+  end
+
   describe "updating only the title" do
     it "does not refresh the cache when original_url is unchanged" do
       link_id = shortlink.id # create the record before stubbing

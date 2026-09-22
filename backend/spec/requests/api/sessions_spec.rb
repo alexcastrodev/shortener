@@ -45,6 +45,30 @@ RSpec.describe("Sessions", type: :request) do
       expect(body["error"]).to(eq(I18n.t("errors.account_deactivated")))
     end
 
+    it "burns the token after too many wrong codes" do
+      user = FactoryBot.create(:user)
+      user.generate_login_token!
+      valid_code = user.login_token
+
+      User::MAX_LOGIN_ATTEMPTS.times do
+        post "/api/login_verify", params: { email: user.email, code: "9999999" }, as: :json
+      end
+
+      post "/api/login_verify", params: { email: user.email, code: valid_code }, as: :json
+
+      expect(response).to(have_http_status(:unauthorized))
+      expect(user.reload.login_token).to(be_nil)
+    end
+
+    it "matches the email case-insensitively" do
+      user = FactoryBot.create(:user)
+      user.generate_login_token!
+
+      post "/api/login_verify", params: { email: user.email.upcase, code: user.login_token }, as: :json
+
+      expect(response).to(have_http_status(:ok))
+    end
+
     context "development bypass code 0000000" do
       it "signs in without a matching token when in development" do
         allow(Rails).to(receive(:env).and_return(ActiveSupport::StringInquirer.new("development")))
@@ -70,6 +94,20 @@ RSpec.describe("Sessions", type: :request) do
 
         expect(response).to(have_http_status(:unauthorized))
       end
+    end
+  end
+
+  describe "POST /api/login_request" do
+    it "does not resend the magic link within the cooldown" do
+      user = FactoryBot.create(:user)
+
+      post "/api/login_request", params: { email: user.email }, as: :json
+      first_token = user.reload.login_token
+
+      post "/api/login_request", params: { email: user.email }, as: :json
+
+      expect(response).to(have_http_status(:ok))
+      expect(user.reload.login_token).to(eq(first_token))
     end
   end
 end

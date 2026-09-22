@@ -4,7 +4,7 @@ class AnalyticsWorker
   include Sneakers::Worker
   from_queue "analytics", durable: true
 
-  def work(msg)
+  def work_with_params(msg, delivery_info, _metadata)
     data = JSON.parse(msg).with_indifferent_access
     shortlink = Shortlink.find_by(short_code: data[:shortlink_code])
     return reject! unless shortlink
@@ -24,6 +24,12 @@ class AnalyticsWorker
 
     ack!
   rescue => e
-    logger.error("Erro: #{e.message}")
+    logger.error("[AnalyticsWorker] #{e.class}: #{e.message}")
+    Sentry.capture_exception(e)
+
+    # Every message must be acked or rejected, otherwise it stays unacked and
+    # blocks the prefetch window. Retry once for transient failures (e.g. DB
+    # hiccup), then drop it so a poison message can't loop forever.
+    delivery_info&.redelivered? ? reject! : requeue!
   end
 end

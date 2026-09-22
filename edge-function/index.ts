@@ -1,4 +1,4 @@
-import { type Channel, connect, type Connection } from "@nashaddams/amqp";
+import { connect } from "@nashaddams/amqp";
 import { createClient } from "npm:redis@^4.5";
 import { getHeaders } from "./headers.ts";
 
@@ -6,33 +6,64 @@ const RABBITMQ_HOST = Deno.env.get("RABBITMQ_HOST") ?? "127.0.0.1";
 const RABBITMQ_PORT = Number(Deno.env.get("RABBITMQ_PORT") ?? 5672);
 const QUEUE_NAME = "analytics";
 
-let connection: Connection | null = null;
-let channel: Channel | null = null;
+type Connection = Awaited<ReturnType<typeof connect>>;
+type Channel = Awaited<ReturnType<Connection["openChannel"]>>;
 
-async function setupRabbit() {
-  if (connection && channel) return;
-  connection = await connect({
-    hostname: RABBITMQ_HOST,
-    port: RABBITMQ_PORT,
-    username: Deno.env.get("RABBITMQ_DEFAULT_USER"),
-    password: Deno.env.get("RABBITMQ_DEFAULT_PASS"),
+let connection: Connection | null = null;
+// Shared by concurrent requests so only one connection is opened at a time.
+let channelPromise: Promise<Channel> | null = null;
+
+function resetRabbit(conn: Connection | null = connection) {
+  if (conn !== connection) return;
+  connection = null;
+  channelPromise = null;
+  conn?.close().catch(() => {});
+}
+
+function getChannel(): Promise<Channel> {
+  if (channelPromise) return channelPromise;
+
+  const attempt = (async () => {
+    const conn = await connect({
+      hostname: RABBITMQ_HOST,
+      port: RABBITMQ_PORT,
+      username: Deno.env.get("RABBITMQ_DEFAULT_USER"),
+      password: Deno.env.get("RABBITMQ_DEFAULT_PASS"),
+    });
+    connection = conn;
+
+    // Drop the cached connection when the broker closes it, so the next
+    // publish reconnects instead of failing forever.
+    conn.closed()
+      .catch((err) => console.error("[AMQP] Connection lost:", err))
+      .finally(() => resetRabbit(conn));
+
+    const channel = await conn.openChannel();
+    await channel.declareQueue({ queue: QUEUE_NAME, durable: true });
+    console.log(`[AMQP] Connected to ${RABBITMQ_HOST}:${RABBITMQ_PORT}`);
+    return channel;
+  })();
+
+  channelPromise = attempt;
+  attempt.catch(() => {
+    if (channelPromise === attempt) resetRabbit();
   });
-  channel = await connection.openChannel();
-  await channel.declareQueue({ queue: QUEUE_NAME, durable: true });
-  console.log(`[AMQP] Connected to ${RABBITMQ_HOST}:${RABBITMQ_PORT}`);
+
+  return attempt;
 }
 
 async function publishMessage(payload: Record<string, unknown>) {
   try {
-    await setupRabbit();
+    const channel = await getChannel();
     const body = new TextEncoder().encode(JSON.stringify(payload));
-    await channel!.publish(
+    await channel.publish(
       { routingKey: QUEUE_NAME },
       { contentType: "application/json" },
       body,
     );
   } catch (err) {
     console.error("[AMQP] Publish failed:", err);
+    resetRabbit();
   }
 }
 

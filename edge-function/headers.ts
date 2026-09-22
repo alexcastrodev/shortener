@@ -77,20 +77,24 @@ function extractIpAddress(req: Request, info: Deno.ServeHandlerInfo): string {
   return ipFromHeaders || ipFromInfo || "";
 }
 
-function detectBrowser(user_agent: string): string {
-  if (user_agent.includes("Chrome")) return "Chrome";
-  if (user_agent.includes("Firefox")) return "Firefox";
-  if (user_agent.includes("Safari") && !user_agent.includes("Chrome")) return "Safari";
-  if (user_agent.includes("Edge")) return "Edge";
+// Order matters: Edge and Chrome on iOS also contain "Safari", and Edge on
+// desktop also contains "Chrome", so the more specific tokens go first.
+export function detectBrowser(user_agent: string): string {
+  if (/Edg(e|A|iOS)?\//.test(user_agent)) return "Edge";
+  if (/Firefox|FxiOS/.test(user_agent)) return "Firefox";
+  if (/Chrome|CriOS/.test(user_agent)) return "Chrome";
+  if (user_agent.includes("Safari")) return "Safari";
   return "Unknown";
 }
 
-function detectPlatform(user_agent: string): string {
+// Android UAs contain "Linux" and iOS UAs contain "Mac OS X", so check the
+// mobile platforms first.
+export function detectPlatform(user_agent: string): string {
+  if (/Android/i.test(user_agent)) return "Android";
+  if (/iPhone|iPad|iPod/i.test(user_agent)) return "iOS";
   if (user_agent.includes("Windows")) return "Windows";
   if (user_agent.includes("Mac OS")) return "macOS";
   if (user_agent.includes("Linux")) return "Linux";
-  if (/Android/i.test(user_agent)) return "Android";
-  if (/iPhone|iPad|iPod/i.test(user_agent)) return "iOS";
   return "Unknown";
 }
 

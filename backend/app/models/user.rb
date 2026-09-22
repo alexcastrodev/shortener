@@ -4,9 +4,12 @@
 #
 #  id                  :bigint           not null, primary key
 #  admin               :boolean          default(FALSE), not null
+#  deactivated_at      :datetime
 #  email               :string           not null
+#  login_attempts      :integer          default(0), not null
 #  login_token         :string
 #  login_token_sent_at :datetime
+#  shortlinks_count    :integer          default(0), not null
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
 #
@@ -17,6 +20,10 @@
 #
 class User < ApplicationRecord
   include PgSearch::Model
+
+  MAX_LOGIN_ATTEMPTS = 5
+  LOGIN_TOKEN_TTL = 15.minutes
+  MAGIC_LINK_COOLDOWN = 1.minute
 
   # ===============
   # Audit
@@ -70,18 +77,36 @@ class User < ApplicationRecord
     update!(
       login_token: SecureRandom.random_number(10**7).to_s.rjust(7, "0"),
       login_token_sent_at: Time.current,
+      login_attempts: 0,
     )
   end
 
   def login_token_valid?
-    login_token_sent_at && login_token_sent_at > 15.minutes.ago
+    login_token_sent_at && login_token_sent_at > LOGIN_TOKEN_TTL.ago
+  end
+
+  # Checks the code in constant time. Each wrong guess counts as an attempt;
+  # after MAX_LOGIN_ATTEMPTS the token is burned and a new link is required.
+  def verify_login_token(code)
+    return false unless login_token.present? && login_token_valid?
+    return true if ActiveSupport::SecurityUtils.secure_compare(login_token, code.to_s)
+
+    increment!(:login_attempts)
+    clear_login_token! if login_attempts >= MAX_LOGIN_ATTEMPTS
+    false
   end
 
   def clear_login_token!
-    update!(login_token: nil, login_token_sent_at: nil)
+    update!(login_token: nil, login_token_sent_at: nil, login_attempts: 0)
+  end
+
+  def magic_link_recently_sent?
+    login_token_sent_at.present? && login_token_sent_at > MAGIC_LINK_COOLDOWN.ago
   end
 
   def send_magic_link
+    return if magic_link_recently_sent?
+
     generate_login_token!
     LoginMailer.with(user: self).magic_link.deliver_later
   end

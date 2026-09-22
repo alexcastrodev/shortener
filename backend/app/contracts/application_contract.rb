@@ -10,4 +10,16 @@ class ApplicationContract < Dry::Validation::Contract
   register_macro(:email_format) do
     key.failure("must be a valid email") if value.present? && !URI::MailTo::EMAIL_REGEXP.match?(value)
   end
+
+  # Only http(s) URLs with a host may become redirect targets; rejects
+  # javascript:, data:, file: and other schemes.
+  register_macro(:http_url) do
+    next if value.nil?
+
+    uri = URI.parse(value.strip)
+    valid = uri.is_a?(URI::HTTP) && uri.host.present?
+    key.failure("must be a valid http or https URL") unless valid
+  rescue URI::InvalidURIError
+    key.failure("must be a valid http or https URL")
+  end
 end
