@@ -10,7 +10,7 @@ class Api::Me::ShortlinksController < ApplicationController
   # GET /api/me/shortlinks
   def index
     page = [params.fetch(:page, 1).to_i, 1].max
-    per_page = [[params.fetch(:per_page, 20).to_i, 1].max, 100].min
+    per_page = params.fetch(:per_page, 20).to_i.clamp(1, 100)
 
     shortlinks = @current_user.shortlinks.order(created_at: :desc)
     total = shortlinks.count

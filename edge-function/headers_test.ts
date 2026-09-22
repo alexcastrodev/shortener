@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { detectBrowser, detectPlatform } from "./headers.ts";
+import { detectBrowser, detectPlatform, extractLocation } from "./headers.ts";
 
 const cases: Array<[string, string, string, string]> = [
   [
@@ -59,3 +59,19 @@ for (const [name, ua, browser, platform] of cases) {
     assertEquals(detectPlatform(ua), platform);
   });
 }
+
+Deno.test("reads country and region from Cloudflare headers", () => {
+  const headers = new Headers({ "cf-ipcountry": "br", "cf-region": "Sao Paulo" });
+  assertEquals(extractLocation(headers), { country_code: "BR", region: "Sao Paulo" });
+});
+
+Deno.test("treats unknown and Tor countries as missing", () => {
+  for (const country of ["XX", "T1"]) {
+    const headers = new Headers({ "cf-ipcountry": country });
+    assertEquals(extractLocation(headers), { country_code: null, region: null });
+  }
+});
+
+Deno.test("returns nulls without Cloudflare headers", () => {
+  assertEquals(extractLocation(new Headers()), { country_code: null, region: null });
+});

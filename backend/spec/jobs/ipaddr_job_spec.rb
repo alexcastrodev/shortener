@@ -53,4 +53,41 @@ RSpec.describe(IpaddrJob, type: :job) do
       expect(set_spy).not_to(have_received(:perform_later))
     end
   end
+
+  describe "enqueueing" do
+    let(:user) { User.create!(email: "test+#{SecureRandom.hex(4)}@example.com") }
+    let(:shortlink) { Shortlink.create!(original_url: "https://example.com", user: user) }
+
+    it "is skipped when the edge already sent country and region" do
+      expect do
+        Event.create!(shortlink: shortlink, ip_address: "1.2.3.4", country_code: "BR", region: "Sao Paulo")
+      end.not_to(have_enqueued_job(IpaddrJob))
+    end
+
+    it "is enqueued when the region is missing" do
+      expect do
+        Event.create!(shortlink: shortlink, ip_address: "1.2.3.4", country_code: "BR")
+      end.to(have_enqueued_job(IpaddrJob))
+    end
+  end
+
+  describe "filling missing location" do
+    it "keeps the country from the edge and fills the region" do
+      user = User.create!(email: "test+#{SecureRandom.hex(4)}@example.com")
+      shortlink = Shortlink.create!(original_url: "https://example.com", user: user)
+      event = Event.create!(shortlink: shortlink, ip_address: "1.2.3.4", country_code: "BR")
+      response = instance_double(
+        HTTParty::Response,
+        code: 200,
+        parsed_response: { "status" => "success", "countryCode" => "US", "regionName" => "California" },
+      )
+      allow(HTTParty).to(receive(:get).and_return(response))
+
+      IpaddrJob.perform_now(event.id)
+
+      event.reload
+      expect(event.country_code).to(eq("BR"))
+      expect(event.region).to(eq("California"))
+    end
+  end
 end

@@ -97,7 +97,8 @@
   "workspace": {
     "dependencies": [
       "jsr:@nashaddams/amqp@^1.1.1",
-      "jsr:@std/assert@1"
+      "jsr:@std/assert@1",
+      "npm:redis@^4.5.0"
     ]
   }
 }

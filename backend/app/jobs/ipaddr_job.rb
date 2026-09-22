@@ -9,12 +9,10 @@ class IpaddrJob < ApplicationJob
     # https://ip-api.com/docs
     response = HTTParty.get("http://ip-api.com/json/#{event.ip_address}")
     Rails.logger.info("IP API response: #{response.parsed_response}")
+    # Keep values already provided by the edge (Cloudflare headers).
     if response.code == 200 && response.parsed_response["status"] == "success"
-      event.country_code = response.parsed_response["countryCode"]
-      event.region = response.parsed_response["regionName"]
-    else
-      event.country_code = nil
-      event.region = nil
+      event.country_code ||= response.parsed_response["countryCode"]
+      event.region ||= response.parsed_response["regionName"]
     end
 
     event.save! if event.changed?

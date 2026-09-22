@@ -1,4 +1,4 @@
-FROM ruby:3.4.6
+FROM ruby:4.0.7
 
 # Install build dependencies and SQLite development libraries
 RUN apt-get update -qq && apt-get install -y \

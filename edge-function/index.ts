@@ -1,5 +1,5 @@
 import { connect } from "@nashaddams/amqp";
-import { createClient } from "npm:redis@^4.5";
+import { createClient } from "redis";
 import { getHeaders } from "./headers.ts";
 
 const RABBITMQ_HOST = Deno.env.get("RABBITMQ_HOST") ?? "127.0.0.1";
@@ -109,14 +109,12 @@ Deno.serve({ port: 8000 }, async (req, info) => {
         return Response.redirect(notFoundUrl, 302);
       }
 
-      getHeaders(req, info).then((payload) => {
-        publishMessage({
-          ...payload,
-          shortlink_code: key,
-          timestamp: new Date().toISOString(),
-        })
-        .catch((err) => console.error("[AMQP] Background publish error:", err));
-      })
+      // Fire and forget: the redirect must not wait for the broker.
+      publishMessage({
+        ...getHeaders(req, info),
+        shortlink_code: key,
+        timestamp: new Date().toISOString(),
+      }).catch((err) => console.error("[AMQP] Background publish error:", err));
 
       return Response.redirect(value, 302);
     } catch (err) {

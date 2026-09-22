@@ -1,5 +1,5 @@
 import type { AxiosResponse } from 'axios';
-import { api } from '../api';
+import { publicApi } from '../api';
 import type {
   LoginVerifyRequestBody,
   LoginVerifyResponse,
@@ -8,7 +8,7 @@ import type {
 export async function loginVerifyRequest(
   data: LoginVerifyRequestBody
 ): Promise<LoginVerifyResponse> {
-  const response: AxiosResponse<LoginVerifyResponse> = await api.post(
+  const response: AxiosResponse<LoginVerifyResponse> = await publicApi.post(
     '/api/login_verify',
     data
   );

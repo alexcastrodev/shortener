@@ -1,80 +1,25 @@
-function getRemoteIpFromInfo(i: unknown): string | null {
-  if (!i || typeof i !== "object") return null;
-  const obj = i as Record<string, unknown>;
-
-  if (obj.remoteAddr) {
-    const ra = obj.remoteAddr;
-    if (typeof ra === "string") return ra;
-    if (ra && typeof ra === "object") {
-      const rao = ra as Record<string, unknown>;
-      if (typeof rao.hostname === "string") return rao.hostname;
-      if (typeof rao.ip === "string") return rao.ip;
-      if (typeof rao.address === "string") return rao.address;
-    }
-  }
-
-  if (obj.connInfo && typeof obj.connInfo === "object") {
-    const ci = obj.connInfo as Record<string, unknown>;
-    const ra = ci.remoteAddr;
-    if (typeof ra === "string") return ra;
-    if (ra && typeof ra === "object") {
-      const rao = ra as Record<string, unknown>;
-      if (typeof rao.hostname === "string") return rao.hostname;
-      if (typeof rao.ip === "string") return rao.ip;
-    }
-  }
-
-  if (obj.client && typeof obj.client === "object") {
-    const c = obj.client as Record<string, unknown>;
-    if (typeof c.ip === "string") return c.ip;
-    if (typeof c.hostname === "string") return c.hostname;
-  }
-
-  if (obj.request && typeof obj.request === "object") {
-    const reqObj = obj.request as Record<string, unknown>;
-    if (reqObj.conn && typeof reqObj.conn === "object") {
-      const conn = reqObj.conn as Record<string, unknown>;
-      const ra = conn.remoteAddr;
-      if (typeof ra === "string") return ra;
-      if (ra && typeof ra === "object") {
-        const rao = ra as Record<string, unknown>;
-        if (typeof rao.hostname === "string") return rao.hostname;
-      }
-    }
-  }
-
-  if (typeof obj.ip === "string") return obj.ip;
-  if (typeof obj.hostname === "string") return obj.hostname;
-
-  return null;
-}
-
-function getNestedString(obj: unknown, path: string[]): string | null {
-  if (!obj || typeof obj !== "object") return null;
-  let cur: unknown = obj;
-  for (const key of path) {
-    if (!cur || typeof cur !== "object") return null;
-    const asObj = cur as Record<string, unknown>;
-    cur = asObj[key];
-  }
-  return typeof cur === "string" ? cur : null;
-}
-
+// Public traffic reaches this function only through Cloudflare Tunnel, which
+// sets cf-connecting-ip to the real client IP. X-Forwarded-For and X-Real-IP
+// are client-controlled, so they are ignored. The socket address is only a
+// fallback for local development, where there is no tunnel.
 function extractIpAddress(req: Request, info: Deno.ServeHandlerInfo): string {
-  const headers = req.headers;
-  const forwarded_for = headers.get("x-forwarded-for") || "";
-  
-  const ipFromHeaders = 
-    headers.get("cf-connecting-ip") || 
-    forwarded_for.split(",")[0]?.trim() || 
-    headers.get("x-real-ip") || 
-    "";
-  
-  const ipFromInfo = 
-    getRemoteIpFromInfo(info) || 
-    getRemoteIpFromInfo((info as unknown as Record<string, unknown>).connInfo);
-  
-  return ipFromHeaders || ipFromInfo || "";
+  const cfIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
+
+  const addr = info.remoteAddr;
+  return addr.transport === "tcp" || addr.transport === "udp" ? addr.hostname : "";
+}
+
+// cf-ipcountry is always sent by Cloudflare; cf-region only when the
+// "Add visitor location headers" managed transform is enabled. Missing values
+// are filled later by the backend's IpaddrJob.
+export function extractLocation(headers: Headers) {
+  const country = headers.get("cf-ipcountry")?.trim().toUpperCase();
+  // XX = unknown location, T1 = Tor exit node
+  const country_code = country && !["XX", "T1"].includes(country) ? country : null;
+  const region = headers.get("cf-region")?.trim() || null;
+
+  return { country_code, region };
 }
 
 // Order matters: Edge and Chrome on iOS also contain "Safari", and Edge on
@@ -98,7 +43,7 @@ export function detectPlatform(user_agent: string): string {
   return "Unknown";
 }
 
-export async function getHeaders(req: Request, info: Deno.ServeHandlerInfo) {
+export function getHeaders(req: Request, info: Deno.ServeHandlerInfo) {
   const headers = req.headers;
   const user_agent = headers.get("user-agent") || "";
   const referer = headers.get("referer") || "";
@@ -108,6 +53,7 @@ export async function getHeaders(req: Request, info: Deno.ServeHandlerInfo) {
   const platform = detectPlatform(user_agent);
 
   return {
+    ...extractLocation(headers),
     browser,
     ip_address,
     platform,

@@ -1,0 +1,63 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+env:
+  TEST_STACK: shortener-ci-${{ github.run_id }}
+  TEST_COMPOSE: -f .ci/compose.test.yml
+
+jobs:
+  test:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # A throwaway Postgres + Valkey next to a Ruby container that runs the backend specs
+      # against this commit. Nothing deploys unless they pass.
+      - name: Run backend specs
+        run: |
+          docker compose -p "$TEST_STACK" $TEST_COMPOSE up \
+            --attach backend-test --abort-on-container-exit --exit-code-from backend-test \
+            backend-test
+
+      - name: Tear down test stack
+        if: always()
+        run: docker compose -p "$TEST_STACK" $TEST_COMPOSE down -v --remove-orphans
+
+  build-and-deploy:
+    needs: test
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build images
+        run: |
+          build() {
+            docker build -f "$2" \
+              -t "pizito:5001/$1:latest" \
+              -t "pizito:5001/$1:${{ github.sha }}" .
+          }
+          build shortener .ci/Dockerfile
+          build shortener-frontend .ci/Dockerfile.frontend
+          build shortener-edge .ci/Dockerfile.deno
+
+      - name: Push images
+        run: |
+          for image in shortener shortener-frontend shortener-edge; do
+            docker push "pizito:5001/$image:latest"
+            docker push "pizito:5001/$image:${{ github.sha }}"
+          done
+
+      - name: Deploy stacks to swarm
+        run: ./deploy.sh

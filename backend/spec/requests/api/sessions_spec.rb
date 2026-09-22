@@ -109,5 +109,19 @@ RSpec.describe("Sessions", type: :request) do
       expect(response).to(have_http_status(:ok))
       expect(user.reload.login_token).to(eq(first_token))
     end
+
+    # Rate limiting needs a real cache store; the test env only has one when
+    # REDIS_URL is set (as in CI).
+    it "rate limits repeated requests for the same email" do
+      skip("requires REDIS_URL") if ENV["REDIS_URL"].blank?
+
+      email = "limited+#{SecureRandom.hex(4)}@example.com"
+      5.times { post("/api/login_request", params: { email: email }, as: :json) }
+      expect(response).to(have_http_status(:ok))
+
+      post "/api/login_request", params: { email: email.upcase }, as: :json
+
+      expect(response).to(have_http_status(:too_many_requests))
+    end
   end
 end

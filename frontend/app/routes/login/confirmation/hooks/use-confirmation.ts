@@ -49,9 +49,20 @@ export function useConfirmation() {
         return;
       }
 
+      if (status === 429) {
+        notifications.show({
+          title: 'Too many attempts',
+          message:
+            'Please wait a few minutes, then request a new code and try again.',
+          color: 'red',
+        });
+        return;
+      }
+
       notifications.show({
         title: 'Error',
-        message: 'Pin code is invalid, please try again.',
+        message:
+          'Pin code is invalid or expired. After several wrong attempts, request a new code.',
         color: 'red',
       });
     },

@@ -1,8 +1,8 @@
 import type { LoginRequestRequestBody } from './login-request.types';
-import { api } from '../api';
+import { publicApi } from '../api';
 
 export async function loginRequest(
   data: LoginRequestRequestBody
 ): Promise<void> {
-  await api.post('/api/login_request', data);
+  await publicApi.post('/api/login_request', data);
 }

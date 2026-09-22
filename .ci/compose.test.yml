@@ -1,0 +1,47 @@
+# Throwaway stack for the backend specs in CI (see .github/workflows/deploy.yml). It runs on
+# the same host as production, so nothing is published on host ports. backend-test runs as
+# root, so everything Rails writes (tmp/, log/) and the gems go to anonymous volumes:
+# root-owned files in the checkout break the runner's next `actions/checkout` clean.
+services:
+  db:
+    image: postgres:17
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  cache:
+    image: valkey/valkey:8.1.4
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  backend-test:
+    image: ruby:4.0.7
+    working_dir: /app
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    environment:
+      - RAILS_ENV=test
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      # Enables the redirect cache and rate limiting specs.
+      - REDIS_URL=redis://cache:6379/0
+    volumes:
+      - ../backend:/app
+      - /app/tmp
+      - /app/log
+      - /usr/local/bundle
+    command: >-
+      bash -c "bundle install --jobs 4 --quiet
+      && bin/rails db:create db:schema:load
+      && bundle exec rspec"

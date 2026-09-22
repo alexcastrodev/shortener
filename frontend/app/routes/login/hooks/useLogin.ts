@@ -4,6 +4,7 @@ import { notifyError } from '@internal/core/utils/notify';
 import { useNavigate } from 'react-router';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { z } from 'zod/v4';
+import type { ResponseError } from '@internal/core/types/ResponseError';
 
 const schema = z.object({
   email: z.email(),
@@ -15,7 +16,15 @@ export function useLogin() {
     onSuccess: () => {
       router('/login-confirmation', { state: { email: form.values.email } });
     },
-    onError: () => {
+    onError: (error: ResponseError & { response?: { status?: number } }) => {
+      if (error?.response?.status === 429) {
+        notifyError(
+          'Too many login requests for this email. Please wait a few minutes and try again.',
+          'Slow down'
+        );
+        return;
+      }
+
       notifyError('Something went wrong, please try again later.');
     },
   });

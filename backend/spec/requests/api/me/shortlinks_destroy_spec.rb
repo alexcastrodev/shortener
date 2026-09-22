@@ -25,9 +25,9 @@ RSpec.describe("DELETE /api/me/shortlinks/:id", type: :request) do
   end
 
   it "soft deletes immediately and enqueues the purge job" do
-    expect {
-      delete "/api/me/shortlinks/#{shortlink.id}", headers: auth_headers, as: :json
-    }.to(have_enqueued_job(PurgeShortlinkJob).with(shortlink.id))
+    expect do
+      delete("/api/me/shortlinks/#{shortlink.id}", headers: auth_headers, as: :json)
+    end.to(have_enqueued_job(PurgeShortlinkJob).with(shortlink.id))
 
     expect(response).to(have_http_status(:no_content))
     expect(shortlink.reload.deleted_at).to(be_present)

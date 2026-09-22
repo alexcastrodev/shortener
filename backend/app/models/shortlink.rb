@@ -130,5 +130,4 @@ class Shortlink < ApplicationRecord
       break code unless Shortlink.with_deleted.exists?(short_code: code)
     end
   end
-
 end
