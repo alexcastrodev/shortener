@@ -15,6 +15,7 @@ export { PageBackground, PageContainer } from './background';
 export { Alert } from './alert';
 export { IconBadge } from './icon-badge';
 export { BrandMark } from './brand-mark';
+export { KurzLogo } from './kurz-logo';
 export { ThemeToggle } from './theme-toggle';
 
 // Statistical Components

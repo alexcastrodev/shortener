@@ -30,12 +30,9 @@
 
   .left { position: absolute; left: 72px; top: 64px; bottom: 64px; width: 600px; display: flex; flex-direction: column; }
   .brand { display: flex; align-items: center; gap: 14px; }
-  .mark {
-    width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center;
-    background: var(--card); border: 1px solid var(--border); color: var(--primary);
-    box-shadow: 0 0 0 6px rgb(79 181 179 / 0.08), 0 10px 30px rgb(0 0 0 / 0.35);
-  }
-  .name { font-size: 40px; font-weight: 650; letter-spacing: -0.02em; }
+  .mark { filter: drop-shadow(0 10px 24px rgb(0 0 0 / 0.4)); }
+  .name { font-size: 44px; font-weight: 700; letter-spacing: -0.045em; }
+  .period { display: inline-block; width: 0.3em; height: 0.3em; margin-left: 2px; border-radius: 50%; background: var(--primary); }
 
   h1 {
     margin-top: auto; font-size: 76px; line-height: 1.02; font-weight: 650; letter-spacing: -0.045em;
@@ -89,10 +86,18 @@
 
   <div class="left">
     <div class="brand">
-      <div class="mark">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6 -6"/><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464"/><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463"/></svg>
-      </div>
-      <div class="name">Kurz</div>
+      <svg class="mark" viewBox="0 0 64 64" width="60" height="60">
+        <defs>
+          <linearGradient id="kurz-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7ae0dc"/><stop offset="1" stop-color="#2fa9a5"/></linearGradient>
+          <linearGradient id="kurz-bottom" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f8f8b"/><stop offset="1" stop-color="#136e6b"/></linearGradient>
+        </defs>
+        <rect width="64" height="64" rx="15" fill="#151b20"/>
+        <rect x=".75" y=".75" width="62.5" height="62.5" rx="14.25" fill="none" stroke="#29333c" stroke-width="1.5"/>
+        <rect x="14" y="13" width="10" height="38" rx="2.5" fill="#eef2f5"/>
+        <path d="M27 32H38.5L52 51H40.5Z" fill="url(#kurz-bottom)"/>
+        <path d="M27 32L40.5 13H52L38.5 32Z" fill="url(#kurz-top)"/>
+      </svg>
+      <div class="name">kurz<span class="period"></span></div>
     </div>
 
     <h1>Short links.<br>Bio pages.<br><span class="accent">Every click.</span></h1>

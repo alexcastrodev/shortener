@@ -1,7 +1,7 @@
 {
-  "name": "Kurz - Free Link Shortener",
+  "name": "Kurz",
   "short_name": "Kurz",
-  "description": "Free forever link shortener with analytics. Encurtador de link grátis.",
+  "description": "Short links, bio pages and click analytics. Free and open source.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -14,15 +14,24 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
-  "theme_color": "#7c3aed",
-  "background_color": "#f7f8fa",
+  "theme_color": "#101418",
+  "background_color": "#101418",
   "display": "standalone",
   "start_url": "/",
   "scope": "/",
   "orientation": "portrait-primary",
-  "categories": ["utilities", "productivity"],
+  "categories": [
+    "utilities",
+    "productivity"
+  ],
   "lang": "en-US",
   "dir": "ltr"
 }

@@ -6,6 +6,11 @@ import { Providers } from './layout/providers';
 import { useNonce } from './utils/nonce';
 
 export const links: Route.LinksFunction = () => [
+  { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+  { rel: 'icon', href: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+  { rel: 'icon', href: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+  { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
+  { rel: 'manifest', href: '/site.webmanifest' },
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
   {
     rel: 'preconnect',
@@ -60,8 +65,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           media="(prefers-color-scheme: dark)"
           content="#101418"
         />
-
-        <link rel="canonical" href="https://kurz.fyi" />
 
         <ColorSchemeScript defaultColorScheme="auto" nonce={nonce} />
         <Meta />
