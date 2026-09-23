@@ -3,6 +3,7 @@ import { getPublicPage } from '@internal/core/actions/get-public-page/get-public
 import { trackPageLinkClick } from '@internal/core/actions/track-page-link-click/track-page-link-click.service';
 import { BioPageView } from '../../modules/bio-page';
 import type { Route } from './+types/$username';
+import { ogImageMeta } from '../../modules/seo';
 
 export async function loader({ params }: Route.LoaderArgs) {
   const page = await getPublicPage(params.username);
@@ -38,10 +39,13 @@ export function meta({ loaderData, params }: Route.MetaArgs) {
     { property: 'og:title', content: title },
     { property: 'og:description', content: description },
     { property: 'og:url', content: url },
-    { name: 'twitter:card', content: 'summary' },
+    // The photo as a small square card; without one, the Kurz preview.
     ...(page.avatar_url
-      ? [{ property: 'og:image', content: page.avatar_url }]
-      : []),
+      ? [
+          { name: 'twitter:card', content: 'summary' },
+          { property: 'og:image', content: page.avatar_url },
+        ]
+      : ogImageMeta()),
     { tagName: 'link', rel: 'canonical', href: url },
   ];
 }

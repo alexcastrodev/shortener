@@ -6,7 +6,11 @@ if [ -z "${LD_PRELOAD+x}" ]; then
     export LD_PRELOAD
 fi
 
-# Create or migrate existing database
-./bin/rails db:prepare
+# Create or migrate the database. In production deploy.sh migrates once before the
+# rollout and the stack sets SKIP_DB_PREPARE=1: several containers starting together
+# would otherwise race for the migration lock (ActiveRecord::ConcurrentMigrationError).
+if [ "${SKIP_DB_PREPARE:-}" != "1" ]; then
+  ./bin/rails db:prepare
+fi
 
 exec "${@}"

@@ -1,16 +1,18 @@
 import type { MetaFunction } from 'react-router';
 import { IconChartBar, IconCode, IconShieldCheck, IconUser } from '@tabler/icons-react';
 import { Layout } from '../layout/web-layout';
+import { ogImageMeta } from '../modules/seo';
 import { Card } from '@internal/ui';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: 'About - Kurz | Link Shortener' },
+    { title: 'About - Kurz' },
     {
       name: 'description',
       content:
         'Learn more about Kurz, an open-source URL shortener built around simple link creation and click analytics.',
     },
+    ...ogImageMeta(),
   ];
 };
 

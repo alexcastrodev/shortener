@@ -31,7 +31,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           name="keywords"
           content="encurtador de link grátis, free link shortener, url shortener, short url, link shortener free, encurtador de url, shorten link, kurz link shortener, bitly alternative, free url shortener, link encurtador, short links, custom short links"
         />
-        <meta name="author" content="Kurz - Free Link Shortener" />
+        <meta name="author" content="Kurz" />
         <meta
           name="robots"
           content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
@@ -40,7 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="google" content="nositelinkssearchbox" />
 
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Kurz - Free Link Shortener" />
+        <meta property="og:site_name" content="Kurz" />
         <meta property="og:locale" content="en_US" />
         <meta property="og:locale:alternate" content="pt_BR" />
 

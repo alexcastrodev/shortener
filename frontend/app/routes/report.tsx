@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react';
 import type { MetaFunction } from 'react-router';
 import { IconAlertTriangle, IconMail } from '@tabler/icons-react';
 import { Layout } from '../layout/web-layout';
+import { ogImageMeta } from '../modules/seo';
 import { Card } from '@internal/ui';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: 'Report Abuse - Kurz | Link Shortener' },
+    { title: 'Report Abuse - Kurz' },
     {
       name: 'description',
       content:
         'Report abusive, phishing, or malicious shortened links and bio pages on Kurz.',
     },
+    ...ogImageMeta(),
   ];
 };
 

@@ -8,6 +8,7 @@ import type { LinksFunction, MetaFunction } from 'react-router';
 import { Layout } from '../layout/web-layout';
 import { BioShowcase } from '../modules/bio-page';
 import { ClickGlobe, FeatureBento, HeroConsole } from '../modules/landing';
+import { OG_IMAGE, SITE_URL, ogImageMeta } from '../modules/seo';
 
 // Geist (display and mono) is only used on the landing page.
 export const links: LinksFunction = () => [
@@ -18,11 +19,10 @@ export const links: LinksFunction = () => [
 ];
 
 export const meta: MetaFunction = () => {
-  const title = 'Kurz - Link Shortener';
+  const title = 'Kurz · Short links and bio pages';
   const description =
-    'Shorten links and build a bio link page. Free and open source.';
-  const url = 'https://kurz.fyi';
-  const image = `${url}/logo-light.webp`;
+    'Shorten links, track every click and put all your links on one bio page. Free and open source.';
+  const url = SITE_URL;
 
   return [
     { title },
@@ -30,14 +30,10 @@ export const meta: MetaFunction = () => {
     { property: 'og:title', content: title },
     { property: 'og:description', content: description },
     { property: 'og:url', content: url },
-    { property: 'og:image', content: image },
-    { property: 'og:image:width', content: '1200' },
-    { property: 'og:image:height', content: '630' },
-    { property: 'og:image:alt', content: 'Kurz - Link Shortener' },
     { name: 'twitter:title', content: title },
     { name: 'twitter:description', content: description },
-    { name: 'twitter:image', content: image },
     { name: 'twitter:url', content: url },
+    ...ogImageMeta(),
     {
       name: 'keywords',
       content:
@@ -52,7 +48,7 @@ export default function LinkShortenerLanding() {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: 'Kurz',
-    alternateName: ['Link Shortener', 'URL Shortener'],
+    alternateName: ['Kurz link shortener', 'Kurz bio pages'],
     url: 'https://kurz.fyi',
     description:
       'Shorten links and build a bio link page. Free and open source.',
@@ -74,7 +70,7 @@ export default function LinkShortenerLanding() {
       price: '0',
       priceCurrency: 'USD',
     },
-    screenshot: 'https://kurz.fyi/logo-light.webp',
+    screenshot: OG_IMAGE.url,
     author: {
       '@type': 'Organization',
       name: 'Kurz',
