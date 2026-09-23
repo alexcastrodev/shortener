@@ -108,3 +108,5 @@ gem "vcr", group: [:development, :test]
 gem "webmock", group: [:development, :test]
 gem "google-protobuf", "~> 3.19"
 gem "bullet", group: [:development, :test]
+
+gem "valid_email2", "~> 7.1"

@@ -10,13 +10,15 @@
 #  login_token         :string
 #  login_token_sent_at :datetime
 #  shortlinks_count    :integer          default(0), not null
+#  verified_at         :datetime
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
 #
 # Indexes
 #
-#  index_users_on_login_token  (login_token) UNIQUE
-#  index_users_on_lower_email  (lower((email)::text)) UNIQUE
+#  index_users_on_login_token                 (login_token) UNIQUE
+#  index_users_on_lower_email                 (lower((email)::text)) UNIQUE
+#  index_users_on_verified_at_and_created_at  (verified_at,created_at)
 #
 class User < ApplicationRecord
   include PgSearch::Model
@@ -112,5 +114,14 @@ class User < ApplicationRecord
 
     generate_login_token!
     LoginMailer.with(user: self).magic_link.deliver_later
+  end
+
+  def verified?
+    verified_at.present?
+  end
+
+  # The first successful sign-in proves the address is real and reachable.
+  def mark_verified!
+    update!(verified_at: Time.current) unless verified?
   end
 end

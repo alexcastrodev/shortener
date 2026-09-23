@@ -553,6 +553,9 @@ GEM
     uniform_notifier (1.18.0)
     uri (1.1.1)
     useragent (0.16.11)
+    valid_email2 (7.1.0)
+      activemodel (>= 6.0)
+      mail (~> 2.5)
     vcr (6.4.0)
     webmock (3.25.1)
       addressable (>= 2.8.0)
@@ -625,6 +628,7 @@ DEPENDENCIES
   stimulus-rails
   thruster
   turbo-rails
+  valid_email2 (~> 7.1)
   vcr
   webmock
 

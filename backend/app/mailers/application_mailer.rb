@@ -1,7 +1,7 @@
 class ApplicationMailer < ActionMailer::Base
-  # Mail goes out through the Gmail account's SMTP, so the sender must be that
-  # account: any other address is rewritten by Gmail and left in
-  # X-Google-Original-From, which spam filters read as spoofing.
-  default from: -> { email_address_with_name(ENV.fetch("GMAIL_USERNAME", "kurz.fyi@gmail.com"), "Kurz") }
+  # The sender has to match the SMTP provider (see config/mail_settings.rb):
+  # a mismatched From is rewritten by Gmail and read as spoofing by filters.
+  default from: -> { MailSettings.from }
   layout "mailer"
+  self.delivery_job = MailDeliveryJob
 end

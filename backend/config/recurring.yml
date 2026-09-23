@@ -33,3 +33,7 @@ production:
     class: DetectPageAbuseJob
     queue: default
     schedule: every hour at minute 40
+  cleanup_unverified_users:
+    class: CleanupUnverifiedUsersJob
+    queue: default
+    schedule: every day at 3:30am

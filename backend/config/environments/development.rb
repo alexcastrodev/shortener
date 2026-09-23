@@ -41,15 +41,8 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
   config.action_mailer.delivery_method = :smtp
-  config.action_mailer.smtp_settings = {
-    address: "smtp.gmail.com",
-    port: 587,
-    domain: "gmail.com",
-    user_name: ENV["GMAIL_USERNAME"],
-    password: ENV["GMAIL_APP_PASSWORD"],
-    authentication: "plain",
-    enable_starttls_auto: true,
-  }
+  config.action_mailer.smtp_settings = MailSettings.smtp
+  config.action_mailer.deliver_later_queue_name = :mailers
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log

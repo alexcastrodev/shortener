@@ -4,8 +4,8 @@ default: &default
       batch_size: 500
   workers:
     # Every queue except "images", which must never run more than one job at
-    # a time (see OptimizeAvatarJob). Mailers and Active Storage analyze /
-    # purge jobs use "default"; recurring tasks defined with `command:`
+    # a time (see OptimizeAvatarJob), and "mailers" (below). Active Storage
+    # analyze / purge jobs use "default"; recurring tasks defined with `command:`
     # (clear_solid_queue_finished_jobs) run on "solid_queue_recurring".
     - queues: [default, safety, analytics, solid_queue_recurring]
       threads: 2
@@ -21,6 +21,12 @@ default: &default
       batch_size: 500
       processes: 1
       polling_interval: 6
+    # Sign-in codes: their own worker so a backlog elsewhere never delays
+    # them, polled every second.
+    - queues: "mailers"
+      threads: 1
+      processes: 1
+      polling_interval: 1
     # One avatar decode at a time, cluster-wide: bursts wait in line instead
     # of running several 48MP decodes side by side in the jobs container.
     - queues: "images"

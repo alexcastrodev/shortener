@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_23_180000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -341,8 +341,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_180000) do
     t.datetime "login_token_sent_at"
     t.integer "shortlinks_count", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.datetime "verified_at"
     t.index "lower((email)::text)", name: "index_users_on_lower_email", unique: true
     t.index ["login_token"], name: "index_users_on_login_token", unique: true
+    t.index ["verified_at", "created_at"], name: "index_users_on_verified_at_and_created_at"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

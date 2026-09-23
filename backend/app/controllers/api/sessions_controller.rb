@@ -1,8 +1,22 @@
 class Api::SessionsController < ApplicationController
   include SessionCookie
+  include ClientIp
 
-  # Keyed by email rather than IP: the API sits behind a proxy, and the threats
-  # are per account (guessing a code, flooding an inbox).
+  # Per IP: one visitor cycling through fresh addresses hits these long before
+  # the shared email budget (MailBudget), so they cannot spend it for others.
+  rate_limit to: 10,
+    within: 10.minutes,
+    only: :create,
+    name: "login_request_ip",
+    by: -> { client_ip },
+    with: -> { too_many_requests }
+  rate_limit to: 30,
+    within: 1.day,
+    only: :create,
+    name: "login_request_ip_daily",
+    by: -> { client_ip },
+    with: -> { too_many_requests }
+  # Per email: guessing a code, or flooding one inbox.
   rate_limit to: 5,
     within: 10.minutes,
     only: :create,
@@ -16,15 +30,21 @@ class Api::SessionsController < ApplicationController
     by: -> { normalized_email },
     with: -> { too_many_requests }
 
-  # POST /api/login_request
+  # POST /api/login_request  { email, turnstile_token }
   def create
-    if params[:email].present?
-      user = User.find_or_create_by(email: params[:email])
-      user.send_magic_link
+    return render(json: { error: "Email is required" }, status: :unprocessable_entity) if params[:email].blank?
+    return render(json: { error: "captcha_failed" }, status: :forbidden) unless Turnstile.valid?(params[:turnstile_token], action: "login", remote_ip: client_ip)
 
+    result = LoginCodeRequest.call(email: params[:email])
+    case result.status
+    when :sent
       render(json: { message: "If the email exists, the link has been sent." })
-    else
-      render(json: { error: "Email is required" }, status: :unprocessable_entity)
+    when :invalid_email
+      render(json: { error: "invalid_email" }, status: :unprocessable_entity)
+    when :undeliverable
+      render(json: { error: "undeliverable_email" }, status: :unprocessable_entity)
+    when :budget_exhausted
+      render(json: { error: result.reason.to_s }, status: :service_unavailable)
     end
   end
 
@@ -40,6 +60,7 @@ class Api::SessionsController < ApplicationController
 
       token = SessionToken.issue(user)
       user.clear_login_token!
+      user.mark_verified!
       set_session_cookie(token, SessionToken::TTL.from_now)
 
       # The token only travels in the httpOnly cookie, never in the body.
