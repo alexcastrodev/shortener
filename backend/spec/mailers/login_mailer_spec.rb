@@ -32,4 +32,11 @@ RSpec.describe(LoginMailer) do
     expect(html.scan(/<html/i).size).to(eq(1))
     expect(html).not_to(include("Shortener"))
   end
+
+  it "tells the owner of an existing account what confirming a sign-up does" do
+    mail = described_class.with(user: user, purpose: "sign_up_existing").magic_link
+
+    expect(mail.subject).to(eq("#{user.login_token} is your Kurz confirmation code"))
+    expect(mail.text_part.body.decoded).to(include("already has a Kurz account", "someone tried to create a Kurz account"))
+  end
 end

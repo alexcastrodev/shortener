@@ -110,3 +110,7 @@ gem "google-protobuf", "~> 3.19"
 gem "bullet", group: [:development, :test]
 
 gem "valid_email2", "~> 7.1"
+
+gem "argon2", "~> 2.3"
+
+gem "googleauth", "~> 1.17"

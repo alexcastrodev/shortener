@@ -108,7 +108,7 @@ export default function LinkShortenerLanding() {
 
             <div className="landing-rise mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <a
-                href="/login"
+                href="/signup"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition-opacity hover:opacity-90"
               >
                 Get started
@@ -206,7 +206,7 @@ export default function LinkShortenerLanding() {
             No paid plans. No credit card. Open source.
           </p>
           <a
-            href="/login"
+            href="/signup"
             className="mt-10 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition-opacity hover:opacity-90"
           >
             <IconClick size={18} />

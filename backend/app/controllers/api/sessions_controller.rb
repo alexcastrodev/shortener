@@ -1,6 +1,7 @@
 class Api::SessionsController < ApplicationController
   include SessionCookie
   include ClientIp
+  include CodeRequestResponse
 
   # Per IP: one visitor cycling through fresh addresses hits these long before
   # the shared email budget (MailBudget), so they cannot spend it for others.
@@ -14,6 +15,26 @@ class Api::SessionsController < ApplicationController
     within: 1.day,
     only: :create,
     name: "login_request_ip_daily",
+    by: -> { client_ip },
+    with: -> { too_many_requests }
+  # Password guessing: per IP across accounts, per account across IPs (the
+  # account itself also locks for a while, see PasswordAuthenticatable).
+  rate_limit to: 20,
+    within: 10.minutes,
+    only: :password,
+    name: "login_password_ip",
+    by: -> { client_ip },
+    with: -> { too_many_requests }
+  rate_limit to: 10,
+    within: 15.minutes,
+    only: :password,
+    name: "login_password_email",
+    by: -> { normalized_email },
+    with: -> { too_many_requests }
+  rate_limit to: 20,
+    within: 10.minutes,
+    only: :google,
+    name: "login_google_ip",
     by: -> { client_ip },
     with: -> { too_many_requests }
   # Per email: guessing a code, or flooding one inbox.
@@ -33,22 +54,45 @@ class Api::SessionsController < ApplicationController
   # POST /api/login_request  { email, turnstile_token }
   def create
     return render(json: { error: "Email is required" }, status: :unprocessable_entity) if params[:email].blank?
-    return render(json: { error: "captcha_failed" }, status: :forbidden) unless Turnstile.valid?(params[:turnstile_token], action: "login", remote_ip: client_ip)
+    return unless turnstile_passed?("login")
 
-    result = LoginCodeRequest.call(email: params[:email])
-    case result.status
-    when :sent
-      render(json: { message: "If the email exists, the link has been sent." })
-    when :invalid_email
-      render(json: { error: "invalid_email" }, status: :unprocessable_entity)
-    when :undeliverable
-      render(json: { error: "undeliverable_email" }, status: :unprocessable_entity)
-    when :budget_exhausted
-      render(json: { error: result.reason.to_s }, status: :service_unavailable)
+    render_code_request(LoginCodeRequest.call(email: params[:email], purpose: :sign_in))
+  end
+
+  # POST /api/login/password  { email, password, turnstile_token }
+  # One answer for every failure (unknown email, unconfirmed account, wrong
+  # or locked password), and the same work behind each, so neither the
+  # message nor the timing tells whether an account exists.
+  def password
+    return unless turnstile_passed?("login")
+
+    user = User.find_by(email: normalized_email)
+    usable = user&.verified? && user.active?
+    authenticated = usable ? user.authenticate_password(params[:password]) : User.burn_password_check(params[:password])
+
+    return render(json: { error: "invalid_credentials" }, status: :unauthorized) unless authenticated
+
+    user.clear_login_token! if user.login_token.present?
+    start_session(user)
+  end
+
+  # POST /api/login/google  { credential }
+  # The ID token from Google Identity Services (see GoogleSignIn).
+  def google
+    result = GoogleSignIn.call(credential: params[:credential])
+
+    case result.error
+    when nil then start_session(result.user)
+    when :deactivated then render(json: { error: I18n.t("errors.account_deactivated") }, status: :forbidden)
+    when :disabled then head(:not_found)
+    else render(json: { error: "google_#{result.error}" }, status: :unauthorized)
     end
   end
 
-  # POST /api/login_verify
+  # POST /api/login_verify  { email, code, purpose }
+  # purpose "sign_up" confirms a new account and turns on the password chosen
+  # when signing up; any other code sign-in drops that pending password (see
+  # PasswordAuthenticatable#activate_pending_password!).
   def verify
     user = User.find_by(email: normalized_email)
 
@@ -58,13 +102,10 @@ class Api::SessionsController < ApplicationController
         return
       end
 
-      token = SessionToken.issue(user)
       user.clear_login_token!
+      params[:purpose] == "sign_up" ? user.activate_pending_password! : user.discard_pending_password!
       user.mark_verified!
-      set_session_cookie(token, SessionToken::TTL.from_now)
-
-      # The token only travels in the httpOnly cookie, never in the body.
-      render(json: UserSerializer.new(user).serialize, status: :ok)
+      start_session(user)
     else
       render(json: { error: "Token invalid or expired" }, status: :unauthorized)
     end

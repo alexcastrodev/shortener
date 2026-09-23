@@ -22,6 +22,7 @@ export default [
       route('pages', 'routes/pages/index.tsx'),
       route('pages/:id', 'routes/pages/$id.tsx'),
       route('pages/:id/stats', 'routes/pages/stats.tsx'),
+      route('account', 'routes/account.tsx'),
     ]),
     ...prefix('admin', [
       index('routes/admin/index.tsx'),
@@ -35,5 +36,8 @@ export default [
   layout('layout/guest.tsx', [
     route('login', 'routes/login/index.tsx'),
     route('login-confirmation', 'routes/login/confirmation/index.tsx'),
+    route('signup', 'routes/signup.tsx'),
+    route('password/forgot', 'routes/password/forgot.tsx'),
+    route('password/reset', 'routes/password/reset.tsx'),
   ]),
 ] satisfies RouteConfig;

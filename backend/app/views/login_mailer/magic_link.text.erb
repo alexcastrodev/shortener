@@ -1,9 +1,9 @@
-Your Kurz sign-in code: <%= @code %>
+<%= @title %>: <%= @code %>
 
-Enter this code on the Kurz sign-in page to continue.
+<%= @body %>
 The code expires in <%= @valid_minutes %> minutes and works once.
 
-You're getting this because someone asked to sign in to Kurz with <%= @user.email %>.
+You're getting this because <%= @reason %>.
 If it wasn't you, you can ignore this email.
 
 Kurz · https://kurz.fyi

@@ -12,6 +12,11 @@ Rails.application.routes.draw do
     post "login_request", to: "sessions#create"
     post "login_verify", to: "sessions#verify"
     delete "logout", to: "sessions#destroy"
+    post "login/password", to: "sessions#password"
+    post "login/google", to: "sessions#google"
+    post "signup", to: "registrations#create"
+    post "password/forgot", to: "password_resets#create"
+    post "password/reset", to: "password_resets#update"
 
     namespace :admin do
       resources :users, only: [:index] do
@@ -41,6 +46,7 @@ Rails.application.routes.draw do
         get "statistics", to: "shortlinks#statistics"
         get "qr_code", to: "shortlinks#qr_code"
       end
+      resource :password, only: [:update]
       resources :page_templates, only: [:index, :create, :update, :destroy]
       resources :community_templates, only: [:index] do
         member { post "report", to: "community_templates#report" }

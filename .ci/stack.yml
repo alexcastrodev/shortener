@@ -27,6 +27,8 @@ services:
       - MAIL_NEW_ADDRESS_DAILY_LIMIT=${MAIL_NEW_ADDRESS_DAILY_LIMIT:-40}
       - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
       - TURNSTILE_HOSTNAMES=kurz.fyi
+      # Sign in with Google: the OAuth client id the ID tokens must be issued for.
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - FRONTEND_URL=${FRONTEND_URL}
       - SENTRY_DSN=${SENTRY_DSN}
       - SENTRY_LOGGER=1

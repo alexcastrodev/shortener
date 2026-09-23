@@ -54,6 +54,10 @@ class ApplicationController < ActionController::API
     return if cookie_session? && !csrf_safe?
 
     @current_user = User.find(@session_payload["sub"])
+    # Signed out everywhere (e.g. by a password change) after this token was issued.
+    unless @current_user.session_current?(@session_payload["iat"])
+      return render(json: { message: "Invalid or expired token" }, status: :unauthorized)
+    end
 
     if @current_user.deactivated?
       render(json: { message: I18n.t("errors.account_deactivated") }, status: :forbidden)

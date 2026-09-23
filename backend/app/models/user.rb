@@ -2,17 +2,23 @@
 #
 # Table name: users
 #
-#  id                  :bigint           not null, primary key
-#  admin               :boolean          default(FALSE), not null
-#  deactivated_at      :datetime
-#  email               :string           not null
-#  login_attempts      :integer          default(0), not null
-#  login_token         :string
-#  login_token_sent_at :datetime
-#  shortlinks_count    :integer          default(0), not null
-#  verified_at         :datetime
-#  created_at          :datetime         not null
-#  updated_at          :datetime         not null
+#  id                       :bigint           not null, primary key
+#  admin                    :boolean          default(FALSE), not null
+#  deactivated_at           :datetime
+#  email                    :string           not null
+#  failed_password_attempts :integer          default(0), not null
+#  login_attempts           :integer          default(0), not null
+#  login_token              :string
+#  login_token_sent_at      :datetime
+#  password_changed_at      :datetime
+#  password_digest          :string
+#  password_locked_until    :datetime
+#  pending_password_digest  :string
+#  sessions_revoked_at      :datetime
+#  shortlinks_count         :integer          default(0), not null
+#  verified_at              :datetime
+#  created_at               :datetime         not null
+#  updated_at               :datetime         not null
 #
 # Indexes
 #
@@ -22,6 +28,7 @@
 #
 class User < ApplicationRecord
   include PgSearch::Model
+  include PasswordAuthenticatable
 
   MAX_LOGIN_ATTEMPTS = 5
   LOGIN_TOKEN_TTL = 15.minutes
@@ -30,7 +37,7 @@ class User < ApplicationRecord
   # ===============
   # Audit
   # ===============
-  audited only: [:email, :admin, :deactivated_at]
+  audited only: [:email, :admin, :deactivated_at, :password_changed_at]
 
   # ===============
   # Search
@@ -52,6 +59,7 @@ class User < ApplicationRecord
   has_many :pages, dependent: :destroy
   has_many :page_templates, dependent: :destroy
   has_many :page_template_reports, dependent: :delete_all
+  has_many :identities, dependent: :delete_all
 
   # ===============
   # Scopes
@@ -109,11 +117,11 @@ class User < ApplicationRecord
     login_token_sent_at.present? && login_token_sent_at > MAGIC_LINK_COOLDOWN.ago
   end
 
-  def send_magic_link
+  def send_magic_link(purpose: :sign_in)
     return if magic_link_recently_sent?
 
     generate_login_token!
-    LoginMailer.with(user: self).magic_link.deliver_later
+    LoginMailer.with(user: self, purpose: purpose.to_s).magic_link.deliver_later
   end
 
   def verified?

@@ -48,9 +48,12 @@ export function AppHeader() {
         <div className="flex items-center gap-3">
           <ThemeToggle />
           {user && (
-            <span className="hidden text-sm text-muted-foreground lg:inline">
+            <NavLink
+              to="/app/account"
+              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground lg:inline"
+            >
               {user.email}
-            </span>
+            </NavLink>
           )}
           <button
             type="button"

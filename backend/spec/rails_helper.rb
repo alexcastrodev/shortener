@@ -36,6 +36,7 @@ rescue ActiveRecord::PendingMigrationError => e
   abort(e.to_s.strip)
 end
 RSpec.configure do |config|
+  config.include(ActiveSupport::Testing::TimeHelpers)
   # Make ActiveJob test helpers available in specs and ensure the test adapter is used
   config.include(ActiveJob::TestHelper)
 

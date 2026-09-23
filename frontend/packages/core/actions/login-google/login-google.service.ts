@@ -1,0 +1,17 @@
+import type { AxiosResponse } from 'axios';
+import { publicApi } from '../api';
+import type { LoginGoogleBody } from './login-google.types';
+import type { LoginVerifyResponse } from '../login-verify/login-verify.types';
+
+export async function loginWithGoogle(
+  data: LoginGoogleBody
+): Promise<LoginVerifyResponse> {
+  const response: AxiosResponse<LoginVerifyResponse> = await publicApi.post(
+    '/api/login/google',
+    data,
+    // Needed for the browser to store the session cookie of a cross-origin response.
+    { withCredentials: true }
+  );
+
+  return response.data;
+}

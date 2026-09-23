@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_23_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -89,6 +89,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_190000) do
     t.bigint "shortlink_id", null: false
     t.string "user_agent"
     t.index ["shortlink_id"], name: "index_events_on_shortlink_id"
+  end
+
+  create_table "identities", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email"
+    t.datetime "last_used_at"
+    t.string "provider", null: false
+    t.string "uid", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["provider", "uid"], name: "index_identities_on_provider_and_uid", unique: true
+    t.index ["user_id", "provider"], name: "index_identities_on_user_id_and_provider", unique: true
+    t.index ["user_id"], name: "index_identities_on_user_id"
   end
 
   create_table "page_link_clicks", force: :cascade do |t|
@@ -336,9 +349,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_190000) do
     t.datetime "created_at", null: false
     t.datetime "deactivated_at"
     t.string "email", null: false
+    t.integer "failed_password_attempts", default: 0, null: false
     t.integer "login_attempts", default: 0, null: false
     t.string "login_token"
     t.datetime "login_token_sent_at"
+    t.datetime "password_changed_at"
+    t.string "password_digest"
+    t.datetime "password_locked_until"
+    t.string "pending_password_digest"
+    t.datetime "sessions_revoked_at"
     t.integer "shortlinks_count", default: 0, null: false
     t.datetime "updated_at", null: false
     t.datetime "verified_at"
@@ -350,6 +369,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_190000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "events", "shortlinks", on_delete: :cascade
+  add_foreign_key "identities", "users", on_delete: :cascade
   add_foreign_key "page_link_clicks", "page_links", on_delete: :cascade
   add_foreign_key "page_links", "pages", on_delete: :cascade
   add_foreign_key "page_template_reports", "page_templates", on_delete: :cascade

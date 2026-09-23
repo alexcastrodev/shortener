@@ -1,8 +1,6 @@
 require "rails_helper"
 
 RSpec.describe(MailBudget) do
-  include ActiveSupport::Testing::TimeHelpers
-
   around do |example|
     skip("requires REDIS_URL") if ENV["REDIS_URL"].blank?
     previous = ENV.to_h.slice("MAIL_DAILY_LIMIT", "MAIL_MONTHLY_LIMIT", "MAIL_NEW_ADDRESS_DAILY_LIMIT")

@@ -1,18 +1,16 @@
 import { NavLink } from 'react-router';
 import {
   IconHome2,
-  IconLogout,
+  IconUserCircle,
   IconAddressBook,
   IconSettings,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { useLogout } from '../../modules/auth/use-logout';
 import { AdminGuard } from '../admin-guard';
 import styles from './mobile-nav.module.css';
 
 export function MobileNav() {
   const { t } = useTranslation('menu');
-  const handleLogout = useLogout();
 
   return (
     <nav className={styles.mobileNav}>
@@ -50,10 +48,16 @@ export function MobileNav() {
         </NavLink>
       </AdminGuard>
 
-      <button onClick={handleLogout} className={styles.navItem}>
-        <IconLogout size={22} stroke={1.5} />
-        <span className={styles.label}>{t('logout')}</span>
-      </button>
+      {/* Logging out lives on the account page, keeping the bar at four items. */}
+      <NavLink
+        to="/app/account"
+        className={({ isActive }) =>
+          `${styles.navItem} ${isActive ? styles.active : ''}`
+        }
+      >
+        <IconUserCircle size={22} stroke={1.5} />
+        <span className={styles.label}>{t('account')}</span>
+      </NavLink>
     </nav>
   );
 }
