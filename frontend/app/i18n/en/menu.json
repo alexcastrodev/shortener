@@ -9,5 +9,7 @@
     "manage_users": "Manage application users",
     "shortlinks": "Shortlinks",
     "manage_shortlinks": "Manage Shortlinks",
-    "audit_logs": "Audit Logs"
+    "audit_logs": "Audit Logs",
+    "moderation": "Moderation",
+    "admin": "Admin"
 }

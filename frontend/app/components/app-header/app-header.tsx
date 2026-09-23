@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router';
-import { IconHome2, IconLogout, IconUsers, IconLink, IconHistory, IconAddressBook } from '@tabler/icons-react';
+import { IconHome2, IconLogout, IconAddressBook, IconSettings } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { useLogout } from '../../modules/auth/use-logout';
@@ -35,18 +35,11 @@ export function AppHeader() {
               {t('pages')}
             </NavLink>
 
+            {/* One entry for every admin section; /admin lists them. */}
             <AdminGuard>
-              <NavLink to="/admin/users" className={navClass}>
-                <IconUsers size={17} stroke={1.8} />
-                {t('users')}
-              </NavLink>
-              <NavLink to="/admin/shortlinks" className={navClass}>
-                <IconLink size={17} stroke={1.8} />
-                {t('shortlinks')}
-              </NavLink>
-              <NavLink to="/admin/audit-logs" className={navClass}>
-                <IconHistory size={17} stroke={1.8} />
-                {t('audit_logs')}
+              <NavLink to="/admin" className={navClass}>
+                <IconSettings size={17} stroke={1.8} />
+                {t('admin')}
               </NavLink>
             </AdminGuard>
           </nav>

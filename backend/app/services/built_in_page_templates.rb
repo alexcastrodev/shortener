@@ -6,8 +6,8 @@ module BuiltInPageTemplates
 
   PLACEHOLDER = "https://example.com/replace-me"
 
-  def self.social(icon, url)
-    { "kind" => "social", "label" => icon.capitalize, "url" => url, "icon" => icon, "active" => false }
+  def self.social(icon, url = PageLink::NETWORKS.fetch(icon)[:placeholder])
+    { "kind" => "social", "label" => PageLink::NETWORKS.fetch(icon)[:name], "url" => url, "icon" => icon, "active" => false }
   end
 
   def self.link(label, icon: nil, url: PLACEHOLDER)

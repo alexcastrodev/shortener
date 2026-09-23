@@ -18,7 +18,7 @@ RSpec.describe("Sessions", type: :request) do
       body = JSON.parse(response.body)
       expect(body["user"]["email"]).to(eq(user.email))
       expect(body.to_s).not_to(include(cookies["kurz_session"]))
-      expect(response.headers["Set-Cookie"]).to(match(/kurz_session=.+; path=\/;.*httponly; samesite=strict/i))
+      expect(response.headers["Set-Cookie"]).to(match(%r{kurz_session=.+; path=/;.*httponly; samesite=strict}i))
       expect(user.reload.login_token).to(be_nil)
     end
 

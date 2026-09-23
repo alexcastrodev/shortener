@@ -28,7 +28,7 @@ RSpec.describe("/api/public/shortlinks/:short_code", type: :request) do
   describe "POST unlock" do
     it "returns the destination and records the click for the right password" do
       expect do
-        post "/api/public/shortlinks/#{shortlink.short_code}/unlock", params: { password: "hunter22" }, headers: headers, as: :json
+        post("/api/public/shortlinks/#{shortlink.short_code}/unlock", params: { password: "hunter22" }, headers: headers, as: :json)
       end.to(change { shortlink.events.count }.by(1))
 
       expect(response).to(have_http_status(:ok))

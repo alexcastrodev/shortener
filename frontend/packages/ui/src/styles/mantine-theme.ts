@@ -1,8 +1,25 @@
-import { createTheme, type MantineThemeOverride } from '@mantine/core';
+import {
+  createTheme,
+  defaultVariantColorsResolver,
+  type MantineThemeOverride,
+} from '@mantine/core';
 
 export const mantineTheme: MantineThemeOverride = createTheme({
   primaryColor: 'brand',
   primaryShade: { light: 7, dark: 4 },
+  // The dark-mode brand fill (shade 4) is light, and white text on it is
+  // hard to read. Text on brand fills follows --app-primary-foreground,
+  // which is white in light mode and near-black in dark mode.
+  variantColorResolver: input => {
+    const resolved = defaultVariantColorsResolver(input);
+    if (
+      input.variant === 'filled' &&
+      (input.color ?? input.theme.primaryColor) === 'brand'
+    ) {
+      return { ...resolved, color: 'var(--app-primary-foreground)' };
+    }
+    return resolved;
+  },
   defaultRadius: 'md',
   fontFamily:
     'Inter, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',

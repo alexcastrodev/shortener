@@ -27,8 +27,20 @@
 class PageLink < ApplicationRecord
   MAX_PER_PAGE = 50
   KINDS = ["link", "social", "header"].freeze
-  # Brand icons the frontend knows how to draw (bio-page/social-networks).
-  ICONS = ["instagram", "tiktok", "facebook", "linkedin", "snapchat", "youtube", "x", "onlyfans", "whatsapp"].freeze
+  # Brand icons the frontend knows how to draw (bio-page/social-networks),
+  # with the display name and the placeholder URL used by templates.
+  NETWORKS = {
+    "instagram" => { name: "Instagram", placeholder: "https://www.instagram.com/your_handle" },
+    "tiktok" => { name: "TikTok", placeholder: "https://www.tiktok.com/@your_handle" },
+    "facebook" => { name: "Facebook", placeholder: "https://www.facebook.com/your_page" },
+    "linkedin" => { name: "LinkedIn", placeholder: "https://www.linkedin.com/in/your_profile" },
+    "snapchat" => { name: "Snapchat", placeholder: "https://www.snapchat.com/add/your_handle" },
+    "youtube" => { name: "YouTube", placeholder: "https://www.youtube.com/@your_channel" },
+    "x" => { name: "X", placeholder: "https://x.com/your_handle" },
+    "onlyfans" => { name: "OnlyFans", placeholder: "https://onlyfans.com/your_handle" },
+    "whatsapp" => { name: "WhatsApp", placeholder: "https://wa.me/351900000000" },
+  }.freeze
+  ICONS = NETWORKS.keys.freeze
 
   # ===============
   # Audit

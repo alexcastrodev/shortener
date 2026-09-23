@@ -1,11 +1,9 @@
 import { NavLink } from 'react-router';
 import {
   IconHome2,
-  IconUsers,
   IconLogout,
-  IconLink,
-  IconHistory,
   IconAddressBook,
+  IconSettings,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useLogout } from '../../modules/auth/use-logout';
@@ -39,33 +37,16 @@ export function MobileNav() {
         <span className={styles.label}>{t('pages')}</span>
       </NavLink>
 
+      {/* One entry for every admin section; /admin lists them. */}
       <AdminGuard>
         <NavLink
-          to="/admin/users"
+          to="/admin"
           className={({ isActive }) =>
             `${styles.navItem} ${isActive ? styles.active : ''}`
           }
         >
-          <IconUsers size={22} stroke={1.5} />
-          <span className={styles.label}>{t('users')}</span>
-        </NavLink>
-        <NavLink
-          to="/admin/shortlinks"
-          className={({ isActive }) =>
-            `${styles.navItem} ${isActive ? styles.active : ''}`
-          }
-        >
-          <IconLink size={22} stroke={1.5} />
-          <span className={styles.label}>{t('shortlinks')}</span>
-        </NavLink>
-        <NavLink
-          to="/admin/audit-logs"
-          className={({ isActive }) =>
-            `${styles.navItem} ${isActive ? styles.active : ''}`
-          }
-        >
-          <IconHistory size={22} stroke={1.5} />
-          <span className={styles.label}>{t('audit_logs')}</span>
+          <IconSettings size={22} stroke={1.5} />
+          <span className={styles.label}>{t('admin')}</span>
         </NavLink>
       </AdminGuard>
 

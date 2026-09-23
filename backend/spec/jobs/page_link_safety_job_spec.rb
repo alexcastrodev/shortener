@@ -64,7 +64,7 @@ RSpec.describe(GoogleLib::SafeBrowsing::V4::Services, ".unsafe_urls") do
   end
 
   it "raises instead of flagging everything when the API fails" do
-    stub_request(:post, %r{safebrowsing.googleapis.com}).to_return(status: 503)
+    stub_request(:post, /safebrowsing.googleapis.com/).to_return(status: 503)
 
     expect { described_class.unsafe_urls(["https://ok.example.com"]) }.to(raise_error(described_class::Error))
   end

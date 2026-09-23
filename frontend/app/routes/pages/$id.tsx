@@ -2,13 +2,14 @@ import {
   Button,
   FileButton,
   Group,
+  Loader,
   Stack,
   Switch,
   TextInput,
   Textarea,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import {
@@ -72,9 +73,7 @@ const pageSchema = z.object({
   bio: z.string().max(300),
   theme: z.enum(PAGE_THEMES),
   published: z.boolean(),
-  expires_at: z
-    .string()
-    .refine(isFutureDateTimeLocal, 'Must be in the future'),
+  expires_at: z.string().refine(isFutureDateTimeLocal, 'Must be in the future'),
 });
 
 function errorMessage(error: unknown) {
@@ -89,7 +88,11 @@ function errorMessage(error: unknown) {
 }
 
 function showError(error: unknown) {
-  notifications.show({ title: 'Error', message: errorMessage(error), color: 'red' });
+  notifications.show({
+    title: 'Error',
+    message: errorMessage(error),
+    color: 'red',
+  });
 }
 
 export default function PageEditor() {
@@ -194,7 +197,6 @@ function Editor({ page }: { page: Page }) {
       onConfirm: () => deletePage(page.id),
     });
   }
-
 
   return (
     <PageContainer className="pb-24 sm:pb-10">
@@ -313,7 +315,6 @@ function Editor({ page }: { page: Page }) {
               </Stack>
             </form>
           </Card>
-
         </div>
 
         <div className="lg:sticky lg:top-20 lg:self-start">
@@ -333,7 +334,9 @@ function Editor({ page }: { page: Page }) {
               }}
               links={links}
               onChange={refresh}
-              onPickTemplate={() => openTemplateGallery({ page, onApplied: refresh })}
+              onPickTemplate={() =>
+                openTemplateGallery({ page, onApplied: refresh })
+              }
             />
           </PhoneFrame>
         </div>
@@ -364,7 +367,9 @@ function ThemePicker({
               aria-checked={selected}
               onClick={() => onChange(theme)}
               className={`rounded-lg border-2 p-1 text-xs font-medium transition-colors ${
-                selected ? 'border-primary' : 'border-transparent hover:border-border'
+                selected
+                  ? 'border-primary'
+                  : 'border-transparent hover:border-border'
               }`}
             >
               <span
@@ -382,9 +387,23 @@ function ThemePicker({
   );
 }
 
+// Mirrors Page::AVATAR_MAX_SIZE; checked here too so an oversized photo is
+// refused before spending the upload.
+const AVATAR_MAX_BYTES = 50 * 1024 * 1024;
+// The server shrinks uploads in the background. Poll while it does, but
+// give up after a couple of minutes (a stuck upload is cleaned up
+// server-side within the hour).
+const AVATAR_POLL_MS = 2000;
+const AVATAR_POLL_LIMIT = 60;
+
 function AvatarField({ page, onChange }: { page: Page; onChange: () => void }) {
+  const queryClient = useQueryClient();
+  const [pollGaveUp, setPollGaveUp] = useState(false);
   const { mutate: upload, isPending: isUploading } = useUploadPageAvatar({
-    onSuccess: onChange,
+    onSuccess: () => {
+      setPollGaveUp(false);
+      onChange();
+    },
     onError: showError,
   });
   const { mutate: remove, isPending: isRemoving } = useDeletePageAvatar({
@@ -392,32 +411,72 @@ function AvatarField({ page, onChange }: { page: Page; onChange: () => void }) {
     onError: showError,
   });
 
+  const isProcessing = !!page.avatar_processing;
+
+  useEffect(() => {
+    if (!isProcessing || pollGaveUp) return;
+
+    let polls = 0;
+    const timer = setInterval(() => {
+      polls += 1;
+      if (polls > AVATAR_POLL_LIMIT) {
+        clearInterval(timer);
+        setPollGaveUp(true);
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: getPageKey(page.id) });
+    }, AVATAR_POLL_MS);
+    return () => clearInterval(timer);
+  }, [isProcessing, pollGaveUp, page.id, queryClient]);
+
+  const pickFile = (file: File | null) => {
+    if (!file) return;
+    if (file.size > AVATAR_MAX_BYTES) {
+      showError({ errors: { avatar: ['must be at most 50MB'] } });
+      return;
+    }
+    upload({ pageId: page.id, file });
+  };
+
   return (
     <div className="flex items-center gap-4">
-      {page.avatar_url ? (
-        <img
-          src={page.avatar_url}
-          alt="Current avatar"
-          className="h-16 w-16 rounded-full object-cover"
-        />
-      ) : (
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
-          <IconPhoto size={22} />
-        </div>
-      )}
+      <div className="relative h-16 w-16 shrink-0">
+        {page.avatar_url ? (
+          <img
+            src={page.avatar_url}
+            alt="Current avatar"
+            className="h-16 w-16 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <IconPhoto size={22} />
+          </div>
+        )}
+        {isProcessing && !pollGaveUp && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+            <Loader size="sm" color="white" />
+          </div>
+        )}
+      </div>
       <div className="flex flex-col gap-1">
         <Group gap="xs">
           <FileButton
             accept="image/png,image/jpeg,image/webp,image/heic,image/heif,.heic,.heif"
-            onChange={file => file && upload({ pageId: page.id, file })}
+            onChange={pickFile}
           >
             {props => (
-              <Button {...props} size="xs" variant="default" loading={isUploading}>
+              <Button
+                {...props}
+                size="xs"
+                variant="default"
+                loading={isUploading}
+                disabled={isProcessing && !pollGaveUp}
+              >
                 {page.avatar_url ? 'Change photo' : 'Upload photo'}
               </Button>
             )}
           </FileButton>
-          {page.avatar_url && (
+          {(page.avatar_url || isProcessing) && (
             <Button
               size="xs"
               variant="subtle"
@@ -430,7 +489,13 @@ function AvatarField({ page, onChange }: { page: Page; onChange: () => void }) {
           )}
         </Group>
         <span className="text-xs text-muted-foreground">
-          PNG, JPEG, WebP or HEIC, up to 10MB.
+          {isUploading
+            ? 'Uploading…'
+            : isProcessing
+              ? pollGaveUp
+                ? 'Still processing your photo, check back in a few minutes.'
+                : 'Processing your photo…'
+              : 'PNG, JPEG, WebP or HEIC, up to 50MB.'}
         </span>
       </div>
     </div>

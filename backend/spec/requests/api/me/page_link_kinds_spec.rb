@@ -10,7 +10,7 @@ RSpec.describe("Page link kinds (link, social icon, section header)", type: :req
   end
 
   def create_link(params)
-    post "/api/me/pages/#{page.id}/links", params: params, headers: auth_headers, as: :json
+    post("/api/me/pages/#{page.id}/links", params: params, headers: auth_headers, as: :json)
     response
   end
 

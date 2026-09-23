@@ -1,3 +1,4 @@
+import { Breadcrumb } from '../../components/breadcrumb';
 import { Badge, Center, Loader, Select } from '@mantine/core';
 import { IconHistory, IconLock } from '@tabler/icons-react';
 import { Alert, Card, PageContainer } from '@internal/ui';
@@ -143,6 +144,12 @@ export default function AdminAuditLogsPage() {
 
   return (
     <PageContainer className="pb-24 sm:pb-10">
+      <Breadcrumb
+        items={[
+          { label: 'Administration', href: '/admin' },
+          { label: 'Audit Logs' },
+        ]}
+      />
       <div className="mb-6">
         <div className="flex items-center gap-3">
           <div className="inline-flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">

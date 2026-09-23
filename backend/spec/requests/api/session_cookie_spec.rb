@@ -11,7 +11,7 @@ RSpec.describe("Session cookie and token", type: :request) do
 
   def sign_in
     user.generate_login_token!
-    post "/api/login_verify", params: { email: user.email, code: user.login_token }, as: :json
+    post("/api/login_verify", params: { email: user.email, code: user.login_token }, as: :json)
     expect(response).to(have_http_status(:ok))
   end
 
@@ -75,7 +75,7 @@ RSpec.describe("Session cookie and token", type: :request) do
 
   describe "rejected tokens" do
     def me_with(token)
-      get "/api/me", headers: { "Authorization" => "Bearer #{token}" }
+      get("/api/me", headers: { "Authorization" => "Bearer #{token}" })
       response
     end
 

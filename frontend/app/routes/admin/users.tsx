@@ -84,8 +84,7 @@ export default function UsersPage() {
   return (
     <PageContainer className="pb-24 sm:pb-10">
       <Breadcrumb items={[
-        { label: 'Dashboard', href: '/app' },
-        { label: t('administration') },
+        { label: t('administration'), href: '/admin' },
         { label: t('users') },
       ]} />
       <div className="mb-6">

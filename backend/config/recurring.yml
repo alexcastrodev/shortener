@@ -21,7 +21,15 @@ production:
     class: ExpireScheduledShortlinksJob
     queue: default
     schedule: every 5 minutes
+  cleanup_stale_avatar_uploads:
+    class: CleanupStaleAvatarUploadsJob
+    queue: default
+    schedule: every 15 minutes
   recheck_page_links_safety:
     class: RecheckPageLinksSafetyJob
     queue: safety
     schedule: at 4am every day
+  detect_page_abuse:
+    class: DetectPageAbuseJob
+    queue: default
+    schedule: every hour at minute 40

@@ -26,6 +26,12 @@ Rails.application.routes.draw do
         end
       end
       resources :audits, only: [:index]
+      resources :page_templates, only: [:index] do
+        member { post "toggle_hidden", to: "page_templates#toggle_hidden" }
+      end
+      resources :abuse_signals, only: [:index] do
+        member { post "dismiss", to: "abuse_signals#dismiss" }
+      end
     end
 
     namespace :me do
@@ -35,7 +41,10 @@ Rails.application.routes.draw do
         get "statistics", to: "shortlinks#statistics"
         get "qr_code", to: "shortlinks#qr_code"
       end
-      resources :page_templates, only: [:index, :create, :destroy]
+      resources :page_templates, only: [:index, :create, :update, :destroy]
+      resources :community_templates, only: [:index] do
+        member { post "report", to: "community_templates#report" }
+      end
       resources :pages, only: [:index, :show, :create, :update, :destroy] do
         post "avatar", to: "pages#upload_avatar"
         delete "avatar", to: "pages#destroy_avatar"

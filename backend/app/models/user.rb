@@ -49,6 +49,7 @@ class User < ApplicationRecord
   has_many :shortlinks, dependent: :destroy
   has_many :pages, dependent: :destroy
   has_many :page_templates, dependent: :destroy
+  has_many :page_template_reports, dependent: :delete_all
 
   # ===============
   # Scopes

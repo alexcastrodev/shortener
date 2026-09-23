@@ -42,5 +42,11 @@ class PageSerializer < BaseSerializer
 
   attributes :public_url, :avatar_url
 
+  # A new avatar is being optimized in the background; avatar_url still
+  # points at the previous one until it is done.
+  attribute :avatar_processing do |page|
+    page.avatar_processing?
+  end
+
   many :page_links, key: :links, resource: PageLinkSerializer, if: proc { |_| params[:with_links] }
 end

@@ -62,6 +62,22 @@ RSpec.describe("Injection hardening", type: :request) do
       expect(body["links"].map { |l| l["label"] }).to(all(eq(payload.first(80))))
       expect(response.media_type).to(eq("application/json"))
     end
+
+    it "keeps it inert in Community template names and descriptions" do
+      page.update!(display_title: payload.first(80))
+      post "/api/me/page_templates", params: { name: payload.first(60), page_id: page.id }, headers: auth_headers, as: :json
+      template_id = JSON.parse(response.body)["page_template"]["id"]
+      patch "/api/me/page_templates/#{template_id}", params: { visibility: "public", author_page_id: page.id, description: payload.first(140) }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:ok))
+
+      get "/api/me/community_templates", headers: auth_headers
+
+      template = JSON.parse(response.body)["page_template"].first
+      expect(template["name"]).to(eq(payload.first(60)))
+      expect(template["description"]).to(eq(payload.first(140)))
+      expect(template["author"]["label"]).to(start_with(payload.first(80)))
+      expect(response.media_type).to(eq("application/json"))
+    end
   end
 
   describe "SQL injection" do
@@ -81,7 +97,7 @@ RSpec.describe("Injection hardening", type: :request) do
   end
 
   describe "template ids" do
-    ["../../etc/passwd", "custom-0 OR 1=1", "custom-../1", "Kernel"].each do |id|
+    ["../../etc/passwd", "custom-0 OR 1=1", "custom-../1", "Kernel", "community-0 OR 1=1", "community-../1"].each do |id|
       it "rejects #{id.inspect}" do
         post "/api/me/pages/#{page.id}/apply_template", params: { template: id }, headers: auth_headers, as: :json
         expect(response).to(have_http_status(:not_found))

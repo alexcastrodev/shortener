@@ -3,6 +3,15 @@ class Api::Me::PageTemplatesController < ApplicationController
 
   before_action :authenticate_user!
 
+  # Publishing is free but not unbounded: keeps the gallery from being
+  # flooded from a single account.
+  rate_limit to: 5,
+    within: 1.day,
+    only: :update,
+    name: "page_template_publish",
+    by: -> { current_user&.id },
+    with: -> { render(json: { error: "Too many publications today, please try again tomorrow" }, status: :too_many_requests) }
+
   # GET /api/me/page_templates
   # Built-in templates first, then the ones this user saved (never anyone
   # else's).
@@ -26,6 +35,26 @@ class Api::Me::PageTemplatesController < ApplicationController
         render(json: { errors: template.errors.full_messages }, status: :unprocessable_entity)
       end
     end
+  end
+
+  # PATCH /api/me/page_templates/:id  { visibility, description, author_page_id }
+  # Publishes to (or removes from) the Community gallery. Removing takes it
+  # out immediately; pages already created from it keep their copies.
+  def update
+    template = @current_user.page_templates.find(params[:id].to_s.delete_prefix(CUSTOM_PREFIX))
+
+    validate_contract(PageTemplatePublishContract) do |validated_params|
+      if validated_params[:visibility] == "public"
+        # The author is shown through one of the user's own public pages.
+        author_page = policy_scope(Page).visible.find(validated_params[:author_page_id])
+        template.publish!(author_page: author_page, description: validated_params[:description])
+      else
+        template.unpublish!
+      end
+      render(json: { page_template: serialize_custom(template) }, status: :ok)
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    render(json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity)
   end
 
   # DELETE /api/me/page_templates/:id  (only the user's own)

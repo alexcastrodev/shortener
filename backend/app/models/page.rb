@@ -26,14 +26,39 @@
 #
 class Page < ApplicationRecord
   THEMES = ["default", "midnight", "sunset", "forest", "ocean", "paper"].freeze
-  # Phone photos (HEIC or JPEG) are often 2-5MB; only a small WebP variant
-  # is ever served.
-  AVATAR_MAX_SIZE = 10.megabytes
+  # Full-resolution phone photos (a 48MP HEIC can pass 40MB) are accepted
+  # and shrunk in the background by OptimizeAvatarJob; only a small WebP
+  # variant is ever served.
+  AVATAR_MAX_SIZE = 50.megabytes
+  # Checked from the image header before anything is stored or queued, so a
+  # tiny file declaring huge dimensions (decompression bomb) never gets
+  # decoded. A 48MP iPhone photo is 8064x6048.
+  AVATAR_MAX_PIXELS = 100_000_000
+  AVATAR_MAX_DIMENSION = 12_000
+  # The stored avatar, after optimization; :thumb is derived from it.
+  AVATAR_MAX_EDGE = 1024
   SLUG_FORMAT = /\A[a-z0-9][a-z0-9_.-]{1,28}[a-z0-9]\z/
   # Slugs that would be confusing as /u/:slug or collide with product words.
   RESERVED_SLUGS = [
-    "about", "admin", "api", "app", "dashboard", "help", "kurz", "login", "logout",
-    "me", "new", "pages", "report", "settings", "signup", "status", "support", "u", "www",
+    "about",
+    "admin",
+    "api",
+    "app",
+    "dashboard",
+    "help",
+    "kurz",
+    "login",
+    "logout",
+    "me",
+    "new",
+    "pages",
+    "report",
+    "settings",
+    "signup",
+    "status",
+    "support",
+    "u",
+    "www",
   ].freeze
 
   # ===============
@@ -70,6 +95,9 @@ class Page < ApplicationRecord
   has_one_attached :avatar do |attachable|
     attachable.variant(:thumb, resize_to_fill: [400, 400], format: :webp)
   end
+  # The raw upload, kept only until OptimizeAvatarJob replaces the avatar
+  # with it. The current avatar stays visible in the meantime.
+  has_one_attached :avatar_upload
 
   def soft_delete!
     update!(deleted_at: Time.current)
@@ -77,6 +105,10 @@ class Page < ApplicationRecord
 
   def public_url
     "#{ENV["FRONTEND_URL"]}/u/#{slug}"
+  end
+
+  def avatar_processing?
+    avatar_upload.attached?
   end
 
   # Always the resized variant, never the original upload: visitors only

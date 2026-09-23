@@ -36,6 +36,9 @@ export type Page = {
   expires_at?: string | null;
   public_url: string;
   avatar_url?: string | null;
+  // A new avatar is being optimized server-side; avatar_url still points at
+  // the previous one until then.
+  avatar_processing?: boolean;
   links?: PageLink[];
   created_at: string;
   updated_at: string;
@@ -66,12 +69,33 @@ export type PageTemplateItem = {
   active?: boolean;
 };
 
+export type PageTemplateVisibility = 'private' | 'public';
+
+// "by Title · @slug"; slug is null while the author's page is not public.
+export type PageTemplateAuthor = {
+  label: string;
+  slug: string | null;
+};
+
 export type PageTemplate = {
-  // Built-in key ("creator") or "custom-<id>" for the user's own.
+  // Built-in key ("creator"), "custom-<id>" for the user's own, or
+  // "community-<id>" for someone else's published one.
   id: string;
   name: string;
   description?: string | null;
   theme: PageTheme;
   built_in: boolean;
   items: PageTemplateItem[];
+  // Own templates only: the placeholder version the Community gets.
+  public_items?: PageTemplateItem[];
+  visibility?: PageTemplateVisibility;
+  hidden?: boolean;
+  uses_count?: number;
+  author?: PageTemplateAuthor | null;
+  community?: boolean;
+  // A Community template published by the current user.
+  mine?: boolean;
 };
+
+export type PageTemplateReportReason =
+  'spam' | 'offensive' | 'impersonation' | 'other';

@@ -23,9 +23,12 @@ export default [
       route('pages/:id', 'routes/pages/$id.tsx'),
     ]),
     ...prefix('admin', [
+      index('routes/admin/index.tsx'),
       route('users', 'routes/admin/users.tsx'),
       route('shortlinks', 'routes/admin/shortlinks.tsx'),
       route('audit-logs', 'routes/admin/audit-logs.tsx'),
+      route('moderation', 'routes/admin/moderation/templates.tsx'),
+      route('moderation/abuse', 'routes/admin/moderation/abuse.tsx'),
     ]),
   ]),
   layout('layout/guest.tsx', [
