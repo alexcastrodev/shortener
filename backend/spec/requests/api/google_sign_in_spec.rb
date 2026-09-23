@@ -86,6 +86,43 @@ RSpec.describe("Sign in with Google", type: :request) do
     expect(response.cookies[SessionCookie::NAME]).to(be_nil)
   end
 
+  describe "with the popup's one-time code" do
+    let(:token_url) { "https://oauth2.googleapis.com/token" }
+
+    around do |example|
+      ENV["GOOGLE_CLIENT_SECRET"] = "secret"
+      example.run
+    ensure
+      ENV.delete("GOOGLE_CLIENT_SECRET")
+    end
+
+    it "exchanges the code with the client secret, then signs in with the ID token" do
+      stub_request(:post, token_url).to_return(status: 200, body: { id_token: "id-token" }.to_json)
+      google_says
+
+      post "/api/login/google", params: { code: "one-time-code" }, as: :json
+
+      expect(response).to(have_http_status(:ok))
+      expect(a_request(:post, token_url).with(body: hash_including(
+        "code" => "one-time-code",
+        "client_id" => client_id,
+        "client_secret" => "secret",
+        "redirect_uri" => "postmessage",
+        "grant_type" => "authorization_code",
+      ))).to(have_been_made)
+      expect(User.find_by!(email: "marina@gmail.com")).to(be_verified)
+    end
+
+    it "refuses a code Google does not accept" do
+      stub_request(:post, token_url).to_return(status: 400, body: { error: "invalid_grant" }.to_json)
+
+      post "/api/login/google", params: { code: "reused-code" }, as: :json
+
+      expect(response).to(have_http_status(:unauthorized))
+      expect(json["error"]).to(eq("google_invalid_token"))
+    end
+  end
+
   it "is off without a client id" do
     ENV.delete("GOOGLE_CLIENT_ID")
 

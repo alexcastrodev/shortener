@@ -67,7 +67,7 @@ export default function Signup() {
     >
       {GOOGLE_CLIENT_ID && (
         <>
-          <GoogleButton text="signup_with" onCredential={google.signIn} />
+          <GoogleButton onCode={google.signIn} pending={google.pending} />
           <AuthDivider />
         </>
       )}

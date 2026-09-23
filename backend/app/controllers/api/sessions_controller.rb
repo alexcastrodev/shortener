@@ -76,10 +76,10 @@ class Api::SessionsController < ApplicationController
     start_session(user)
   end
 
-  # POST /api/login/google  { credential }
-  # The ID token from Google Identity Services (see GoogleSignIn).
+  # POST /api/login/google  { code } or { credential }
+  # The one-time code from Google's popup, or an ID token (see GoogleSignIn).
   def google
-    result = GoogleSignIn.call(credential: params[:credential])
+    result = GoogleSignIn.call(credential: params[:credential], code: params[:code])
 
     case result.error
     when nil then start_session(result.user)

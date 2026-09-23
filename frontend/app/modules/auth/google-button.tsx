@@ -1,42 +1,42 @@
-import { useComputedColorScheme } from '@mantine/core';
-import { useEffect, useRef } from 'react';
+import { useRef, useState } from 'react';
+import { GoogleLogo, ProviderButton } from './provider-button';
 
-// "Sign in with Google" through Google Identity Services. Google renders the
-// button itself (its branding rules) and hands back an ID token, which the
-// API verifies (backend/app/services/google_sign_in.rb). Without
+// "Continue with Google" drawn by us, so it always matches the other sign-in
+// options (Google's rendered button restyles itself per visitor). Clicking
+// opens Google's popup through Google Identity Services (authorization code
+// flow); the one-time code goes to the API, which exchanges it for the ID
+// token (backend/app/services/google_sign_in.rb). Without
 // VITE_GOOGLE_CLIENT_ID nothing renders.
 
 export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as
   string | undefined;
 const SCRIPT_URL = 'https://accounts.google.com/gsi/client';
 
-interface GoogleIdApi {
-  initialize: (options: Record<string, unknown>) => void;
-  renderButton: (
-    element: HTMLElement,
-    options: Record<string, unknown>
-  ) => void;
+interface CodeClient {
+  requestCode: () => void;
+}
+
+interface GoogleOAuthApi {
+  initCodeClient: (options: Record<string, unknown>) => CodeClient;
 }
 
 declare global {
   interface Window {
-    google?: { accounts: { id: GoogleIdApi } };
+    google?: { accounts: { oauth2?: GoogleOAuthApi } };
   }
 }
 
-let scriptPromise: Promise<GoogleIdApi> | undefined;
+let scriptPromise: Promise<GoogleOAuthApi> | undefined;
 
-function loadGoogle(): Promise<GoogleIdApi> {
-  if (window.google?.accounts?.id)
-    return Promise.resolve(window.google.accounts.id);
+function loadGoogle(): Promise<GoogleOAuthApi> {
+  const ready = () => window.google?.accounts?.oauth2;
+  if (ready()) return Promise.resolve(ready()!);
   scriptPromise ??= new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = SCRIPT_URL;
     script.async = true;
     script.onload = () =>
-      window.google?.accounts?.id
-        ? resolve(window.google.accounts.id)
-        : reject(new Error('google'));
+      ready() ? resolve(ready()!) : reject(new Error('google'));
     script.onerror = () => {
       scriptPromise = undefined;
       reject(new Error('google'));
@@ -47,57 +47,47 @@ function loadGoogle(): Promise<GoogleIdApi> {
 }
 
 export function GoogleButton({
-  text = 'continue_with',
-  onCredential,
+  onCode,
+  pending = false,
 }: {
-  text?: 'signin_with' | 'signup_with' | 'continue_with';
-  onCredential: (credential: string) => void;
+  onCode: (code: string) => void;
+  pending?: boolean;
 }) {
-  const container = useRef<HTMLDivElement>(null);
-  const onCredentialRef = useRef(onCredential);
-  onCredentialRef.current = onCredential;
-  const scheme = useComputedColorScheme('dark');
-
-  useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || !container.current) return;
-    let cancelled = false;
-
-    loadGoogle()
-      .then(google => {
-        const element = container.current;
-        if (cancelled || !element) return;
-        google.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: (response: { credential?: string }) => {
-            if (response.credential)
-              onCredentialRef.current(response.credential);
-          },
-          ux_mode: 'popup',
-          auto_select: false,
-          use_fedcm_for_button: true,
-        });
-        element.replaceChildren();
-        google.renderButton(element, {
-          type: 'standard',
-          theme: scheme === 'dark' ? 'filled_black' : 'outline',
-          size: 'large',
-          shape: 'rectangular',
-          text,
-          logo_alignment: 'left',
-          // Same language as the rest of the site, not the browser's.
-          locale: 'en',
-          width: Math.min(element.offsetWidth || 348, 400),
-        });
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [scheme, text]);
+  const [opening, setOpening] = useState(false);
+  const onCodeRef = useRef(onCode);
+  onCodeRef.current = onCode;
 
   if (!GOOGLE_CLIENT_ID) return null;
+
+  async function open() {
+    setOpening(true);
+    try {
+      const oauth2 = await loadGoogle();
+      oauth2
+        .initCodeClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'openid email',
+          ux_mode: 'popup',
+          callback: (response: { code?: string }) => {
+            setOpening(false);
+            if (response.code) onCodeRef.current(response.code);
+          },
+          // Closing the popup or blocking it lands here.
+          error_callback: () => setOpening(false),
+        })
+        .requestCode();
+    } catch {
+      setOpening(false);
+    }
+  }
+
   return (
-    <div ref={container} className="flex min-h-10 w-full justify-center" />
+    <ProviderButton
+      icon={<GoogleLogo />}
+      onClick={open}
+      loading={opening || pending}
+    >
+      Continue with Google
+    </ProviderButton>
   );
 }

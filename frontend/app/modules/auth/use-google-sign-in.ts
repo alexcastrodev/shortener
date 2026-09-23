@@ -29,7 +29,7 @@ export function useGoogleSignIn() {
   });
 
   return {
-    signIn: (credential: string) => mutation.mutate({ credential }),
+    signIn: (code: string) => mutation.mutate({ code }),
     pending: mutation.isPending,
   };
 }

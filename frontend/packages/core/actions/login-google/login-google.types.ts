@@ -1,4 +1,6 @@
 export interface LoginGoogleBody {
-  // The ID token Google Identity Services returned.
-  credential: string;
+  // The one-time code from Google's popup (authorization code flow).
+  code?: string;
+  // Or an ID token, when Google renders the button itself.
+  credential?: string;
 }

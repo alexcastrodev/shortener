@@ -18,6 +18,6 @@ end
 # about Turnstile or Resend set these themselves.
 RSpec.configure do |config|
   config.before(:suite) do
-    ["TURNSTILE_SECRET_KEY", "TURNSTILE_HOSTNAMES", "MAIL_PROVIDER", "RESEND_API_KEY", "MAIL_FROM", "GOOGLE_CLIENT_ID"].each { |key| ENV.delete(key) }
+    ["TURNSTILE_SECRET_KEY", "TURNSTILE_HOSTNAMES", "MAIL_PROVIDER", "RESEND_API_KEY", "MAIL_FROM", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"].each { |key| ENV.delete(key) }
   end
 end

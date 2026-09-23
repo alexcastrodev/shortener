@@ -29,6 +29,8 @@ services:
       - TURNSTILE_HOSTNAMES=kurz.fyi
       # Sign in with Google: the OAuth client id the ID tokens must be issued for.
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      # Exchanges the popup's one-time code for the ID token (never sent to the browser).
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - FRONTEND_URL=${FRONTEND_URL}
       - SENTRY_DSN=${SENTRY_DSN}
       - SENTRY_LOGGER=1

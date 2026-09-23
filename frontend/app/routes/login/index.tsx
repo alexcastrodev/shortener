@@ -123,9 +123,12 @@ export default function Login() {
 
       <div className="space-y-3">
         {GOOGLE_CLIENT_ID && (
-          <GoogleButton text="signin_with" onCredential={google.signIn} />
+          <GoogleButton onCode={google.signIn} pending={google.pending} />
         )}
-        <ProviderButton to="/signup" icon={IconMail}>
+        <ProviderButton
+          to="/signup"
+          icon={<IconMail size={18} stroke={1.9} className="text-[#1f1f1f]" />}
+        >
           Sign up with email
         </ProviderButton>
       </div>
