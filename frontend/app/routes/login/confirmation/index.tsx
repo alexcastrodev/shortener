@@ -58,6 +58,22 @@ export default function Login() {
               <Button fullWidth type="submit" loading={loading} color="brand">
                 Verify and sign in
               </Button>
+
+              <div className="flex gap-3 rounded-lg border border-primary/25 bg-primary/5 p-3.5">
+                <span className="mt-0.5 text-lg leading-none" aria-hidden="true">
+                  📬
+                </span>
+                <div className="text-sm">
+                  <p className="font-medium text-foreground">
+                    No code yet? Take a peek in your spam folder.
+                  </p>
+                  <p className="mt-1 text-muted-foreground">
+                    Kurz is free and has no fancy email service behind it, so
+                    our emails sometimes get lost on the way. Marking it as
+                    &ldquo;Not spam&rdquo; helps the next one find you.
+                  </p>
+                </div>
+              </div>
             </Stack>
           </form>
         </Card>
