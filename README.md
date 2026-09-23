@@ -1,7 +1,10 @@
 # Introduction
 
 <p align="center">
-    <img src="./.github/assets/logo-dark.webp" alt="project" width="300px">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="./.github/assets/kurz-logo-dark.png">
+        <img src="./.github/assets/kurz-logo-light.png" alt="kurz." width="280">
+    </picture>
 </p>
 
 <p align="center">
