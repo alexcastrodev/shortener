@@ -41,7 +41,11 @@ services:
       - /app/tmp
       - /app/log
       - /usr/local/bundle
+    # libvips (with its HEIC plugin) is loaded at boot by config/initializers/vips.rb,
+    # same package as the production image (.ci/Dockerfile).
     command: >-
-      bash -c "bundle install --jobs 4 --quiet
+      bash -c "apt-get update -qq
+      && apt-get install --no-install-recommends -y -qq libvips > /dev/null
+      && bundle install --jobs 4 --quiet
       && bin/rails db:create db:schema:load
       && bundle exec rspec"

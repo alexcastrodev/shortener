@@ -47,7 +47,8 @@ RSpec.describe(OptimizeAvatarJob, type: :job) do
   end
 
   it "converts a HEIC photo" do
-    skip("libvips without HEIF support") unless system("vips -l 2>/dev/null | grep -q heifload")
+    # Asks the library the app loads (not the vips CLI, which CI does not install).
+    skip("libvips without HEIF support") if Vips.type_find("VipsOperation", "heifload").zero?
     blob_id = attach_upload(File.open(Rails.root.join("spec/fixtures/files/avatar.heic")), "image/heic")
 
     described_class.perform_now(page.id, blob_id)
