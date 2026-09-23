@@ -1,13 +1,23 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <title><%= message.subject %></title>
     <style>
-      /* Email styles need to be inline */
+      @media (prefers-color-scheme: dark) {
+        .bg { background: #101418 !important; }
+        .card { background: #151b20 !important; border-color: #29333c !important; }
+        .fg { color: #eef2f5 !important; }
+        .muted { color: #a7b0bc !important; }
+        .code { background: #183436 !important; color: #eef2f5 !important; }
+        .dot { color: #4fb5b3 !important; }
+      }
     </style>
   </head>
-
-  <body>
+  <body class="bg" style="margin:0;padding:0;background:#f7f8fa;">
     <%= yield %>
   </body>
 </html>

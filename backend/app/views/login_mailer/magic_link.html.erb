@@ -1,75 +1,40 @@
-<!-- app/views/login_mailer/sudo_code.html.erb -->
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="x-apple-disable-message-reformatting" content="width=device-width,initial-scale=1" />
-        <title>Please verify your identity</title>
-        <style>
-          @media (prefers-color-scheme: dark) {
-            body { background: #0d1117 !important; color: #c9d1d9 !important; }
-            .card { background: #161b22 !important; border-color: #30363d !important; }
-            .muted { color: #8b949e !important; }
-            h1, p { color: #c9d1d9 !important; }
-            .code-block { background: #21262d !important; }
-          }
-        </style>
-      </head>
-      <body style="margin: 0; padding: 0; background: #f6f8fa; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background: #f6f8fa;">
-          <tr>
-            <td align="center" style="padding: 32px 12px;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 620px;">
-                <tr>
-                  <td align="center" style="padding: 12px 0 20px;">
-                    <strong style="font-size: 18px; color: #24292f;">Shortener</strong>
-                  </td>
-                </tr>
+<%# Hidden preview line shown by inbox lists next to the subject. %>
+<div style="display:none;max-height:0;overflow:hidden;">
+  Enter this code to sign in to Kurz. It expires in <%= @valid_minutes %> minutes.
+</div>
 
-                <tr>
-                  <td align="left" class="card" style="background: #ffffff; border: 1px solid #d0d7de; border-radius: 6px; padding: 24px;">
-                    <h1 style="margin: 0 0 12px; font: 600 22px/1.3 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #24292f;">
-                      Please verify your identity, <%= @user.email %>
-                    </h1>
-
-                <p style="margin:0 0 16px;font:400 14px/1.6 system-ui,-apple-system,Segoe UI,Roboto;color:#24292f;">
-                  Here is your Shortener authentication code:
-                </p>
-
-                <div style="text-align:center;padding:12px 0 20px;">
-                  <div style="display:inline-block;font:700 28px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; letter-spacing:4px; color:#24292f;">
-                    <%= @code %>
-                  </div>
-                </div>
-
-                <p class="muted" style="margin:0 0 16px;font:400 13px/1.6 system-ui,-apple-system,Segoe UI,Roboto;color:#57606a;">
-                  This code is valid for <strong><%= @valid_minutes || 15 %> minutes</strong> and can only be used once.
-                </p>
-
-                <p style="margin:0 0 12px;font:600 13px/1.6 system-ui,-apple-system,Segoe UI,Roboto;color:#24292f;">
-                  Please don't share this code with anyone:
-                  <span class="muted" style="color:#57606a;font-weight:400;">
-                    we`ll never ask for it on the phone or via email.
-                  </span>
-                </p>
-
-                <p style="margin:16px 0 0;font:400 13px/1.6 system-ui,-apple-system,Segoe UI,Roboto;color:#57606a;">
-                  Thanks,<br/>
-                  Shortener Team
-                </p>
-              </td>
-            </tr>
-
-            <tr>
-              <td class="muted" style="padding:14px 6px 0;color:#57606a;font:400 12px/1.6 system-ui,-apple-system,Segoe UI,Roboto;text-align:left;">
-                You`re receiving this email because a verification code was requested for your
-                Shortener account. If this wasn`t you, please ignore this email.
-              </td>
-            </tr>
-
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="bg" style="background:#f7f8fa;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:480px;">
+        <tr>
+          <td style="padding:0 4px 20px;font:700 22px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;letter-spacing:-0.5px;" class="fg">
+            <span class="fg" style="color:#111827;">kurz</span><span class="dot" style="color:#116d6e;">.</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="card" style="background:#ffffff;border:1px solid #d9e0e7;border-radius:12px;padding:28px;">
+            <p class="fg" style="margin:0 0 8px;font:600 18px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;">
+              Your sign-in code
+            </p>
+            <p class="muted" style="margin:0 0 20px;font:400 14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#4b5563;">
+              Enter this code on the Kurz sign-in page to continue.
+            </p>
+            <div class="code" style="margin:0 0 20px;padding:16px;border-radius:10px;background:#eef6f6;text-align:center;font:700 30px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:6px;color:#111827;">
+              <%= @code %>
+            </div>
+            <p class="muted" style="margin:0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#4b5563;">
+              The code expires in <%= @valid_minutes %> minutes and works once.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td class="muted" style="padding:16px 4px 0;font:400 12px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#6b7280;">
+            You're getting this because someone asked to sign in to Kurz with <%= @user.email %>.
+            If it wasn't you, you can ignore this email.
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
