@@ -21,6 +21,7 @@ export default [
       route('links/:id', 'routes/links/$id.tsx'),
       route('pages', 'routes/pages/index.tsx'),
       route('pages/:id', 'routes/pages/$id.tsx'),
+      route('pages/:id/stats', 'routes/pages/stats.tsx'),
     ]),
     ...prefix('admin', [
       index('routes/admin/index.tsx'),

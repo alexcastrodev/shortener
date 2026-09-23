@@ -49,6 +49,7 @@ Rails.application.routes.draw do
         post "avatar", to: "pages#upload_avatar"
         delete "avatar", to: "pages#destroy_avatar"
         get "qr_code", to: "pages#qr_code"
+        get "statistics", to: "pages#statistics"
         post "apply_template", to: "pages#apply_template"
         resources :page_links, path: "links", only: [:create, :update, :destroy] do
           collection { patch "reorder", to: "page_links#reorder" }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_23_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -101,6 +101,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_170000) do
     t.string "referer"
     t.string "region"
     t.string "user_agent"
+    t.index ["page_link_id", "clicked_at"], name: "index_page_link_clicks_on_page_link_id_and_clicked_at"
     t.index ["page_link_id"], name: "index_page_link_clicks_on_page_link_id"
   end
 

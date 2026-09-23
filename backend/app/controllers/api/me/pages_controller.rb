@@ -3,7 +3,7 @@ class Api::Me::PagesController < ApplicationController
   include ClientIp
 
   before_action :authenticate_user!
-  before_action :load_page, only: [:show, :update, :destroy, :upload_avatar, :destroy_avatar, :qr_code, :apply_template]
+  before_action :load_page, only: [:show, :update, :destroy, :upload_avatar, :destroy_avatar, :qr_code, :apply_template, :statistics]
 
   # Creating pages is free, but not unbounded: slows down scripted squatting
   # of slugs and bulk phishing pages from fresh accounts.
@@ -122,6 +122,11 @@ class Api::Me::PagesController < ApplicationController
     @page.avatar_upload.purge_later if @page.avatar_upload.attached?
     @page.avatar.purge_later if @page.avatar.attached?
     head(:no_content)
+  end
+
+  # GET /api/me/pages/:page_id/statistics?days=7|30|90
+  def statistics
+    render(json: Pages::StatisticsService.call(page: @page, days: params[:days]), status: :ok)
   end
 
   # GET /api/me/pages/:page_id/qr_code

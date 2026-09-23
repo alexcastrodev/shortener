@@ -239,7 +239,10 @@ export function PageContentEditor({
                                 </Tooltip>
                               }
                             >
-                              <PopoverTitle>{network.name} icon</PopoverTitle>
+                              <PopoverTitle>
+                                {network.name} icon · {item.clicks_count}{' '}
+                                {item.clicks_count === 1 ? 'click' : 'clicks'}
+                              </PopoverTitle>
                               <LinkFields
                                 initial={{ label: item.label, url: item.url ?? '' }}
                                 hideLabel

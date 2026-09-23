@@ -17,6 +17,7 @@ import {
   IconCalendarTime,
   IconExternalLink,
   IconPhoto,
+  IconChartBar,
   IconQrcode,
   IconTemplate,
   IconTrash,
@@ -216,6 +217,13 @@ function Editor({ page }: { page: Page }) {
             onClick={() => openTemplateGallery({ page, onApplied: refresh })}
           >
             Templates
+          </Button>
+          <Button
+            variant="default"
+            leftSection={<IconChartBar size={16} />}
+            onClick={() => navigate(`/app/pages/${page.id}/stats`)}
+          >
+            Statistics
           </Button>
           <Button
             variant="default"

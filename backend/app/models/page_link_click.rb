@@ -15,7 +15,8 @@
 #
 # Indexes
 #
-#  index_page_link_clicks_on_page_link_id  (page_link_id)
+#  index_page_link_clicks_on_page_link_id                 (page_link_id)
+#  index_page_link_clicks_on_page_link_id_and_clicked_at  (page_link_id,clicked_at)
 #
 # Foreign Keys
 #
