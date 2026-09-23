@@ -5,22 +5,16 @@ import {
   IconLogout,
   IconLink,
   IconHistory,
+  IconAddressBook,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
-import { useUserState } from '@internal/core/states/use-user-state';
+import { useLogout } from '../../modules/auth/use-logout';
 import { AdminGuard } from '../admin-guard';
 import styles from './mobile-nav.module.css';
 
 export function MobileNav() {
   const { t } = useTranslation('menu');
-  const navigate = useNavigate();
-  const { clear } = useUserState();
-
-  const handleLogout = () => {
-    clear();
-    navigate('/login');
-  };
+  const handleLogout = useLogout();
 
   return (
     <nav className={styles.mobileNav}>
@@ -33,6 +27,16 @@ export function MobileNav() {
       >
         <IconHome2 size={22} stroke={1.5} />
         <span className={styles.label}>{t('dashboard')}</span>
+      </NavLink>
+
+      <NavLink
+        to="/app/pages"
+        className={({ isActive }) =>
+          `${styles.navItem} ${isActive ? styles.active : ''}`
+        }
+      >
+        <IconAddressBook size={22} stroke={1.5} />
+        <span className={styles.label}>{t('pages')}</span>
       </NavLink>
 
       <AdminGuard>

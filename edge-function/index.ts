@@ -1,10 +1,12 @@
 import { connect } from "@nashaddams/amqp";
 import { createClient } from "redis";
 import { getHeaders } from "./headers.ts";
+import { resolveCacheValue } from "./cache.ts";
 
 const RABBITMQ_HOST = Deno.env.get("RABBITMQ_HOST") ?? "127.0.0.1";
 const RABBITMQ_PORT = Number(Deno.env.get("RABBITMQ_PORT") ?? 5672);
 const QUEUE_NAME = "analytics";
+const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "https://kurz.fyi";
 
 type Connection = Awaited<ReturnType<typeof connect>>;
 type Channel = Awaited<ReturnType<Connection["openChannel"]>>;
@@ -103,20 +105,23 @@ Deno.serve({ port: 8000 }, async (req, info) => {
   if (key) {
     try {
       const value = await valkeyClient.get(cache_key);
+      const action = resolveCacheValue(value, key, FRONTEND_URL);
 
-      if (!value) {
-        console.log(`[REDIS] Key not found: ${cache_key}`);
+      if (action.kind === "not_found") {
+        console.log(`[REDIS] Key not found or unreadable: ${cache_key}`);
         return Response.redirect(notFoundUrl, 302);
       }
 
-      // Fire and forget: the redirect must not wait for the broker.
-      publishMessage({
-        ...getHeaders(req, info),
-        shortlink_code: key,
-        timestamp: new Date().toISOString(),
-      }).catch((err) => console.error("[AMQP] Background publish error:", err));
+      if (action.track) {
+        // Fire and forget: the redirect must not wait for the broker.
+        publishMessage({
+          ...getHeaders(req, info),
+          shortlink_code: key,
+          timestamp: new Date().toISOString(),
+        }).catch((err) => console.error("[AMQP] Background publish error:", err));
+      }
 
-      return Response.redirect(value, 302);
+      return Response.redirect(action.url, 302);
     } catch (err) {
       console.error("[REDIS] Error fetching key:", err);
       return Response.redirect(notFoundUrl, 302);

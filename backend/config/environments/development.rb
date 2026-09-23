@@ -26,8 +26,10 @@ Rails.application.configure do
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.connects_to = { database: { writing: :development } }
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  # Store uploaded files on the local file system (see config/storage.yml for
+  # options), or in an S3-compatible bucket (e.g. a local SeaweedFS) when
+  # S3_BUCKET is set.
+  config.active_storage.service = ENV["S3_BUCKET"].present? ? :seaweedfs : :local
 
   # Don't care if the mailer can't send.
   config.action_mailer.raise_delivery_errors = false

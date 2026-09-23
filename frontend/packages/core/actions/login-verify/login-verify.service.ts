@@ -10,7 +10,9 @@ export async function loginVerifyRequest(
 ): Promise<LoginVerifyResponse> {
   const response: AxiosResponse<LoginVerifyResponse> = await publicApi.post(
     '/api/login_verify',
-    data
+    data,
+    // Needed for the browser to store the Set-Cookie of a cross-origin response.
+    { withCredentials: true }
   );
 
   return response.data;

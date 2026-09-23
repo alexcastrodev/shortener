@@ -1,4 +1,6 @@
 class Api::SessionsController < ApplicationController
+  include SessionCookie
+
   # Keyed by email rather than IP: the API sits behind a proxy, and the threats
   # are per account (guessing a code, flooding an inbox).
   rate_limit to: 5,
@@ -36,16 +38,34 @@ class Api::SessionsController < ApplicationController
         return
       end
 
-      token = generate_jwt(user)
+      token = SessionToken.issue(user)
       user.clear_login_token!
+      set_session_cookie(token, SessionToken::TTL.from_now)
 
-      render(json: UserSerializer.new(user).serialize(meta: { token: token }), status: :ok)
+      # The token only travels in the httpOnly cookie, never in the body.
+      render(json: UserSerializer.new(user).serialize, status: :ok)
     else
       render(json: { error: "Token invalid or expired" }, status: :unauthorized)
     end
   end
 
+  # DELETE /api/logout
+  # Revokes the current token (not just the cookie), so a copy of it stops
+  # working too. Always succeeds, even without a valid session.
+  def destroy
+    revoke_current_token
+    clear_session_cookie
+    head(:no_content)
+  end
+
   private
+
+  def revoke_current_token
+    token = session_token
+    SessionToken.revoke(SessionToken.decode(token)) if token.present?
+  rescue JWT::DecodeError
+    # Already invalid, expired or revoked: nothing to revoke.
+  end
 
   def normalized_email
     params[:email].to_s.strip.downcase
@@ -59,10 +79,5 @@ class Api::SessionsController < ApplicationController
   # flow can be exercised locally without a real email round-trip.
   def dev_bypass?
     Rails.env.development? && params[:code] == "0000000"
-  end
-
-  def generate_jwt(user)
-    payload = { sub: user.id, exp: 2.days.from_now.to_i }
-    JWT.encode(payload, Rails.application.secret_key_base, "HS256")
   end
 end

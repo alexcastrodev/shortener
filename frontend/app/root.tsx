@@ -3,6 +3,7 @@ import { ColorSchemeScript } from '@mantine/core';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import type { Route } from './+types/root';
 import { Providers } from './layout/providers';
+import { useNonce } from './utils/nonce';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -18,6 +19,8 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const nonce = useNonce();
+
   return (
     <html lang="en">
       <head>
@@ -60,14 +63,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <link rel="canonical" href="https://kurz.fyi" />
 
-        <ColorSchemeScript defaultColorScheme="auto" />
+        <ColorSchemeScript defaultColorScheme="auto" nonce={nonce} />
         <Meta />
         <Links />
       </head>
       <body>
         <Providers>{children}</Providers>
-        <ScrollRestoration />
-        <Scripts />
+        <ScrollRestoration nonce={nonce} />
+        <Scripts nonce={nonce} />
       </body>
     </html>
   );

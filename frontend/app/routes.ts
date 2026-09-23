@@ -11,10 +11,16 @@ export default [
   route('about', 'routes/about.tsx'),
   route('report', 'routes/report.tsx'),
   route('status/success', 'routes/status/success.tsx'),
+  layout('layout/bio-layout.tsx', [
+    route('u/:username', 'routes/bio/$username.tsx'),
+    route('s/:shortCode', 'routes/unlock/$shortCode.tsx'),
+  ]),
   layout('layout/index.tsx', [
     ...prefix('app', [
       index('routes/dashboard/index.tsx'),
       route('links/:id', 'routes/links/$id.tsx'),
+      route('pages', 'routes/pages/index.tsx'),
+      route('pages/:id', 'routes/pages/$id.tsx'),
     ]),
     ...prefix('admin', [
       route('users', 'routes/admin/users.tsx'),

@@ -5,7 +5,7 @@ export interface LoginVerifyRequestBody {
   code: string;
 }
 
+// The session token is set as an httpOnly cookie, never returned in the body.
 export interface LoginVerifyResponse {
-  token: string;
   user: User;
 }

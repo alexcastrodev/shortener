@@ -1,5 +1,8 @@
 class ApplicationController < ActionController::API
   include Pundit::Authorization
+  include ActionController::Cookies
+  # Lets models build Active Storage URLs (avatars) for the current host.
+  include ActiveStorage::SetCurrent
 
   rescue_from ::ActiveRecord::RecordNotFound, with: :record_not_found
   rescue_from ::ActiveRecord::RecordNotDestroyed, with: :record_not_destroyed
@@ -36,29 +39,52 @@ class ApplicationController < ActionController::API
     render(json: { message: "You are not authorized to perform this action" }, status: :forbidden)
   end
 
-  def authenticate_user
-    auth_header = request.headers["Authorization"]
-    return if auth_header.blank?
-
-    @current_user = User.find_by(id: jwt_user_id(auth_header))
+  # SVGs are XML documents a browser can execute scripts in when opened
+  # directly; the QR codes never contain any, and this keeps it that way.
+  def svg_response_headers
+    response.headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+    response.headers["X-Content-Type-Options"] = "nosniff"
   end
 
   def authenticate_user!
-    auth_header = request.headers["Authorization"]
-    return render(json: { message: "Missing token" }, status: :unauthorized) unless auth_header
+    token = session_token
+    return render(json: { message: "Missing token" }, status: :unauthorized) if token.blank?
 
-    @current_user = User.find(jwt_user_id(auth_header))
+    @session_payload = SessionToken.decode(token)
+    return if cookie_session? && !csrf_safe?
+
+    @current_user = User.find(@session_payload["sub"])
 
     if @current_user.deactivated?
       render(json: { message: I18n.t("errors.account_deactivated") }, status: :forbidden)
     end
-  rescue JWT::ExpiredSignature, JWT::DecodeError
+  rescue JWT::DecodeError
     render(json: { message: "Invalid or expired token" }, status: :unauthorized)
   end
 
-  def jwt_user_id(auth_header)
-    token = auth_header.split(" ").last
-    decoded = JWT.decode(token, Rails.application.secret_key_base, true, algorithm: "HS256")
-    decoded.first["sub"]
+  # Browsers authenticate with the httpOnly session cookie; API clients (and
+  # specs) may still send "Authorization: Bearer <token>".
+  def session_token
+    bearer_token || cookies[SessionCookie::NAME]
+  end
+
+  def bearer_token
+    scheme, token = request.headers["Authorization"].to_s.split(" ", 2)
+    token if scheme&.casecmp?("Bearer")
+  end
+
+  def cookie_session?
+    bearer_token.blank?
+  end
+
+  # The cookie is SameSite=Strict and CORS only admits our origins; on top of
+  # that, state-changing requests must carry a header that cross-site forms
+  # cannot set and that forces a CORS preflight.
+  def csrf_safe?
+    return true if request.get? || request.head?
+    return true if request.headers["X-Requested-With"] == "XMLHttpRequest"
+
+    render(json: { message: "Missing X-Requested-With header" }, status: :forbidden)
+    false
   end
 end

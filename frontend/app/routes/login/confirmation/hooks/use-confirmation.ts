@@ -10,7 +10,7 @@ import type { ResponseError } from '@internal/core/types/ResponseError';
 
 export function useConfirmation() {
   const router = useNavigate();
-  const { setup } = useUserState();
+  const { setUser } = useUserState();
   const location = useLocation();
   const email = location.state?.email;
   const autoSubmitted = useRef(false);
@@ -29,8 +29,8 @@ export function useConfirmation() {
   }, [email, router]);
 
   const { mutate, isPending } = useLoginVerifyRequest({
-    onSuccess: ({ token, user }) => {
-      setup(token, user);
+    onSuccess: ({ user }) => {
+      setUser(user);
       router('/app');
     },
     onError: (error: ResponseError & { response?: { status?: number } }) => {

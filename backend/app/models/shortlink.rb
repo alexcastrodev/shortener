@@ -5,9 +5,11 @@
 #  id               :bigint           not null, primary key
 #  deleted_at       :datetime
 #  events_count     :integer          default(0), not null
+#  expires_at       :datetime
 #  inactive_at      :datetime
 #  last_accessed_at :datetime
 #  original_url     :string           not null
+#  password_digest  :string
 #  safe             :boolean          default(TRUE), not null
 #  safe_checked_at  :datetime
 #  short_code       :string           not null
@@ -19,6 +21,7 @@
 # Indexes
 #
 #  index_shortlinks_on_deleted_at  (deleted_at)
+#  index_shortlinks_on_expires_at  (expires_at) WHERE ((expires_at IS NOT NULL) AND (inactive_at IS NULL))
 #  index_shortlinks_on_short_code  (short_code) UNIQUE
 #  index_shortlinks_on_user_id     (user_id)
 #
@@ -28,7 +31,7 @@ class Shortlink < ApplicationRecord
   # ===============
   # Audit
   # ===============
-  audited except: [:short_code, :events_count, :last_accessed_at, :deleted_at]
+  audited except: [:short_code, :events_count, :last_accessed_at, :deleted_at, :password_digest]
 
   # ===============
   # Search
@@ -45,12 +48,17 @@ class Shortlink < ApplicationRecord
   scope :with_deleted, -> { unscope(where: :deleted_at) }
   scope :safe, -> { where(safe: true) }
   scope :active, -> { where(inactive_at: nil) }
+  scope :expired, -> { where(inactive_at: nil).where(expires_at: ..Time.current) }
 
   # ===============
   # Validations
   # ===============
   validates :original_url, presence: true
   validates :short_code, presence: true, uniqueness: true
+
+  # Optional: without a password the link redirects straight from the edge.
+  has_secure_password validations: false
+  validates :password, length: { in: 4..72 }, allow_nil: true
 
   # ===============
   # Associations
@@ -79,9 +87,14 @@ class Shortlink < ApplicationRecord
     false
   end
 
+  # The edge function reads this value on every redirect. It is a small JSON
+  # document rather than the raw URL so new link states only add a new "t",
+  # instead of magic strings mixed with URLs:
+  #   {"t":"url","v":"https://..."} redirect to v
+  #   {"t":"locked"}                redirect to the password page (/s/:code)
   def save_cache
     Rails.cache.redis.with do |conn|
-      conn.set(cache_key, original_url)
+      conn.set(cache_key, cache_value.to_json)
     end
   rescue => e
     Rails.logger.error("Failed to save shortlink cache: #{e.class}: #{e.message}")
@@ -102,20 +115,45 @@ class Shortlink < ApplicationRecord
     update!(safe: false, safe_checked_at: Time.current, inactive_at: Time.current)
   end
 
+  # A link past its expiration date stays inactive even when it is safe.
   def mark_as_safe!
-    save_cache
-    update!(safe: true, safe_checked_at: Time.current, inactive_at: nil)
+    update!(safe: true, safe_checked_at: Time.current, inactive_at: expired? ? (inactive_at || Time.current) : nil)
+    save_cache if servable?
   end
 
   def cache_key
     "shortlink:#{short_code}"
   end
 
-  private
+  def cache_value
+    password_protected? ? { t: "locked" } : { t: "url", v: original_url }
+  end
+
+  def password_protected?
+    password_digest.present?
+  end
+
+  def expired?
+    expires_at.present? && expires_at <= Time.current
+  end
+
+  # Hard deadline: the cache entry goes away with the flag, so the edge
+  # stops redirecting at the moment the link expires.
+  def expire!
+    remove_cache
+    update!(inactive_at: Time.current)
+  end
+
+  # Whether the edge should redirect for this link at all.
+  def servable?
+    inactive_at.nil? && safe? && !expired?
+  end
 
   def short_url
     "#{ENV["EDGE_API"]}/#{short_code}"
   end
+
+  private
 
   # ============
   # Callbacks

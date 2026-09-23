@@ -28,6 +28,8 @@ module Backend
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+    # The session token is kept in an httpOnly cookie (see SessionCookie).
+    config.middleware.use(ActionDispatch::Cookies)
 
     config.cache_store = :redis_cache_store, {
       url: ENV["REDIS_URL"],

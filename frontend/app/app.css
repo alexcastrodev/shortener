@@ -3,6 +3,8 @@
 @custom-variant dark (&:where([data-mantine-color-scheme="dark"], [data-mantine-color-scheme="dark"] *));
 
 @theme inline {
+  --font-display: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --color-background: var(--app-background);
@@ -92,4 +94,148 @@ button {
 
 button:disabled {
   cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Landing page (routes/index.tsx). Every animation is transform/opacity
+   only, and all motion is opt-in via prefers-reduced-motion.
+   ========================================================================== */
+
+/* Thin grid, faded out towards the edges. */
+.landing-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--app-foreground) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--app-foreground) 7%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+
+.landing-glow {
+  background: radial-gradient(
+    ellipse 50% 45% at 50% 0%,
+    color-mix(in oklab, var(--app-primary) 35%, transparent),
+    transparent 70%
+  );
+}
+
+.landing-gradient-text {
+  background: linear-gradient(180deg, var(--app-foreground) 30%, color-mix(in oklab, var(--app-foreground) 55%, transparent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Cards whose border and background light up around the pointer. The
+   position comes from --spot-x / --spot-y, set by SpotlightCard. */
+.spotlight-card {
+  position: relative;
+  isolation: isolate;
+}
+.spotlight-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: radial-gradient(
+    420px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    color-mix(in oklab, var(--app-primary) 16%, transparent),
+    transparent 60%
+  );
+}
+.spotlight-card:hover::before {
+  opacity: 1;
+}
+
+/* 3D stage for the bio page showcase. --tilt-x / --tilt-y follow the
+   pointer (BioShowcase); the resting angle gives depth without motion. */
+.bio-stage {
+  perspective: 1600px;
+}
+.bio-stage-inner {
+  transform-style: preserve-3d;
+  transform: rotateX(var(--tilt-x, 6deg)) rotateY(var(--tilt-y, -10deg));
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bio-phone-left {
+  transform: translate3d(-165px, 30px, -170px) rotateY(24deg);
+}
+.bio-phone-right {
+  transform: translate3d(165px, 30px, -170px) rotateY(-24deg);
+}
+.bio-phone-front {
+  transform: translate3d(0, 0, 40px);
+}
+.bio-float-layer {
+  transform: translateZ(140px);
+}
+
+@keyframes landing-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -10px; }
+}
+@keyframes landing-tap {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--app-primary) 70%, transparent); transform: scale(1); }
+  12% { transform: scale(0.97); }
+  25% { transform: scale(1); }
+  100% { box-shadow: 0 0 0 18px transparent; transform: scale(1); }
+}
+@keyframes landing-caret {
+  50% { opacity: 0; }
+}
+@keyframes landing-rise {
+  from { opacity: 0; translate: 0 16px; }
+  to { opacity: 1; translate: 0 0; }
+}
+@keyframes landing-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes bio-fan-left {
+  from { transform: translate3d(0, 40px, -240px) rotateY(0deg); opacity: 0; }
+  to { transform: translate3d(-165px, 30px, -170px) rotateY(24deg); opacity: 1; }
+}
+@keyframes bio-fan-right {
+  from { transform: translate3d(0, 40px, -240px) rotateY(0deg); opacity: 0; }
+  to { transform: translate3d(165px, 30px, -170px) rotateY(-24deg); opacity: 1; }
+}
+@keyframes console-tilt-in {
+  from { transform: perspective(1400px) rotateX(24deg) scale(0.94); opacity: 0.4; }
+  to { transform: perspective(1400px) rotateX(0deg) scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-float { animation: landing-float 6s ease-in-out infinite; }
+  .landing-float-delayed { animation: landing-float 7s ease-in-out 1.5s infinite; }
+  .landing-tap { animation: landing-tap 3s ease-out infinite; }
+  .landing-caret { animation: landing-caret 1s steps(1) infinite; }
+  .landing-rise { animation: landing-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .landing-draw { stroke-dasharray: 1; animation: landing-draw 2.4s ease-out both; }
+
+  /* Scroll-driven entrances: the phones fan out and the console lays flat
+     as they scroll into view. Browsers without support show the final
+     layout. */
+  @supports (animation-timeline: view()) {
+    .bio-phone-left {
+      animation: bio-fan-left linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 40%;
+    }
+    .bio-phone-right {
+      animation: bio-fan-right linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 40%;
+    }
+    .console-tilt-in {
+      animation: console-tilt-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 35%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bio-stage-inner { transition: none; }
 }

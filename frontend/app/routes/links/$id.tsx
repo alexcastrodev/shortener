@@ -2,6 +2,7 @@ import {
   IconArrowLeft,
   IconClipboard,
   IconExternalLink,
+  IconQrcode,
 } from '@tabler/icons-react';
 import { useNavigate, useParams } from 'react-router';
 import { useGetShortlinkDetails } from '@internal/core/actions/get-shortlink-details/get-shortlink-details.hook';
@@ -11,6 +12,7 @@ import { Button } from '@mantine/core';
 import { useClipboard } from '@mantine/hooks';
 import { Statistics } from './components/statistics';
 import { Alert, Card, PageContainer } from '@internal/ui';
+import { openQrCodeModal } from '../../modules/qr-code';
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -140,6 +142,21 @@ export default function Page() {
               }}
             >
               Copy
+            </Button>
+
+            <Button
+              variant="default"
+              leftSection={<IconQrcode size={16} />}
+              onClick={() =>
+                openQrCodeModal({
+                  resource: 'shortlinks',
+                  id: link.id,
+                  url: link.short_url,
+                  filename: `kurz-${link.short_code}.svg`,
+                })
+              }
+            >
+              QR code
             </Button>
           </div>
         </div>

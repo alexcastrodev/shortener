@@ -7,6 +7,9 @@ import {
   IconShare,
   IconAlertTriangle,
   IconPencil,
+  IconQrcode,
+  IconLock,
+  IconCalendarTime,
 } from '@tabler/icons-react';
 import type { Shortlink } from 'packages/core/types/Shortlink';
 import { useNavigate } from 'react-router';
@@ -17,6 +20,7 @@ import { useDeleteShortlink } from 'packages/core/actions/delete-shortlink/delet
 import { queryClient } from 'packages/core/service-provider';
 import { useTranslation } from 'react-i18next';
 import { EditShortlinkForm } from './edit-shortlink-form';
+import { openQrCodeModal } from '../../modules/qr-code';
 
 interface ShortlinkCardListItemProps {
   shortlink: Shortlink;
@@ -78,6 +82,16 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
       title: t('edit_link'),
       centered: true,
       children: <EditShortlinkForm shortlink={shortlink} modalId={modalId} />,
+    });
+  };
+
+  const handleQrCode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    openQrCodeModal({
+      resource: 'shortlinks',
+      id: shortlink.id,
+      url: shortlink.short_url,
+      filename: `kurz-${shortlink.short_code}.svg`,
     });
   };
 
@@ -143,6 +157,12 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
               >
                 {t('edit_link')}
               </Menu.Item>
+              <Menu.Item
+                leftSection={<IconQrcode size={16} />}
+                onClick={handleQrCode}
+              >
+                {t('qr_code')}
+              </Menu.Item>
               <Menu.Divider />
               <Menu.Item
                 color="red"
@@ -171,7 +191,7 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
         )}
 
         <div className="flex items-center justify-between border-t border-border pt-2">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2">
             <Tooltip label={t('click_count') || 'Click count'}>
               <Badge
                 size="md"
@@ -182,6 +202,26 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
                 {shortlink.events_count}
               </Badge>
             </Tooltip>
+            {shortlink.password_protected && (
+              <Badge
+                size="md"
+                variant="light"
+                color="gray"
+                leftSection={<IconLock size={14} />}
+              >
+                {t('password_protected')}
+              </Badge>
+            )}
+            {shortlink.expires_at && shortlink.is_active && (
+              <Badge
+                size="md"
+                variant="light"
+                color="gray"
+                leftSection={<IconCalendarTime size={14} />}
+              >
+                {t('expires_on', { date: formatDate(shortlink.expires_at) })}
+              </Badge>
+            )}
 
           </div>
           <div className="text-right">

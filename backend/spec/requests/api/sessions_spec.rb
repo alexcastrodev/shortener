@@ -16,7 +16,9 @@ RSpec.describe("Sessions", type: :request) do
 
       expect(response).to(have_http_status(:ok))
       body = JSON.parse(response.body)
-      expect(body["token"]).to(be_present)
+      expect(body["user"]["email"]).to(eq(user.email))
+      expect(body.to_s).not_to(include(cookies["kurz_session"]))
+      expect(response.headers["Set-Cookie"]).to(match(/kurz_session=.+; path=\/;.*httponly; samesite=strict/i))
       expect(user.reload.login_token).to(be_nil)
     end
 
@@ -80,8 +82,7 @@ RSpec.describe("Sessions", type: :request) do
           as: :json
 
         expect(response).to(have_http_status(:ok))
-        body = JSON.parse(response.body)
-        expect(body["token"]).to(be_present)
+        expect(cookies["kurz_session"]).to(be_present)
       end
 
       it "is ignored outside of development" do

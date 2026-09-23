@@ -90,4 +90,41 @@ RSpec.describe(IpaddrJob, type: :job) do
       expect(event.region).to(eq("California"))
     end
   end
+
+  describe "bio page clicks" do
+    let(:click) do
+      page = FactoryBot.create(:page)
+      link = FactoryBot.create(:page_link, page: page)
+      link.page_link_clicks.create!(ip_address: "1.2.3.4")
+    end
+
+    it "fills the location of a PageLinkClick" do
+      response = instance_double(
+        HTTParty::Response,
+        code: 200,
+        parsed_response: { "status" => "success", "countryCode" => "PT", "regionName" => "Lisbon" },
+      )
+      allow(HTTParty).to(receive(:get).and_return(response))
+
+      IpaddrJob.perform_now(click.id, model: "PageLinkClick")
+
+      expect(click.reload).to(have_attributes(country_code: "PT", region: "Lisbon"))
+    end
+
+    it "keeps the model when retrying" do
+      allow(HTTParty).to(receive(:get).and_raise(StandardError.new("network error")))
+      set_spy = spy("set_return")
+      allow(IpaddrJob).to(receive(:set).and_return(set_spy))
+
+      IpaddrJob.perform_now(click.id, model: "PageLinkClick")
+
+      expect(set_spy).to(have_received(:perform_later).with(click.id, model: "PageLinkClick", retry_count: 1))
+    end
+
+    it "ignores models outside the allowlist" do
+      expect(HTTParty).not_to(receive(:get))
+
+      IpaddrJob.perform_now(1, model: "User")
+    end
+  end
 end

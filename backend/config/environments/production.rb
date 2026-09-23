@@ -18,8 +18,10 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  # Store uploaded files in the SeaweedFS bucket shared on the host (see
+  # config/storage.yml). Falls back to local disk until S3_BUCKET is set, so
+  # deploying before the bucket credentials exist does not break boot.
+  config.active_storage.service = ENV["S3_BUCKET"].present? ? :seaweedfs : :local
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = true

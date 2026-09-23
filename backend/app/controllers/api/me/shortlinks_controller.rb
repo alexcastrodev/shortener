@@ -1,6 +1,6 @@
 class Api::Me::ShortlinksController < ApplicationController
   before_action :authenticate_user!
-  before_action :load_link, only: [:destroy, :show, :statistics, :update]
+  before_action :load_link, only: [:destroy, :show, :statistics, :update, :qr_code]
 
   # GET /api/me/shortlinks/:id
   def show
@@ -29,7 +29,7 @@ class Api::Me::ShortlinksController < ApplicationController
   # POST /api/me/shortlinks
   def create
     validate_contract(ShortlinkContract) do |validated_params|
-      link = @current_user.shortlinks.new(validated_params)
+      link = @current_user.shortlinks.new(password_params(validated_params))
       if link.save
         render(json: ShortlinkSerializer.new(link).serialize, status: :created)
       else
@@ -41,11 +41,11 @@ class Api::Me::ShortlinksController < ApplicationController
   # PATCH/PUT /api/me/shortlinks/:id
   def update
     validate_contract(ShortlinkUpdateContract) do |validated_params|
-      if @link.update(validated_params)
+      if @link.update(password_params(validated_params))
         if @link.saved_change_to_original_url?
-          @link.save_cache
           SafetyUrlJob.perform_later(@link.id) if ENV["ENABLE_GOOGLE_SAFE_LINK"].present?
         end
+        refresh_cache if cache_affected?
         render(json: ShortlinkSerializer.new(@link).serialize, status: :ok)
       else
         render(json: { errors: @link.errors.full_messages }, status: :unprocessable_entity)
@@ -69,7 +69,30 @@ class Api::Me::ShortlinksController < ApplicationController
     render(json: @link.event_statistics, status: :ok)
   end
 
+  # GET /api/me/shortlinks/:id/qr_code
+  def qr_code
+    svg_response_headers
+    send_data(QrCodeService.svg(@link.short_url), type: "image/svg+xml", disposition: "inline", filename: "#{@link.short_code}.svg")
+  end
+
   private
+
+  # A blank password means "remove the password".
+  def password_params(validated_params)
+    return validated_params unless validated_params.key?(:password)
+
+    validated_params.merge(password: validated_params[:password].presence)
+  end
+
+  def cache_affected?
+    @link.saved_change_to_original_url? || @link.saved_change_to_password_digest? || @link.saved_change_to_expires_at?
+  end
+
+  def refresh_cache
+    return if @link.inactive_at.present?
+
+    @link.servable? ? @link.save_cache : @link.remove_cache
+  end
 
   def load_link
     link_id = params[:id] || params[:shortlink_id]

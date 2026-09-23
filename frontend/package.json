@@ -10,6 +10,7 @@
     "format": "prettier --write \"**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@internal/core": "0.0.0",
     "@internal/ui": "0.0.0",
     "@mantine/charts": "9.3.1",

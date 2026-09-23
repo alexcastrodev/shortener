@@ -4,12 +4,17 @@ namespace :shortlink do
     ExpireInactiveShortlinksJob.perform_now
   end
 
-  desc "Update redis cache for all shortlinks"
+  # Also migrates entries written in the old raw-URL format to JSON. Keys are
+  # overwritten in place (never flushed first), so redirects keep working
+  # while it runs and unrelated keys in the same Redis (rate limit counters)
+  # are left alone.
+  desc "Rewrite the redis cache for all shortlinks"
   task update_cache: :environment do
-    Rails.cache.redis.with do |conn|
-      conn.flushdb
-      Shortlink.find_each do |shortlink|
-        shortlink.send(:save_cache)
+    Shortlink.with_deleted.find_each do |shortlink|
+      if shortlink.deleted_at.nil? && shortlink.servable?
+        shortlink.save_cache
+      else
+        shortlink.remove_cache
       end
     end
   end

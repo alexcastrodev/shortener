@@ -7,6 +7,7 @@ export async function getLoggedUserPublic(): Promise<GetLoggedUserResponse> {
     '/api/me',
     {
       timeout: 5000,
+      withCredentials: true,
     }
   );
 

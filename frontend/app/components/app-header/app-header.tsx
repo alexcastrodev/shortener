@@ -1,7 +1,8 @@
-import { NavLink, useNavigate } from 'react-router';
-import { IconHome2, IconLogout, IconUsers, IconLink, IconHistory } from '@tabler/icons-react';
+import { NavLink } from 'react-router';
+import { IconHome2, IconLogout, IconUsers, IconLink, IconHistory, IconAddressBook } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useUserState } from '@internal/core/states/use-user-state';
+import { useLogout } from '../../modules/auth/use-logout';
 import { AdminGuard } from '../admin-guard';
 import { BrandMark, ThemeToggle } from '@internal/ui';
 
@@ -14,14 +15,9 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
   ].join(' ');
 
 export function AppHeader() {
-  const navigate = useNavigate();
   const { t } = useTranslation('menu');
-  const { clear, user } = useUserState();
-
-  const handleLogout = () => {
-    clear();
-    navigate('/login');
-  };
+  const { user } = useUserState();
+  const handleLogout = useLogout();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
@@ -33,6 +29,10 @@ export function AppHeader() {
             <NavLink to="/app" end className={navClass}>
               <IconHome2 size={17} stroke={1.8} />
               {t('dashboard')}
+            </NavLink>
+            <NavLink to="/app/pages" className={navClass}>
+              <IconAddressBook size={17} stroke={1.8} />
+              {t('pages')}
             </NavLink>
 
             <AdminGuard>

@@ -5,9 +5,11 @@
 #  id               :bigint           not null, primary key
 #  deleted_at       :datetime
 #  events_count     :integer          default(0), not null
+#  expires_at       :datetime
 #  inactive_at      :datetime
 #  last_accessed_at :datetime
 #  original_url     :string           not null
+#  password_digest  :string
 #  safe             :boolean          default(TRUE), not null
 #  safe_checked_at  :datetime
 #  short_code       :string           not null
@@ -19,6 +21,7 @@
 # Indexes
 #
 #  index_shortlinks_on_deleted_at  (deleted_at)
+#  index_shortlinks_on_expires_at  (expires_at) WHERE ((expires_at IS NOT NULL) AND (inactive_at IS NULL))
 #  index_shortlinks_on_short_code  (short_code) UNIQUE
 #  index_shortlinks_on_user_id     (user_id)
 #

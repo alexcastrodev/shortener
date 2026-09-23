@@ -6,6 +6,19 @@ local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
+# SeaweedFS S3 gateway on pizito (bucket_seaweedfs, proxy_net). Same variable
+# names as musik-app, which shares the host. Files are served to browsers
+# through Rails (proxy mode, see Page#avatar_url), so only the internal
+# endpoint is needed and the gateway never has to be public.
+seaweedfs:
+  service: S3
+  access_key_id: <%= ENV["S3_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["S3_SECRET_ACCESS_KEY"] %>
+  region: us-east-1
+  bucket: <%= ENV["S3_BUCKET"] %>
+  endpoint: <%= ENV["S3_ENDPOINT"] %>
+  force_path_style: true
+
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
 #   service: S3

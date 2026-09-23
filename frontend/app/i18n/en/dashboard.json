@@ -15,6 +15,7 @@
   "never_accessed": "Never accessed",
   "untitled": "Untitled",
   "edit_link": "Edit link",
+  "qr_code": "QR code",
   "copy_link": "Copy link",
   "delete": "Delete",
   "delete_confirm_title": "Delete shortlink",
@@ -32,5 +33,13 @@
   "no_results_found": "No results found",
   "try_different_search": "Try a different search",
   "unsafe_shortlink_message": "This shortlink was marked as unsafe by Google Safe Browsing. We will review the link soon.",
-  "inactive_shortlink_message": "This shortlink was deactivated due to inactivity."
+  "inactive_shortlink_message": "This shortlink was deactivated due to inactivity.",
+  "password_label": "Password",
+  "password_new_hint": "Optional. Visitors must enter it before being redirected.",
+  "password_keep_hint": "This link is protected. Leave blank to keep the current password.",
+  "password_remove": "Remove password",
+  "password_protected": "Password",
+  "expires_at_label": "Expires at",
+  "expires_at_hint": "Optional. The link stops working at this date and time.",
+  "expires_on": "Expires {{date}}"
 }

@@ -17,3 +17,11 @@ production:
     class: ExpireInactiveShortlinksJob
     queue: default
     schedule: at 3am every day
+  expire_scheduled_shortlinks:
+    class: ExpireScheduledShortlinksJob
+    queue: default
+    schedule: every 5 minutes
+  recheck_page_links_safety:
+    class: RecheckPageLinksSafetyJob
+    queue: safety
+    schedule: at 4am every day
