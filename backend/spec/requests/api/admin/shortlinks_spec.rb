@@ -23,7 +23,7 @@ RSpec.describe("Admin Shortlinks", type: :request, vcr: true) do
       json_response = JSON.parse(response.body)
       expect(json_response["shortlink"]).to(be_an(Array))
       expect(json_response["shortlink"].size).to(eq(2))
-      expect(json_response["shortlink"].first).to(include("original_url", "short_code"))
+      expect(json_response["shortlink"].first).to(include("original_url", "short_code", "created_at"))
     end
 
     it "includes associated user when present" do

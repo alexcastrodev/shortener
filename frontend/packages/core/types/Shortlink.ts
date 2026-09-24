@@ -14,5 +14,6 @@ export type Shortlink = {
   inactive_at?: string | null;
   password_protected?: boolean;
   expires_at?: string | null;
+  created_at?: string;
   user?: User | null;
 };

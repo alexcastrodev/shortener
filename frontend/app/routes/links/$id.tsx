@@ -104,6 +104,17 @@ export default function Page() {
                 </a>
               </div>
 
+              {link.created_at && (
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">
+                    Created
+                  </p>
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(link.created_at).toLocaleString()}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <p className="text-sm font-semibold text-muted-foreground">
                   Last accessed

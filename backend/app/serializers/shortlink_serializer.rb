@@ -47,5 +47,9 @@ class ShortlinkSerializer < BaseSerializer
     shortlink.expires_at&.iso8601
   end
 
+  attribute :created_at do |shortlink|
+    shortlink.created_at&.iso8601
+  end
+
   attributes :safe_checked_at, if: proc { |_s| params[:admin] }
 end
