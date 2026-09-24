@@ -179,6 +179,12 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
           {shortlink.original_url}
         </p>
 
+        {shortlink.created_at && (
+          <p className="text-xs text-muted-foreground">
+            {t('created_on', { date: formatDate(shortlink.created_at) })}
+          </p>
+        )}
+
         {!shortlink.is_active && (
           <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
             <IconAlertTriangle size={14} />

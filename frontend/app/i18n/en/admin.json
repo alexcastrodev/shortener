@@ -36,5 +36,6 @@
   "cancel": "Cancel",
   "confirm_prompt": "Are you sure you want to {{action}} this shortlink?",
   "joined": "Joined",
+  "created_on": "Created {{date}}",
   "shortlinks_count": "shortlinks"
 }

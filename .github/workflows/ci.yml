@@ -36,6 +36,10 @@ jobs:
       REDIS_URL: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v4
+      # config/initializers/vips.rb loads libvips at boot. On Ubuntu the HEVC
+      # decoder for HEIC avatars is only suggested by libheif, so add it.
+      - name: Install libvips
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libvips libheif-plugin-libde265
       - uses: ruby/setup-ruby@v1
         with:
           working-directory: backend

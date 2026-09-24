@@ -209,6 +209,19 @@ export default function AdminShortlinksPage() {
                       {shortlink.user?.email || '—'}
                     </span>
                   </Tooltip>
+                  {shortlink.created_at && (
+                    <Tooltip label={new Date(shortlink.created_at).toLocaleString()}>
+                      <span className="text-xs text-muted-foreground">
+                        {t('created_on', {
+                          date: new Date(shortlink.created_at).toLocaleDateString('en-US', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          }),
+                        })}
+                      </span>
+                    </Tooltip>
+                  )}
                 </div>
               </div>
 

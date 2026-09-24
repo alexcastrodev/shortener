@@ -96,6 +96,18 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* iOS Safari zooms into any focused field whose font is smaller than 16px.
+   Keep fields at 16px on touch screens instead of disabling zoom in the
+   viewport meta tag, so pinch-to-zoom still works. !important beats the
+   per-size font variables Mantine sets on its inputs. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* ==========================================================================
    Landing page (routes/index.tsx). Every animation is transform/opacity
    only, and all motion is opt-in via prefers-reduced-motion.

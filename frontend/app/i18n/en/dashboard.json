@@ -41,5 +41,6 @@
   "password_protected": "Password",
   "expires_at_label": "Expires at",
   "expires_at_hint": "Optional. The link stops working at this date and time.",
-  "expires_on": "Expires {{date}}"
+  "expires_on": "Expires {{date}}",
+  "created_on": "Created {{date}}"
 }
