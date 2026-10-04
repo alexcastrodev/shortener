@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # A throwaway Postgres + Valkey next to a Ruby container that runs the backend specs
       # against this commit. Nothing deploys unless they pass.
@@ -42,7 +42,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build images
         run: |
