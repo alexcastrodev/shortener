@@ -83,6 +83,7 @@ Rails.application.routes.draw do
         post "pages/:slug/links/:page_link_id/click", to: "page_link_clicks#create", as: :page_link_click, format: false
       end
       resources :forms, only: [:show], param: :public_id, format: false
+      post "forms/:public_id/responses", to: "form_responses#create", as: :form_responses, format: false
       get "shortlinks/:short_code", to: "shortlink_unlocks#show", as: :locked_shortlink
       post "shortlinks/:short_code/unlock", to: "shortlink_unlocks#create", as: :shortlink_unlock
     end
