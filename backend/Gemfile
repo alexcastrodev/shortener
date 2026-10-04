@@ -69,7 +69,7 @@ gem "dry-validation"
 # Serializer Backend
 gem "oj"
 # Kept on 2.x (2.19.9+ carries the security fixes) until json 3 is tested
-gem "json", "~> 2.19", ">= 2.19.9"
+gem "json", "~> 3.0"
 gem "sneakers"
 gem "jwt"
 # has_secure_password for password-protected shortlinks

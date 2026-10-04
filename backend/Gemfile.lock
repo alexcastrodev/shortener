@@ -272,7 +272,7 @@ GEM
       actionview (>= 7.0.0)
       activesupport (>= 7.0.0)
     jmespath (1.6.2)
-    json (2.21.2)
+    json (3.0.2)
     jwt (3.3.0)
       base64
     kamal (2.7.0)
@@ -624,7 +624,7 @@ DEPENDENCIES
   image_processing (~> 1.2)
   importmap-rails
   jbuilder
-  json (~> 2.19, >= 2.19.9)
+  json (~> 3.0)
   jwt
   kamal
   metainspector
