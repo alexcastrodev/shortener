@@ -4,7 +4,8 @@ module Forms
 
     TYPES = ["short_text", "long_text", "email", "number", "single_choice", "multiple_choice", "yes_no", "rating", "date"].freeze
     CHOICE_TYPES = ["single_choice", "multiple_choice"].freeze
-    ID_FORMAT = /\A[A-Za-z0-9]{8}\z/
+    ID_LENGTH = 8
+    ID_FORMAT = /\A[A-Za-z0-9]{#{ID_LENGTH}}\z/
     LABEL_MAX = 300
     HELP_MAX = 500
     CHOICE_LABEL_MAX = 100
