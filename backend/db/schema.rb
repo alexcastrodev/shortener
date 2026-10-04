@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -89,6 +89,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_230000) do
     t.bigint "shortlink_id", null: false
     t.string "user_agent"
     t.index ["shortlink_id"], name: "index_events_on_shortlink_id"
+  end
+
+  create_table "form_daily_stats", force: :cascade do |t|
+    t.bigint "form_id", null: false
+    t.date "day", null: false
+    t.integer "views", default: 0, null: false
+    t.integer "unique_views", default: 0, null: false
+    t.integer "starts", default: 0, null: false
+    t.index ["form_id", "day"], name: "index_form_daily_stats_on_form_id_and_day", unique: true
+  end
+
+  create_table "form_responses", force: :cascade do |t|
+    t.bigint "form_id", null: false
+    t.jsonb "answers", default: {}, null: false
+    t.string "country", limit: 2
+    t.string "platform"
+    t.string "browser"
+    t.string "source"
+    t.string "idempotency_key", limit: 64
+    t.datetime "created_at", null: false
+    t.index ["form_id", "created_at"], name: "index_form_responses_on_form_id_and_created_at"
+    t.index ["form_id", "id"], name: "index_form_responses_on_form_id_and_id"
+    t.index ["form_id", "idempotency_key"], name: "index_form_responses_on_form_and_idempotency_key", unique: true, where: "(idempotency_key IS NOT NULL)"
+    t.check_constraint "jsonb_typeof(answers) = 'object'::text AND octet_length(answers::text) <= 65536", name: "form_responses_answers_object_max_64kb"
   end
 
   create_table "forms", force: :cascade do |t|
@@ -387,6 +411,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_230000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "events", "shortlinks", on_delete: :cascade
+  add_foreign_key "form_daily_stats", "forms", on_delete: :cascade
+  add_foreign_key "form_responses", "forms", on_delete: :cascade
   add_foreign_key "forms", "users", on_delete: :cascade
   add_foreign_key "identities", "users", on_delete: :cascade
   add_foreign_key "page_link_clicks", "page_links", on_delete: :cascade
