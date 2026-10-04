@@ -7,8 +7,9 @@ if Rails.env.production? && ENV["SENTRY_DSN"].present?
     config.profiles_sample_rate = 1.0
     # https://docs.sentry.io/platforms/ruby/configuration/options/#tracing-options
     config.traces_sample_rate = 1.0
-    config.enable_logs = ENV["SENTRY_LOGGER"].present?
-    config.enabled_patches = [:logger]
+    # Logs are always on since sentry-ruby 7 (enable_logs was removed); the :logger patch
+    # is what forwards Rails.logger lines, so only enable it when SENTRY_LOGGER is set.
+    config.enabled_patches = ENV["SENTRY_LOGGER"].present? ? [:logger] : []
     config.send_default_pii = false
     # Lambdas: SentryScrubber is autoloaded, so it can't be referenced while initializers run.
     config.before_send = ->(event, hint) { SentryScrubber.event(event, hint) }
