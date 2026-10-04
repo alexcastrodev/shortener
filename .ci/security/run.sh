@@ -18,7 +18,8 @@ $C build migrate runner
 $C up -d --wait api
 [ "$(docker network inspect kurzsec_sec -f '{{.Internal}}')" = true ] || { echo "refusing: network is not internal"; exit 2; }
 
-$C run --rm seed
+$C run --rm -T seed | sed -n 's/^TOKENS://p' > security/out/tokens.json
+[ -s security/out/tokens.json ] || { echo "seed produced no tokens"; exit 2; }
 rc=0
 $C run --rm runner bash /security/checks/run-all.sh || rc=$?
 

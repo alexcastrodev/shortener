@@ -1,5 +1,6 @@
-# Runs inside the api container (rails runner). Creates the tenants every check uses and writes
-# their session tokens to /out/tokens.json. Resources are created through the real API by the checks.
+# Runs inside the api container (rails runner). Creates the tenants every check uses and prints
+# their session tokens as one TOKENS:<json> line (run.sh stores it; the container's uid cannot write
+# to a bind mount owned by the host user). Resources are created through the real API by the checks.
 require "json"
 
 def make(email, admin: false, deactivated: false)
@@ -16,5 +17,4 @@ users = {
   ownerD: make("owner-d@sec.test", deactivated: true),
 }
 
-File.write("/out/tokens.json", JSON.pretty_generate(users.to_h { |k, u| [k, { id: u.id, token: SessionToken.issue(u) }] }))
-puts "seeded #{users.size} users"
+puts "TOKENS:" + JSON.generate(users.to_h { |k, u| [k, { id: u.id, token: SessionToken.issue(u) }] })

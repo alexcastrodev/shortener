@@ -77,7 +77,6 @@ services:
     command: ["bin/rails", "runner", "/security/seed.rb"]
     volumes:
       - ./security:/security:ro
-      - ./security/out:/out
     networks: [sec]
     profiles: [tools]
     depends_on:
