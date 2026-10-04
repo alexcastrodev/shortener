@@ -13,6 +13,10 @@ class Form < ApplicationRecord
   validates :theme, inclusion: { in: Page::THEMES }
   validate :field_definitions
 
+  def public_url
+    "#{ENV["FRONTEND_URL"]}/f/#{public_id}"
+  end
+
   private
 
   def field_definitions

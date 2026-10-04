@@ -40,6 +40,14 @@ internal	GET	/resume_historical_location
 owner	GET	/api/me
 owner	GET	/api/me/community_templates
 owner	POST	/api/me/community_templates/:id/report
+owner	GET	/api/me/forms
+owner	POST	/api/me/forms
+owner	DELETE	/api/me/forms/:id
+owner	GET	/api/me/forms/:id
+owner	PATCH	/api/me/forms/:id
+owner	PUT	/api/me/forms/:id
+owner	POST	/api/me/forms/:id/publish
+owner	POST	/api/me/forms/:id/unpublish
 owner	GET	/api/me/page_templates
 owner	POST	/api/me/page_templates
 owner	DELETE	/api/me/page_templates/:id
