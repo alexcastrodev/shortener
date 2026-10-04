@@ -1,6 +1,4 @@
 class CreateForms < ActiveRecord::Migration[8.1]
-  # A form is one row: its questions live in `fields` (jsonb array), so reordering or editing
-  # them is a single locked UPDATE and there is no per-field table to race on.
   def change
     create_table(:forms) do |t|
       t.references(:user, null: false, foreign_key: { on_delete: :cascade })
