@@ -71,10 +71,10 @@ services:
       timeout: 5s
       retries: 40
 
-  seed:
+  # One-off Rails commands (seed, route dump) in the production image.
+  rails:
     image: kurzsec-api
     environment: *api-env
-    command: ["bin/rails", "runner", "/security/seed.rb"]
     volumes:
       - ./security:/security:ro
     networks: [sec]
