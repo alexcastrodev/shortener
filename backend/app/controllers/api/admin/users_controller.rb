@@ -11,6 +11,7 @@ class Api::Admin::UsersController < ApplicationController
 
   # POST /api/admin/users/:id/toggle_active
   def toggle_active
+    authorize(User, :list_all?)
     user = User.find(params[:id])
     authorize(user, :toggle_active?)
 

@@ -24,6 +24,7 @@ class Api::Admin::PageTemplatesController < ApplicationController
   # POST /api/admin/page_templates/:id/toggle_hidden
   # Unhiding clears the reports: the template starts over.
   def toggle_hidden
+    authorize(PageTemplate, :moderate?)
     template = PageTemplate.where(visibility: "public").find(params[:id])
     authorize(template, :moderate?)
 
