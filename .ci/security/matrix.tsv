@@ -87,6 +87,7 @@ owner	PATCH	/api/me/shortlinks/:id
 owner	PUT	/api/me/shortlinks/:id
 owner	GET	/api/me/shortlinks/:shortlink_id/qr_code
 owner	GET	/api/me/shortlinks/:shortlink_id/statistics
+public	GET	/api/public/forms/:public_id
 public	GET	/api/public/pages/:slug
 public	POST	/api/public/pages/:slug/links/:page_link_id/click
 public	GET	/api/public/shortlinks/:short_code
