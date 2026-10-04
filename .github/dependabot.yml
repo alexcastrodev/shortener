@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: bundler
+    directory: /backend
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+    groups:
+      rails: { patterns: ["rails", "rails-*", "action*", "active*"] }
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+    groups:
+      minor-and-patch: { update-types: [minor, patch] }
+  - package-ecosystem: docker
+    directory: /.ci
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
