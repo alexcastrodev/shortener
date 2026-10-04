@@ -47,6 +47,12 @@ Rails.application.routes.draw do
         get "qr_code", to: "shortlinks#qr_code"
       end
       resource :password, only: [:update]
+      resources :forms, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :publish
+          post :unpublish
+        end
+      end
       resources :page_templates, only: [:index, :create, :update, :destroy]
       resources :community_templates, only: [:index] do
         member { post "report", to: "community_templates#report" }
