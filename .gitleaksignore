@@ -1,0 +1,2 @@
+# False positive: a column name in a condition (login_token_sent_at), not a credential.
+6741de75c8fc682e9f5b1cd8ae746d861912a33a:backend/app/models/user.rb:generic-api-key:12
