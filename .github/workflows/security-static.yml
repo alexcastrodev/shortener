@@ -1,0 +1,72 @@
+name: Security (static)
+
+# Dependency advisories, secrets and image/file scanning on every PR. No secrets, read-only token.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-static-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bundler-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          working-directory: backend
+          bundler-cache: true
+      - run: gem install bundler-audit --no-document
+      - run: bundle-audit check --update
+
+  npm-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Runtime dependencies only; fixes ship in a PR of their own.
+      - run: npm audit --package-lock-only --omit=dev --audit-level=high
+
+  deno-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: edge-function
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno audit
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Whole history, every ref the clone has. --redact keeps secrets out of the log.
+      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 detect --source /repo --redact --no-banner --log-opts="--all"
+
+  trivy-fs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Vulnerabilities with a fix available and secrets; Dockerfile lint is not a gate.
+      - run: >-
+          docker run --rm -v "$PWD:/repo" aquasec/trivy:0.75.0 fs
+          --scanners vuln,secret --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
+          --skip-dirs node_modules --skip-dirs tmp /repo
