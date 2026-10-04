@@ -9,5 +9,10 @@ if Rails.env.production? && ENV["SENTRY_DSN"].present?
     config.traces_sample_rate = 1.0
     config.enable_logs = ENV["SENTRY_LOGGER"].present?
     config.enabled_patches = [:logger]
+    config.send_default_pii = false
+    # Lambdas: SentryScrubber is autoloaded, so it can't be referenced while initializers run.
+    config.before_send = ->(event, hint) { SentryScrubber.event(event, hint) }
+    config.before_send_transaction = ->(event, hint) { SentryScrubber.event(event, hint) }
+    config.before_send_log = ->(log) { SentryScrubber.log(log) }
   end
 end

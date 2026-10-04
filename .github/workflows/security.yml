@@ -1,0 +1,38 @@
+name: Security harness
+
+# Heavy (builds the production image, ~6 GB RAM): nightly, on demand, and when the harness itself
+# changes. Never runs on the self-hosted production runner and has no secrets.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".ci/security/**"
+      - ".ci/compose.security.yml"
+      - ".github/workflows/security.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run harness
+        run: .ci/security/run.sh
+      - name: Results
+        if: always()
+        run: column -t -s "$(printf '\t')" .ci/security/out/results.tsv || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-results
+          path: .ci/security/out/results.tsv
+          if-no-files-found: ignore
