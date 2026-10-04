@@ -31,10 +31,13 @@ export default function handleRequest(
 
   // Vite's dev server injects its own inline scripts, so the strict policy
   // only applies to production builds.
-  const strict =
-    import.meta.env.PROD && needsStrictCsp(new URL(request.url).pathname);
+  const pathname = new URL(request.url).pathname;
+  const strict = import.meta.env.PROD && needsStrictCsp(pathname);
   const nonce = strict ? randomBytes(16).toString('base64') : undefined;
-  if (nonce) responseHeaders.set('Content-Security-Policy', strictCsp(nonce));
+  if (nonce) {
+    responseHeaders.set('Content-Security-Policy', strictCsp(nonce, pathname));
+    responseHeaders.set('Cache-Control', 'no-store');
+  }
 
   return new Promise((resolve, reject) => {
     let shellRendered = false;

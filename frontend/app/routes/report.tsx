@@ -19,13 +19,18 @@ export const meta: MetaFunction = () => {
 
 const REPORT_EMAIL = 'kurz.fyi@gmail.com';
 
-// Bio pages link here as /report?page=<slug>. The page is prerendered, so
-// the query string is only read after hydration.
+// Bio pages link here as /report?page=<slug> and public forms as
+// /report?form=<id>. The page is prerendered, so the query string is only
+// read after hydration.
 function useReportedPage() {
-  const [page, setPage] = useState<string | null>(null);
+  const [page, setPage] = useState<{ kind: 'page' | 'form'; id: string } | null>(null);
 
   useEffect(() => {
-    setPage(new URLSearchParams(window.location.search).get('page'));
+    const query = new URLSearchParams(window.location.search);
+    const slug = query.get('page');
+    const form = query.get('form');
+    if (slug) setPage({ kind: 'page', id: slug });
+    else if (form) setPage({ kind: 'form', id: form });
   }, []);
 
   return page;
@@ -35,8 +40,8 @@ export default function Report() {
   const reportedPage = useReportedPage();
   const mailto = reportedPage
     ? `mailto:${REPORT_EMAIL}?${new URLSearchParams({
-        subject: `Report bio page: ${reportedPage}`,
-        body: `Page: https://kurz.fyi/u/${reportedPage}\n\nWhy it is abusive:\n`,
+        subject: `Report ${reportedPage.kind === 'form' ? 'form' : 'bio page'}: ${reportedPage.id}`,
+        body: `${reportedPage.kind === 'form' ? 'Form' : 'Page'}: https://kurz.fyi/${reportedPage.kind === 'form' ? 'f' : 'u'}/${reportedPage.id}\n\nWhy it is abusive:\n`,
       })
         .toString()
         .replace(/\+/g, '%20')}`
