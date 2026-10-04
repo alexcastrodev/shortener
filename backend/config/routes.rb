@@ -51,6 +51,11 @@ Rails.application.routes.draw do
         member do
           post :publish
           post :unpublish
+          post :apply_template
+          post :duplicate
+        end
+        resources :fields, only: [:create, :update, :destroy], controller: "form_fields" do
+          collection { patch :reorder }
         end
       end
       resources :page_templates, only: [:index, :create, :update, :destroy]

@@ -45,6 +45,23 @@ module Forms
       errors
     end
 
+    def with_new_ids(field)
+      field = field.stringify_keys
+      field["id"] ||= new_id
+      field["choices"] = field["choices"].map { |choice| choice.stringify_keys.tap { |c| c["id"] ||= new_id } } if field["choices"].is_a?(Array)
+      field
+    end
+
+    def with_fresh_ids(field)
+      field = field.stringify_keys.except("id")
+      field["choices"] = field["choices"].map { |choice| choice.stringify_keys.except("id") } if field["choices"].is_a?(Array)
+      with_new_ids(field)
+    end
+
+    def new_id
+      SecureRandom.alphanumeric(ID_LENGTH)
+    end
+
     def cast_answer(field, raw)
       field = field.stringify_keys
       return blank_answer(field) if blank?(raw)

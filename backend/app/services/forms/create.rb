@@ -1,6 +1,4 @@
 module Forms
-  class LimitReached < StandardError; end
-
   class Create
     include Callable
 

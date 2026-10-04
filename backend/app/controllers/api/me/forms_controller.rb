@@ -4,6 +4,10 @@ class Api::Me::FormsController < ApplicationController
   before_action :authenticate_user!, prepend: true
   skip_before_action :load_form, only: [:index, :create]
 
+  rescue_from Forms::LimitReached do
+    render(json: { error: "forms_daily_limit" }, status: :too_many_requests)
+  end
+
   def index
     forms = policy_scope(Form).order(created_at: :desc)
     render(json: FormSerializer.new(forms).serialize, status: :ok)
@@ -20,8 +24,6 @@ class Api::Me::FormsController < ApplicationController
 
       form = Forms::Create.call(user: @current_user, attributes: attributes)
       render(json: FormSerializer.new(form).serialize, status: :created)
-    rescue Forms::LimitReached
-      render(json: { error: "forms_daily_limit" }, status: :too_many_requests)
     rescue ActiveRecord::RecordInvalid => e
       render(json: { errors: e.record.errors.to_hash }, status: :unprocessable_entity)
     end
@@ -49,12 +51,35 @@ class Api::Me::FormsController < ApplicationController
     render(json: FormSerializer.new(@form).serialize, status: :ok)
   end
 
+  def apply_template
+    validate_contract(FormTemplateApplicationContract) do |validated_params|
+      render(json: FormSerializer.new(Forms::Definition.apply_template(@form, validated_params[:template])).serialize, status: :ok)
+    rescue ActiveRecord::RecordInvalid => e
+      render(json: { errors: e.record.errors.to_hash }, status: :unprocessable_entity)
+    end
+  end
+
+  def duplicate
+    copy = Forms::Create.call(user: @current_user, attributes: duplicate_attributes)
+    render(json: FormSerializer.new(copy).serialize, status: :created)
+  end
+
   def unpublish
     @form.update!(published: false)
     render(json: FormSerializer.new(@form).serialize, status: :ok)
   end
 
   private
+
+  def duplicate_attributes
+    {
+      title: "Copy of #{@form.title}".first(Form::TITLE_MAX),
+      description: @form.description,
+      thank_you_message: @form.thank_you_message,
+      theme: @form.theme,
+      fields: @form.fields.map { |field| Forms::FieldSchema.with_fresh_ids(field) },
+    }
+  end
 
   def attributes_for(validated_params)
     template_id = validated_params.delete(:template)

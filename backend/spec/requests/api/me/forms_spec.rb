@@ -184,4 +184,135 @@ RSpec.describe("/api/me/forms", type: :request) do
       expect(form.reload.published).to(be(false))
     end
   end
+
+  describe "fields" do
+    let!(:form) { make_form }
+
+    def field_ids
+      form.reload.fields.map { |f| f["id"] }
+    end
+
+    it "adds, updates, reorders and removes questions" do
+      post "/api/me/forms/#{form.id}/fields", params: { type: "short_text", label: "Name", required: true }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:created))
+      post "/api/me/forms/#{form.id}/fields", params: { type: "single_choice", label: "Pick", choices: [{ label: "a" }, { label: "b" }] }, headers: auth_headers, as: :json
+      first, second = field_ids
+      expect(second).to(be_present)
+
+      patch "/api/me/forms/#{form.id}/fields/#{first}", params: { label: "Full name" }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:ok))
+      expect(json["form"]["fields"].first).to(include("label" => "Full name", "required" => true))
+
+      patch "/api/me/forms/#{form.id}/fields/reorder", params: { ids: [second, first] }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:ok))
+      expect(field_ids).to(eq([second, first]))
+
+      delete "/api/me/forms/#{form.id}/fields/#{second}", headers: auth_headers
+      expect(response).to(have_http_status(:ok))
+      expect(field_ids).to(eq([first]))
+    end
+
+    it "answers 422 for an invalid question and for a type change" do
+      post "/api/me/forms/#{form.id}/fields", params: { type: "rating", label: "x", scale: 7 }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(json["errors"]).to(have_key("fields"))
+
+      post "/api/me/forms/#{form.id}/fields", params: { type: "short_text", label: "x" }, headers: auth_headers, as: :json
+      id = field_ids.first
+      patch "/api/me/forms/#{form.id}/fields/#{id}", params: { type: "email" }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:unprocessable_entity))
+    end
+
+    it "answers 422 for a reorder that is not a permutation" do
+      post "/api/me/forms/#{form.id}/fields", params: { type: "short_text", label: "x" }, headers: auth_headers, as: :json
+
+      patch "/api/me/forms/#{form.id}/fields/reorder", params: { ids: [field_ids.first, "zzzzzzzz"] }, headers: auth_headers, as: :json
+
+      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(json["errors"]).to(have_key("ids"))
+    end
+
+    it "does not accept a client-chosen field id or keys outside the contract" do
+      post "/api/me/forms/#{form.id}/fields", params: { type: "short_text", label: "x", id: "hacked00", evil: 1 }, headers: auth_headers, as: :json
+
+      expect(response).to(have_http_status(:created))
+      expect(form.reload.fields.first.keys).to(match_array(["id", "type", "label"]))
+      expect(form.fields.first["id"]).not_to(eq("hacked00"))
+    end
+
+    it "treats another user's form and a field of another form as not found" do
+      theirs = make_form(user: other_user, fields: [field])
+      mine = make_form(fields: [{ "id" => "mine0001", "type" => "yes_no", "label" => "m" }])
+
+      post "/api/me/forms/#{theirs.id}/fields", params: { type: "short_text", label: "x" }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:not_found))
+      patch "/api/me/forms/#{theirs.id}/fields/abcd1234", params: { label: "x" }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:not_found))
+      patch "/api/me/forms/#{mine.id}/fields/abcd1234", params: { label: "x" }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:not_found))
+      delete "/api/me/forms/#{mine.id}/fields/abcd1234", headers: auth_headers
+      expect(response).to(have_http_status(:not_found))
+      expect(theirs.reload.fields).to(eq([field]))
+    end
+
+    it "requires authentication" do
+      post "/api/me/forms/#{form.id}/fields", params: { type: "short_text", label: "x" }, as: :json
+      expect(response).to(have_http_status(:unauthorized))
+      patch "/api/me/forms/#{form.id}/fields/reorder", params: { ids: [] }, as: :json
+      expect(response).to(have_http_status(:unauthorized))
+    end
+  end
+
+  describe "apply_template and duplicate" do
+    it "applies a template to a form without responses" do
+      form = make_form
+
+      post "/api/me/forms/#{form.id}/apply_template", params: { template: "feedback" }, headers: auth_headers, as: :json
+
+      expect(response).to(have_http_status(:ok))
+      expect(json["form"]["fields"].size).to(eq(3))
+    end
+
+    it "refuses an unknown template and a form with responses" do
+      form = make_form
+      post "/api/me/forms/#{form.id}/apply_template", params: { template: "community-1" }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:unprocessable_entity))
+
+      form.update_column(:responses_count, 2)
+      post "/api/me/forms/#{form.id}/apply_template", params: { template: "contact" }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:unprocessable_entity))
+    end
+
+    it "duplicates a form unpublished, with fresh ids and no responses" do
+      original = make_form(title: "Survey", fields: [field], published: true, responses_count: 9)
+
+      post "/api/me/forms/#{original.id}/duplicate", headers: auth_headers
+
+      expect(response).to(have_http_status(:created))
+      copy = Form.find(json["form"]["id"])
+      expect(copy).to(have_attributes(title: "Copy of Survey", published: false, responses_count: 0, user_id: current_user.id))
+      expect(copy.public_id).not_to(eq(original.public_id))
+      expect(copy.fields.size).to(eq(1))
+      expect(copy.fields.first["id"]).not_to(eq("abcd1234"))
+    end
+
+    it "counts a duplicate against the daily quota" do
+      original = make_form
+      (Form::MAX_CREATED_PER_DAY - 2).times { |i| make_form(title: "F#{i}") }
+
+      post "/api/me/forms/#{original.id}/duplicate", headers: auth_headers
+      expect(response).to(have_http_status(:created))
+      post "/api/me/forms/#{original.id}/duplicate", headers: auth_headers
+      expect(response).to(have_http_status(:too_many_requests))
+    end
+
+    it "answers another user's form as not found" do
+      theirs = make_form(user: other_user)
+
+      post "/api/me/forms/#{theirs.id}/duplicate", headers: auth_headers
+      expect(response).to(have_http_status(:not_found))
+      post "/api/me/forms/#{theirs.id}/apply_template", params: { template: "contact" }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:not_found))
+    end
+  end
 end
