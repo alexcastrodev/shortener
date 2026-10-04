@@ -59,7 +59,7 @@ jobs:
         with:
           fetch-depth: 0
       # Whole history, every ref the clone has. --redact keeps secrets out of the log.
-      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 detect --source /repo --redact --no-banner --log-opts="--all"
+      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 detect --source /repo --redact --no-banner --verbose --log-opts="--all"
 
   trivy-fs:
     runs-on: ubuntu-latest
