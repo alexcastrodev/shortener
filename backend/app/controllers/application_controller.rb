@@ -10,6 +10,8 @@ class ApplicationController < ActionController::API
   rescue_from ::ActiveRecord::RecordNotUnique, with: :record_not_unique
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
+  before_action :reject_null_bytes
+
   attr_reader :current_user
 
   def validate_contract(contract_class, context: nil)
@@ -23,6 +25,19 @@ class ApplicationController < ActionController::API
   end
 
   private
+
+  def reject_null_bytes
+    render(json: { message: "Bad request" }, status: :bad_request) if contains_null_byte?(request.parameters)
+  end
+
+  def contains_null_byte?(value)
+    case value
+    when String then value.include?("\u0000")
+    when Hash then value.any? { |key, item| contains_null_byte?(key) || contains_null_byte?(item) }
+    when Array then value.any? { |item| contains_null_byte?(item) }
+    else false
+    end
+  end
 
   def record_not_found(exception)
     render(json: { message: "Resource not found" }, status: :not_found)
