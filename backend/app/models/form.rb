@@ -6,6 +6,8 @@ class Form < ApplicationRecord
   before_validation(on: :create) { self.public_id ||= SecureRandom.alphanumeric(PUBLIC_ID_LENGTH) }
 
   belongs_to :user
+  has_many :responses, class_name: "FormResponse", dependent: :delete_all
+  has_many :daily_stats, class_name: "FormDailyStat", dependent: :delete_all
   scope :visible, -> { where(published: true).joins(:user).merge(User.active) }
 
   validates :title, presence: true, length: { maximum: TITLE_MAX }
