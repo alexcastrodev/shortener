@@ -1,5 +1,6 @@
 class Form < ApplicationRecord
   MAX_CREATED_PER_DAY = 20
+  TITLE_MAX = 120
   audited only: [:title, :published]
   PUBLIC_ID_LENGTH = 12
   before_validation(on: :create) { self.public_id ||= SecureRandom.alphanumeric(PUBLIC_ID_LENGTH) }
@@ -7,7 +8,7 @@ class Form < ApplicationRecord
   belongs_to :user
   scope :visible, -> { where(published: true).joins(:user).merge(User.active) }
 
-  validates :title, presence: true, length: { maximum: 120 }
+  validates :title, presence: true, length: { maximum: TITLE_MAX }
   validates :description, length: { maximum: 1000 }
   validates :thank_you_message, length: { maximum: 500 }
   validates :theme, inclusion: { in: Page::THEMES }

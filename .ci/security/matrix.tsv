@@ -42,10 +42,17 @@ owner	GET	/api/me/community_templates
 owner	POST	/api/me/community_templates/:id/report
 owner	GET	/api/me/forms
 owner	POST	/api/me/forms
+owner	POST	/api/me/forms/:form_id/fields
+owner	DELETE	/api/me/forms/:form_id/fields/:id
+owner	PATCH	/api/me/forms/:form_id/fields/:id
+owner	PUT	/api/me/forms/:form_id/fields/:id
+owner	PATCH	/api/me/forms/:form_id/fields/reorder
 owner	DELETE	/api/me/forms/:id
 owner	GET	/api/me/forms/:id
 owner	PATCH	/api/me/forms/:id
 owner	PUT	/api/me/forms/:id
+owner	POST	/api/me/forms/:id/apply_template
+owner	POST	/api/me/forms/:id/duplicate
 owner	POST	/api/me/forms/:id/publish
 owner	POST	/api/me/forms/:id/unpublish
 owner	GET	/api/me/page_templates

@@ -1,0 +1,5 @@
+class FormTemplateApplicationContract < ApplicationContract
+  params do
+    required(:template).filled(:string)
+  end
+end

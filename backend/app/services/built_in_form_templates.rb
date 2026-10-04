@@ -107,19 +107,7 @@ module BuiltInFormTemplates
       "title" => template["title"],
       "theme" => template["theme"],
       "thank_you_message" => template["thank_you_message"],
-      "fields" => template["fields"].map { |field| with_ids(field) },
+      "fields" => template["fields"].map { |field| Forms::FieldSchema.with_new_ids(field) },
     }
-  end
-
-  private
-
-  def with_ids(field)
-    field = field.merge("id" => new_id)
-    field["choices"] = field["choices"].map { |choice| choice.merge("id" => new_id) } if field["choices"]
-    field
-  end
-
-  def new_id
-    SecureRandom.alphanumeric(Forms::FieldSchema::ID_LENGTH)
   end
 end
