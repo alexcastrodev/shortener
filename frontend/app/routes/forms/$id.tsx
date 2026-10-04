@@ -27,7 +27,8 @@ import { useSetFormPublished } from '@internal/core/actions/set-form-published/s
 import { useDeleteForm } from '@internal/core/actions/delete-form/delete-form.hook';
 import { PAGE_THEMES } from '@internal/core/types/Page';
 import type { Form } from '@internal/core/types/Form';
-import { ThemePicker } from '../../modules/bio-page';
+import { PhoneFrame, ThemePicker } from '../../modules/bio-page';
+import { FormRenderer } from '../../modules/forms/form-renderer';
 import { formErrorMessage } from '../../modules/forms/form-errors';
 import { QuestionList } from './components/question-list';
 import type { Route } from './+types/$id';
@@ -176,7 +177,9 @@ function Builder({ form: current }: { form: Form }) {
         </Group>
       </div>
 
-      <Card className="max-w-2xl p-5 sm:p-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6">
+        <Card className="p-5 sm:p-6">
         <h2 className="mb-4 font-semibold">Form</h2>
         <form onSubmit={form.onSubmit(values => save({ id: current.id, data: values }))}>
           <Stack gap="md">
@@ -225,8 +228,27 @@ function Builder({ form: current }: { form: Form }) {
         </form>
       </Card>
 
-      <div className="mt-6">
         <QuestionList form={current} />
+        </div>
+
+        <div className="lg:sticky lg:top-20 lg:self-start">
+          <p className="mb-3 text-center text-sm font-medium text-muted-foreground">
+            Preview
+          </p>
+          <PhoneFrame label="Form preview">
+            <FormRenderer
+              key={current.fields.map(field => field.id).join('-')}
+              mode="preview"
+              form={{
+                title: form.values.title || 'Untitled form',
+                description: form.values.description || null,
+                thank_you_message: form.values.thank_you_message || null,
+                theme: form.values.theme,
+                fields: current.fields,
+              }}
+            />
+          </PhoneFrame>
+        </div>
       </div>
     </PageContainer>
   );
