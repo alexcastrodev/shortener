@@ -29,4 +29,9 @@ $C run --rm runner bash /security/checks/run-all.sh || rc=$?
 fivexx=$($C logs api 2>&1 | grep -cE 'Completed 5[0-9]{2}' || true)
 echo "== oracle: $fivexx request(s) ended in 5xx"
 [ "$fivexx" = 0 ] || rc=1
+
+# Canary oracle: an answer typed by a respondent must never reach the API logs.
+leaks=$($C logs api 2>&1 | grep -c 'CNRY-' || true)
+echo "== oracle: $leaks log line(s) carry a respondent canary"
+[ "$leaks" = 0 ] || rc=1
 exit "$rc"

@@ -1,5 +1,6 @@
-FROM debian:bookworm-slim
+FROM postgres:17
+ENTRYPOINT []
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y -qq curl jq python3 postgresql-client ca-certificates && \
+    apt-get install --no-install-recommends -y -qq curl jq python3 ca-certificates && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 WORKDIR /security
