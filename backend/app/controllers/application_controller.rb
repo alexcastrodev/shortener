@@ -7,6 +7,7 @@ class ApplicationController < ActionController::API
   rescue_from ::ActiveRecord::RecordNotFound, with: :record_not_found
   rescue_from ::ActiveRecord::RecordNotDestroyed, with: :record_not_destroyed
   rescue_from ::ActiveRecord::RecordInvalid, with: :record_invalid
+  rescue_from ::ActiveRecord::RecordNotUnique, with: :record_not_unique
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
   attr_reader :current_user
@@ -25,6 +26,11 @@ class ApplicationController < ActionController::API
 
   def record_not_found(exception)
     render(json: { message: "Resource not found" }, status: :not_found)
+  end
+
+  # Never echo the PG message: its DETAIL line carries the conflicting value.
+  def record_not_unique(exception)
+    render(json: { message: "Conflict" }, status: :conflict)
   end
 
   def record_not_destroyed(exception)
