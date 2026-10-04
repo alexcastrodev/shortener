@@ -16,17 +16,35 @@ module Turnstile
     secret.present?
   end
 
+  UNAVAILABLE_ERRORS = [
+    Net::OpenTimeout,
+    Net::ReadTimeout,
+    SocketError,
+    Errno::ECONNREFUSED,
+    Errno::ECONNRESET,
+    Errno::EHOSTUNREACH,
+    EOFError,
+    OpenSSL::SSL::SSLError,
+    JSON::ParserError,
+    TypeError,
+    NoMethodError,
+  ].freeze
+
   def valid?(token, action:, remote_ip:)
-    return true unless enabled?
-    return false if token.blank?
+    check(token, action: action, remote_ip: remote_ip) != :rejected
+  end
+
+  def check(token, action:, remote_ip:)
+    return unavailable("secret key is not set") unless enabled?
+    return :rejected if token.blank? || !token.is_a?(String)
 
     result = verify(token, remote_ip)
-    return result["success"] == true if testing_key?(result)
+    return unavailable("unexpected answer from Cloudflare") unless result.is_a?(Hash) && result.key?("success")
 
-    result["success"] == true && result["action"] == action && hostname_allowed?(result["hostname"])
-  rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, Errno::ECONNREFUSED, JSON::ParserError => e
-    Rails.logger.warn("[Turnstile] verification skipped: #{e.class}")
-    true
+    accepted = testing_key?(result) ? result["success"] == true : confirmed?(result, action)
+    accepted ? :ok : :rejected
+  rescue *UNAVAILABLE_ERRORS => e
+    unavailable(e.class.name)
   end
 
   private
@@ -46,6 +64,16 @@ module Turnstile
   # secret is set.
   def testing_key?(result)
     !Rails.env.production? && result.dig("metadata", "result_with_testing_key") == true
+  end
+
+  def confirmed?(result, action)
+    result["success"] == true && result["action"] == action && hostname_allowed?(result["hostname"])
+  end
+
+  def unavailable(reason)
+    Rails.logger.warn("[Turnstile] unavailable: #{reason}")
+    Sentry.capture_message("Turnstile unavailable: #{reason}", level: :warning) if defined?(Sentry) && Sentry.initialized?
+    :unavailable
   end
 
   def hostname_allowed?(hostname)
