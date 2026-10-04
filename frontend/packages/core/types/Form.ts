@@ -60,3 +60,8 @@ export type FormFieldInput = {
   min?: number | null;
   max?: number | null;
 };
+
+export type PublicForm = Pick<
+  Form,
+  'title' | 'description' | 'thank_you_message' | 'theme' | 'fields'
+>;

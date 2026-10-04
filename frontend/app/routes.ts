@@ -14,6 +14,7 @@ export default [
   layout('layout/bio-layout.tsx', [
     route('u/:username', 'routes/bio/$username.tsx'),
     route('s/:shortCode', 'routes/unlock/$shortCode.tsx'),
+    route('f/:publicId', 'routes/f/$publicId.tsx'),
   ]),
   layout('layout/index.tsx', [
     ...prefix('app', [

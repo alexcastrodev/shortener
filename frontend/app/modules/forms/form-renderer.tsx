@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import type { Form } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
 import { FieldInput, type Answer } from './field-inputs';
@@ -8,16 +8,23 @@ export type RenderableForm = Pick<
   'title' | 'description' | 'thank_you_message' | 'theme' | 'fields'
 >;
 
+export type SubmitFailure = {
+  message?: string;
+  fieldErrors?: Record<string, string[]>;
+};
+
 type Props = {
   form: RenderableForm;
   mode: 'preview' | 'live';
   onSubmit?: (answers: Record<string, Answer>) => Promise<void> | void;
+  lastStepSlot?: ReactNode;
+  footer?: ReactNode;
 };
 
 const isBlank = (value: Answer) =>
   value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
 
-export function FormRenderer({ form, mode, onSubmit }: Props) {
+export function FormRenderer({ form, mode, onSubmit, lastStepSlot, footer }: Props) {
   const theme = getBioTheme(form.theme);
   const uid = useId();
   const total = form.fields.length;
@@ -29,7 +36,7 @@ export function FormRenderer({ form, mode, onSubmit }: Props) {
 
   const field = step >= 0 && step < total ? form.fields[step] : null;
   const done = step >= total && total > 0;
-  const shell = `flex flex-col px-5 py-8 ${theme.page} ${
+  const shell = `flex flex-col px-[max(1.25rem,calc((100%-36rem)/2))] py-8 ${theme.page} ${
     mode === 'live' ? 'min-h-dvh' : 'min-h-full'
   }`;
   const primary = `min-h-11 rounded-lg px-5 py-2 font-medium ${theme.button}`;
@@ -50,8 +57,17 @@ export function FormRenderer({ form, mode, onSubmit }: Props) {
       try {
         await onSubmit(answers);
         setStep(total);
-      } catch {
-        setError('We could not send your answers. Please try again.');
+      } catch (failure) {
+        const { message, fieldErrors } = (failure ?? {}) as SubmitFailure;
+        const invalid = fieldErrors
+          ? form.fields.findIndex(item => fieldErrors[item.id])
+          : -1;
+        if (invalid >= 0) setStep(invalid);
+        setError(
+          invalid >= 0
+            ? 'Please check this answer.'
+            : (message ?? 'We could not send your answers. Please try again.')
+        );
       } finally {
         setSubmitting(false);
       }
@@ -74,6 +90,7 @@ export function FormRenderer({ form, mode, onSubmit }: Props) {
       <div className={shell}>
         <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
         <p className={`mt-3 ${theme.bio}`}>This form has no questions yet.</p>
+        {footer}
       </div>
     );
   }
@@ -90,6 +107,7 @@ export function FormRenderer({ form, mode, onSubmit }: Props) {
             Start
           </button>
         </div>
+        {footer}
       </div>
     );
   }
@@ -115,6 +133,7 @@ export function FormRenderer({ form, mode, onSubmit }: Props) {
             </button>
           </div>
         )}
+        {footer}
       </div>
     );
   }
@@ -156,6 +175,7 @@ export function FormRenderer({ form, mode, onSubmit }: Props) {
         theme={theme}
         inputId={inputId}
       />
+      {step === total - 1 && lastStepSlot}
       {error && (
         <p
           role="alert"
@@ -179,6 +199,7 @@ export function FormRenderer({ form, mode, onSubmit }: Props) {
           {step === total - 1 ? (submitting ? 'Sending…' : 'Submit') : 'OK'}
         </button>
       </div>
+      {footer}
     </div>
   );
 }
