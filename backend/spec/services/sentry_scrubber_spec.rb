@@ -18,7 +18,7 @@ RSpec.describe(SentryScrubber) do
     event.breadcrumbs = Sentry::BreadcrumbBuffer.new(5)
     event.breadcrumbs.record(Sentry::Breadcrumb.new(message: canary))
 
-    scrubbed = described_class.event(event).to_hash.to_s
+    scrubbed = described_class.event(event).to_h.to_s
 
     expect(scrubbed).not_to(include(canary))
     expect(scrubbed).not_to(include("203.0.113.77"))
