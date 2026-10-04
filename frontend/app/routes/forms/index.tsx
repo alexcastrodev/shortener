@@ -3,6 +3,7 @@ import { useForm } from '@mantine/form';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { IconTrash } from '@tabler/icons-react';
+import { Link } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { z } from 'zod/v4';
@@ -14,6 +15,7 @@ import {
 import { useGetFormTemplates } from '@internal/core/actions/get-form-templates/get-form-templates.hook';
 import { useCreateForm } from '@internal/core/actions/create-form/create-form.hook';
 import { useDeleteForm } from '@internal/core/actions/delete-form/delete-form.hook';
+import { formErrorMessage } from '../../modules/forms/form-errors';
 import type { Route } from './+types/index';
 
 export function meta({}: Route.MetaArgs) {
@@ -29,21 +31,6 @@ const schema = z.object({
   title: z.string().trim().min(1, 'Give your form a title').max(120),
   template: z.string().optional(),
 });
-
-function errorMessage(error: unknown) {
-  const body = error as
-    | { error?: string; errors?: Record<string, string[]> }
-    | undefined;
-  if (body?.error === 'forms_daily_limit') {
-    return 'You reached the limit of 20 new forms per day. Try again tomorrow.';
-  }
-  if (body?.errors) {
-    return Object.entries(body.errors)
-      .map(([key, value]) => `${key} ${[value].flat().join(', ')}`)
-      .join('; ');
-  }
-  return 'Something went wrong, please try again later.';
-}
 
 export default function FormsIndex() {
   const queryClient = useQueryClient();
@@ -65,7 +52,7 @@ export default function FormsIndex() {
     onError: error => {
       notifications.show({
         title: 'Could not create form',
-        message: errorMessage(error),
+        message: formErrorMessage(error),
         color: 'red',
       });
     },
@@ -76,7 +63,7 @@ export default function FormsIndex() {
     onError: error => {
       notifications.show({
         title: 'Could not delete form',
-        message: errorMessage(error),
+        message: formErrorMessage(error),
         color: 'red',
       });
     },
@@ -119,14 +106,14 @@ export default function FormsIndex() {
 
           {forms?.map(item => (
             <Card key={item.id} className="flex items-center justify-between gap-4 p-4">
-              <div className="min-w-0 flex-1">
+              <Link to={`/app/forms/${item.id}`} className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-foreground">{item.title}</p>
                 <p className="truncate text-sm text-muted-foreground">
                   {item.fields.length} {item.fields.length === 1 ? 'question' : 'questions'} ·{' '}
                   {item.responses_count} {item.responses_count === 1 ? 'response' : 'responses'}
                   {item.published ? ' · Published' : ' · Draft'}
                 </p>
-              </div>
+              </Link>
               <button
                 type="button"
                 aria-label={`Delete ${item.title}`}
