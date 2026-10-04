@@ -15,8 +15,8 @@ export function strictCsp(nonce: string) {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}'`,
     // Mantine sets inline style attributes; styles cannot run code.
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self'",
     // Avatars are proxied by the API (never loaded from the bucket).
     `img-src 'self' data: blob: ${api}`,
     `connect-src 'self' ${api}`,
