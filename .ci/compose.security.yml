@@ -1,0 +1,97 @@
+# Security harness (tmp/plan.md, Seção 5): the production API image against a throwaway Postgres
+# and Valkey on a network with no Internet and no published ports. Run it with
+# .ci/security/run.sh, never with `docker stack` and never against production.
+name: kurzsec
+
+x-api-env: &api-env
+  RAILS_ENV: production
+  # Generated per run by run.sh; the harness never touches a real secret.
+  SECRET_KEY_BASE: ${SEC_SECRET_KEY_BASE:?run through .ci/security/run.sh}
+  POSTGRES_HOST: db
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: production
+  REDIS_URL: redis://cache:6379/0
+  FRONTEND_URL: https://kurz.fyi
+  SKIP_DB_PREPARE: "1"
+
+networks:
+  sec:
+    internal: true
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: production
+    networks: [sec]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  cache:
+    image: valkey/valkey:8.1.4
+    networks: [sec]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  migrate:
+    image: kurzsec-api
+    build:
+      context: ..
+      dockerfile: .ci/Dockerfile
+    # The entrypoint runs db:prepare unless SKIP_DB_PREPARE=1.
+    environment:
+      <<: *api-env
+      SKIP_DB_PREPARE: "0"
+    command: ["true"]
+    networks: [sec]
+    depends_on:
+      db: { condition: service_healthy }
+      cache: { condition: service_healthy }
+
+  api:
+    image: kurzsec-api
+    environment: *api-env
+    networks:
+      sec:
+        # The production hostname, so Host-header checks use the real value.
+        aliases: [api.kurz.fyi]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-H", "Host: api.kurz.fyi", "http://localhost/up"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+
+  seed:
+    image: kurzsec-api
+    environment: *api-env
+    command: ["bin/rails", "runner", "/security/seed.rb"]
+    volumes:
+      - ./security:/security:ro
+    networks: [sec]
+    profiles: [tools]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  runner:
+    build:
+      context: security
+      dockerfile: runner.Dockerfile
+    environment:
+      API: http://api.kurz.fyi
+    volumes:
+      - ./security:/security:ro
+      - ./security/out:/out
+    networks: [sec]
+    profiles: [tools]
+    depends_on:
+      api: { condition: service_healthy }
