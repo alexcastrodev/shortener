@@ -48,3 +48,15 @@ export type FormTemplate = {
   theme: PageTheme;
   questions: number;
 };
+
+export type FormFieldInput = {
+  type?: FormFieldType;
+  label?: string;
+  help?: string | null;
+  required?: boolean;
+  choices?: { id?: string; label: string }[];
+  max_choices?: number | null;
+  scale?: 5 | 10;
+  min?: number | null;
+  max?: number | null;
+};

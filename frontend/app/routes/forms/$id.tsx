@@ -29,6 +29,7 @@ import { PAGE_THEMES } from '@internal/core/types/Page';
 import type { Form } from '@internal/core/types/Form';
 import { ThemePicker } from '../../modules/bio-page';
 import { formErrorMessage } from '../../modules/forms/form-errors';
+import { QuestionList } from './components/question-list';
 import type { Route } from './+types/$id';
 
 export function meta({}: Route.MetaArgs) {
@@ -223,6 +224,10 @@ function Builder({ form: current }: { form: Form }) {
           </Stack>
         </form>
       </Card>
+
+      <div className="mt-6">
+        <QuestionList form={current} />
+      </div>
     </PageContainer>
   );
 }
