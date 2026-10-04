@@ -18,6 +18,7 @@ class Api::Admin::AbuseSignalsController < ApplicationController
 
   # POST /api/admin/abuse_signals/:id/dismiss
   def dismiss
+    authorize(AbuseSignal, :moderate?)
     signal = AbuseSignal.find(params[:id])
     authorize(signal, :moderate?)
 

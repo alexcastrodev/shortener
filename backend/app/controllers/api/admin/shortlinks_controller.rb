@@ -12,6 +12,7 @@ class Api::Admin::ShortlinksController < ApplicationController
 
   # POST /api/admin/shortlinks/:id/toggle_safe
   def toggle_safe
+    authorize(Shortlink, :modify_shortlink_safety?)
     shortlink = Shortlink.find(params[:id])
     authorize(shortlink, :modify_shortlink_safety?)
 
@@ -26,6 +27,7 @@ class Api::Admin::ShortlinksController < ApplicationController
 
   # POST /api/admin/shortlinks/:id/toggle_active
   def toggle_active
+    authorize(Shortlink, :modify_shortlink_active?)
     shortlink = Shortlink.find(params[:id])
     authorize(shortlink, :modify_shortlink_active?)
 
