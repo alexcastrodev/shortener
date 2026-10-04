@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_23_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -89,6 +89,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_210000) do
     t.bigint "shortlink_id", null: false
     t.string "user_agent"
     t.index ["shortlink_id"], name: "index_events_on_shortlink_id"
+  end
+
+  create_table "forms", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "public_id", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.text "thank_you_message"
+    t.string "theme", default: "default", null: false
+    t.boolean "published", default: false, null: false
+    t.jsonb "fields", default: [], null: false
+    t.integer "responses_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["public_id"], name: "index_forms_on_public_id", unique: true
+    t.index ["user_id", "created_at"], name: "index_forms_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_forms_on_user_id"
+    t.check_constraint "jsonb_typeof(fields) = 'array'::text", name: "forms_fields_is_array"
   end
 
   create_table "identities", force: :cascade do |t|
@@ -369,6 +387,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_23_210000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "events", "shortlinks", on_delete: :cascade
+  add_foreign_key "forms", "users", on_delete: :cascade
   add_foreign_key "identities", "users", on_delete: :cascade
   add_foreign_key "page_link_clicks", "page_links", on_delete: :cascade
   add_foreign_key "page_links", "pages", on_delete: :cascade
