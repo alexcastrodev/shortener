@@ -1,8 +1,14 @@
 import { Badge, Button, Center, Loader, PasswordInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconKey, IconLogout, IconUserCircle } from '@tabler/icons-react';
+import {
+  IconKey,
+  IconLogout,
+  IconSettings,
+  IconUserCircle,
+} from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { Card, PageContainer } from '@internal/ui';
 import {
   getLoggedUserKey,
@@ -190,6 +196,26 @@ export default function AccountPage() {
             Log out
           </Button>
         </Card>
+
+        {user.admin && (
+          <Card className="flex items-center justify-between gap-4 p-5 sm:p-6">
+            <div className="min-w-0">
+              <p className="font-semibold text-foreground">Administration</p>
+              <p className="text-sm text-muted-foreground">
+                Users, shortlinks, audit logs and moderation.
+              </p>
+            </div>
+            <Button
+              component={Link}
+              to="/admin"
+              variant="default"
+              leftSection={<IconSettings size={16} />}
+              className="shrink-0"
+            >
+              Open admin
+            </Button>
+          </Card>
+        )}
 
         <PasswordSection hasPassword={!!user.has_password} />
       </div>

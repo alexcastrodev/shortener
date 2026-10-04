@@ -40,6 +40,7 @@ internal	GET	/resume_historical_location
 owner	GET	/api/me
 owner	GET	/api/me/community_templates
 owner	POST	/api/me/community_templates/:id/report
+owner	GET	/api/me/form_templates
 owner	GET	/api/me/forms
 owner	POST	/api/me/forms
 owner	POST	/api/me/forms/:form_id/fields

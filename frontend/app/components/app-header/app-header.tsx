@@ -1,5 +1,11 @@
 import { NavLink } from 'react-router';
-import { IconHome2, IconLogout, IconAddressBook, IconSettings } from '@tabler/icons-react';
+import {
+  IconHome2,
+  IconLogout,
+  IconAddressBook,
+  IconForms,
+  IconSettings,
+} from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { useLogout } from '../../modules/auth/use-logout';
@@ -33,6 +39,10 @@ export function AppHeader() {
             <NavLink to="/app/pages" className={navClass}>
               <IconAddressBook size={17} stroke={1.8} />
               {t('pages')}
+            </NavLink>
+            <NavLink to="/app/forms" className={navClass}>
+              <IconForms size={17} stroke={1.8} />
+              {t('forms')}
             </NavLink>
 
             {/* One entry for every admin section; /admin lists them. */}
