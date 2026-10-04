@@ -3,10 +3,9 @@ import {
   IconHome2,
   IconUserCircle,
   IconAddressBook,
-  IconSettings,
+  IconForms,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { AdminGuard } from '../admin-guard';
 import styles from './mobile-nav.module.css';
 
 export function MobileNav() {
@@ -35,20 +34,17 @@ export function MobileNav() {
         <span className={styles.label}>{t('pages')}</span>
       </NavLink>
 
-      {/* One entry for every admin section; /admin lists them. */}
-      <AdminGuard>
-        <NavLink
-          to="/admin"
-          className={({ isActive }) =>
-            `${styles.navItem} ${isActive ? styles.active : ''}`
-          }
-        >
-          <IconSettings size={22} stroke={1.5} />
-          <span className={styles.label}>{t('admin')}</span>
-        </NavLink>
-      </AdminGuard>
+      <NavLink
+        to="/app/forms"
+        className={({ isActive }) =>
+          `${styles.navItem} ${isActive ? styles.active : ''}`
+        }
+      >
+        <IconForms size={22} stroke={1.5} />
+        <span className={styles.label}>{t('forms')}</span>
+      </NavLink>
 
-      {/* Logging out lives on the account page, keeping the bar at four items. */}
+      {/* Logout and Admin live on the account page, keeping the bar at four items. */}
       <NavLink
         to="/app/account"
         className={({ isActive }) =>

@@ -47,6 +47,7 @@ Rails.application.routes.draw do
         get "qr_code", to: "shortlinks#qr_code"
       end
       resource :password, only: [:update]
+      resources :form_templates, only: [:index]
       resources :forms, only: [:index, :show, :create, :update, :destroy] do
         member do
           post :publish
