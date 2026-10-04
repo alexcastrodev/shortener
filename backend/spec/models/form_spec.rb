@@ -40,6 +40,15 @@ RSpec.describe(Form, type: :model) do
     expect { form.update_column(:fields, { "a" => 1 }) }.to(raise_error(ActiveRecord::StatementInvalid))
   end
 
+  it "runs the field definition rules" do
+    valid = [{ "id" => "abcd1234", "type" => "yes_no", "label" => "Ok?" }]
+    expect(build_form(fields: valid)).to(be_valid)
+
+    form = build_form(fields: [{ "id" => "abcd1234", "type" => "file", "label" => "x" }])
+    expect(form).not_to(be_valid)
+    expect(form.errors[:fields]).not_to(be_empty)
+  end
+
   describe ".visible" do
     it "is only published forms of active owners" do
       live = build_form(published: true).tap(&:save!)

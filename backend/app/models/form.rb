@@ -11,11 +11,11 @@ class Form < ApplicationRecord
   validates :description, length: { maximum: 1000 }
   validates :thank_you_message, length: { maximum: 500 }
   validates :theme, inclusion: { in: Page::THEMES }
-  validate :fields_is_array
+  validate :field_definitions
 
   private
 
-  def fields_is_array
-    errors.add(:fields, :invalid) unless fields.is_a?(Array)
+  def field_definitions
+    Forms::FieldSchema.definition_errors(fields).each { |message| errors.add(:fields, message) }
   end
 end
