@@ -1,6 +1,8 @@
 import { IconChevronLeft } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { KurzLogo, ThemeToggle } from '@internal/ui';
+import { useTranslation } from 'react-i18next';
+
 
 // The frame of every sign-in screen: a narrow centered column with the mark,
 // a title and a line under it, over the landing page's grid and glow.
@@ -15,6 +17,7 @@ export function AuthShell({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const { t } = useTranslation('auth');
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <div
@@ -32,7 +35,7 @@ export function AuthShell({
           className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           <IconChevronLeft size={16} />
-          Home
+          {t('home')}
         </a>
         <ThemeToggle />
       </div>
@@ -60,10 +63,11 @@ export function AuthShell({
 
 // "or" between two ways of doing the same thing.
 export function AuthDivider() {
+  const { t } = useTranslation('auth');
   return (
     <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
       <span className="h-px flex-1 bg-border" />
-      or
+      {t('or')}
       <span className="h-px flex-1 bg-border" />
     </div>
   );

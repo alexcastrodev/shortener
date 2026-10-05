@@ -1,5 +1,8 @@
 import { PasswordInput, Progress } from '@mantine/core';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+
 
 export const MIN_PASSWORD_LENGTH = 8;
 
@@ -43,7 +46,7 @@ export function useNewPassword() {
 }
 
 // Length first (NIST 800-63B), with a nudge for mixing kinds of characters.
-function strength(password: string) {
+function strength(password: string, t: TFunction<'auth'>) {
   const length = password.length;
   const kinds = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(pattern =>
     pattern.test(password)
@@ -53,22 +56,23 @@ function strength(password: string) {
     return {
       value: Math.max(6, (length / MIN_PASSWORD_LENGTH) * 40),
       color: 'red',
-      label: 'Too short',
+      label: t('strength_too_short'),
     };
   }
   if (length >= 16 || (length >= 12 && kinds >= 3)) {
-    return { value: 100, color: 'green', label: 'Strong' };
+    return { value: 100, color: 'green', label: t('strength_strong') };
   }
   // Accepted, but short passwords are the easiest to guess.
   return {
     value: Math.min(85, 50 + (length - MIN_PASSWORD_LENGTH) * 5),
     color: 'yellow',
-    label: 'Okay',
+    label: t('strength_okay'),
   };
 }
 
 function StrengthBar({ password }: { password: string }) {
-  const { value, color, label } = strength(password);
+  const { t } = useTranslation('auth');
+  const { value, color, label } = strength(password, t);
 
   return (
     <div className="mt-2 flex items-center gap-3" aria-live="polite">
@@ -79,7 +83,7 @@ function StrengthBar({ password }: { password: string }) {
         radius="xl"
         className="flex-1"
         transitionDuration={200}
-        aria-label="Password strength"
+        aria-label={t('strength_label')}
       />
       <span
         className="w-16 text-right text-xs font-medium"
@@ -94,7 +98,7 @@ function StrengthBar({ password }: { password: string }) {
 }
 
 export function NewPasswordFields({
-  label = 'Password',
+  label,
   size,
   fields,
 }: {
@@ -112,17 +116,19 @@ export function NewPasswordFields({
     attempted,
   } = fields;
   const count = password.length;
+  const { t } = useTranslation('auth');
+  const name = label ?? t('password_label');
 
   return (
     <>
       <PasswordInput
-        label={label}
+        label={name}
         size={size}
         autoComplete="new-password"
-        description={`At least ${MIN_PASSWORD_LENGTH} characters. A few words work well.`}
+        description={t('password_hint', { min: MIN_PASSWORD_LENGTH })}
         error={
           attempted && tooShort
-            ? `Use at least ${MIN_PASSWORD_LENGTH} characters (${count} so far).`
+            ? t('password_short_error', { min: MIN_PASSWORD_LENGTH, count })
             : undefined
         }
         value={password}
@@ -136,11 +142,11 @@ export function NewPasswordFields({
         required
       />
       <PasswordInput
-        label={`Confirm ${label.toLowerCase()}`}
+        label={t('confirm_label', { label: name.toLowerCase() })}
         size={size}
         autoComplete="new-password"
         value={confirmation}
-        error={mismatch ? "Passwords don't match" : undefined}
+        error={mismatch ? t('passwords_mismatch') : undefined}
         onChange={event => setConfirmation(event.currentTarget.value)}
         required
       />

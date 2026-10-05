@@ -2,6 +2,8 @@ import { goAfterLogin } from '../../../modules/oauth/return-to';
 import { Button, PinInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import type { MetaFunction } from 'react-router';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useLoginVerifyRequest } from '@internal/core/actions/login-verify/login-verify.hook';
@@ -19,6 +21,7 @@ export const meta: MetaFunction = () => {
 const CODE_LENGTH = 7;
 
 export default function LoginConfirmation() {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const { setUser } = useUserState();
   const location = useLocation();
@@ -44,16 +47,16 @@ export default function LoginConfirmation() {
         color: 'red',
         title:
           status === 403
-            ? 'Account deactivated'
+            ? t('deactivated_title')
             : status === 429
-              ? 'Too many attempts'
-              : 'Wrong code',
+              ? t('too_many_title')
+              : t('wrong_code_title'),
         message:
           status === 403
-            ? 'Your account has been deactivated. Contact support if you believe this is a mistake.'
+            ? t('deactivated_support')
             : status === 429
-              ? 'Please wait a few minutes, then request a new code and try again.'
-              : 'That code is wrong or expired. After several wrong attempts, request a new one.',
+              ? t('too_many_message')
+              : t('wrong_code_message'),
       });
     },
   });
@@ -65,10 +68,10 @@ export default function LoginConfirmation() {
 
   return (
     <AuthShell
-      title={purpose === 'sign_up' ? 'Confirm your email' : 'Check your email'}
+      title={purpose === 'sign_up' ? t('confirm_title_signup') : t('check_title')}
       subtitle={
         <>
-          We sent a {CODE_LENGTH}-digit code to{' '}
+          {t('code_sent', { length: CODE_LENGTH })}{' '}
           <span className="font-medium text-foreground">{email}</span>.
         </>
       }
@@ -77,7 +80,7 @@ export default function LoginConfirmation() {
           to={purpose === 'sign_up' ? '/signup' : '/login'}
           className="hover:underline"
         >
-          Use a different email
+          {t('use_other_email')}
         </Link>
       }
     >
@@ -114,9 +117,7 @@ export default function LoginConfirmation() {
           loading={verify.isPending}
           disabled={code.length !== CODE_LENGTH}
         >
-          {purpose === 'sign_up'
-            ? 'Confirm and create account'
-            : 'Verify and log in'}
+          {purpose === 'sign_up' ? t('confirm_create') : t('verify_login')}
         </Button>
 
         {/* Kurz sends from a free email plan, so the code sometimes lands in spam. */}
@@ -126,12 +127,10 @@ export default function LoginConfirmation() {
           </span>
           <div className="text-sm">
             <p className="font-medium text-foreground">
-              No code yet? Take a peek in your spam folder.
+              {t('spam_title')}
             </p>
             <p className="mt-1 text-muted-foreground">
-              Kurz is free and has no fancy email service behind it, so our
-              emails sometimes get lost on the way. Marking it as &ldquo;Not
-              spam&rdquo; helps the next one find you.
+              {t('spam_body')}
             </p>
           </div>
         </div>

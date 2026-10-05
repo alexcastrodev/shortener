@@ -64,7 +64,12 @@ for (const namespace of namespaces) {
     const code = [...sources(appDir), ...sources(packagesDir)].join('\n');
     const unused = [...flatten(load('en', namespace)).keys()]
       .map(base)
-      .filter((key) => !['"', "'", '`'].some((q) => code.includes(`${q}${key}${q}`)));
+      .filter(
+        (key) =>
+          !['"', "'", '`'].some(
+            (q) => code.includes(`${q}${key}${q}`) || code.includes(`${q}${namespace}:${key}${q}`),
+          ),
+      );
     assert.deepEqual([...new Set(unused)], []);
   });
 }
