@@ -1,7 +1,9 @@
 class OauthGrant < ApplicationRecord
-  SCOPES = ["forms:read", "forms:write", "forms:publish", "responses:read", "shortlinks:read", "shortlinks:write", "pages:read", "pages:write", "pages:publish", "account:full"].freeze
+  SCOPES = ["forms:read", "forms:write", "forms:publish", "responses:read", "shortlinks:read", "shortlinks:write", "pages:read", "pages:write", "pages:publish", "appointments:read", "appointments:write", "account:full"].freeze
   FULL_SCOPE = "account:full".freeze
   PUBLISH_SCOPES = ["forms:publish", "pages:publish"].freeze
+  PERSONAL_DATA_SCOPES = ["responses:read", "appointments:read", "appointments:write"].freeze
+  APPOINTMENT_SCOPES = ["appointments:read", "appointments:write"].freeze
 
   audited only: [:scopes, :revoked_at]
 
@@ -32,9 +34,9 @@ class OauthGrant < ApplicationRecord
   private
 
   def publish_apart_from_responses
-    return unless scopes.is_a?(Array) && scopes.include?("responses:read") && scopes.intersect?(PUBLISH_SCOPES)
+    return unless scopes.is_a?(Array) && scopes.intersect?(PERSONAL_DATA_SCOPES) && scopes.intersect?(PUBLISH_SCOPES)
 
-    errors.add(:scopes, "cannot combine reading responses with publishing")
+    errors.add(:scopes, "cannot combine reading personal data with publishing")
   end
 
   def scopes_known

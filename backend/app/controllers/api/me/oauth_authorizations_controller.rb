@@ -14,7 +14,7 @@ class Api::Me::OauthAuthorizationsController < ApplicationController
 
     render(json: {
       client: { name: request_data.client.client_name, redirect_host: URI.parse(request_data.redirect_uri).host },
-      scopes: request_data.scopes,
+      scopes: offered(request_data),
       email: current_user.email,
       resource: request_data.resource,
     })
@@ -25,12 +25,12 @@ class Api::Me::OauthAuthorizationsController < ApplicationController
     return render_failure(request_data) unless request_data.valid?
     return render(json: { redirect_to: request_data.redirect_url(error: "access_denied") }) unless params[:decision] == "allow"
 
-    granted = Array(params[:granted_scopes]).map(&:to_s).uniq & request_data.scopes
+    granted = Array(params[:granted_scopes]).map(&:to_s).uniq & offered(request_data)
     granted = [OauthGrant::FULL_SCOPE] if granted.include?(OauthGrant::FULL_SCOPE)
     return render(json: { redirect_to: request_data.redirect_url(error: "access_denied") }) if granted.empty?
 
-    if granted.include?("responses:read") && granted.intersect?(OauthGrant::PUBLISH_SCOPES)
-      return render(json: { error: "conflicting_scopes", message: "Reading responses cannot be combined with publishing" }, status: :unprocessable_entity)
+    if granted.intersect?(OauthGrant::PERSONAL_DATA_SCOPES) && granted.intersect?(OauthGrant::PUBLISH_SCOPES)
+      return render(json: { error: "conflicting_scopes", message: "Reading personal data cannot be combined with publishing" }, status: :unprocessable_entity)
     end
 
     grant = OauthGrant.create!(user: current_user, oauth_client: request_data.client, scopes: granted, resource: request_data.resource)
@@ -39,6 +39,12 @@ class Api::Me::OauthAuthorizationsController < ApplicationController
   end
 
   private
+
+  def offered(request_data)
+    return request_data.scopes if Appointments::Config.enabled_for?(current_user)
+
+    request_data.scopes - OauthGrant::APPOINTMENT_SCOPES
+  end
 
   def require_enabled
     head(:not_found) unless Oauth::Config.enabled?
