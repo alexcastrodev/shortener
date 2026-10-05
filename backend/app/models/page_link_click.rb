@@ -39,19 +39,10 @@ class PageLinkClick < ApplicationRecord
   # Callbacks
   # ===============
   before_validation :set_clicked_at, on: :create
-  after_commit :ipaddr_job, on: :create, if: :missing_location?
 
   private
 
   def set_clicked_at
     self.clicked_at ||= Time.current
-  end
-
-  def missing_location?
-    ip_address.present? && (country_code.blank? || region.blank?)
-  end
-
-  def ipaddr_job
-    IpaddrJob.perform_later(id, model: self.class.name)
   end
 end

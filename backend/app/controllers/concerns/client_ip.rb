@@ -7,8 +7,7 @@ module ClientIp
 
   private
 
-  # Only a well-formed IP is trusted: the value is used as a rate-limit key,
-  # stored, and interpolated into the ip-api.com lookup URL (IpaddrJob).
+  # Only a well-formed IP is trusted: the value is used as a rate-limit key and stored.
   def client_ip
     header = request.headers["CF-Connecting-IP"].to_s.strip
     IPAddr.new(header).to_s
