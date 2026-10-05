@@ -26,9 +26,13 @@ module CodeRequestResponse
   end
 
   def start_session(user)
+    restored = user.pending_deletion?
+    user.cancel_deletion! if restored
     token = SessionToken.issue(user)
     set_session_cookie(token, SessionToken::TTL.from_now)
     # The token only travels in the httpOnly cookie, never in the body.
-    render(json: CurrentUserSerializer.new(user).serialize, status: :ok)
+    body = JSON.parse(CurrentUserSerializer.new(user).serialize)
+    body["deletion_cancelled"] = true if restored
+    render(json: body, status: :ok)
   end
 end

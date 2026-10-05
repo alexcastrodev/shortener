@@ -1,14 +1,15 @@
-import { Badge, Button, Center, Loader, PasswordInput } from '@mantine/core';
+import { Badge, Button, Center, Loader, PasswordInput, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
   IconKey,
   IconLogout,
   IconSettings,
+  IconTrash,
   IconUserCircle,
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Card, PageContainer } from '@internal/ui';
 import {
   getLoggedUserKey,
@@ -19,9 +20,11 @@ import { useRevokeOauthGrant } from '@internal/core/actions/revoke-oauth-grant/r
 import { SCOPE_LABELS } from '../modules/oauth/scopes';
 import { modals } from '@mantine/modals';
 import { useUpdatePassword } from '@internal/core/actions/update-password/update-password.hook';
+import { useDeleteAccount } from '@internal/core/actions/delete-account/delete-account.hook';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { notifyError } from '@internal/core/utils/notify';
 import { explainAuthError, type AuthError } from '../modules/auth/auth-errors';
+import { rememberScheduledDeletion } from '../modules/auth/deletion-notice';
 import { useLogout } from '../modules/auth/use-logout';
 import { useSubmitLock } from '../modules/auth/use-submit-lock';
 import {
@@ -141,6 +144,114 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
           >
             {hasPassword ? 'Change password' : 'Set password'}
           </Button>
+        </form>
+      )}
+    </Card>
+  );
+}
+
+function DeleteAccount({ email, hasPassword }: { email: string; hasPassword: boolean }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { clear } = useUserState();
+  const logout = useLogout();
+  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState('');
+  const [current, setCurrent] = useState('');
+  const [needsSignIn, setNeedsSignIn] = useState(false);
+  const submitOnce = useSubmitLock();
+
+  const remove = useDeleteAccount({
+    onSuccess: ({ deletion_due_at }) => {
+      clear();
+      queryClient.clear();
+      rememberScheduledDeletion(deletion_due_at);
+      navigate('/login');
+    },
+    onError: error => {
+      const authError = error as AuthError;
+      const code = authError?.response?.data?.error;
+      if (code === 'reauthentication_required') {
+        setNeedsSignIn(true);
+        return;
+      }
+      if (code === 'invalid_current_password') {
+        notifyError('That password is not correct.', 'Account not deleted');
+        return;
+      }
+      const [message, title] = explainAuthError(authError);
+      notifyError(message, title);
+    },
+  });
+
+  const matches = confirm.trim().toLowerCase() === email.toLowerCase();
+
+  return (
+    <Card className="p-5 sm:p-6">
+      <div className="flex items-start gap-3">
+        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-500">
+          <IconTrash size={18} stroke={1.8} />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-semibold text-foreground">Delete account</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your links, bio pages, forms, responses and uploaded files go offline now and are
+            permanently deleted after 30 days. Signing in again before then cancels the deletion.
+          </p>
+        </div>
+      </div>
+
+      {!open && (
+        <Button className="mt-5" variant="default" color="red" c="red.5" onClick={() => setOpen(true)}>
+          Delete my account
+        </Button>
+      )}
+
+      {open && needsSignIn && (
+        <div className="mt-5 rounded-lg border border-border bg-muted/40 p-4 text-sm">
+          <p className="text-foreground">For your security, sign in again with an email code, then delete your account here.</p>
+          <Button className="mt-3" variant="default" size="sm" leftSection={<IconLogout size={15} />} onClick={logout}>
+            Sign in again
+          </Button>
+        </div>
+      )}
+
+      {open && !needsSignIn && (
+        <form
+          className="mt-5 max-w-md space-y-4"
+          onSubmit={event => {
+            event.preventDefault();
+            if (!matches) return;
+            submitOnce(release =>
+              remove.mutate(
+                { confirm_email: confirm.trim(), current_password: hasPassword ? current : undefined },
+                { onSettled: release }
+              )
+            );
+          }}
+        >
+          <TextInput
+            label={`Type ${email} to confirm`}
+            autoComplete="off"
+            value={confirm}
+            onChange={event => setConfirm(event.currentTarget.value)}
+          />
+          {hasPassword && (
+            <PasswordInput
+              label="Password"
+              autoComplete="current-password"
+              value={current}
+              onChange={event => setCurrent(event.currentTarget.value)}
+            />
+          )}
+          <div className="flex gap-2">
+            <Button type="submit" color="red" loading={remove.isPending} disabled={!matches || (hasPassword && !current)}>
+              Delete my account
+            </Button>
+            <Button variant="default" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+          </div>
         </form>
       )}
     </Card>
@@ -273,6 +384,8 @@ export default function AccountPage() {
         <ConnectedApps />
 
         <PasswordSection hasPassword={!!user.has_password} />
+
+        <DeleteAccount email={user.email} hasPassword={!!user.has_password} />
       </div>
     </PageContainer>
   );

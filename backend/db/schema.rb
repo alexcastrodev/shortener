@@ -495,7 +495,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000100) do
     t.integer "shortlinks_count", default: 0, null: false
     t.datetime "updated_at", null: false
     t.datetime "verified_at"
+    t.datetime "deletion_requested_at"
     t.index "lower((email)::text)", name: "index_users_on_lower_email", unique: true
+    t.index ["deletion_requested_at"], name: "index_users_on_deletion_requested_at", where: "(deletion_requested_at IS NOT NULL)"
     t.index ["login_token"], name: "index_users_on_login_token", unique: true
     t.index ["verified_at", "created_at"], name: "index_users_on_verified_at_and_created_at"
   end

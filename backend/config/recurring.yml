@@ -21,6 +21,10 @@ production:
     class: CleanupOrphanFormUploadsJob
     queue: default
     schedule: every 15 minutes
+  purge_deleted_accounts:
+    class: PurgeDeletedAccountsJob
+    queue: default
+    schedule: at 4:30am every day
   purge_mcp_tool_calls:
     class: PurgeMcpToolCallsJob
     queue: default

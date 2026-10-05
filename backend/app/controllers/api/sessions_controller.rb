@@ -67,7 +67,7 @@ class Api::SessionsController < ApplicationController
     return unless turnstile_passed?("login")
 
     user = User.find_by(email: normalized_email)
-    usable = user&.verified? && user.active?
+    usable = user&.verified? && user.can_sign_in?
     authenticated = usable ? user.authenticate_password(params[:password]) : User.burn_password_check(params[:password])
 
     return render(json: { error: "invalid_credentials" }, status: :unauthorized) unless authenticated
@@ -97,7 +97,7 @@ class Api::SessionsController < ApplicationController
     user = User.find_by(email: normalized_email)
 
     if user && (dev_bypass? || user.verify_login_token(params[:code]))
-      if user.deactivated?
+      unless user.can_sign_in?
         render(json: { error: I18n.t("errors.account_deactivated") }, status: :forbidden)
         return
       end

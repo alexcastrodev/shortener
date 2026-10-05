@@ -1,5 +1,10 @@
 import { goAfterLogin } from '../../modules/oauth/return-to';
 import {
+  announceRestore,
+  clearScheduledDeletion,
+  readScheduledDeletion,
+} from '../../modules/auth/deletion-notice';
+import {
   Alert,
   Button,
   PasswordInput,
@@ -46,6 +51,7 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const submitOnce = useSubmitLock();
   const deactivated = searchParams.get('deactivated') === 'true';
+  const [scheduledFor, setScheduledFor] = useState(readScheduledDeletion);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -63,8 +69,9 @@ export default function Login() {
   const onSettled = () => turnstile.current?.reset();
 
   const passwordLogin = useLoginPassword({
-    onSuccess: ({ user }) => {
-      setUser(user);
+    onSuccess: response => {
+      setUser(response.user);
+      announceRestore(response);
       goAfterLogin(navigate);
     },
     onError: error => {
@@ -103,6 +110,25 @@ export default function Login() {
         </>
       }
     >
+      {scheduledFor && (
+        <Alert
+          icon={<IconAlertTriangle size={18} />}
+          title="Your account is scheduled for deletion"
+          color="yellow"
+          className="mb-6"
+          withCloseButton
+          onClose={() => {
+            clearScheduledDeletion();
+            setScheduledFor(null);
+          }}
+        >
+          It will be permanently deleted on{' '}
+          {scheduledFor.toLocaleDateString('en-US', { dateStyle: 'long' })}.
+          Until then your links, bio pages and forms are offline. Sign in again
+          before that date to cancel the deletion and bring everything back.
+        </Alert>
+      )}
+
       {deactivated && (
         <Alert
           icon={<IconAlertTriangle size={18} />}
