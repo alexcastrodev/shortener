@@ -42,6 +42,7 @@ mcp	GET	/mcp
 mcp	POST	/mcp
 owner	GET	/api/me
 owner	DELETE	/api/me
+owner	POST	/api/me/data_export
 owner	GET	/api/me/color_palettes
 owner	POST	/api/me/color_palettes
 owner	DELETE	/api/me/color_palettes/:id

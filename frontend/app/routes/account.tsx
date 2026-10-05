@@ -1,6 +1,7 @@
 import { Badge, Button, Center, Loader, PasswordInput, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
+  IconDownload,
   IconKey,
   IconLogout,
   IconSettings,
@@ -21,6 +22,7 @@ import { SCOPE_LABELS } from '../modules/oauth/scopes';
 import { modals } from '@mantine/modals';
 import { useUpdatePassword } from '@internal/core/actions/update-password/update-password.hook';
 import { useDeleteAccount } from '@internal/core/actions/delete-account/delete-account.hook';
+import { exportAccountData } from '@internal/core/actions/export-account-data/export-account-data.service';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { notifyError } from '@internal/core/utils/notify';
 import { explainAuthError, type AuthError } from '../modules/auth/auth-errors';
@@ -143,6 +145,81 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
             disabled={hasPassword && !current}
           >
             {hasPassword ? 'Change password' : 'Set password'}
+          </Button>
+        </form>
+      )}
+    </Card>
+  );
+}
+
+function DownloadData({ hasPassword }: { hasPassword: boolean }) {
+  const logout = useLogout();
+  const [current, setCurrent] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
+
+  const download = async () => {
+    setBusy(true);
+    try {
+      const blob = await exportAccountData(hasPassword ? current : undefined);
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `kurz-data-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      setCurrent('');
+    } catch (failure) {
+      const status = (failure as { response?: { status?: number } })?.response?.status;
+      if (status === 403) setNeedsSignIn(true);
+      else if (status === 422) notifyError('That password is not correct.', 'Data not downloaded');
+      else if (status === 413) notifyError('There is too much data for one file. Export your biggest forms to Excel first.', 'Too much data');
+      else if (status === 429) notifyError('Too many downloads. Please try again in an hour.', 'Slow down');
+      else notifyError('We could not prepare your data. Please try again.', 'Download failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="p-5 sm:p-6">
+      <div className="flex items-start gap-3">
+        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+          <IconDownload size={18} stroke={1.8} />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-semibold text-foreground">Download your data</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            A JSON file with your account, short links, bio pages, forms and their responses, connected apps and
+            saved palettes. It leaves out passwords, tokens and your visitors’ IP addresses.
+          </p>
+        </div>
+      </div>
+
+      {needsSignIn ? (
+        <div className="mt-5 rounded-lg border border-border bg-muted/40 p-4 text-sm">
+          <p className="text-foreground">For your security, sign in again with an email code, then download your data here.</p>
+          <Button className="mt-3" variant="default" size="sm" leftSection={<IconLogout size={15} />} onClick={logout}>
+            Sign in again
+          </Button>
+        </div>
+      ) : (
+        <form
+          className="mt-5 max-w-md space-y-4"
+          onSubmit={event => {
+            event.preventDefault();
+            void download();
+          }}
+        >
+          {hasPassword && (
+            <PasswordInput
+              label="Password"
+              autoComplete="current-password"
+              value={current}
+              onChange={event => setCurrent(event.currentTarget.value)}
+            />
+          )}
+          <Button type="submit" variant="default" loading={busy} disabled={hasPassword && !current} leftSection={<IconDownload size={16} />}>
+            Download my data
           </Button>
         </form>
       )}
@@ -384,6 +461,8 @@ export default function AccountPage() {
         <ConnectedApps />
 
         <PasswordSection hasPassword={!!user.has_password} />
+
+        <DownloadData hasPassword={!!user.has_password} />
 
         <DeleteAccount email={user.email} hasPassword={!!user.has_password} />
       </div>
