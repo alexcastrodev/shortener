@@ -6,6 +6,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { Link, useNavigate } from 'react-router';
 import { z } from 'zod/v4';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { Card, PageContainer } from '@internal/ui';
 import {
   getPagesKey,
@@ -23,17 +25,15 @@ export function meta({}: Route.MetaArgs) {
 
 export const ssr = false;
 
-const schema = z.object({
-  slug: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .regex(
-      /^[a-z0-9][a-z0-9_.-]{1,28}[a-z0-9]$/,
-      '3–30 characters: letters, numbers, ".", "_" or "-"'
-    ),
-  display_title: z.string().optional(),
-});
+const makeSchema = (message: string) =>
+  z.object({
+    slug: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^[a-z0-9][a-z0-9_.-]{1,28}[a-z0-9]$/, message),
+    display_title: z.string().optional(),
+  });
 
 function errorMessage(error: unknown) {
   const errors = (error as { errors?: unknown } | undefined)?.errors;
@@ -43,10 +43,11 @@ function errorMessage(error: unknown) {
       .map(([key, value]) => `${key} ${value}`)
       .join(', ');
   }
-  return 'Something went wrong, please try again later.';
+  return i18n.t('pages:generic_error');
 }
 
 export default function PagesIndex() {
+  const { t } = useTranslation('pages');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: pages, isLoading } = useGetPages();
@@ -54,7 +55,7 @@ export default function PagesIndex() {
   const form = useForm({
     mode: 'uncontrolled',
     initialValues: { slug: '', display_title: '' },
-    validate: zod4Resolver(schema),
+    validate: zod4Resolver(makeSchema(t('slug_rule'))),
   });
 
   const { mutate, isPending } = useCreatePage({
@@ -64,7 +65,7 @@ export default function PagesIndex() {
     },
     onError: error => {
       notifications.show({
-        title: 'Could not create page',
+        title: t('create_failed'),
         message: errorMessage(error),
         color: 'red',
       });
@@ -74,9 +75,9 @@ export default function PagesIndex() {
   return (
     <PageContainer className="pb-24 sm:pb-10">
       <div className="mb-6">
-        <p className="text-sm font-medium text-muted-foreground">Bio pages</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('bio_pages')}</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-          Your pages
+          {t('your_pages')}
         </h1>
       </div>
 
@@ -86,7 +87,7 @@ export default function PagesIndex() {
 
           {!isLoading && pages?.length === 0 && (
             <Card className="p-6 text-center text-sm text-muted-foreground">
-              No pages yet. Pick an address to create your first one.
+              {t('no_pages')}
             </Card>
           )}
 
@@ -98,14 +99,14 @@ export default function PagesIndex() {
                 </p>
                 <p className="truncate text-sm text-muted-foreground">
                   kurz.fyi/u/{page.slug}
-                  {!page.published && ' · Unpublished'}
+                  {!page.published && ` · ${t('unpublished')}`}
                 </p>
               </Link>
               <a
                 href={`/u/${page.slug}`}
                 target="_blank"
                 rel="noreferrer"
-                aria-label={`Open ${page.slug}`}
+                aria-label={t('open_page', { slug: page.slug })}
                 className="text-muted-foreground hover:text-foreground"
               >
                 <IconExternalLink size={18} />
@@ -115,25 +116,25 @@ export default function PagesIndex() {
         </div>
 
         <Card className="p-5 lg:sticky lg:top-4 lg:self-start">
-          <h2 className="mb-4 font-semibold">New page</h2>
+          <h2 className="mb-4 font-semibold">{t('new_page')}</h2>
           <form onSubmit={form.onSubmit(values => mutate(values))}>
             <Stack gap="md">
               <TextInput
-                label="Address"
+                label={t('address')}
                 leftSection={<span className="pl-2 text-xs">/u/</span>}
                 leftSectionWidth={36}
-                placeholder="yourname"
+                placeholder={t('address_placeholder')}
                 key={form.key('slug')}
                 {...form.getInputProps('slug')}
                 required
               />
               <TextInput
-                label="Title (optional)"
+                label={t('title_optional')}
                 key={form.key('display_title')}
                 {...form.getInputProps('display_title')}
               />
               <Button type="submit" fullWidth loading={isPending} color="brand">
-                Create page
+                {t('create_page')}
               </Button>
             </Stack>
           </form>
