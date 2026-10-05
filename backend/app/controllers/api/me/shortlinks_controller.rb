@@ -2,6 +2,13 @@ class Api::Me::ShortlinksController < ApplicationController
   before_action :authenticate_user!
   before_action :load_link, only: [:destroy, :show, :statistics, :update, :qr_code]
 
+  rate_limit to: 60,
+    within: 10.minutes,
+    only: :create,
+    name: "shortlink_create",
+    by: -> { current_user&.id },
+    with: -> { render(json: { error: "Too many links created, please try again later" }, status: :too_many_requests) }
+
   # GET /api/me/shortlinks/:id
   def show
     render(json: ShortlinkSerializer.new(@link).serialize, status: :ok)

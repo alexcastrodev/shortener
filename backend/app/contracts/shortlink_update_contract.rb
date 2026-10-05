@@ -1,7 +1,7 @@
 class ShortlinkUpdateContract < ApplicationContract
   params do
-    optional(:original_url).filled(:string)
-    optional(:title).maybe(:string)
+    optional(:original_url).filled(:string, max_size?: 2048)
+    optional(:title).maybe(:string, max_size?: 255)
     # nil or "" removes the password
     optional(:password).maybe(:string)
     optional(:expires_at).maybe(:time)
