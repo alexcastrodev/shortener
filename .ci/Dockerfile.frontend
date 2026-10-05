@@ -1,15 +1,15 @@
-FROM node:26-bookworm AS development-dependencies-env
+FROM node:26-bookworm@sha256:2aaae6d91f99fee84cfc92da9b52c22a185752d247746052bbc3f961e44478c6 AS development-dependencies-env
 COPY ./frontend /app
 WORKDIR /app
 RUN npm ci --legacy-peer-deps
 
-FROM node:26-bookworm AS production-dependencies-env
+FROM node:26-bookworm@sha256:2aaae6d91f99fee84cfc92da9b52c22a185752d247746052bbc3f961e44478c6 AS production-dependencies-env
 COPY ./frontend/package.json ./frontend/package-lock.json /app/
 COPY ./frontend/packages /app/packages
 WORKDIR /app
 RUN npm ci --omit=dev --legacy-peer-deps
 
-FROM node:26-bookworm AS build-env
+FROM node:26-bookworm@sha256:2aaae6d91f99fee84cfc92da9b52c22a185752d247746052bbc3f961e44478c6 AS build-env
 COPY ./frontend /app/
 COPY --from=development-dependencies-env /app/node_modules /app/node_modules
 WORKDIR /app
@@ -29,7 +29,7 @@ ENV VITE_BASE_URL=$VITE_BASE_URL \
 ENV NODE_OPTIONS=--dns-result-order=ipv4first
 RUN npm run build
 
-FROM node:26-bookworm
+FROM node:26-bookworm@sha256:2aaae6d91f99fee84cfc92da9b52c22a185752d247746052bbc3f961e44478c6
 COPY ./frontend/package.json ./frontend/package-lock.json /app/
 COPY --from=production-dependencies-env /app/node_modules /app/node_modules
 COPY --from=build-env /app/build /app/build
