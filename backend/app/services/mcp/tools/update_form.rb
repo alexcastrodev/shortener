@@ -3,7 +3,7 @@ module Mcp
     class UpdateForm < Mcp::BaseTool
       tool_name "update_form"
       title "Edit a form draft"
-      description "Edits the title, description, thank-you message or theme of an unpublished form."
+      description "Edits the title, description, thank-you message, theme or layout (one_at_a_time, page or steps) of an unpublished form."
       input_schema(
         properties: {
           id: { type: "integer", minimum: 1 },
@@ -11,6 +11,7 @@ module Mcp
           description: { type: "string", maxLength: 1000 },
           thank_you_message: { type: "string", maxLength: 500 },
           theme: { type: "string", enum: Page::THEMES },
+          layout: { type: "string", enum: Form::LAYOUTS },
         },
         required: ["id"],
         additionalProperties: false,

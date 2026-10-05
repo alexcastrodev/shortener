@@ -23,7 +23,8 @@ module Mcp
           title: Mcp::Content.clean(form.title, max: 120),
           published: form.published,
           responses_count: form.responses_count,
-          questions: form.fields.size,
+          questions: form.fields.count { |field| Forms::FieldSchema.answerable?(field) },
+          sections: form.fields.count { |field| field["type"] == "section" },
           dashboard_url: "#{ENV.fetch("FRONTEND_URL", "https://kurz.fyi")}/app/forms/#{form.id}",
         }
         return json unless detail
@@ -32,6 +33,8 @@ module Mcp
           description: form.description && Mcp::Content.clean(form.description, max: 1000),
           thank_you_message: form.thank_you_message && Mcp::Content.clean(form.thank_you_message, max: 500),
           theme: form.theme,
+          layout: form.layout,
+          short_url: form.shortlink&.short_url,
           fields: form.fields.map { |field| field_json(field) },
         )
       end
