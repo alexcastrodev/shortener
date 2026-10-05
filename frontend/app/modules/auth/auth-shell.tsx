@@ -2,6 +2,7 @@ import { IconChevronLeft } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { KurzLogo, ThemeToggle } from '@internal/ui';
 import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '../../i18n/language-switcher';
 
 
 // The frame of every sign-in screen: a narrow centered column with the mark,
@@ -37,7 +38,10 @@ export function AuthShell({
           <IconChevronLeft size={16} />
           {t('home')}
         </a>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
       </div>
 
       <div className="relative mx-auto flex min-h-[calc(100vh-84px)] w-full max-w-[380px] flex-col justify-center px-4 pb-20">

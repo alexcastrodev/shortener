@@ -24,10 +24,11 @@ class Api::Me::UsersController < ApplicationController
   end
 
   def update
-    if current_user.update(params.permit(:time_zone))
+    if current_user.update(params.permit(:time_zone, :locale))
       render(json: CurrentUserSerializer.new(current_user).serialize, status: :ok)
     else
-      render(json: { error: "invalid_time_zone" }, status: :unprocessable_entity)
+      error = current_user.errors.include?(:locale) ? "invalid_locale" : "invalid_time_zone"
+      render(json: { error: error }, status: :unprocessable_entity)
     end
   end
 
