@@ -69,7 +69,7 @@ check("A00", "the production route table equals matrix.tsv, and owner/admin rout
   declared = MATRIX.map { |_, verb, path| [verb, path] }
   expect((routes - declared).empty?, "unclassified: #{(routes - declared).first(3).inspect}")
   expect((declared - routes).empty?, "stale: #{(declared - routes).first(3).inspect}")
-  MATRIX.select { |klass, *| ["owner", "admin"].include?(klass) }.each do |_, verb, path|
+  MATRIX.select { |klass, *| ["owner", "admin", "mcp"].include?(klass) }.each do |_, verb, path|
     concrete = path.gsub(/:[a-z_]+/, "1")
     expect_eq(401, anonymous(verb.downcase.to_sym, concrete).status, "#{verb} #{concrete}")
   end
@@ -343,6 +343,32 @@ check("E12", "consent: needs a cookie session plus the CSRF header, never redire
   expect_eq(404, as(:b, :delete, "/api/me/oauth_grants/#{mine['id']}", nil, headers: { "X-Requested-With" => "XMLHttpRequest" }).status, "other tenant")
   expect_eq(204, as(:a, :delete, "/api/me/oauth_grants/#{mine['id']}", nil, headers: { "X-Requested-With" => "XMLHttpRequest" }).status, "revoke")
   expect_eq("invalid_grant", form_post("/oauth/token", { grant_type: "refresh_token", refresh_token: exchanged.json["refresh_token"], client_id: client.client_id }).json["error"], "refresh after revoke")
+end
+
+check("E07", "MCP on the real stack: the 401 challenge, every wrong credential kind refused, a valid OAuth token initializes, and it is worthless on /api") do
+  rpc = { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "harness", version: "1" } } }
+  accept = { "Accept" => "application/json, text/event-stream" }
+  challenge = anonymous(:post, "/mcp", rpc, headers: accept)
+  expect_eq(401, challenge.status, "anonymous")
+  expect(challenge.headers["www-authenticate"].to_s.include?("resource_metadata=\"https://api.kurz.fyi/.well-known/oauth-protected-resource/mcp\""), "challenge")
+  expect_eq(401, http(:post, "/mcp", body: rpc, token: token(:a), headers: accept).status, "session JWT")
+  expect_eq(401, http(:post, "/mcp?access_token=kz_at_x", body: rpc, headers: accept).status, "query token")
+  expect_eq(401, http(:post, "/mcp", body: rpc, token: "kz_rt_x", headers: accept).status, "refresh token")
+
+  client = OauthClient.create!(client_name: "MCP", redirect_uris: ["https://claude.ai/api/mcp/auth_callback"])
+  grant = OauthGrant.create!(user: TENANTS[:a], oauth_client: client, scopes: ["forms:read"], resource: "https://api.kurz.fyi/mcp")
+  access, = OauthAccessToken.issue(grant)
+  ok = http(:post, "/mcp", body: rpc, token: access, headers: accept)
+  expect_eq(200, ok.status, "valid token")
+  expect_eq("kurz", ok.json.dig("result", "serverInfo", "name"))
+  expect_eq("no-store", ok.headers["cache-control"])
+  expect(!ok.headers.key?("set-cookie"), "cookie on /mcp")
+  expect_eq(403, http(:post, "/mcp", body: rpc, token: access, headers: accept.merge("Origin" => "https://evil.example")).status, "hostile origin")
+  expect_eq(401, http(:get, "/api/me/forms", token: access).status, "OAuth token on /api")
+  expect(http(:post, "/mcp", raw: JSON.generate(rpc.merge(pad: "a" * 300_000)), token: access, headers: accept).status < 500, "huge body")
+
+  grant.revoke!
+  expect_eq(401, http(:post, "/mcp", body: rpc, token: access, headers: accept).status, "after revoke")
 end
 
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")

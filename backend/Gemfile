@@ -114,3 +114,5 @@ gem "valid_email2", "~> 7.1"
 gem "argon2", "~> 2.3"
 
 gem "googleauth", "~> 1.17"
+
+gem "mcp", "~> 1.6"

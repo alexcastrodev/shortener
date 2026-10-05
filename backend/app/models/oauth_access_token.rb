@@ -14,6 +14,6 @@ class OauthAccessToken < ApplicationRecord
   def self.authenticate(raw)
     return unless Oauth::Tokens.kind?(raw, :access)
 
-    includes(oauth_grant: :user).where("expires_at > ?", Time.current).find_by(token_digest: Oauth::Tokens.digest(raw))
+    includes(:oauth_grant).where("expires_at > ?", Time.current).find_by(token_digest: Oauth::Tokens.digest(raw))
   end
 end
