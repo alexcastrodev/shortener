@@ -28,6 +28,9 @@ module Mcp
         UpdateField,
         RemoveField,
         ReorderFields,
+        ListResponses,
+        GetResponse,
+        GetSummary,
       ]
     end
 

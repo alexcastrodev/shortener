@@ -1,6 +1,4 @@
 module Mcp
-  class RateLimited < StandardError; end
-
   module Throttle
     extend self
 

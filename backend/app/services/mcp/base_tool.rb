@@ -34,7 +34,8 @@ module Mcp
         Throttle.check!(user, "writes", Throttle::WRITES) if writes
         Throttle.check!(user, tool_name, limits) if limits.any?
         result = perform(user: user, **args)
-        finish(grant, started, MCP::Tool::Response.new([{ type: "text", text: JSON.generate(result) }], structured_content: result))
+        returned = result.is_a?(Hash) ? result.delete(:returned_records).to_i : 0
+        finish(grant, started, MCP::Tool::Response.new([{ type: "text", text: render_text(result) }], structured_content: result), records: returned)
       rescue Mcp::RateLimited
         finish(grant, started, error_response("rate_limited", "Too many calls, try again later"))
       rescue Mcp::ToolError => e
@@ -56,12 +57,17 @@ module Mcp
         MCP::Tool::Response.new([{ type: "text", text: JSON.generate(error: code, message: message) }], error: true, structured_content: { error: code, message: message })
       end
 
-      def finish(grant, started, response)
+      def render_text(result)
+        JSON.generate(result)
+      end
+
+      def finish(grant, started, response, records: 0)
         McpToolCall.create!(
           oauth_grant: grant,
           tool: tool_name,
           status: response.error? ? "error" : "ok",
           error_code: (response.structured_content[:error] if response.error?),
+          records_returned: records,
           duration_ms: ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round,
         )
         response

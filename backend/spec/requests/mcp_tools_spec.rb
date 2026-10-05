@@ -176,7 +176,7 @@ RSpec.describe("MCP shortlink tools", type: :request) do
 
       calls = McpToolCall.order(:id).to_a
       expect(calls.map { |c| [c.tool, c.status, c.error_code] }).to(eq([["create_shortlink", "ok", nil], ["get_shortlink_statistics", "error", "not_found"]]))
-      expect(McpToolCall.column_names).to(match_array(["id", "oauth_grant_id", "tool", "status", "error_code", "duration_ms", "created_at"]))
+      expect(McpToolCall.column_names).to(match_array(["id", "oauth_grant_id", "tool", "status", "error_code", "duration_ms", "created_at", "records_returned"]))
       expect(calls.map(&:attributes).to_s).not_to(include("secret-path"))
     end
 
