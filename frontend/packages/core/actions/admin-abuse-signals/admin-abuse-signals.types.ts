@@ -1,4 +1,4 @@
-export type AbuseSignalKind = 'same_text' | 'same_links';
+export type AbuseSignalKind = 'same_text' | 'same_links' | 'form_flood';
 export type AbuseSignalStatus = 'open' | 'dismissed';
 
 export interface AbuseSignal {
@@ -15,6 +15,13 @@ export interface AbuseSignal {
     user_id: number;
     published: boolean;
     deleted: boolean;
+  }[];
+  forms: {
+    id: number;
+    title: string;
+    user_id: number;
+    published: boolean;
+    responses_count: number;
   }[];
 }
 

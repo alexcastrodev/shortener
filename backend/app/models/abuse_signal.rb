@@ -1,6 +1,7 @@
 # Several new accounts publishing the same page (same text or same set of
 # links) in a short window: a pattern of phishing and spam campaigns. Found
-# by DetectPageAbuseJob; admins decide what to do.
+# by DetectPageAbuseJob; admins decide what to do. A form_flood signal comes
+# from DetectFormAbuseJob, which already unpublished the form.
 # == Schema Information
 #
 # Table name: abuse_signals
@@ -22,7 +23,7 @@
 #  index_abuse_signals_on_status                (status)
 #
 class AbuseSignal < ApplicationRecord
-  KINDS = ["same_text", "same_links"].freeze
+  KINDS = ["same_text", "same_links", "form_flood"].freeze
   STATUSES = ["open", "dismissed"].freeze
 
   validates :kind, inclusion: { in: KINDS }
