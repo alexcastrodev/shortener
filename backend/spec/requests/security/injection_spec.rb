@@ -116,11 +116,16 @@ RSpec.describe("Injection hardening", type: :request) do
       expect(link.page_link_clicks.last.ip_address).not_to(include("admin"))
     end
 
-    it "skips the geo lookup for anything that is not an IP" do
-      click = link.page_link_clicks.create!(ip_address: "evil.example/../x")
+    it "never looks an address up on a third party, whatever it contains" do
       expect(HTTParty).not_to(receive(:get))
+      link
 
-      IpaddrJob.perform_now(click.id, model: "PageLinkClick")
+      perform_enqueued_jobs do
+        link.page_link_clicks.create!(ip_address: "evil.example/../x")
+        link.page_link_clicks.create!(ip_address: "198.51.100.7")
+      end
+
+      expect(a_request(:any, /ip-api\.com/)).not_to(have_been_made)
     end
   end
 

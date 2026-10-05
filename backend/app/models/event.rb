@@ -40,7 +40,6 @@ class Event < ApplicationRecord
   # ===============
   before_validation :set_clicked_at, on: :create
   after_commit :update_last_visited, on: :create
-  after_commit :ipaddr_job, on: :create, if: :missing_location?
 
   private
 
@@ -50,13 +49,5 @@ class Event < ApplicationRecord
 
   def update_last_visited
     shortlink.update(last_accessed_at: clicked_at)
-  end
-
-  def missing_location?
-    country_code.blank? || region.blank?
-  end
-
-  def ipaddr_job
-    IpaddrJob.perform_later(id)
   end
 end
