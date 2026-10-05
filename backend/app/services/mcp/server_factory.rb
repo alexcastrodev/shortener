@@ -14,6 +14,7 @@ module Mcp
       transport = MCP::Server::Transports::StreamableHTTPTransport.new(
         server,
         stateless: true,
+        serve_subscriptions_listen: false,
         allowed_hosts: [URI.parse(Oauth::Config.resource).host],
         allowed_origins: ENV.fetch("MCP_ALLOWED_ORIGINS", "").split(",").map(&:strip).reject(&:empty?),
         max_request_bytes: MAX_REQUEST_BYTES,

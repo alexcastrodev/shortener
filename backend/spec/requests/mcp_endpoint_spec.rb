@@ -108,6 +108,35 @@ RSpec.describe("POST /mcp", type: :request) do
     end
   end
 
+  describe "streams" do
+    let(:listen) do
+      {
+        jsonrpc: "2.0",
+        id: 7,
+        method: "subscriptions/listen",
+        params: {
+          _meta: { "io.modelcontextprotocol/protocolVersion" => "2026-07-28", "io.modelcontextprotocol/clientCapabilities" => {} },
+          notifications: { toolsListChanged: true },
+        },
+      }
+    end
+    let(:modern_headers) { { "MCP-Protocol-Version" => "2026-07-28", "Mcp-Method" => "subscriptions/listen" } }
+
+    it "answers subscriptions/listen as unimplemented instead of failing, because a stateless JSON host cannot hold a stream open" do
+      call(listen, headers: modern_headers)
+
+      expect(response).not_to(have_http_status(:internal_server_error))
+      expect(response.status).to(be_between(400, 404))
+      expect(json.dig("error", "code")).to(eq(-32601))
+    end
+
+    it "answers GET with 405 and never opens a stream" do
+      get("/mcp", headers: accept.merge("Authorization" => "Bearer #{access}"))
+
+      expect(response).to(have_http_status(:method_not_allowed))
+    end
+  end
+
   describe "protocol" do
     it "initializes, lists only the tools the grant may use, sends no cookie and stays no-store" do
       call
