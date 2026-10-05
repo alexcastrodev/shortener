@@ -12,6 +12,7 @@ module Appointments
 
     def enabled_for?(user)
       return false unless enabled? && user
+
       allowed = allowed_emails
       allowed.empty? || allowed.include?(user.email.to_s.downcase)
     end
