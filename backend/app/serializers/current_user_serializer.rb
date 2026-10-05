@@ -14,4 +14,8 @@ class CurrentUserSerializer < UserSerializer
   attribute :google_connected do |user|
     user.identities.exists?(provider: GoogleSignIn::PROVIDER)
   end
+
+  attribute :appointments_enabled do |user|
+    Appointments::Config.enabled_for?(user)
+  end
 end
