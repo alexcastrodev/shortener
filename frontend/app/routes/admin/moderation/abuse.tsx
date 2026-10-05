@@ -84,8 +84,9 @@ export default function ModerationAbusePage() {
           ]}
         />
         <p className="text-sm text-muted-foreground sm:ml-auto">
-          Three or more new accounts publishing the same page within a day.
-          Checked hourly.
+          Pages: three or more new accounts publishing the same page within a
+          day (checked hourly). Forms: unpublished automatically after a flood
+          of responses or uploads in an hour (checked every 10 minutes).
         </p>
       </div>
 
