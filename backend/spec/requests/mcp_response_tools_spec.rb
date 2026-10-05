@@ -156,4 +156,14 @@ RSpec.describe("MCP response tools", type: :request) do
 
     expect(failed?(tool("list_responses", { form_id: form.id }))).to(be(false))
   end
+
+  it "reports a timeout when a query runs past the statement limit" do
+    stub_const("Mcp::BaseTool::STATEMENT_TIMEOUT_MS", 50)
+    allow(Mcp::Guards).to(receive(:form).and_wrap_original { |*| ActiveRecord::Base.connection.execute("SELECT pg_sleep(1)") })
+
+    reply = tool("list_responses", { form_id: form.id })
+
+    expect(JSON.parse(text(reply))).to(include("error" => "timeout"))
+    expect(McpToolCall.last.error_code).to(eq("timeout"))
+  end
 end
