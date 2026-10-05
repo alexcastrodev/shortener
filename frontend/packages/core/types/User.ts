@@ -8,5 +8,7 @@ export type User = {
   has_password?: boolean;
   deletion_due_at?: string | null;
   google_connected?: boolean;
+  locale?: string | null;
+  time_zone?: string;
   created_at: string;
 };

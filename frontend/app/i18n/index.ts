@@ -10,6 +10,7 @@ import auth from './en/auth.json';
 import pages from './en/pages.json';
 import forms from './en/forms.json';
 import respond from './en/respond.json';
+import settings from './en/settings.json';
 import menuPt from './pt-PT/menu.json';
 import homePt from './pt-PT/home.json';
 import dashboardPt from './pt-PT/dashboard.json';
@@ -19,10 +20,11 @@ import authPt from './pt-PT/auth.json';
 import pagesPt from './pt-PT/pages.json';
 import formsPt from './pt-PT/forms.json';
 import respondPt from './pt-PT/respond.json';
+import settingsPt from './pt-PT/settings.json';
 
 export const resources = {
-  en: { menu, home, dashboard, admin, links, auth, pages, forms, respond },
-  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt },
+  en: { menu, home, dashboard, admin, links, auth, pages, forms, respond, settings },
+  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt, settings: settingsPt },
 } as const;
 
 i18n.use(initReactI18next).init({

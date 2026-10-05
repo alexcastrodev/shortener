@@ -32,7 +32,7 @@ function sources(dir: string): string[] {
   if (!statSync(dir, { throwIfNoEntry: false })?.isDirectory()) return [];
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
-    if (name === 'node_modules' || path === here) return [];
+    if (name === 'node_modules' || name.endsWith('.test.ts')) return [];
     if (statSync(path).isDirectory()) return sources(path);
     return /\.(ts|tsx)$/.test(name) ? [readFileSync(path, 'utf8')] : [];
   });

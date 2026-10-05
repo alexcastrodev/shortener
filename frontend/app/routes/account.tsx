@@ -28,6 +28,7 @@ import { notifyError } from '@internal/core/utils/notify';
 import { explainAuthError, type AuthError } from '../modules/auth/auth-errors';
 import { rememberScheduledDeletion } from '../modules/auth/deletion-notice';
 import { useLogout } from '../modules/auth/use-logout';
+import { LanguageCard } from '../i18n/language-switcher';
 import { useSubmitLock } from '../modules/auth/use-submit-lock';
 import {
   NewPasswordFields,
@@ -457,6 +458,8 @@ export default function AccountPage() {
             </Button>
           </Card>
         )}
+
+        <LanguageCard />
 
         <ConnectedApps />
 

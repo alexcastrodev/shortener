@@ -36,6 +36,7 @@ class User < ApplicationRecord
   LOGIN_TOKEN_TTL = 15.minutes
   MAGIC_LINK_COOLDOWN = 1.minute
   DELETION_GRACE = 30.days
+  LOCALES = ["en", "pt-PT"].freeze
   RESTORE_WINDOW = 10.minutes
 
   # ===============
@@ -54,8 +55,10 @@ class User < ApplicationRecord
   # Validations
   # ===============
   normalizes :email, with: ->(email) { email.strip.downcase }
+  normalizes :locale, with: ->(locale) { locale.to_s.strip.presence }
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :time_zone, inclusion: { in: ->(_) { TZInfo::Timezone.all_identifiers } }
+  validates :locale, inclusion: { in: LOCALES }, allow_nil: true
 
   # ===============
   # Associations
