@@ -41,6 +41,8 @@ mcp	DELETE	/mcp
 mcp	GET	/mcp
 mcp	POST	/mcp
 owner	GET	/api/me
+owner	PATCH	/api/me
+owner	PUT	/api/me
 owner	DELETE	/api/me
 owner	POST	/api/me/data_export
 owner	GET	/api/me/color_palettes

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -497,6 +497,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_020000) do
     t.string "pending_password_digest"
     t.datetime "sessions_revoked_at"
     t.integer "shortlinks_count", default: 0, null: false
+    t.string "time_zone", default: "UTC", null: false
     t.datetime "updated_at", null: false
     t.datetime "verified_at"
     t.datetime "deletion_requested_at"

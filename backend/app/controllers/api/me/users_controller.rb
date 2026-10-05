@@ -23,6 +23,14 @@ class Api::Me::UsersController < ApplicationController
     render(json: CurrentUserSerializer.new(current_user).serialize, status: :ok)
   end
 
+  def update
+    if current_user.update(params.permit(:time_zone))
+      render(json: CurrentUserSerializer.new(current_user).serialize, status: :ok)
+    else
+      render(json: { error: "invalid_time_zone" }, status: :unprocessable_entity)
+    end
+  end
+
   # POST /api/me/data_export  { current_password? }
   def export
     if @current_user.password?

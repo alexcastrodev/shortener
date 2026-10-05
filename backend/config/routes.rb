@@ -53,7 +53,7 @@ Rails.application.routes.draw do
     end
 
     namespace :me do
-      resource :users, path: "", only: [:show, :destroy] do
+      resource :users, path: "", only: [:show, :update, :destroy] do
       end
       resources :shortlinks, only: [:index, :show, :create, :destroy, :update] do
         get "statistics", to: "shortlinks#statistics"

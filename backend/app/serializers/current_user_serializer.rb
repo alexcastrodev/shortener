@@ -7,6 +7,8 @@ class CurrentUserSerializer < UserSerializer
     user.deletion_due_at&.iso8601
   end
 
+  attributes :time_zone
+
   attribute :has_password do |user|
     user.password?
   end
