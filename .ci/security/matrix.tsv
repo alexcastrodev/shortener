@@ -59,6 +59,7 @@ owner	DELETE	/api/me/forms/:form_id/responses
 owner	GET	/api/me/forms/:form_id/responses
 owner	DELETE	/api/me/forms/:form_id/responses/:id
 owner	GET	/api/me/forms/:form_id/responses/:id
+owner	GET	/api/me/forms/:form_id/responses_export
 owner	GET	/api/me/forms/:form_id/summary
 owner	GET	/api/me/forms/:form_id/uploads/:id
 owner	DELETE	/api/me/forms/:id
