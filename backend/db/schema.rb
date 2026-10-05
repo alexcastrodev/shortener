@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_070000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_080000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -273,11 +273,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_070000) do
     t.index ["status", "next_attempt_at"], name: "index_notifications_pending", where: "((status)::text = 'pending'::text)"
     t.index ["user_id", "channel", "id"], name: "index_notifications_on_user_channel_id"
     t.index ["user_id"], name: "index_notifications_on_user_id"
-    t.check_constraint "channel::text = ANY (ARRAY['in_app'::character varying, 'email'::character varying, 'push'::character varying]::text[])", name: "notifications_channel_known"
+    t.check_constraint "channel::text = ANY (ARRAY['in_app'::character varying::text, 'email'::character varying::text, 'push'::character varying::text])", name: "notifications_channel_known"
     t.check_constraint "jsonb_typeof(payload) = 'object'::text", name: "notifications_payload_is_object"
     t.check_constraint "recipient_kind::text = 'owner'::text AND user_id IS NOT NULL OR recipient_kind::text = 'client'::text AND recipient_email IS NOT NULL", name: "notifications_has_recipient"
-    t.check_constraint "recipient_kind::text = ANY (ARRAY['owner'::character varying, 'client'::character varying]::text[])", name: "notifications_recipient_kind_known"
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'sent'::character varying, 'failed'::character varying]::text[])", name: "notifications_status_known"
+    t.check_constraint "recipient_kind::text = ANY (ARRAY['owner'::character varying::text, 'client'::character varying::text])", name: "notifications_recipient_kind_known"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'sent'::character varying::text, 'failed'::character varying::text])", name: "notifications_status_known"
   end
 
   create_table "oauth_access_tokens", force: :cascade do |t|
@@ -411,6 +411,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_070000) do
     t.index ["deleted_at"], name: "index_pages_on_deleted_at"
     t.index ["slug"], name: "index_pages_on_slug", unique: true
     t.index ["user_id"], name: "index_pages_on_user_id"
+  end
+
+  create_table "push_subscriptions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "endpoint", limit: 2048, null: false
+    t.string "p256dh", null: false
+    t.string "auth", null: false
+    t.string "user_agent_label"
+    t.datetime "last_used_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["endpoint"], name: "index_push_subscriptions_on_endpoint", unique: true
+    t.index ["user_id"], name: "index_push_subscriptions_on_user_id"
   end
 
   create_table "shortlinks", force: :cascade do |t|
@@ -633,6 +646,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_070000) do
   add_foreign_key "page_templates", "pages", column: "author_page_id", on_delete: :nullify
   add_foreign_key "page_templates", "users", on_delete: :cascade
   add_foreign_key "pages", "users"
+  add_foreign_key "push_subscriptions", "users", on_delete: :cascade
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
