@@ -81,10 +81,21 @@ RSpec.describe("Account deletion", type: :request) do
       post("/api/login_verify", params: { email: user.email, code: user.login_token }, as: :json)
 
       expect(response).to(have_http_status(:ok))
+      expect(JSON.parse(response.body)["deletion_cancelled"]).to(be(true))
       user.reload
       expect(user).not_to(be_pending_deletion)
       expect(user.deactivated_at).to(be_nil)
       expect(link.reload.inactive_at).to(be_nil)
+    end
+
+    it "does not claim a cancellation when there was nothing to cancel" do
+      other = FactoryBot.create(:user)
+      other.generate_login_token!
+
+      post("/api/login_verify", params: { email: other.email, code: other.login_token }, as: :json)
+
+      expect(response).to(have_http_status(:ok))
+      expect(JSON.parse(response.body)).not_to(have_key("deletion_cancelled"))
     end
 
     it "does not restore a link that was already inactive before the request" do

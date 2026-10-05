@@ -2,6 +2,7 @@ import { goAfterLogin } from '../oauth/return-to';
 import { useNavigate } from 'react-router';
 import { useLoginGoogle } from '@internal/core/actions/login-google/login-google.hook';
 import { useUserState } from '@internal/core/states/use-user-state';
+import { announceRestore } from './deletion-notice';
 import { notifyError } from '@internal/core/utils/notify';
 import { explainAuthError, type AuthError } from './auth-errors';
 
@@ -11,8 +12,9 @@ export function useGoogleSignIn() {
   const { setUser } = useUserState();
 
   const mutation = useLoginGoogle({
-    onSuccess: ({ user }) => {
-      setUser(user);
+    onSuccess: response => {
+      setUser(response.user);
+      announceRestore(response);
       goAfterLogin(navigate);
     },
     onError: error => {

@@ -24,6 +24,7 @@ import { useDeleteAccount } from '@internal/core/actions/delete-account/delete-a
 import { useUserState } from '@internal/core/states/use-user-state';
 import { notifyError } from '@internal/core/utils/notify';
 import { explainAuthError, type AuthError } from '../modules/auth/auth-errors';
+import { rememberScheduledDeletion } from '../modules/auth/deletion-notice';
 import { useLogout } from '../modules/auth/use-logout';
 import { useSubmitLock } from '../modules/auth/use-submit-lock';
 import {
@@ -164,11 +165,7 @@ function DeleteAccount({ email, hasPassword }: { email: string; hasPassword: boo
     onSuccess: ({ deletion_due_at }) => {
       clear();
       queryClient.clear();
-      notifications.show({
-        color: 'green',
-        autoClose: 15000,
-        message: `Your account is scheduled for deletion on ${new Date(deletion_due_at).toLocaleDateString('en-US')}. Sign in again before then to cancel.`,
-      });
+      rememberScheduledDeletion(deletion_due_at);
       navigate('/login');
     },
     onError: error => {

@@ -11,4 +11,5 @@ export interface LoginVerifyRequestBody {
 // The session token is set as an httpOnly cookie, never returned in the body.
 export interface LoginVerifyResponse {
   user: User;
+  deletion_cancelled?: boolean;
 }

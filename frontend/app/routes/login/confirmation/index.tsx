@@ -7,6 +7,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { useLoginVerifyRequest } from '@internal/core/actions/login-verify/login-verify.hook';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { AuthShell } from '../../../modules/auth/auth-shell';
+import { announceRestore } from '../../../modules/auth/deletion-notice';
 import type { AuthError } from '../../../modules/auth/auth-errors';
 
 export const ssr = false;
@@ -31,8 +32,9 @@ export default function LoginConfirmation() {
   }, [email, navigate]);
 
   const verify = useLoginVerifyRequest({
-    onSuccess: ({ user }) => {
-      setUser(user);
+    onSuccess: response => {
+      setUser(response.user);
+      announceRestore(response);
       goAfterLogin(navigate);
     },
     onError: error => {
