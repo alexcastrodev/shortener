@@ -26,6 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run harness
+        env:
+          ZAP: ${{ github.event_name == 'pull_request' && '0' || '1' }}
         run: .ci/security/run.sh
       - name: Results
         if: always()
@@ -34,5 +36,7 @@ jobs:
         if: always()
         with:
           name: security-results
-          path: .ci/security/out/results.txt
+          path: |
+            .ci/security/out/results.txt
+            .ci/security/out/zap
           if-no-files-found: ignore
