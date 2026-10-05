@@ -26,6 +26,7 @@ module CodeRequestResponse
   end
 
   def start_session(user)
+    user.cancel_deletion! if user.pending_deletion?
     token = SessionToken.issue(user)
     set_session_cookie(token, SessionToken::TTL.from_now)
     # The token only travels in the httpOnly cookie, never in the body.

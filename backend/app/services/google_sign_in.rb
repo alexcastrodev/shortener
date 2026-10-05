@@ -40,7 +40,7 @@ class GoogleSignIn
     return failure(:email_not_verified) unless payload["email_verified"] == true
 
     user = link(payload["sub"].to_s, payload["email"].to_s.strip.downcase)
-    user.deactivated? ? failure(:deactivated) : Result.new(user: user, error: nil)
+    user.can_sign_in? ? Result.new(user: user, error: nil) : failure(:deactivated)
   rescue Google::Auth::IDTokens::VerificationError, Google::Auth::IDTokens::KeySourceError => e
     Rails.logger.info("[GoogleSignIn] rejected token: #{e.class}")
     failure(:invalid_token)

@@ -28,7 +28,7 @@ class Api::PasswordResetsController < ApplicationController
   # POST /api/password/reset  { email, code, password }
   def update
     user = User.find_by(email: params[:email].to_s.strip.downcase)
-    unless user&.verified? && user.active? && user.verify_login_token(params[:code])
+    unless user&.verified? && user.can_sign_in? && user.verify_login_token(params[:code])
       return render(json: { error: "invalid_code" }, status: :unauthorized)
     end
 

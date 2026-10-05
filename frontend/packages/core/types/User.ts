@@ -6,6 +6,7 @@ export type User = {
   deactivated_at: string | null;
   // false for accounts that only sign in with emailed codes.
   has_password?: boolean;
+  deletion_due_at?: string | null;
   google_connected?: boolean;
   created_at: string;
 };

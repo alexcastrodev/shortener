@@ -3,6 +3,10 @@
 class CurrentUserSerializer < UserSerializer
   root_key :user
 
+  attribute :deletion_due_at do |user|
+    user.deletion_due_at&.iso8601
+  end
+
   attribute :has_password do |user|
     user.password?
   end

@@ -27,7 +27,7 @@ class LoginCodeRequest
     return result(:invalid_email) unless ValidEmail2::Address.new(email).valid?
 
     user = User.find_by(email: email)
-    return result(:sent) if user&.deactivated?
+    return result(:sent) if user && !user.can_sign_in?
     return result(:sent) if purpose == :password_reset && !user&.verified?
 
     # Signing up with an address that already has an account (made with
