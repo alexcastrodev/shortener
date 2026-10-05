@@ -29,7 +29,7 @@ networks:
 
 services:
   db:
-    image: postgres:17
+    image: postgres:17@sha256:d74eeac9a635390a49bc21bd49fccd973de707e2a53a76ac49b552b8712ec46f
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: production
@@ -43,7 +43,7 @@ services:
       retries: 30
 
   cache:
-    image: valkey/valkey:8.1.4
+    image: valkey/valkey:8.1.4@sha256:81db6d39e1bba3b3ff32bd3a1b19a6d69690f94a3954ec131277b9a26b95b3aa
     networks: [sec]
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]

@@ -1,6 +1,6 @@
 services:
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
     container_name: rabbitmq
     networks:
       - proxy_net
@@ -24,7 +24,7 @@ services:
       - /mnt/ssd/@docker/shortener/rabbit:/var/lib/rabbitmq
 
   db:
-    image: postgres:17
+    image: postgres:17@sha256:d74eeac9a635390a49bc21bd49fccd973de707e2a53a76ac49b552b8712ec46f
     container_name: postgres
     networks:
       - proxy_net
@@ -47,7 +47,7 @@ services:
           memory: 256M
 
   cache:
-    image: valkey/valkey:8.1.4
+    image: valkey/valkey:8.1.4@sha256:81db6d39e1bba3b3ff32bd3a1b19a6d69690f94a3954ec131277b9a26b95b3aa
     container_name: valkey
     volumes:
       - /mnt/ssd/@docker/shortener/valkey:/data
