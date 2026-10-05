@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { FormField } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
 import { FieldInput, focusFirstInput, isBlank, type Answer } from './field-inputs';
@@ -29,6 +30,7 @@ export function PagedForm({
   activeFieldId,
   onSelectField,
 }: Props) {
+  const { t } = useTranslation('respond');
   const theme = getBioTheme(form.theme, form.custom_colors);
   const uid = useId();
   const pages = splitPages(form.fields, form.layout);
@@ -67,7 +69,7 @@ export function PagedForm({
     Object.fromEntries(
       fields
         .filter(item => item.required && !isSection(item) && isBlank(answers[item.id]))
-        .map(item => [item.id, 'This question is required'])
+        .map(item => [item.id, t('required')])
     );
 
   const next = async () => {
@@ -90,11 +92,11 @@ export function PagedForm({
           ? form.fields.find(item => fieldErrors[item.id])
           : undefined;
         if (failing) {
-          setErrors({ [failing.id]: 'Please check this answer.' });
+          setErrors({ [failing.id]: t('check_answer') });
           setPage(Math.max(0, pages.findIndex(fields => fields.includes(failing))));
         }
         setFormError(
-          failing ? null : (message ?? 'We could not send your answers. Please try again.')
+          failing ? null : (message ?? t('send_failed'))
         );
       } finally {
         setSubmitting(false);
@@ -108,7 +110,7 @@ export function PagedForm({
     return (
       <div className={shell} style={theme.style}>
         <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
-        <p className={`mt-3 ${theme.bio}`}>This form has no questions yet.</p>
+        <p className={`mt-3 ${theme.bio}`}>{t('no_questions')}</p>
         {footer}
       </div>
     );
@@ -117,9 +119,9 @@ export function PagedForm({
   if (done) {
     return (
       <div className={`${shell} justify-center`} style={theme.style} role="status">
-        <h1 className={`text-2xl font-semibold ${theme.title}`}>Thank you</h1>
+        <h1 className={`text-2xl font-semibold ${theme.title}`}>{t('thank_you')}</h1>
         <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>
-          {form.thank_you_message || 'Your answers were sent.'}
+          {form.thank_you_message || t('answers_sent')}
         </p>
         {mode === 'preview' && (
           <div className="mt-8">
@@ -133,7 +135,7 @@ export function PagedForm({
                 setDone(false);
               }}
             >
-              Restart preview
+              {t('restart_preview')}
             </button>
           </div>
         )}
@@ -152,7 +154,7 @@ export function PagedForm({
       {pages.length > 1 && (
         <div
           role="progressbar"
-          aria-label="Progress"
+          aria-label={t('progress')}
           aria-valuemin={0}
           aria-valuemax={pages.length}
           aria-valuenow={current + 1}
@@ -250,7 +252,7 @@ export function PagedForm({
             className={`text-sm underline ${theme.footer}`}
             onClick={() => setPage(current - 1)}
           >
-            Back
+            {t('back')}
           </button>
         ) : (
           <span />
@@ -258,7 +260,7 @@ export function PagedForm({
         <div className="flex items-center gap-4">
           {pages.length > 1 && (
             <span className={`font-mono text-xs ${theme.bio}`}>
-              Step {current + 1} of {pages.length}
+              {t('step_of', { current: current + 1, total: pages.length })}
             </span>
           )}
           <button
@@ -267,7 +269,7 @@ export function PagedForm({
             disabled={submitting}
             onClick={() => void next()}
           >
-            {last ? (submitting ? 'Sending…' : 'Submit') : 'Next'}
+            {last ? (submitting ? t('sending') : t('submit')) : t('next')}
           </button>
         </div>
       </div>
