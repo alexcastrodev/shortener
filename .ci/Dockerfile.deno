@@ -1,12 +1,12 @@
 # https://docs.deno.com/runtime/reference/docker/
 # Build stage
-FROM denoland/deno:latest AS builder
+FROM denoland/deno:2.9.7 AS builder
 WORKDIR /app
 COPY ./edge-function .
 RUN deno cache index.ts
 
 # Production stage
-FROM denoland/deno:latest
+FROM denoland/deno:2.9.7
 WORKDIR /app
 COPY --from=builder /app .
 CMD ["deno", "run", "--allow-net", "--allow-env", "--allow-read", "index.ts"]
