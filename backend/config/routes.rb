@@ -8,6 +8,9 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
 
+  match "/rails/active_storage/direct_uploads", via: :all, to: ->(_env) { [404, {}, []] }
+  match "/rails/active_storage/disk/*rest", via: :all, to: ->(_env) { [404, {}, []] }
+
   get "/.well-known/oauth-protected-resource", to: "well_known/oauth#protected_resource", format: false
   get "/.well-known/oauth-protected-resource/mcp", to: "well_known/oauth#protected_resource", format: false
   get "/.well-known/oauth-authorization-server", to: "well_known/oauth#authorization_server", format: false

@@ -129,3 +129,6 @@ storage	PUT	/rails/active_storage/disk/:encoded_token
 storage	GET	/rails/active_storage/representations/:signed_blob_id/:variation_key/*filename
 storage	GET	/rails/active_storage/representations/proxy/:signed_blob_id/:variation_key/*filename
 storage	GET	/rails/active_storage/representations/redirect/:signed_blob_id/:variation_key/*filename
+
+internal	ANY	/rails/active_storage/direct_uploads
+internal	ANY	/rails/active_storage/disk/*rest

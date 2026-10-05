@@ -580,6 +580,11 @@ check("D01", "form image uploads on the real stack: real images become WebP with
   ["/rails/active_storage/blobs/redirect/#{sid}/image.webp", "/rails/active_storage/blobs/proxy/#{sid}/image.webp"].each do |path|
     expect(http(:get, path).status != 200, "active storage served #{path}")
   end
+  blobs_before = sql("select count(*) from active_storage_blobs").to_i
+  direct = http(:post, "/rails/active_storage/direct_uploads", body: { blob: { filename: "x.txt", byte_size: 4, checksum: Digest::MD5.base64digest("abcd"), content_type: "text/plain" } })
+  expect_eq(404, direct.status, "anonymous direct upload")
+  expect_eq(blobs_before, sql("select count(*) from active_storage_blobs").to_i, "blob created by an anonymous direct upload")
+  expect_eq(404, http(:put, "/rails/active_storage/disk/garbage", raw: "x").status, "disk transfer")
   expect(!database_text.values.join(" ").include?("SecretCamera"), "metadata in the database")
   expect(!blob.filename.to_s.include?("photo"), "client filename kept")
 end
