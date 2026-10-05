@@ -371,6 +371,55 @@ check("E07", "MCP on the real stack: the 401 challenge, every wrong credential k
   expect_eq(401, http(:post, "/mcp", body: rpc, token: access, headers: accept).status, "after revoke")
 end
 
+def mcp_tool(access, name, arguments = {})
+  body = { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: name, arguments: arguments } }
+  http(:post, "/mcp", body: body, token: access, headers: { "Accept" => "application/json, text/event-stream" }).json
+end
+
+check("MC08", "MCP shortlink tools on the real stack: scopes decide the tool list, hostile URLs and extra keys are refused, 20 attempts an hour per user, tenants isolated, audit holds metadata only") do
+  client = OauthClient.create!(client_name: "Tools", redirect_uris: ["https://claude.ai/api/mcp/auth_callback"])
+  grant = OauthGrant.create!(user: TENANTS[:a], oauth_client: client, scopes: ["shortlinks:read", "shortlinks:write"], resource: "https://api.kurz.fyi/mcp")
+  access, = OauthAccessToken.issue(grant)
+  listing = http(:post, "/mcp", body: { jsonrpc: "2.0", id: 1, method: "tools/list" }, token: access, headers: { "Accept" => "application/json, text/event-stream" }).json
+  expect_eq(["create_shortlink", "get_shortlink_statistics", "list_shortlinks"], listing.dig("result", "tools").map { |t| t["name"] }.sort, "tools")
+
+  readonly = OauthGrant.create!(user: TENANTS[:a], oauth_client: client, scopes: ["forms:read"], resource: "https://api.kurz.fyi/mcp")
+  ro_access, = OauthAccessToken.issue(readonly)
+  ro = http(:post, "/mcp", body: { jsonrpc: "2.0", id: 1, method: "tools/list" }, token: ro_access, headers: { "Accept" => "application/json, text/event-stream" }).json
+  expect_eq([], ro.dig("result", "tools"), "unrelated scope")
+
+  ["javascript:alert(1)", "data:text/html,x", "java\tscript:x", "file:///etc/passwd"].each do |bad|
+    reply = mcp_tool(access, "create_shortlink", { original_url: bad })
+    expect(reply["error"] || reply.dig("result", "isError"), "accepted #{bad.inspect}")
+  end
+  ["short_code", "password", "user_id", "inactive_at"].each do |extra|
+    reply = mcp_tool(access, "create_shortlink", { original_url: "https://example.com", extra => "x" })
+    expect(reply["error"] || reply.dig("result", "isError"), "accepted key #{extra}")
+  end
+  expect_eq(0, sql("select count(*) from shortlinks where user_id = #{TENANTS[:a].id}").to_i, "nothing stored yet")
+
+  first = mcp_tool(access, "create_shortlink", { original_url: "https://example.com/harness", title: "<b>x</b>" })
+  expect_eq(false, first.dig("result", "isError"), "create")
+  expect_eq("<b>x</b>", first.dig("result", "structuredContent", "title"), "inert title")
+  expect(first.dig("result", "structuredContent", "short_code").to_s.match?(/\A[A-Za-z0-9]{6}\z/), "random code")
+  19.times { |i| mcp_tool(access, "create_shortlink", { original_url: "https://example.com/#{i}" }) }
+  limited = mcp_tool(access, "create_shortlink", { original_url: "https://example.com/over" })
+  expect_eq("rate_limited", limited.dig("result", "structuredContent", "error"), "21st")
+  expect_eq(16, sql("select count(*) from shortlinks where user_id = #{TENANTS[:a].id}").to_i, "stored: 20 attempts an hour, and the 4 refused hostile URLs count as attempts")
+
+  foreign = sql("select id from shortlinks where user_id = #{TENANTS[:a].id} limit 1").to_i
+  other_grant = OauthGrant.create!(user: TENANTS[:b], oauth_client: client, scopes: ["shortlinks:read"], resource: "https://api.kurz.fyi/mcp")
+  other_access, = OauthAccessToken.issue(other_grant)
+  stolen = mcp_tool(other_access, "get_shortlink_statistics", { id: foreign })
+  missing = mcp_tool(other_access, "get_shortlink_statistics", { id: 999_999 })
+  expect_eq(missing.dig("result", "structuredContent"), stolen.dig("result", "structuredContent"), "cross tenant looks like missing")
+  expect(mcp_tool(other_access, "list_shortlinks").dig("result", "structuredContent", "shortlinks").empty?, "B lists A's links")
+
+  calls = rows("select tool, status from mcp_tool_calls where oauth_grant_id = #{grant.id}")
+  expect(calls.any? { |tool, _| tool == "create_shortlink" }, "no audit rows")
+  expect(!database_text["mcp_tool_calls"].include?("example.com"), "arguments stored in mcp_tool_calls")
+end
+
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")
 puts "== #{Harness.results.count { |r| r[2] == 'PASS' }}/#{Harness.results.size} checks passed"
 exit(Harness.failed? ? 1 : 0)

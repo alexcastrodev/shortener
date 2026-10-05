@@ -4,15 +4,11 @@ module Mcp
 
     MAX_REQUEST_BYTES = 256.kilobytes
 
-    def tools
-      []
-    end
-
     def call(grant:, request:)
       server = MCP::Server.new(
         name: "kurz",
         version: "1.0.0",
-        tools: tools,
+        tools: Mcp::Tools.for_scopes(grant.scopes),
         server_context: { user: grant.user, grant: grant, scopes: grant.scopes },
       )
       transport = MCP::Server::Transports::StreamableHTTPTransport.new(

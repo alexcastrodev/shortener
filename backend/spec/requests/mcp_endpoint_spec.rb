@@ -120,7 +120,7 @@ RSpec.describe("POST /mcp", type: :request) do
   end
 
   describe "protocol" do
-    it "initializes and lists no tools yet, sends no cookie and stays no-store" do
+    it "initializes, lists only the tools the grant may use, sends no cookie and stays no-store" do
       call
       expect(response).to(have_http_status(:ok))
       expect(json.dig("result", "serverInfo", "name")).to(eq("kurz"))
@@ -128,7 +128,7 @@ RSpec.describe("POST /mcp", type: :request) do
       expect(response.headers["Cache-Control"]).to(eq("no-store"))
 
       call({ jsonrpc: "2.0", id: 2, method: "tools/list" })
-      expect(json.dig("result", "tools")).to(eq([]))
+      expect(json.dig("result", "tools").map { |t| t["name"] }).to(eq([]))
     end
 
     it "answers an unknown method with a JSON-RPC error, never a 5xx" do

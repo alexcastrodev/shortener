@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -144,6 +144,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_010000) do
     t.index ["provider", "uid"], name: "index_identities_on_provider_and_uid", unique: true
     t.index ["user_id", "provider"], name: "index_identities_on_user_id_and_provider", unique: true
     t.index ["user_id"], name: "index_identities_on_user_id"
+  end
+
+  create_table "mcp_tool_calls", force: :cascade do |t|
+    t.bigint "oauth_grant_id", null: false
+    t.string "tool", null: false
+    t.string "status", null: false
+    t.string "error_code"
+    t.integer "duration_ms", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.index ["created_at"], name: "index_mcp_tool_calls_on_created_at"
+    t.index ["oauth_grant_id"], name: "index_mcp_tool_calls_on_oauth_grant_id"
   end
 
   create_table "oauth_access_tokens", force: :cascade do |t|
@@ -469,6 +480,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_010000) do
   add_foreign_key "form_responses", "forms", on_delete: :cascade
   add_foreign_key "forms", "users", on_delete: :cascade
   add_foreign_key "identities", "users", on_delete: :cascade
+  add_foreign_key "mcp_tool_calls", "oauth_grants", on_delete: :cascade
   add_foreign_key "oauth_access_tokens", "oauth_grants", on_delete: :cascade
   add_foreign_key "oauth_authorization_codes", "oauth_grants", on_delete: :cascade
   add_foreign_key "oauth_grants", "oauth_clients", on_delete: :cascade
