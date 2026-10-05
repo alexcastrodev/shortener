@@ -126,7 +126,7 @@ check("A02", "another tenant gets 404 on every owner route of a form, its fields
   field = as(:a, :get, "/api/me/forms/#{form['id']}").json["form"]["fields"].first
   base = "/api/me/forms/#{form['id']}"
   [
-    [:get, base], [:patch, base, { title: "x" }], [:delete, base], [:post, "#{base}/publish"], [:post, "#{base}/unpublish"],
+    [:get, base], [:patch, base, { title: "x" }], [:delete, base], [:post, "#{base}/publish"], [:post, "#{base}/unpublish"], [:post, "#{base}/discard"],
     [:post, "#{base}/duplicate"], [:post, "#{base}/apply_template", { template: "contact" }],
     [:post, "#{base}/fields", { type: "short_text", label: "x" }], [:patch, "#{base}/fields/#{field['id']}", { label: "x" }],
     [:delete, "#{base}/fields/#{field['id']}"], [:patch, "#{base}/fields/reorder", { ids: [field["id"]] }],

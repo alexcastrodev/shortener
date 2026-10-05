@@ -60,11 +60,9 @@ class Api::Me::FormsController < ApplicationController
   end
 
   def publish
-    return render(json: { errors: { fields: ["must have at least one question to publish"] } }, status: :unprocessable_entity) if @form.fields.none? { |field| Forms::FieldSchema.answerable?(field) }
-
-    @form.ensure_shortlink!
-    @form.update!(published: true)
-    render(json: FormSerializer.new(@form).serialize, status: :ok)
+    render(json: FormSerializer.new(Forms::Publish.call(form: @form)).serialize, status: :ok)
+  rescue Forms::Publish::NoQuestions
+    render(json: { errors: { fields: ["must have at least one question to publish"] } }, status: :unprocessable_entity)
   end
 
   def apply_template
@@ -81,8 +79,13 @@ class Api::Me::FormsController < ApplicationController
   end
 
   def unpublish
-    @form.update!(published: false)
-    render(json: FormSerializer.new(@form).serialize, status: :ok)
+    render(json: FormSerializer.new(Forms::Unpublish.call(form: @form)).serialize, status: :ok)
+  end
+
+  def discard
+    render(json: FormSerializer.new(Forms::Discard.call(form: @form)).serialize, status: :ok)
+  rescue Forms::Discard::NothingPublished
+    render(json: { errors: { base: ["nothing has been published yet"] } }, status: :unprocessable_entity)
   end
 
   private

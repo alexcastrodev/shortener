@@ -26,7 +26,7 @@ class DetectFormAbuseJob < ApplicationJob
 
   def contain(form, responses:, bytes:)
     now = Time.current
-    form.update!(published: false)
+    Forms::Unpublish.call(form: form)
 
     signal = AbuseSignal.find_or_initialize_by(kind: "form_flood", fingerprint: "form:#{form.id}:#{now.to_date.iso8601}")
     created = signal.new_record?
