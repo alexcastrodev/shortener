@@ -25,6 +25,10 @@ class FormFieldUpdateContract < ApplicationContract
     optional(:rules).hash do
       optional(:time_zone).filled(:string)
       optional(:approval).filled(:string)
+      optional(:min_notice_minutes).maybe(:integer)
+      optional(:window_days).maybe(:integer)
+      optional(:buffer_minutes).maybe(:integer)
+      optional(:max_per_day).maybe(:integer)
     end
   end
 end
