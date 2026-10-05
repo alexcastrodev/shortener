@@ -117,7 +117,10 @@ export default function AuthorizeApp() {
                 <li key={scope}>
                   <Switch
                     checked={!!enabled[scope]}
-                    onChange={event => setEnabled(current => ({ ...current, [scope]: event.currentTarget.checked }))}
+                    onChange={event => {
+                      const checked = event.currentTarget.checked;
+                      setEnabled(current => ({ ...current, [scope]: checked }));
+                    }}
                     label={SCOPE_LABELS[scope]?.label ?? scope}
                     description={SCOPE_LABELS[scope]?.hint}
                   />
