@@ -14,6 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { notifyError } from '@internal/core/utils/notify';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatDate } from '../../i18n/format';
 
 export const ssr = false;
 
@@ -152,7 +153,7 @@ export default function UsersPage() {
                       {user.email}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Joined {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                      {t('joined', { date: formatDate(user.created_at, { month: 'short', year: 'numeric' }) })}
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-col gap-1">

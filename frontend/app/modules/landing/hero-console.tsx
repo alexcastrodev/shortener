@@ -1,6 +1,7 @@
 import { IconCopy, IconShieldCheck } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { usePointerTilt } from './use-pointer-tilt';
+import { formatNumber, useLocale } from '../../i18n/format';
 
 const SAMPLES = [
   { url: 'https://example.com/campaigns/summer-launch/2026?utm_source=newsletter', code: 'x7f2A' },
@@ -70,6 +71,7 @@ function useClickCounter(start: number) {
 }
 
 export function HeroConsole() {
+  useLocale();
   const { sample, typed, phase } = useShortenLoop();
   const clicks = useClickCounter(1284);
   const { ref, onPointerMove, onPointerLeave } = usePointerTilt<HTMLDivElement>(5);
@@ -137,7 +139,7 @@ export function HeroConsole() {
                 Clicks
               </p>
               <p className="font-display text-3xl font-semibold tabular-nums">
-                {clicks.toLocaleString('en-US')}
+                {formatNumber(clicks)}
               </p>
             </div>
             <div className="space-y-1.5">

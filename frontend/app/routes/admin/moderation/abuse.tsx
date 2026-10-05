@@ -13,6 +13,7 @@ import { useDismissAbuseSignal } from '@internal/core/actions/admin-dismiss-abus
 import { useToggleUserActive } from '@internal/core/actions/admin-user-toggle-active/admin-user-toggle-active.hook';
 import { notifyError } from '@internal/core/utils/notify';
 import { ModerationHeader } from './moderation-header';
+import { formatDateTime, useLocale } from '../../../i18n/format';
 
 export const ssr = false;
 
@@ -27,7 +28,7 @@ const KIND_LABELS = {
 };
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleString('en-US', {
+  return formatDateTime(value, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -36,6 +37,7 @@ function formatDate(value: string) {
 }
 
 export default function ModerationAbusePage() {
+  useLocale();
   const { data } = useGetLoggedUser();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<AbuseSignalStatus>('open');

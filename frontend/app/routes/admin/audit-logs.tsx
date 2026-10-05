@@ -8,6 +8,7 @@ import { useGetManageUsers } from '@internal/core/actions/get-manage-users/get-m
 import type { AdminGetAuditsParams } from '@internal/core/actions/admin-audit/admin-audit.types';
 import type { AuditLog } from '@internal/core/actions/admin-audit/admin-audit.types';
 import { useMemo, useState } from 'react';
+import { formatDateTime, useLocale } from '../../i18n/format';
 
 export const ssr = false;
 
@@ -41,6 +42,7 @@ function actionColor(action: string): string {
 }
 
 function AuditCard({ audit }: { audit: AuditLog }) {
+  useLocale();
   const changes = formatChanges(audit.audited_changes);
 
   return (
@@ -83,7 +85,7 @@ function AuditCard({ audit }: { audit: AuditLog }) {
             </p>
           )}
           <p className="mt-1 text-xs text-muted-foreground">
-            {new Date(audit.created_at).toLocaleString()}
+            {formatDateTime(audit.created_at)}
           </p>
           {audit.remote_address && (
             <p className="mt-1 text-xs text-muted-foreground">
