@@ -49,7 +49,7 @@ RSpec.describe(GoogleLib::SafeBrowsing::V4::Services, ".unsafe_urls") do
   before { stub_const("ENV", ENV.to_h.merge("GOOGLE_SAFE_LINK_KEY" => "test-key")) }
 
   it "returns the flagged URLs from one batched request" do
-    stub = stub_request(:post, %r{safebrowsing.googleapis.com/v4/threatMatches:find})
+    stub = stub_request(:post, %r{\Ahttps://safebrowsing\.googleapis\.com/v4/threatMatches:find})
       .with { |request| JSON.parse(request.body).dig("threatInfo", "threatEntries").size == 2 }
       .to_return(
         status: 200,
@@ -64,7 +64,7 @@ RSpec.describe(GoogleLib::SafeBrowsing::V4::Services, ".unsafe_urls") do
   end
 
   it "raises instead of flagging everything when the API fails" do
-    stub_request(:post, /safebrowsing.googleapis.com/).to_return(status: 503)
+    stub_request(:post, /\Ahttps:\/\/safebrowsing\.googleapis\.com\//).to_return(status: 503)
 
     expect { described_class.unsafe_urls(["https://ok.example.com"]) }.to(raise_error(described_class::Error))
   end
