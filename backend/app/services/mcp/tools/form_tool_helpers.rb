@@ -2,7 +2,7 @@ module Mcp
   module Tools
     module FormToolHelpers
       FIELD_PROPERTIES = {
-        type: { type: "string", enum: Forms::FieldSchema::TYPES },
+        type: { type: "string", enum: Forms::FieldSchema::TYPES - ["booking"] },
         label: { type: "string", maxLength: Forms::FieldSchema::LABEL_MAX },
         help: { type: "string", maxLength: Forms::FieldSchema::HELP_MAX },
         required: { type: "boolean" },

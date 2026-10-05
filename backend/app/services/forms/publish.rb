@@ -4,6 +4,15 @@ module Forms
 
     class NoQuestions < StandardError; end
 
+    class Blocked < StandardError
+      attr_reader :messages
+
+      def initialize(messages)
+        @messages = messages
+        super(messages.to_sentence)
+      end
+    end
+
     DIGEST_SQL = "published_digest = encode(sha256(convert_to(published_snapshot::text, 'UTF8')), 'hex')".freeze
 
     def initialize(form:)
@@ -12,6 +21,9 @@ module Forms
 
     def call
       raise NoQuestions if form.fields.none? { |field| FieldSchema.answerable?(field) }
+
+      blocks = BookingSchema.publish_blocks(form.fields)
+      raise Blocked, blocks if blocks.any?
 
       form.ensure_shortlink!
       form.with_lock do

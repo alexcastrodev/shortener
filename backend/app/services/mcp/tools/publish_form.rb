@@ -14,6 +14,8 @@ module Mcp
           Forms::Publish.call(form: form)
         rescue Forms::Publish::NoQuestions
           raise Mcp::ToolError.new("no_questions", "The form needs at least one question before it can be published")
+        rescue Forms::Publish::Blocked => e
+          raise Mcp::ToolError.new("form_incomplete", e.messages.to_sentence)
         end
         FormToolHelpers.form_json(form).merge(public_url: form.public_url)
       end
