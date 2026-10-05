@@ -584,6 +584,39 @@ check("D01", "form image uploads on the real stack: real images become WebP with
   expect(!blob.filename.to_s.include?("photo"), "client filename kept")
 end
 
+check("D02", "image bombs against the real sandbox: oversized headers are refused quickly, 30 concurrent uploads never end in a 5xx, and the decoder stays up") do
+  form = Form.create!(user: TENANTS[:a], title: "Bombs", published: true, fields: [{ "id" => "photo001", "type" => "image", "label" => "Photo" }])
+  path = "/api/public/forms/#{form.public_id}/fields/photo001/uploads"
+  send_file = lambda do |bytes|
+    boundary = "----bomb#{SecureRandom.hex(8)}"
+    body = "--#{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"a.png\"\r\nContent-Type: image/png\r\n\r\n".b + bytes.b + "\r\n--#{boundary}--\r\n".b
+    http(:post, path, raw: body, headers: { "Content-Type" => "multipart/form-data; boundary=#{boundary}" })
+  end
+  canvas = ->(width, height) { Vips::Image.black(width, height).copy(interpretation: :b_w) }
+
+  bombs = {
+    "png 30000x30000 1-bit" => canvas.call(30_000, 30_000).write_to_buffer(".png", bitdepth: 1, compression: 9),
+    "png 12000x6000 (72 MP)" => canvas.call(12_000, 6_000).write_to_buffer(".png", compression: 9),
+    "png 10001x1" => canvas.call(10_001, 1).write_to_buffer(".png"),
+    "jpeg 20000x16" => canvas.call(20_000, 16).write_to_buffer(".jpg"),
+    "webp 16383x100" => canvas.call(16_383, 100).write_to_buffer(".webp"),
+  }
+  bombs.each do |label, bytes|
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    response = send_file.call(bytes)
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+    expect_eq(422, response.status, label)
+    expect(elapsed < 30, "#{label} took #{elapsed.round(1)}s")
+  end
+  expect_eq(0, sql("select count(*) from form_uploads where form_id = #{form.id}").to_i, "rows left by bombs")
+
+  ordinary = canvas.call(80, 60).write_to_buffer(".png")
+  statuses = parallel(30) { send_file.call(ordinary).status }
+  expect(statuses.all? { |status| [201, 429].include?(status) }, "statuses under concurrency: #{statuses.tally}")
+  expect(statuses.count(201) >= 10, "too few uploads succeeded: #{statuses.tally}")
+  expect_eq(201, send_file.call(ordinary).status, "decoder alive after the bombs")
+end
+
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")
 puts "== #{Harness.results.count { |r| r[2] == 'PASS' }}/#{Harness.results.size} checks passed"
 exit(Harness.failed? ? 1 : 0)

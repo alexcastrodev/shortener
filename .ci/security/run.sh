@@ -60,4 +60,11 @@ ips=$($C logs api 2>&1 | grep -cE '203\.0\.113\.77|2001:db8:dead:beef' || true)
 echo "== oracle: $ips log line(s) carry the visitor IP canary"
 [ "$ips" = 0 ] || $C logs api 2>&1 | grep -E '203\.0\.113\.77|2001:db8:dead:beef' | head -3 | cut -c1-400
 [ "$ips" = 0 ] || rc=1
+echo "== chaos: stopping imgproc"
+$C stop imgproc >/dev/null
+set +e
+$C run --rm -T rails bin/rails runner /security/chaos.rb 2>&1 | tee -a security/out/results.txt
+chaos=${PIPESTATUS[0]}
+set -e
+[ "$chaos" = 0 ] || rc=1
 exit "$rc"
