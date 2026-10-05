@@ -28,7 +28,10 @@ class OauthRefreshToken < ApplicationRecord
     if claimed == 1
       current
     else
-      current.oauth_grant.revoke! if current.used_at
+      if current.used_at
+        Oauth::SecurityEvent.record("refresh_reuse", grant_id: current.oauth_grant_id)
+        current.oauth_grant.revoke!
+      end
       nil
     end
   end

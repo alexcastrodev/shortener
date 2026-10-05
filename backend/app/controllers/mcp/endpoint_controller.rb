@@ -47,6 +47,7 @@ class Mcp::EndpointController < ActionController::API
 
   def challenge
     metadata = "#{Oauth::Config.issuer}/.well-known/oauth-protected-resource/mcp"
+    Rails.logger.info("[mcp] event=unauthorized presented=#{request.headers["Authorization"].present?}")
     error = request.headers["Authorization"].present? ? %(error="invalid_token", ) : ""
     response.set_header("WWW-Authenticate", %(Bearer #{error}resource_metadata="#{metadata}", scope="#{Oauth::Config.scopes.join(" ")}"))
     response.set_header("Cache-Control", "no-store")
