@@ -55,6 +55,9 @@ Rails.application.routes.draw do
           post :apply_template
           post :duplicate
         end
+        resources :responses, only: [:index, :show, :destroy], controller: "form_responses"
+        delete "responses", to: "form_responses#destroy_all"
+        get :summary, to: "form_responses#summary"
         resources :fields, only: [:create, :update, :destroy], controller: "form_fields" do
           collection { patch :reorder }
         end

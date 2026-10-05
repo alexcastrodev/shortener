@@ -48,6 +48,11 @@ owner	DELETE	/api/me/forms/:form_id/fields/:id
 owner	PATCH	/api/me/forms/:form_id/fields/:id
 owner	PUT	/api/me/forms/:form_id/fields/:id
 owner	PATCH	/api/me/forms/:form_id/fields/reorder
+owner	DELETE	/api/me/forms/:form_id/responses
+owner	GET	/api/me/forms/:form_id/responses
+owner	DELETE	/api/me/forms/:form_id/responses/:id
+owner	GET	/api/me/forms/:form_id/responses/:id
+owner	GET	/api/me/forms/:form_id/summary
 owner	DELETE	/api/me/forms/:id
 owner	GET	/api/me/forms/:id
 owner	PATCH	/api/me/forms/:id
