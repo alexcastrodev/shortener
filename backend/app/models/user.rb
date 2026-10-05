@@ -61,6 +61,7 @@ class User < ApplicationRecord
   has_many :page_templates, dependent: :destroy
   has_many :page_template_reports, dependent: :delete_all
   has_many :identities, dependent: :delete_all
+  has_many :oauth_grants, dependent: :destroy
 
   # ===============
   # Scopes
