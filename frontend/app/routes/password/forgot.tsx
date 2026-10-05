@@ -1,5 +1,6 @@
 import { Button, TextInput } from '@mantine/core';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MetaFunction } from 'react-router';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { usePasswordForgot } from '@internal/core/actions/password-forgot/password-forgot.hook';
@@ -23,6 +24,7 @@ export const meta: MetaFunction = () => {
 };
 
 export default function ForgotPassword() {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState<string>(location.state?.email ?? '');
@@ -43,11 +45,11 @@ export default function ForgotPassword() {
 
   return (
     <AuthShell
-      title="Reset your password"
-      subtitle="Enter your email and we send you a code to choose a new password."
+      title={t('forgot_title')}
+      subtitle={t('forgot_subtitle')}
       footer={
         <Link to="/login" className="hover:underline">
-          Back to log in
+          {t('back_to_login')}
         </Link>
       }
     >
@@ -67,7 +69,7 @@ export default function ForgotPassword() {
         }}
       >
         <TextInput
-          label="Email"
+          label={t('email_label')}
           type="email"
           size="md"
           autoComplete="email"
@@ -89,7 +91,7 @@ export default function ForgotPassword() {
           loading={forgot.isPending}
           disabled={!email || checking}
         >
-          Send reset code
+          {t('send_reset_code')}
         </Button>
       </form>
     </AuthShell>

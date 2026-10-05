@@ -1,5 +1,6 @@
 import { Button, TextInput } from '@mantine/core';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MetaFunction } from 'react-router';
 import { Link, useNavigate } from 'react-router';
 import { useSignup } from '@internal/core/actions/signup/signup.hook';
@@ -26,6 +27,7 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Signup() {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const submitOnce = useSubmitLock();
@@ -50,20 +52,20 @@ export default function Signup() {
 
   return (
     <AuthShell
-      title="Create your Kurz account"
+      title={t('signup_title')}
       subtitle={
         <>
-          Already have an account?{' '}
+          {t('signup_have_account')}{' '}
           <Link
             to="/login"
             className="font-semibold text-primary underline underline-offset-4 hover:text-foreground"
           >
-            Log in
+            {t('log_in')}
           </Link>
           .
         </>
       }
-      footer="Free, no credit card. We send a code to confirm your email."
+      footer={t('signup_footer')}
     >
       {GOOGLE_CLIENT_ID && (
         <>
@@ -90,7 +92,7 @@ export default function Signup() {
         }}
       >
         <TextInput
-          label="Email"
+          label={t('email_label')}
           type="email"
           size="md"
           placeholder="do.you.know@university.kurz.fyi"
@@ -115,7 +117,7 @@ export default function Signup() {
           loading={signup.isPending}
           disabled={checking}
         >
-          Create account
+          {t('create_account')}
         </Button>
       </form>
     </AuthShell>
