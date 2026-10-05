@@ -17,6 +17,7 @@ module Mcp
         when *TEXT_TYPES then Untrusted.text(raw, budget)
         when "single_choice" then choice_label(field, raw)
         when "multiple_choice" then Array(raw).map { |id| choice_label(field, id) }
+        when "image" then "(image attached)"
         when "date" then Content.clean(raw, max: 10)
         else raw
         end

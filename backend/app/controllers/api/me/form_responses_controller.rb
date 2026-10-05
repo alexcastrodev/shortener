@@ -35,6 +35,7 @@ class Api::Me::FormResponsesController < ApplicationController
   end
 
   def destroy_all
+    @form.uploads.where.not(response_id: nil).find_each(&:destroy)
     @form.responses.delete_all
     @form.update_column(:responses_count, 0)
     head(:no_content)

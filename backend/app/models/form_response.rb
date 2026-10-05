@@ -3,6 +3,7 @@ class FormResponse < ApplicationRecord
 
   belongs_to :form
   counter_culture :form, column_name: "responses_count"
+  has_many :uploads, class_name: "FormUpload", foreign_key: :response_id, dependent: :destroy, inverse_of: :response
 
   validates :country, format: { with: /\A[A-Z]{2}\z/ }, allow_nil: true
   validate :answers_is_object

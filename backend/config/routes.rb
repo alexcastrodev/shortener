@@ -70,6 +70,7 @@ Rails.application.routes.draw do
         resources :responses, only: [:index, :show, :destroy], controller: "form_responses"
         delete "responses", to: "form_responses#destroy_all"
         get :summary, to: "form_responses#summary"
+        get "uploads/:id", to: "form_uploads#show", as: :upload, format: false
         resources :fields, only: [:create, :update, :destroy], controller: "form_fields" do
           collection { patch :reorder }
         end
@@ -100,6 +101,7 @@ Rails.application.routes.draw do
       resources :forms, only: [:show], param: :public_id, format: false
       post "forms/:public_id/responses", to: "form_responses#create", as: :form_responses, format: false
       post "forms/:public_id/events", to: "form_events#create", as: :form_events, format: false
+      post "forms/:public_id/fields/:field_id/uploads", to: "form_uploads#create", as: :form_uploads, format: false
       get "shortlinks/:short_code", to: "shortlink_unlocks#show", as: :locked_shortlink
       post "shortlinks/:short_code/unlock", to: "shortlink_unlocks#create", as: :shortlink_unlock
     end

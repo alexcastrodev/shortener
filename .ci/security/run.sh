@@ -19,8 +19,10 @@ $C up -d --wait api
 [ "$(docker network inspect kurzsec_sec -f '{{.Internal}}')" = true ] || { echo "refusing: network is not internal"; exit 2; }
 
 rc=0
+set +e
 $C run --rm -T rails bin/rails runner /security/suite.rb 2>&1 | tee security/out/results.txt
 rc=${PIPESTATUS[0]}
+set -e
 
 if [ "${ZAP:-0}" = 1 ]; then
   mkdir -p security/out/zap
@@ -30,6 +32,18 @@ if [ "${ZAP:-0}" = 1 ]; then
       zap-baseline.py -t "http://api.kurz.fyi$target" -r "zap$name.html" -J "zap$name.json" -I -m 1 || true
   done
 fi
+
+# Sandbox oracle (D12): the image decoder has no secrets, no route to the database or the Internet, a read-only filesystem and no root.
+sandbox_fail=0
+leaked=$($C exec -T imgproc env | grep -cE 'SECRET|POSTGRES|REDIS|S3_|SENTRY|MASTER_KEY' || true)
+[ "$leaked" = 0 ] || { echo "== sandbox: $leaked secret-looking variable(s) in imgproc"; sandbox_fail=1; }
+for target in db:5432 cache:6379 1.1.1.1:443; do
+  $C exec -T imgproc ruby -rsocket -e "host, port = '$target'.split(':'); begin; Socket.tcp(host, port.to_i, connect_timeout: 2) { exit 1 }; rescue StandardError; exit 0; end" || { echo "== sandbox: imgproc reached $target"; sandbox_fail=1; }
+done
+$C exec -T imgproc sh -c 'touch /rails/should-not-exist 2>/dev/null' && { echo "== sandbox: filesystem is writable"; sandbox_fail=1; }
+[ "$($C exec -T imgproc id -u)" != 0 ] || { echo "== sandbox: imgproc runs as root"; sandbox_fail=1; }
+echo "== oracle: sandbox isolation $([ "$sandbox_fail" = 0 ] && echo ok || echo FAILED)"
+[ "$sandbox_fail" = 0 ] || rc=1
 
 # Global oracle: no request may end in a 5xx, whatever the check was about.
 fivexx=$($C logs api 2>&1 | grep -cE 'Completed 5[0-9]{2}' || true)

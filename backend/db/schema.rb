@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_070000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -113,6 +113,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_060000) do
     t.index ["form_id", "id"], name: "index_form_responses_on_form_id_and_id"
     t.index ["form_id", "idempotency_key"], name: "index_form_responses_on_form_and_idempotency_key", unique: true, where: "(idempotency_key IS NOT NULL)"
     t.check_constraint "jsonb_typeof(answers) = 'object'::text AND octet_length(answers::text) <= 65536", name: "form_responses_answers_object_max_64kb"
+  end
+
+  create_table "form_uploads", force: :cascade do |t|
+    t.bigint "form_id", null: false
+    t.bigint "response_id"
+    t.string "field_id", limit: 8, null: false
+    t.string "token", limit: 24, null: false
+    t.datetime "created_at", null: false
+    t.index ["created_at"], name: "index_form_uploads_orphans", where: "(response_id IS NULL)"
+    t.index ["form_id"], name: "index_form_uploads_on_form_id"
+    t.index ["response_id"], name: "index_form_uploads_on_response_id"
+    t.index ["token"], name: "index_form_uploads_on_token", unique: true
   end
 
   create_table "forms", force: :cascade do |t|
@@ -482,6 +494,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_060000) do
   add_foreign_key "events", "shortlinks", on_delete: :cascade
   add_foreign_key "form_daily_stats", "forms", on_delete: :cascade
   add_foreign_key "form_responses", "forms", on_delete: :cascade
+  add_foreign_key "form_uploads", "form_responses", column: "response_id", on_delete: :nullify
+  add_foreign_key "form_uploads", "forms"
   add_foreign_key "forms", "shortlinks", on_delete: :nullify
   add_foreign_key "forms", "users", on_delete: :cascade
   add_foreign_key "identities", "users", on_delete: :cascade
