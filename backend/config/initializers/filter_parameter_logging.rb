@@ -32,4 +32,7 @@ Rails.application.config.filter_parameters += [
   :search,
   :filename,
   :file,
+  :endpoint,
+  :p256dh,
+  /\Aauth\z/,
 ]

@@ -22,6 +22,9 @@ RSpec.describe("filter_parameters") do
     "file",
     "refresh_token",
     "client_secret",
+    "endpoint",
+    "p256dh",
+    "auth",
   ].each do |key|
     it "filters #{key}" do
       expect(filter.filter(key => "CNRY-secret")[key]).to(eq("[FILTERED]"))
