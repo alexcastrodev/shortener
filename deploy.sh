@@ -26,6 +26,9 @@ migrate() {
   for name in "${MIGRATE_ENV[@]}"; do
     args+=(-e "$name")
   done
+  if [ -n "${MIGRATE_POSTGRES_USER:-}" ]; then
+    args+=(-e "POSTGRES_USER=$MIGRATE_POSTGRES_USER" -e "POSTGRES_PASSWORD=${MIGRATE_POSTGRES_PASSWORD:?MIGRATE_POSTGRES_PASSWORD is required with MIGRATE_POSTGRES_USER}")
+  fi
 
   echo "Running database migrations..."
   if ! docker run "${args[@]}" pizito:5001/shortener:latest ./bin/rails db:prepare; then

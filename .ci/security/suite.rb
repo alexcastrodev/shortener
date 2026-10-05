@@ -617,6 +617,21 @@ check("D02", "image bombs against the real sandbox: oversized headers are refuse
   expect_eq(201, send_file.call(ordinary).status, "decoder alive after the bombs")
 end
 
+check("P16", "the application connects as a role without superuser, DDL or file access, so a SQL injection cannot change the schema or read the host") do
+  expect_eq("kurz_app", sql("select current_user"), "runtime role")
+  expect_eq(false, sql("select rolsuper from pg_roles where rolname = current_user"), "superuser")
+  ["create table harness_probe (id int)", "drop table users", "alter table users add column probe int", "select pg_read_file('/etc/passwd')", "copy users to program 'id'", "create role harness_probe", "truncate schema_migrations"].each do |statement|
+    denied = begin
+      ActiveRecord::Base.connection.execute(statement)
+      false
+    rescue ActiveRecord::StatementInvalid
+      true
+    end
+    expect(denied, "allowed: #{statement}")
+  end
+  expect(sql("select count(*) from users").to_i >= 0, "DML stopped working")
+end
+
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")
 puts "== #{Harness.results.count { |r| r[2] == 'PASS' }}/#{Harness.results.size} checks passed"
 exit(Harness.failed? ? 1 : 0)
