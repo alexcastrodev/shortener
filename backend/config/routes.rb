@@ -65,6 +65,10 @@ Rails.application.routes.draw do
       resource :oauth_authorization, path: "oauth/authorization", only: [:show, :create], controller: "oauth_authorizations"
       resources :oauth_grants, only: [:index, :destroy]
       resources :form_templates, only: [:index]
+      resources :notifications, only: [:index] do
+        member { post :read }
+        collection { post :read_all }
+      end
       resources :forms, only: [:index, :show, :create, :update, :destroy] do
         member do
           post :publish

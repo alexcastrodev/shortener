@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_070000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -80,7 +80,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_060000) do
     t.datetime "created_at", null: false
     t.index ["appointment_id"], name: "index_appointment_tokens_on_appointment_id"
     t.index ["digest"], name: "index_appointment_tokens_on_digest", unique: true
-    t.check_constraint "purpose::text = ANY (ARRAY['manage'::character varying, 'approve'::character varying, 'decline'::character varying]::text[])", name: "appointment_tokens_purpose_known"
+    t.check_constraint "purpose::text = ANY (ARRAY['manage'::character varying::text, 'approve'::character varying::text, 'decline'::character varying::text])", name: "appointment_tokens_purpose_known"
   end
 
   create_table "appointments", force: :cascade do |t|
@@ -113,8 +113,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_060000) do
     t.index ["rescheduled_from_id"], name: "index_appointments_on_rescheduled_from_id"
     t.index ["response_id"], name: "index_appointments_on_response_id"
     t.index ["slot_id"], name: "index_appointments_on_slot_id"
-    t.check_constraint "cancelled_by IS NULL OR (cancelled_by::text = ANY (ARRAY['owner'::character varying, 'client'::character varying, 'system'::character varying]::text[]))", name: "appointments_cancelled_by_known"
-    t.check_constraint "decided_by IS NULL OR (decided_by::text = ANY (ARRAY['owner'::character varying, 'timeout'::character varying, 'client'::character varying]::text[]))", name: "appointments_decided_by_known"
+    t.check_constraint "cancelled_by IS NULL OR (cancelled_by::text = ANY (ARRAY['owner'::character varying::text, 'client'::character varying::text, 'system'::character varying::text]))", name: "appointments_cancelled_by_known"
+    t.check_constraint "decided_by IS NULL OR (decided_by::text = ANY (ARRAY['owner'::character varying::text, 'timeout'::character varying::text, 'client'::character varying::text]))", name: "appointments_decided_by_known"
     t.check_constraint "jsonb_typeof(snapshot) = 'object'::text", name: "appointments_snapshot_is_object"
   end
 
@@ -249,6 +249,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_060000) do
     t.integer "records_returned", default: 0, null: false
     t.index ["created_at"], name: "index_mcp_tool_calls_on_created_at"
     t.index ["oauth_grant_id"], name: "index_mcp_tool_calls_on_oauth_grant_id"
+  end
+
+  create_table "notifications", force: :cascade do |t|
+    t.string "channel", null: false
+    t.string "kind", null: false
+    t.string "recipient_kind", null: false
+    t.bigint "user_id"
+    t.string "recipient_email"
+    t.bigint "appointment_id"
+    t.string "event_key", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.datetime "next_attempt_at"
+    t.datetime "sent_at"
+    t.datetime "read_at"
+    t.text "last_error"
+    t.datetime "created_at", null: false
+    t.index "kind, event_key, channel, recipient_kind, COALESCE((user_id)::text, (recipient_email)::text)", name: "index_notifications_uniqueness", unique: true
+    t.index ["appointment_id"], name: "index_notifications_on_appointment_id"
+    t.index ["created_at"], name: "index_notifications_on_created_at"
+    t.index ["status", "next_attempt_at"], name: "index_notifications_pending", where: "((status)::text = 'pending'::text)"
+    t.index ["user_id", "channel", "id"], name: "index_notifications_on_user_channel_id"
+    t.index ["user_id"], name: "index_notifications_on_user_id"
+    t.check_constraint "channel::text = ANY (ARRAY['in_app'::character varying, 'email'::character varying, 'push'::character varying]::text[])", name: "notifications_channel_known"
+    t.check_constraint "jsonb_typeof(payload) = 'object'::text", name: "notifications_payload_is_object"
+    t.check_constraint "recipient_kind::text = 'owner'::text AND user_id IS NOT NULL OR recipient_kind::text = 'client'::text AND recipient_email IS NOT NULL", name: "notifications_has_recipient"
+    t.check_constraint "recipient_kind::text = ANY (ARRAY['owner'::character varying, 'client'::character varying]::text[])", name: "notifications_recipient_kind_known"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'sent'::character varying, 'failed'::character varying]::text[])", name: "notifications_status_known"
   end
 
   create_table "oauth_access_tokens", force: :cascade do |t|
@@ -590,6 +619,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_060000) do
   add_foreign_key "forms", "users", on_delete: :cascade
   add_foreign_key "identities", "users", on_delete: :cascade
   add_foreign_key "mcp_tool_calls", "oauth_grants", on_delete: :cascade
+  add_foreign_key "notifications", "appointments", on_delete: :cascade
+  add_foreign_key "notifications", "users", on_delete: :cascade
   add_foreign_key "oauth_access_tokens", "oauth_grants", on_delete: :cascade
   add_foreign_key "oauth_authorization_codes", "oauth_grants", on_delete: :cascade
   add_foreign_key "oauth_grants", "oauth_clients", on_delete: :cascade

@@ -60,6 +60,14 @@ module Appointments
         }
       end
       Appointment.insert_all!(rows)
+      first = response.appointments.order(:id).first
+      Notification.notify_owner(
+        user_id: form.user_id,
+        kind: "appointment_created",
+        event_key: group,
+        source: first,
+        payload: { form_id: form.id, response_id: response.id, group_key: group, sessions: rows.size },
+      )
       response.appointments.order(:id)
     rescue Reserve::Full => e
       raise Full, e.starts_at
