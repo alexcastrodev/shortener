@@ -1,0 +1,23 @@
+{
+  "link_number": "Link #{{id}}",
+  "load_failed_title": "Failed to load link",
+  "load_failed_message": "We could not load this link. Please try again later.",
+  "back": "Back",
+  "id_clicks": "ID: {{id}} | Clicks: {{count}}",
+  "destination": "Destination",
+  "short_url": "Short URL",
+  "created": "Created",
+  "last_accessed": "Last accessed",
+  "never": "Never",
+  "open": "Open",
+  "copy": "Copy",
+  "copied_title": "Copied",
+  "copied_message": "Short URL copied to clipboard",
+  "qr_code": "QR code",
+  "no_data_title": "No data yet",
+  "no_data_message": "Your link is ready to go! Statistics will appear here once people start accessing it.",
+  "device_statistics": "Device Statistics",
+  "browser_statistics": "Browser Statistics",
+  "regions": "Regions",
+  "countries": "Countries"
+}

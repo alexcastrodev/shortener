@@ -38,5 +38,10 @@
   "expires_at_label": "Expires at",
   "expires_at_hint": "Optional. The link stops working at this date and time.",
   "expires_on": "Expires {{date}}",
-  "created_on": "Created {{date}}"
+  "created_on": "Created {{date}}",
+  "invalid_url": "Invalid URL",
+  "password_min": "At least 4 characters",
+  "password_max": "At most 72 characters",
+  "expires_future": "Must be in the future",
+  "link_created": "Link created successfully"
 }

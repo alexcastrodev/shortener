@@ -2,17 +2,18 @@ import { Alert, Card, SimpleGrid } from '@mantine/core';
 import { BarChart, DonutChart } from '@mantine/charts';
 import { useEventStatistics } from 'packages/core/actions/get-event-statistics/get-event-statistics.hook';
 import { useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { injectRandomColor } from '~/utils/get-random-color';
 
 export function Statistics() {
+  const { t } = useTranslation('links');
   const params = useParams();
   const { data } = useEventStatistics(params.id || '');
 
   if (!data) {
     return (
-      <Alert title="No data yet" color="brand" variant="light" my="lg">
-        Your link is ready to go! Statistics will appear here once people start
-        accessing it.
+      <Alert title={t('no_data_title')} color="brand" variant="light" my="lg">
+        {t('no_data_message')}
       </Alert>
     );
   }
@@ -21,7 +22,7 @@ export function Statistics() {
     <SimpleGrid cols={{ base: 1, md: 2 }} mt="lg" spacing="md">
       <Card h={420} p="lg">
         <DonutChart
-          chartLabel="Device Statistics"
+          chartLabel={t('device_statistics')}
           withLabelsLine
           labelsType="value"
           withLabels
@@ -46,7 +47,7 @@ export function Statistics() {
 
       <Card h={420} p="lg">
         <DonutChart
-          chartLabel="Browser Statistics"
+          chartLabel={t('browser_statistics')}
           withLabelsLine
           labelsType="value"
           withLabels
@@ -74,7 +75,7 @@ export function Statistics() {
           h="100%"
           data={data.region_statistics || []}
           dataKey="region"
-          series={[{ name: 'count', label: 'Regions', color: 'brand.6' }]}
+          series={[{ name: 'count', label: t('regions'), color: 'brand.6' }]}
           withTooltip
           withLegend
         />
@@ -99,7 +100,7 @@ export function Statistics() {
           h="100%"
           data={data.country_statistics || []}
           dataKey="country"
-          series={[{ name: 'count', label: 'Countries', color: 'indigo.6' }]}
+          series={[{ name: 'count', label: t('countries'), color: 'indigo.6' }]}
           withTooltip
           withLegend
         />

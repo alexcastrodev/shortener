@@ -19,6 +19,7 @@ import { modals } from '@mantine/modals';
 import { useDeleteShortlink } from 'packages/core/actions/delete-shortlink/delete-shortlink.hook';
 import { queryClient } from 'packages/core/service-provider';
 import { useTranslation } from 'react-i18next';
+import { formatDate } from '../../i18n/format';
 import { EditShortlinkForm } from './edit-shortlink-form';
 import { openQrCodeModal } from '../../modules/qr-code';
 
@@ -48,17 +49,12 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
     },
   });
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
-
   const formattedDate = shortlink.last_accessed_at
-    ? formatDate(shortlink.last_accessed_at)
+    ? formatDate(shortlink.last_accessed_at, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
     : t('never_accessed');
 
   const handleViewDetails = () => {

@@ -1,23 +1,33 @@
 import type { ReactNode } from 'react';
 import { Card } from '@internal/ui';
+import { activeLocale } from '../../i18n';
+import { formatDate } from '../../i18n/format';
 
 export type Bucket = { name: string; value: number };
 
-const countryNames =
-  typeof Intl !== 'undefined' && 'DisplayNames' in Intl
-    ? new Intl.DisplayNames(['en'], { type: 'region' })
-    : undefined;
+const countryNames = new Map<string, Intl.DisplayNames>();
+
+function regionNames() {
+  if (typeof Intl === 'undefined' || !('DisplayNames' in Intl)) return undefined;
+  const locale = activeLocale();
+  let names = countryNames.get(locale);
+  if (!names) {
+    names = new Intl.DisplayNames([locale], { type: 'region' });
+    countryNames.set(locale, names);
+  }
+  return names;
+}
 
 export function countryLabel(code: string) {
   if (!/^[A-Z]{2}$/.test(code)) return code;
   const flag = String.fromCodePoint(
     ...[...code].map(char => 0x1f1e6 + char.charCodeAt(0) - 65)
   );
-  return `${flag} ${countryNames?.of(code) ?? code}`;
+  return `${flag} ${regionNames()?.of(code) ?? code}`;
 }
 
 export function formatDay(date: string) {
-  return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US', {
+  return formatDate(`${date}T00:00:00Z`, {
     month: 'short',
     day: 'numeric',
     timeZone: 'UTC',

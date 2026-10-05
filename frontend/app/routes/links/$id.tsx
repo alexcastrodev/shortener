@@ -5,6 +5,8 @@ import {
   IconQrcode,
 } from '@tabler/icons-react';
 import { useNavigate, useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
+import { formatDateTime } from '../../i18n/format';
 import { useGetShortlinkDetails } from '@internal/core/actions/get-shortlink-details/get-shortlink-details.hook';
 import type { Route } from '../../+types/root';
 import { notifications } from '@mantine/notifications';
@@ -24,6 +26,7 @@ export function meta({}: Route.MetaArgs) {
 export const ssr = false;
 
 export default function Page() {
+  const { t } = useTranslation('links');
   const navigate = useNavigate();
   const params = useParams();
   const id = params.id;
@@ -34,8 +37,8 @@ export default function Page() {
   if (error) {
     return (
       <PageContainer>
-        <Alert title="Failed to load link">
-          We could not load this link. Please try again later.
+        <Alert title={t('load_failed_title')}>
+          {t('load_failed_message')}
         </Alert>
       </PageContainer>
     );
@@ -61,7 +64,7 @@ export default function Page() {
           leftSection={<IconArrowLeft size={16} />}
           onClick={() => navigate(-1)}
         >
-          Back
+          {t('back')}
         </Button>
       </div>
 
@@ -69,16 +72,16 @@ export default function Page() {
         <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_auto]">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold text-foreground">
-              {link.title ?? `Link #${link.id}`}
+              {link.title ?? t('link_number', { id: link.id })}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              ID: {link.id} | Clicks: {link.events_count}
+              {t('id_clicks', { id: link.id, count: link.events_count })}
             </p>
 
             <div className="mt-6 space-y-4">
               <div>
                 <p className="text-sm font-semibold text-muted-foreground">
-                  Destination
+                  {t('destination')}
                 </p>
                 <a
                   href={link.original_url}
@@ -92,7 +95,7 @@ export default function Page() {
 
               <div>
                 <p className="text-sm font-semibold text-muted-foreground">
-                  Short URL
+                  {t('short_url')}
                 </p>
                 <a
                   href={link.short_url}
@@ -107,22 +110,22 @@ export default function Page() {
               {link.created_at && (
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">
-                    Created
+                    {t('created')}
                   </p>
                   <div className="text-sm text-muted-foreground">
-                    {new Date(link.created_at).toLocaleString()}
+                    {formatDateTime(link.created_at)}
                   </div>
                 </div>
               )}
 
               <div>
                 <p className="text-sm font-semibold text-muted-foreground">
-                  Last accessed
+                  {t('last_accessed')}
                 </p>
                 <div className="text-sm text-muted-foreground">
                   {link.last_accessed_at
-                    ? new Date(link.last_accessed_at).toLocaleString()
-                    : 'Never'}
+                    ? formatDateTime(link.last_accessed_at)
+                    : t('never')}
                 </div>
               </div>
             </div>
@@ -136,7 +139,7 @@ export default function Page() {
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <IconExternalLink size={16} />
-              Open
+              {t('open')}
             </a>
 
             <Button
@@ -146,13 +149,13 @@ export default function Page() {
               onClick={async () => {
                 copy(link.short_url);
                 notifications.show({
-                  title: 'Copied',
-                  message: 'Short URL copied to clipboard',
+                  title: t('copied_title'),
+                  message: t('copied_message'),
                   color: 'green',
                 });
               }}
             >
-              Copy
+              {t('copy')}
             </Button>
 
             <Button
@@ -167,7 +170,7 @@ export default function Page() {
                 })
               }
             >
-              QR code
+              {t('qr_code')}
             </Button>
           </div>
         </div>
