@@ -2,7 +2,7 @@
 // pages, password-protected link form). Scripts only run with the
 // per-request nonce, so stored content can never execute even if it
 // reached the HTML unescaped.
-const STRICT_CSP_PATHS = [/^\/u\//, /^\/s\//, /^\/f\//];
+const STRICT_CSP_PATHS = [/^\/u\//, /^\/s\//, /^\/f\//, /^\/oauth\//];
 const TURNSTILE_CSP_PATHS = [/^\/f\//];
 const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com';
 

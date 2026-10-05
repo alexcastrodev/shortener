@@ -1,3 +1,4 @@
+import { goAfterLogin } from '../../modules/oauth/return-to';
 import { Button, PinInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useState } from 'react';
@@ -44,7 +45,7 @@ export default function ResetPassword() {
         color: 'green',
         message: 'Password updated. Other sessions were signed out.',
       });
-      navigate('/app');
+      goAfterLogin(navigate);
     },
     onError: error => {
       const [message, title] = explainAuthError(error as AuthError);

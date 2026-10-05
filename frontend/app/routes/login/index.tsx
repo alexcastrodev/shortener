@@ -1,3 +1,4 @@
+import { goAfterLogin } from '../../modules/oauth/return-to';
 import {
   Alert,
   Button,
@@ -64,7 +65,7 @@ export default function Login() {
   const passwordLogin = useLoginPassword({
     onSuccess: ({ user }) => {
       setUser(user);
-      navigate('/app');
+      goAfterLogin(navigate);
     },
     onError: error => {
       setPassword('');

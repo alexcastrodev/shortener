@@ -1,3 +1,4 @@
+import { goAfterLogin } from '../../../modules/oauth/return-to';
 import { Button, PinInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useState } from 'react';
@@ -32,7 +33,7 @@ export default function LoginConfirmation() {
   const verify = useLoginVerifyRequest({
     onSuccess: ({ user }) => {
       setUser(user);
-      navigate('/app');
+      goAfterLogin(navigate);
     },
     onError: error => {
       setCode('');
