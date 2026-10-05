@@ -19,6 +19,7 @@ RSpec.describe("public form definition", type: :request) do
       custom_colors: nil,
       layout: "steps",
       fields: [{ "id" => "serve001", "type" => "short_text", "label" => "Served question", "required" => true, "secret" => "x" }],
+      published_version: 0,
     )
   end
   let(:json) { JSON.parse(response.body) }

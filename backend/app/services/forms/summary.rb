@@ -72,7 +72,7 @@ module Forms
     end
 
     def fields
-      form.fields.select { |field| FieldSchema.answerable?(field) }.map { |field| field_summary(field) }
+      Snapshot.reporting_fields(form).select { |field| FieldSchema.answerable?(field) }.map { |field| field_summary(field) }
     end
 
     def field_summary(field)

@@ -8,8 +8,18 @@ module Forms
 
     class ClaimFailed < StandardError; end
 
-    def initialize(form:, answers:, idempotency_key: nil, meta: {})
+    class FormChanged < StandardError
+      attr_reader :definition
+
+      def initialize(definition)
+        @definition = definition
+        super("form_changed")
+      end
+    end
+
+    def initialize(form:, answers:, idempotency_key: nil, meta: {}, version: nil)
       @form = form
+      @version = version
       @answers = answers
       @idempotency_key = idempotency_key.presence&.to_s&.first(64)
       @meta = meta
@@ -21,6 +31,8 @@ module Forms
 
       return Result.new(nil, { "answers" => ["invalid"] }, false) unless answers.is_a?(Hash)
 
+      raise FormChanged, definition if stale?
+
       @claims = []
       values, errors = cast_all
       return Result.new(nil, errors, false) if errors.any?
@@ -30,12 +42,20 @@ module Forms
 
     private
 
-    attr_reader :form, :answers, :idempotency_key, :meta
+    attr_reader :form, :answers, :idempotency_key, :meta, :version
+
+    def definition
+      @definition ||= PublicDefinition.for(form)
+    end
+
+    def stale?
+      Snapshot.enabled? && version.present? && version.to_i != definition.published_version
+    end
 
     def cast_all
       values = {}
       errors = {}
-      PublicDefinition.for(form).fields.select { |field| FieldSchema.answerable?(field) }.each do |field|
+      definition.fields.select { |field| FieldSchema.answerable?(field) }.each do |field|
         value, error = field["type"] == "image" ? cast_image(field, answers[field["id"]]) : FieldSchema.cast_answer(field, answers[field["id"]])
         if error
           errors[field["id"]] = [error.to_s]
@@ -77,6 +97,7 @@ module Forms
     def attributes
       {
         idempotency_key: idempotency_key,
+        published_version: Snapshot.enabled? ? definition.published_version : nil,
         country: country,
         platform: text(:platform),
         browser: text(:browser),

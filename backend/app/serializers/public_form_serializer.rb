@@ -6,6 +6,8 @@ class PublicFormSerializer < BaseSerializer
 
   attributes :title, :description, :thank_you_message, :theme, :custom_colors, :layout
 
+  attributes :published_version, if: proc { Forms::Snapshot.enabled? }
+
   attribute :fields do |form|
     form.fields.map do |field|
       field.slice(*FIELD_KEYS).tap do |visible|

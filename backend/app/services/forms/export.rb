@@ -30,7 +30,7 @@ module Forms
     attr_reader :form, :days
 
     def questions
-      @questions ||= form.fields.select { |field| FieldSchema.answerable?(field) }
+      @questions ||= Snapshot.reporting_fields(form).select { |field| FieldSchema.answerable?(field) }
     end
 
     def header
