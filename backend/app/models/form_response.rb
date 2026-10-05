@@ -5,6 +5,9 @@ class FormResponse < ApplicationRecord
   counter_culture :form, column_name: "responses_count"
   has_many :uploads, class_name: "FormUpload", foreign_key: :response_id, dependent: :destroy, inverse_of: :response
 
+  has_many :appointments, foreign_key: :response_id, inverse_of: :response, dependent: nil
+  before_destroy { Appointments::Release.call(appointments.holding.pluck(:slot_id)) }
+
   validates :country, format: { with: /\A[A-Z]{2}\z/ }, allow_nil: true
   validate :answers_is_object
   validate :answers_size

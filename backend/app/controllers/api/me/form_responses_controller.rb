@@ -44,6 +44,7 @@ class Api::Me::FormResponsesController < ApplicationController
 
   def destroy_all
     @form.uploads.where.not(response_id: nil).find_each(&:destroy)
+    Appointments::Release.call(@form.appointments.holding.pluck(:slot_id))
     @form.responses.delete_all
     @form.update_column(:responses_count, 0)
     head(:no_content)

@@ -17,9 +17,10 @@ module Forms
       end
     end
 
-    def initialize(form:, answers:, idempotency_key: nil, meta: {}, version: nil)
+    def initialize(form:, answers:, idempotency_key: nil, meta: {}, version: nil, client: {})
       @form = form
       @version = version
+      @client = client
       @answers = answers
       @idempotency_key = idempotency_key.presence&.to_s&.first(64)
       @meta = meta
@@ -42,7 +43,7 @@ module Forms
 
     private
 
-    attr_reader :form, :answers, :idempotency_key, :meta, :version
+    attr_reader :form, :answers, :idempotency_key, :meta, :version, :client
 
     def definition
       @definition ||= PublicDefinition.for(form)
@@ -56,7 +57,7 @@ module Forms
       values = {}
       errors = {}
       definition.fields.select { |field| FieldSchema.answerable?(field) }.each do |field|
-        value, error = field["type"] == "image" ? cast_image(field, answers[field["id"]]) : FieldSchema.cast_answer(field, answers[field["id"]])
+        value, error = cast_field(field)
         if error
           errors[field["id"]] = [error.to_s]
         elsif !value.nil?
@@ -64,6 +65,30 @@ module Forms
         end
       end
       [values, errors]
+    end
+
+    def cast_field(field)
+      raw = answers[field["id"]]
+      case field["type"]
+      when "booking" then cast_booking(field, raw)
+      when "image" then cast_image(field, raw)
+      else FieldSchema.cast_answer(field, raw)
+      end
+    end
+
+    def cast_booking(field, raw)
+      return [nil, :blank] if raw.nil? || raw == ""
+
+      value, error = Appointments::Book.cast(form: form, booking: field, raw: raw)
+      @booking = value
+      [value&.slice("service", "sessions"), error]
+    end
+
+    def contact(values)
+      fields = definition.fields
+      email_id = fields.find { |field| field["type"] == "email" && field["required"] }&.fetch("id")
+      name_id = fields.find { |field| field["type"] == "short_text" && field["required"] }&.fetch("id")
+      { email: values[email_id], name: values[name_id] }
     end
 
     def cast_image(field, raw)
@@ -83,6 +108,7 @@ module Forms
         claimed = @claims.all? { |upload| FormUpload.where(id: upload.id, response_id: nil).update_all(response_id: response.id) == 1 }
         raise ClaimFailed unless claimed
 
+        book(response, values)
         Result.new(response, nil, true)
       end
     rescue ClaimFailed
@@ -92,6 +118,13 @@ module Forms
       raise unless existing
 
       Result.new(existing, nil, false)
+    end
+
+    def book(response, values)
+      return unless @booking
+
+      meta = { time_zone: Appointments::Book.valid_zone(client[:time_zone]), locale: Appointments::Book.valid_locale(client[:locale]) }
+      Appointments::Book.call(form: form, response: response, value: @booking, contact: contact(values), meta: meta, version: definition.published_version)
     end
 
     def attributes
