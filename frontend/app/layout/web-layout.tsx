@@ -40,6 +40,12 @@ export function Layout({ children }: PropsWithChildren) {
               About
             </a>
             <a
+              href="/privacy"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Privacy
+            </a>
+            <a
               href="/report"
               className="text-muted-foreground transition-colors hover:text-foreground"
             >

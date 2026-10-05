@@ -131,7 +131,12 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
             go to the owner of this form. Kurz records your country, device,
             browser and where you came from, never your IP address.
           </p>
-          <p className="mt-2">Never submit passwords or card numbers through a form.</p>
+          <p className="mt-2">
+            Never submit passwords or card numbers through a form.{' '}
+            <a href="/privacy" className={`underline ${theme.footer}`}>
+              Privacy
+            </a>
+          </p>
           <a
             href={`/report?form=${encodeURIComponent(publicId)}`}
             className={`mt-2 inline-block underline ${theme.footer}`}
