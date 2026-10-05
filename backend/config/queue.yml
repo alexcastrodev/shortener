@@ -27,6 +27,10 @@ default: &default
       threads: 1
       processes: 1
       polling_interval: 1
+    - queues: "notifications"
+      threads: 2
+      processes: 1
+      polling_interval: 2
     # One avatar decode at a time, cluster-wide: bursts wait in line instead
     # of running several 48MP decodes side by side in the jobs container.
     - queues: "images"
