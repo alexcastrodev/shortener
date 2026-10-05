@@ -163,6 +163,7 @@ RSpec.describe("OAuth authorization server", type: :request) do
       access = json["access_token"]
       expect(response).to(have_http_status(:ok))
 
+      expect(Oauth::SecurityEvent).to(receive(:record).with("code_replay", grant_id: grant.id))
       exchange(code: code)
 
       expect(json["error"]).to(eq("invalid_grant"))
@@ -206,6 +207,7 @@ RSpec.describe("OAuth authorization server", type: :request) do
       expect(response).to(have_http_status(:ok))
       expect(json["refresh_token"]).not_to(eq(first))
 
+      expect(Oauth::SecurityEvent).to(receive(:record).with("refresh_reuse", grant_id: grant.id))
       refresh(first)
       expect(json["error"]).to(eq("invalid_grant"))
       expect(grant.reload).not_to(be_active)

@@ -19,7 +19,10 @@ class OauthAuthorizationCode < ApplicationRecord
     return find_by!(code_digest: digest) if claimed == 1
 
     replayed = find_by(code_digest: digest)
-    replayed&.oauth_grant&.revoke!
+    if replayed
+      Oauth::SecurityEvent.record("code_replay", grant_id: replayed.oauth_grant_id)
+      replayed.oauth_grant.revoke!
+    end
     nil
   end
 end
