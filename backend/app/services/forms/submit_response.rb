@@ -35,7 +35,7 @@ module Forms
     def cast_all
       values = {}
       errors = {}
-      form.fields.select { |field| FieldSchema.answerable?(field) }.each do |field|
+      PublicDefinition.for(form).fields.select { |field| FieldSchema.answerable?(field) }.each do |field|
         value, error = field["type"] == "image" ? cast_image(field, answers[field["id"]]) : FieldSchema.cast_answer(field, answers[field["id"]])
         if error
           errors[field["id"]] = [error.to_s]
