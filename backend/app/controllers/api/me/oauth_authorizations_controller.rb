@@ -26,6 +26,7 @@ class Api::Me::OauthAuthorizationsController < ApplicationController
     return render(json: { redirect_to: request_data.redirect_url(error: "access_denied") }) unless params[:decision] == "allow"
 
     granted = Array(params[:granted_scopes]).map(&:to_s).uniq & request_data.scopes
+    granted = [OauthGrant::FULL_SCOPE] if granted.include?(OauthGrant::FULL_SCOPE)
     return render(json: { redirect_to: request_data.redirect_url(error: "access_denied") }) if granted.empty?
 
     if granted.include?("responses:read") && granted.intersect?(OauthGrant::PUBLISH_SCOPES)

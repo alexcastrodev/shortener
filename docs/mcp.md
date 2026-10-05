@@ -14,7 +14,8 @@ Kurz exposes shortlinks, bio pages and forms to AI apps through a remote MCP ser
 - Pages and forms are created and edited as drafts. A live page or form accepts only theme and color changes; to edit anything else, unpublish it first (needs the publish scope) or use the dashboard. Deleting and duplicating stay in the dashboard.
 - Publishing and unpublishing need `forms:publish` or `pages:publish`, off by default, and a connection can never hold a publish scope together with `responses:read`: text typed by respondents is untrusted and must not be able to steer what goes online.
 - Forms have a layout (`one_at_a_time`, `page` or `steps`) and can group questions with `section` fields. Every form gets a short link on creation, returned by `get_form`.
-- A form with responses keeps its questions; only its texts can change.
+- `account:full` ("Full access") is a single opt-in scope, off by default and replacing every other permission: it adds update and delete for short links, deleting pages and forms, duplicating forms, applying templates, deleting responses, reading responses together with publishing, and lifts the draft-only and no-edits-after-responses limits. Deleting tools need the exact short code, slug or title repeated as `confirm`, are marked destructive so clients ask first, and are limited to 10 an hour. Account deletion, passwords and connected apps are not available through the MCP.
+- Without full access, a form with responses keeps its questions; only its texts can change.
 - `responses:read` is separate from `forms:read`. Text typed by respondents is returned marked as untrusted data, capped in size, and counts toward a daily budget of 2000 records. No IP, user agent, country or device is exposed.
 - Every call is logged as metadata only (tool, status, duration, records returned) and purged after 90 days. Each call is cancelled after 5 seconds in the database.
 

@@ -23,6 +23,8 @@ module Mcp
       end
 
       def allowed?(scopes)
+        return true if Array(scopes).include?(OauthGrant::FULL_SCOPE)
+
         base = required_scope.to_s.split(":").first
         Array(scopes).include?(required_scope) || (required_scope.end_with?(":read") && Array(scopes).include?("#{base}:write"))
       end
@@ -33,6 +35,7 @@ module Mcp
         return finish(grant, started, error_response("insufficient_scope", "This connection has no access to #{tool_name}")) unless allowed?(server_context[:scopes])
 
         user = server_context.fetch(:user)
+        Mcp::Current.full = Array(server_context[:scopes]).include?(OauthGrant::FULL_SCOPE)
         Throttle.check!(user, "writes", Throttle::WRITES) if writes
         Throttle.check!(user, tool_name, limits) if limits.any?
         result = with_statement_timeout { perform(user: user, **args) }

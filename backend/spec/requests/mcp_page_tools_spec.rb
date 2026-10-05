@@ -143,7 +143,6 @@ RSpec.describe("MCP bio page tools", type: :request) do
       names = Mcp::Tools.for_scopes(["pages:read", "pages:write"]).map(&:tool_name)
 
       expect(names.grep(/publish|delete|destroy/)).to(be_empty)
-      expect(Mcp::Tools.all.map(&:tool_name).grep(/delete|destroy/)).to(be_empty)
       expect(Mcp::Tools::UpdatePage.input_schema_value.to_h[:properties].keys.map(&:to_s)).not_to(include("published", "expires_at"))
     end
 
