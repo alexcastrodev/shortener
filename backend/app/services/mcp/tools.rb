@@ -3,7 +3,22 @@ module Mcp
     extend self
 
     def all
-      [ListShortlinks, GetShortlinkStatistics, CreateShortlink]
+      [
+        ListShortlinks,
+        GetShortlinkStatistics,
+        CreateShortlink,
+        ListPages,
+        GetPage,
+        GetPageStatistics,
+        ListPageTemplates,
+        CreatePage,
+        UpdatePage,
+        AddPageLink,
+        UpdatePageLink,
+        RemovePageLink,
+        ReorderPageLinks,
+        ApplyPageTemplate,
+      ]
     end
 
     def for_scopes(scopes)
