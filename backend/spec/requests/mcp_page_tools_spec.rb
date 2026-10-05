@@ -139,10 +139,11 @@ RSpec.describe("MCP bio page tools", type: :request) do
       expect(snapshot(live)).to(eq(before))
     end
 
-    it "has no tool that publishes, deletes or unpublishes a page" do
-      names = Mcp::Tools.all.map(&:tool_name)
+    it "gives no tool that publishes, deletes or unpublishes a page to the read and write scopes" do
+      names = Mcp::Tools.for_scopes(["pages:read", "pages:write"]).map(&:tool_name)
 
-      expect(names.grep(/publish|delete|destroy|unpublish/)).to(be_empty)
+      expect(names.grep(/publish|delete|destroy/)).to(be_empty)
+      expect(Mcp::Tools.all.map(&:tool_name).grep(/delete|destroy/)).to(be_empty)
       expect(Mcp::Tools::UpdatePage.input_schema_value.to_h[:properties].keys.map(&:to_s)).not_to(include("published", "expires_at"))
     end
 

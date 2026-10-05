@@ -632,6 +632,42 @@ check("P16", "the application connects as a role without superuser, DDL or file 
   expect(sql("select count(*) from users").to_i >= 0, "DML stopped working")
 end
 
+check("MC12", "MCP publishing on the real stack: only a publish scope sees the tools, a token cannot hold publish and responses:read, other tenants are untouchable, a live item accepts only theme and color changes") do
+  client = OauthClient.create!(client_name: "Publisher", redirect_uris: ["https://claude.ai/api/mcp/auth_callback"])
+  owner = User.create!(email: "publisher-#{SecureRandom.hex(4)}@example.test", verified_at: Time.current)
+  accept = { "Accept" => "application/json, text/event-stream" }
+  tools_of = lambda do |token|
+    http(:post, "/mcp", body: { jsonrpc: "2.0", id: 1, method: "tools/list" }, token: token, headers: accept).json.dig("result", "tools").map { |t| t["name"] }
+  end
+  writer, = OauthAccessToken.issue(OauthGrant.create!(user: owner, oauth_client: client, scopes: ["forms:read", "forms:write", "pages:read", "pages:write"], resource: "https://api.kurz.fyi/mcp"))
+  expect(tools_of.call(writer).grep(/publish/).empty?, "write scopes see publish tools")
+
+  publisher, = OauthAccessToken.issue(OauthGrant.create!(user: owner, oauth_client: client, scopes: ["forms:publish", "pages:publish"], resource: "https://api.kurz.fyi/mcp"))
+  expect_eq(["publish_form", "publish_page", "unpublish_form", "unpublish_page"], tools_of.call(publisher).sort, "publish tools")
+
+  conflicting = OauthGrant.new(user: owner, oauth_client: client, scopes: ["responses:read", "forms:publish"], resource: "https://api.kurz.fyi/mcp")
+  expect(!conflicting.valid?, "responses:read and publish were combined")
+
+  form = Form.create!(user: owner, title: "Pub", fields: [{ "id" => "text0001", "type" => "short_text", "label" => "Q" }])
+  page = Page.create!(user: owner, slug: "pub#{SecureRandom.hex(3)}", published: false)
+  expect_eq(true, mcp_tool(publisher, "publish_form", { id: form.id }).dig("result", "structuredContent", "published"), "form published")
+  expect_eq(true, mcp_tool(publisher, "publish_page", { id: page.id }).dig("result", "structuredContent", "published"), "page published")
+  expect_eq(200, http(:get, "/api/public/forms/#{form.public_id}").status, "public form reachable")
+
+  foreign = Form.create!(user: TENANTS[:b], title: "Foreign", fields: [{ "id" => "text0001", "type" => "short_text", "label" => "Q" }])
+  expect_eq("not_found", mcp_tool(publisher, "publish_form", { id: foreign.id }).dig("result", "structuredContent", "error"), "foreign form")
+  expect(!foreign.reload.published, "foreign form was published")
+
+  full, = OauthAccessToken.issue(OauthGrant.create!(user: owner, oauth_client: client, scopes: ["forms:read", "forms:write", "pages:read", "pages:write", "forms:publish", "pages:publish"], resource: "https://api.kurz.fyi/mcp"))
+  colors = { "background" => "#101010", "text" => "#fafafa", "accent" => "#ff5500" }
+  expect_eq(colors, mcp_tool(full, "update_form", { id: form.id, custom_colors: colors }).dig("result", "structuredContent", "custom_colors"), "colors on a live form")
+  expect_eq("form_published", mcp_tool(full, "update_form", { id: form.id, title: "hacked" }).dig("result", "structuredContent", "error"), "title on a live form")
+  expect_eq("page_published", mcp_tool(full, "update_page", { id: page.id, bio: "hacked" }).dig("result", "structuredContent", "error"), "bio on a live page")
+
+  expect_eq(false, mcp_tool(publisher, "unpublish_form", { id: form.id }).dig("result", "structuredContent", "published"), "form unpublished")
+  expect_eq(404, http(:get, "/api/public/forms/#{form.public_id}").status, "unpublished form still reachable")
+end
+
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")
 puts "== #{Harness.results.count { |r| r[2] == 'PASS' }}/#{Harness.results.size} checks passed"
 exit(Harness.failed? ? 1 : 0)

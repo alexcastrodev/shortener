@@ -23,6 +23,9 @@ export function meta() {
   ];
 }
 
+const PUBLISH = ['forms:publish', 'pages:publish'];
+const SENSITIVE = ['responses:read', ...PUBLISH];
+
 const KEYS = [
   'client_id',
   'redirect_uri',
@@ -69,7 +72,7 @@ export default function AuthorizeApp() {
 
   useEffect(() => {
     if (!preview.data) return;
-    setEnabled(Object.fromEntries(preview.data.scopes.map(scope => [scope, scope !== 'responses:read'])));
+    setEnabled(Object.fromEntries(preview.data.scopes.map(scope => [scope, !SENSITIVE.includes(scope)])));
   }, [preview.data]);
 
   useEffect(() => {
@@ -79,6 +82,8 @@ export default function AuthorizeApp() {
   }, [preview.error]);
 
   const granted = Object.keys(enabled).filter(scope => enabled[scope]);
+  const readsResponses = !!enabled['responses:read'];
+  const publishes = PUBLISH.some(scope => enabled[scope]);
   const decide = (decision: 'allow' | 'deny') => mutate({ params, decision, grantedScopes: granted });
 
   return (
@@ -117,6 +122,9 @@ export default function AuthorizeApp() {
                 <li key={scope}>
                   <Switch
                     checked={!!enabled[scope]}
+                    disabled={
+                      (scope === 'responses:read' && publishes) || (PUBLISH.includes(scope) && readsResponses)
+                    }
                     onChange={event => {
                       const checked = event.currentTarget.checked;
                       setEnabled(current => ({ ...current, [scope]: checked }));
@@ -127,6 +135,13 @@ export default function AuthorizeApp() {
                 </li>
               ))}
             </ul>
+
+            {(preview.data.scopes.includes('responses:read') && preview.data.scopes.some(scope => PUBLISH.includes(scope))) && (
+              <MantineAlert mt="md" color="blue" variant="light" title="Reading responses and publishing are exclusive">
+                Text typed by respondents is untrusted. To keep it from steering what gets published, an app can read
+                responses or publish, never both.
+              </MantineAlert>
+            )}
 
             {preview.data.scopes.includes('responses:read') && (
               <MantineAlert mt="md" color="yellow" variant="light" title="Respondents' personal data">
