@@ -3,6 +3,7 @@ services:
     image: pizito:5001/shortener:latest
     environment:
       - RAILS_ENV=production
+      - LOG_REQUESTS=false
       # deploy.sh migrates before the rollout (see bin/docker-entrypoint).
       - SKIP_DB_PREPARE=1
       - POSTGRES_HOST=${POSTGRES_HOST}

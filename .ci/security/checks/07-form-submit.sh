@@ -1,6 +1,6 @@
 post_as() {
   local ip=$1 path=$2 body=$3; shift 3
-  curl -s -w '\n%{http_code}' -X POST -H "CF-Connecting-IP: $ip" -H 'Content-Type: application/json' "$@" -d "$body" "$API$path"
+  curl -s -w '\n%{http_code}' -X POST -H "CF-Connecting-IP: $ip" -H "X-Forwarded-For: $ip" -H 'Content-Type: application/json' "$@" -d "$body" "$API$path"
 }
 
 SUB_FORM=$(payload "$(call ownerA POST /api/me/forms '{"title":"Submit me","template":"contact"}')" | jq -r '.form.id')
