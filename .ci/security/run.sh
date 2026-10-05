@@ -22,6 +22,15 @@ rc=0
 $C run --rm -T rails bin/rails runner /security/suite.rb 2>&1 | tee security/out/results.txt
 rc=${PIPESTATUS[0]}
 
+if [ "${ZAP:-0}" = 1 ]; then
+  mkdir -p security/out/zap
+  for target in / /.well-known/oauth-authorization-server /.well-known/oauth-protected-resource/mcp; do
+    name=$(echo "$target" | tr -c 'a-z0-9' '_')
+    docker run --rm --network kurzsec_sec -v "$PWD/security/out/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable \
+      zap-baseline.py -t "http://api.kurz.fyi$target" -r "zap$name.html" -J "zap$name.json" -I -m 1 || true
+  done
+fi
+
 # Global oracle: no request may end in a 5xx, whatever the check was about.
 fivexx=$($C logs api 2>&1 | grep -cE 'Completed 5[0-9]{2}' || true)
 echo "== oracle: $fivexx request(s) ended in 5xx"
