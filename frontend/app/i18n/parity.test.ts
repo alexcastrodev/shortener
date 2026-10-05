@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
+import { DEFAULT_LOCALE, LOCALES } from './locales.ts';
 
 const here = import.meta.dirname;
 const appDir = resolve(here, '..');
@@ -37,15 +38,20 @@ function sources(dir: string): string[] {
   });
 }
 
-test('every namespace exists in both languages', () => {
-  const pt = readdirSync(join(here, 'pt-PT')).map((file) => file.replace(/\.json$/, ''));
-  assert.deepEqual([...pt].sort(), [...namespaces].sort());
-});
+const translations = LOCALES.filter((locale) => locale !== DEFAULT_LOCALE);
+
+for (const locale of translations) {
+  test(`${locale} has every namespace`, () => {
+    const found = readdirSync(join(here, locale)).map((file) => file.replace(/\.json$/, ''));
+    assert.deepEqual([...found].sort(), [...namespaces].sort());
+  });
+}
 
 for (const namespace of namespaces) {
-  test(`pt-PT matches en in ${namespace}`, (t) => {
-    const en = flatten(load('en', namespace));
-    const pt = flatten(load('pt-PT', namespace));
+  for (const locale of translations) {
+  test(`${locale} matches en in ${namespace}`, (t) => {
+    const en = flatten(load(DEFAULT_LOCALE, namespace));
+    const pt = flatten(load(locale, namespace));
     if (pt.size === 0) return t.skip('not translated yet');
 
     const enKeys = new Set([...en.keys()].map(base));
@@ -59,10 +65,11 @@ for (const namespace of namespaces) {
       assert.deepEqual(placeholders(text), placeholders(source), `placeholders differ in ${key}`);
     }
   });
+  }
 
   test(`every en key of ${namespace} is used`, () => {
     const code = [...sources(appDir), ...sources(packagesDir)].join('\n');
-    const unused = [...flatten(load('en', namespace)).keys()]
+    const unused = [...flatten(load(DEFAULT_LOCALE, namespace)).keys()]
       .map(base)
       .filter(
         (key) =>
