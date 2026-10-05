@@ -43,7 +43,6 @@ services:
       - OAUTH_ISSUER=${OAUTH_ISSUER:-https://api.kurz.fyi}
       - MCP_REDIRECT_HOSTS=${MCP_REDIRECT_HOSTS:-claude.ai,claude.com,chatgpt.com}
       - MCP_ALLOWED_ORIGINS=${MCP_ALLOWED_ORIGINS:-}
-      - MCP_BETA_EMAILS=${MCP_BETA_EMAILS:-}
     networks:
       - proxy_net
     deploy:

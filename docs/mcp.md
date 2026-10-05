@@ -24,7 +24,6 @@ Kurz exposes shortlinks, bio pages and forms to AI apps through a remote MCP ser
 | `OAUTH_ISSUER` | Issuer URL (never taken from the Host header) |
 | `MCP_REDIRECT_HOSTS` | Hosts allowed as OAuth redirect targets (default `claude.ai,claude.com,chatgpt.com`) |
 | `MCP_ALLOWED_ORIGINS` | Extra allowed `Origin` values for `/mcp` |
-| `MCP_BETA_EMAILS` | Comma-separated allowlist while in beta; empty means everyone |
 
 Cloudflare: skip WAF managed challenges and Bot Fight Mode for `/mcp`, `/oauth/*` and `/.well-known/*` (clients are not browsers). Keep rate limiting on.
 

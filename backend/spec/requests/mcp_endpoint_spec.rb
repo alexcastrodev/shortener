@@ -21,7 +21,6 @@ RSpec.describe("POST /mcp", type: :request) do
     example.run
   ensure
     ENV.delete("MCP_ENABLED")
-    ENV.delete("MCP_BETA_EMAILS")
   end
 
   before do
@@ -106,16 +105,6 @@ RSpec.describe("POST /mcp", type: :request) do
       call(token: token)
 
       expect(response).to(have_http_status(:unauthorized))
-    end
-
-    it "limits access to MCP_BETA_EMAILS when set" do
-      ENV["MCP_BETA_EMAILS"] = "someone@else.example"
-      call
-      expect(response).to(have_http_status(:unauthorized))
-
-      ENV["MCP_BETA_EMAILS"] = " #{user.email.upcase} "
-      call
-      expect(response).to(have_http_status(:ok))
     end
   end
 
