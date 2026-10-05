@@ -52,6 +52,7 @@ owner	DELETE	/api/me/color_palettes/:id
 owner	GET	/api/me/community_templates
 owner	POST	/api/me/community_templates/:id/report
 owner	GET	/api/me/form_templates
+owner	GET	/api/me/agenda
 owner	GET	/api/me/notifications
 owner	POST	/api/me/notifications/read_all
 owner	POST	/api/me/notifications/:id/read
