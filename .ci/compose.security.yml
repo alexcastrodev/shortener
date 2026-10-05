@@ -75,27 +75,15 @@ services:
       timeout: 5s
       retries: 40
 
-  # One-off Rails commands (seed, route dump) in the production image.
+  # Runs the Ruby suite inside the production image, on the isolated network.
   rails:
     image: kurzsec-api
-    environment: *api-env
+    environment:
+      <<: *api-env
+      SENTRY_DSN: ""
     volumes:
       - ./security:/security:ro
     networks: [sec]
     profiles: [tools]
     depends_on:
       migrate: { condition: service_completed_successfully }
-
-  runner:
-    build:
-      context: security
-      dockerfile: runner.Dockerfile
-    environment:
-      API: http://api.kurz.fyi
-    volumes:
-      - ./security:/security:ro
-      - ./security/out:/out
-    networks: [sec]
-    profiles: [tools]
-    depends_on:
-      api: { condition: service_healthy }
