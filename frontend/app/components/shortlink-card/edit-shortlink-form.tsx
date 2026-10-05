@@ -6,6 +6,7 @@ import { IconCalendarTime, IconLink, IconLock } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { Shortlink } from 'packages/core/types/Shortlink';
 import { useUpdateShortlink } from 'packages/core/actions/update-shortlink/update-shortlink.hook';
 import type { UpdateShortlinkRequestBody } from 'packages/core/actions/update-shortlink/update-shortlink.types';
@@ -16,26 +17,27 @@ import {
   isoToDateTimeLocal,
 } from '../../utils/datetime-local';
 
-const schema = z
-  .object({
-    title: z.string().optional(),
-    original_url: z.url('Invalid URL'),
-    password: z.string(),
-    remove_password: z.boolean(),
-    expires_at: z.string(),
-  })
-  .refine(values => values.password === '' || values.password.length >= 4, {
-    path: ['password'],
-    message: 'At least 4 characters',
-  })
-  .refine(values => values.password.length <= 72, {
-    path: ['password'],
-    message: 'At most 72 characters',
-  })
-  .refine(values => isFutureDateTimeLocal(values.expires_at), {
-    path: ['expires_at'],
-    message: 'Must be in the future',
-  });
+const makeSchema = (t: TFunction<'dashboard'>) =>
+  z
+    .object({
+      title: z.string().optional(),
+      original_url: z.url(t('invalid_url')),
+      password: z.string(),
+      remove_password: z.boolean(),
+      expires_at: z.string(),
+    })
+    .refine(values => values.password === '' || values.password.length >= 4, {
+      path: ['password'],
+      message: t('password_min'),
+    })
+    .refine(values => values.password.length <= 72, {
+      path: ['password'],
+      message: t('password_max'),
+    })
+    .refine(values => isFutureDateTimeLocal(values.expires_at), {
+      path: ['expires_at'],
+      message: t('expires_future'),
+    });
 
 interface EditShortlinkFormProps {
   shortlink: Shortlink;
@@ -56,7 +58,7 @@ export function EditShortlinkForm({
       remove_password: false,
       expires_at: isoToDateTimeLocal(shortlink.expires_at),
     },
-    validate: zod4Resolver(schema),
+    validate: zod4Resolver(makeSchema(t)),
   });
 
   const { mutate, isPending } = useUpdateShortlink(

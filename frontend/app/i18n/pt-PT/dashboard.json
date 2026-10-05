@@ -38,5 +38,10 @@
   "expires_at_label": "Expira em",
   "expires_at_hint": "Opcional. O link deixa de funcionar nesta data e hora.",
   "expires_on": "Expira a {{date}}",
-  "created_on": "Criado a {{date}}"
+  "created_on": "Criado a {{date}}",
+  "invalid_url": "Endereço inválido",
+  "password_min": "Pelo menos 4 caracteres",
+  "password_max": "No máximo 72 caracteres",
+  "expires_future": "Tem de ser no futuro",
+  "link_created": "Link criado com sucesso"
 }

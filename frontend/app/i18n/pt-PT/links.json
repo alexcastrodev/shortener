@@ -1,0 +1,23 @@
+{
+  "link_number": "Link n.º {{id}}",
+  "load_failed_title": "Não foi possível carregar o link",
+  "load_failed_message": "Não conseguimos carregar este link. Tente novamente mais tarde.",
+  "back": "Voltar",
+  "id_clicks": "ID: {{id}} | Cliques: {{count}}",
+  "destination": "Destino",
+  "short_url": "Endereço curto",
+  "created": "Criado",
+  "last_accessed": "Último acesso",
+  "never": "Nunca",
+  "open": "Abrir",
+  "copy": "Copiar",
+  "copied_title": "Copiado",
+  "copied_message": "Endereço curto copiado para a área de transferência",
+  "qr_code": "Código QR",
+  "no_data_title": "Ainda sem dados",
+  "no_data_message": "O seu link está pronto! As estatísticas aparecerão aqui assim que as pessoas começarem a aceder-lhe.",
+  "device_statistics": "Estatísticas de dispositivos",
+  "browser_statistics": "Estatísticas de navegadores",
+  "regions": "Regiões",
+  "countries": "Países"
+}
