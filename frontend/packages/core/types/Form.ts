@@ -10,6 +10,7 @@ export type FormFieldType =
   | 'yes_no'
   | 'rating'
   | 'date'
+  | 'image'
   | 'section';
 
 export const FORM_LAYOUTS = ['page', 'one_at_a_time', 'steps'] as const;

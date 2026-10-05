@@ -22,6 +22,7 @@ export function PagedForm({
   form,
   mode,
   onSubmit,
+  onUploadImage,
   onStart,
   lastStepSlot,
   footer,
@@ -225,6 +226,7 @@ export function PagedForm({
                 }}
                 theme={theme}
                 inputId={inputId}
+                upload={mode === 'live' ? onUploadImage : undefined}
               />
               {errors[field.id] && (
                 <p role="alert" className={`mt-3 inline-block ${alertClass}`}>
