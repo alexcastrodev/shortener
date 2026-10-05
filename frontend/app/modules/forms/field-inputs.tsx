@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import type { BioTheme } from '../bio-page/themes';
 import type { FormField } from '@internal/core/types/Form';
 
@@ -32,6 +34,7 @@ const inputBase =
   'w-full rounded-lg px-3 py-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-current';
 
 export function FieldInput({ field, value, onChange, theme, inputId, upload }: Props) {
+  const { t } = useTranslation('respond');
   const common = { id: inputId, 'aria-describedby': `${inputId}-help` };
 
   switch (field.type) {
@@ -111,7 +114,7 @@ export function FieldInput({ field, value, onChange, theme, inputId, upload }: P
       return (
         <fieldset id={inputId} className="space-y-2">
           {max < (field.choices?.length ?? 0) && (
-            <p className={`text-xs ${theme.bio}`}>Choose up to {max}</p>
+            <p className={`text-xs ${theme.bio}`}>{t('choose_up_to', { max })}</p>
           )}
           {field.choices?.map(choice => {
             const checked = selected.includes(choice.id);
@@ -143,8 +146,8 @@ export function FieldInput({ field, value, onChange, theme, inputId, upload }: P
       return (
         <fieldset id={inputId} className="grid grid-cols-2 gap-2">
           {[
-            { label: 'Yes', answer: true },
-            { label: 'No', answer: false },
+            { label: t('yes'), answer: true },
+            { label: t('no'), answer: false },
           ].map(option => (
             <label
               key={option.label}
@@ -207,13 +210,15 @@ export function FieldInput({ field, value, onChange, theme, inputId, upload }: P
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
 function uploadMessage(status?: number) {
-  if (status === 503) return 'Image uploads are unavailable right now. You can send the form without it.';
-  if (status === 429) return 'Too many uploads. Please wait a few minutes and try again.';
-  if (status === 413) return 'That file is too large (10 MB at most).';
-  return 'That file could not be used. Choose a PNG, JPEG, WebP or HEIC image up to 10 MB.';
+  const t = i18n.getFixedT(null, 'respond');
+  if (status === 503) return t('upload_unavailable');
+  if (status === 429) return t('upload_rate_limited');
+  if (status === 413) return t('upload_too_large');
+  return t('upload_invalid');
 }
 
 function ImageInput({ field, value, onChange, theme, inputId, upload }: Props & { value: string | undefined }) {
+  const { t } = useTranslation('respond');
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -250,12 +255,12 @@ function ImageInput({ field, value, onChange, theme, inputId, upload }: Props & 
         onChange={event => void choose(event.target.files?.[0])}
         className={`${inputBase} ${theme.button}`}
       />
-      {busy && <p className={`text-sm ${theme.bio}`}>Uploading…</p>}
+      {busy && <p className={`text-sm ${theme.bio}`}>{t('uploading')}</p>}
       {value && !busy && (
         <p className={`flex items-center gap-3 text-sm ${theme.bio}`}>
-          <span className="truncate">Attached{name ? `: ${name}` : ''}</span>
+          <span className="truncate">{name ? t('attached_name', { name }) : t('attached')}</span>
           <button type="button" className="underline" onClick={() => { setName(''); onChange(undefined); }}>
-            Remove
+            {t('remove')}
           </button>
         </p>
       )}

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Form } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
 import { FieldInput, focusFirstInput, isBlank, type Answer, type UploadImage } from './field-inputs';
@@ -46,6 +47,7 @@ function SequentialForm({
   activeFieldId,
   onSelectField,
 }: Props) {
+  const { t } = useTranslation('respond');
   const theme = getBioTheme(form.theme, form.custom_colors);
   const uid = useId();
   const questions = form.fields.filter(item => !isSection(item));
@@ -78,7 +80,7 @@ function SequentialForm({
   const next = async () => {
     if (!field) return;
     if (field.required && isBlank(answers[field.id])) {
-      setError('This question is required');
+      setError(t('required'));
       return;
     }
     setError(null);
@@ -99,8 +101,8 @@ function SequentialForm({
         if (invalid >= 0) setStep(invalid);
         setError(
           invalid >= 0
-            ? 'Please check this answer.'
-            : (message ?? 'We could not send your answers. Please try again.')
+            ? t('check_answer')
+            : (message ?? t('send_failed'))
         );
       } finally {
         setSubmitting(false);
@@ -123,7 +125,7 @@ function SequentialForm({
     return (
       <div className={shell} style={theme.style}>
         <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
-        <p className={`mt-3 ${theme.bio}`}>This form has no questions yet.</p>
+        <p className={`mt-3 ${theme.bio}`}>{t('no_questions')}</p>
         {footer}
       </div>
     );
@@ -146,11 +148,11 @@ function SequentialForm({
               setStep(0);
             }}
           >
-            Start
+            {t('start')}
           </button>
-          <span className={`ml-4 hidden text-xs sm:inline ${theme.bio}`}>press Enter ↵</span>
+          <span className={`ml-4 hidden text-xs sm:inline ${theme.bio}`}>{t('press_enter')}</span>
           <span className={`ml-4 text-sm ${theme.bio}`}>
-            ~{Math.max(1, Math.ceil(total / 4))} min
+            {t('minutes', { n: Math.max(1, Math.ceil(total / 4)) })}
           </span>
         </div>
         {footer}
@@ -161,9 +163,9 @@ function SequentialForm({
   if (done) {
     return (
       <div className={`${shell} justify-center`} style={theme.style} role="status">
-        <h1 className={`text-2xl font-semibold ${theme.title}`}>Thank you</h1>
+        <h1 className={`text-2xl font-semibold ${theme.title}`}>{t('thank_you')}</h1>
         <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>
-          {form.thank_you_message || 'Your answers were sent.'}
+          {form.thank_you_message || t('answers_sent')}
         </p>
         {mode === 'preview' && (
           <div className="mt-8">
@@ -175,7 +177,7 @@ function SequentialForm({
                 setStep(-1);
               }}
             >
-              Restart preview
+              {t('restart_preview')}
             </button>
           </div>
         )}
@@ -194,7 +196,7 @@ function SequentialForm({
     >
       <div
         role="progressbar"
-        aria-label="Progress"
+        aria-label={t('progress')}
         aria-valuemin={0}
         aria-valuemax={total}
         aria-valuenow={step + 1}
@@ -210,7 +212,7 @@ function SequentialForm({
           <span className="mr-2 font-mono uppercase">{sectionOf(form.fields, field!.id)}</span>
         )}
         <span className="sr-only">
-          Question {step + 1} of {total}
+          {t('question_of', { current: step + 1, total })}
         </span>
       </p>
       <label htmlFor={inputId} className={`text-xl font-semibold ${theme.title}`}>
@@ -248,7 +250,7 @@ function SequentialForm({
         {step > 0 && (
           <button
             type="button"
-            aria-label="Back"
+            aria-label={t('back')}
             className={`min-h-11 rounded-lg px-4 ${theme.button}`}
             onClick={() => {
               setError(null);
@@ -259,9 +261,9 @@ function SequentialForm({
           </button>
         )}
         <button type="button" className={primary} disabled={submitting} onClick={() => void next()}>
-          {step === total - 1 ? (submitting ? 'Sending…' : 'Submit') : 'Next'}
+          {step === total - 1 ? (submitting ? t('sending') : t('submit')) : t('next')}
         </button>
-        <span className={`hidden text-xs sm:inline ${theme.bio}`}>press Enter ↵</span>
+        <span className={`hidden text-xs sm:inline ${theme.bio}`}>{t('press_enter')}</span>
         <span className={`ml-auto font-mono text-xs ${theme.bio}`}>
           {step + 1} / {total}
         </span>

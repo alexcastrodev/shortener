@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { data, isRouteErrorResponse } from 'react-router';
 import { getPublicForm } from '@internal/core/actions/get-public-form/get-public-form.service';
 import { submitFormResponse } from '@internal/core/actions/submit-form-response/submit-form-response.service';
@@ -47,14 +49,15 @@ export function HydrateFallback() {
 }
 
 function failureFor(error: SubmitFormResponseError): SubmitFailure {
+  const t = i18n.getFixedT(null, 'respond');
   if (error.status === 422 && error.errors?.answers && !Array.isArray(error.errors.answers)) {
     return { fieldErrors: error.errors.answers };
   }
-  if (error.status === 403) return { message: 'We could not verify you are human. Please try again.' };
-  if (error.status === 429) return { message: 'Too many attempts. Please wait a few minutes and try again.' };
-  if (error.status === 404) return { message: 'This form is no longer accepting answers.' };
-  if (error.status === 413) return { message: 'Your answers are too long.' };
-  return { message: 'We could not send your answers. Please try again.' };
+  if (error.status === 403) return { message: t('err_captcha') };
+  if (error.status === 429) return { message: t('err_rate_limited') };
+  if (error.status === 404) return { message: t('err_closed') };
+  if (error.status === 413) return { message: t('err_too_long') };
+  return { message: t('send_failed') };
 }
 
 export default function PublicForm({ loaderData }: Route.ComponentProps) {
@@ -75,7 +78,7 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
 
   const onSubmit = async (answers: Record<string, unknown>) => {
     if (TURNSTILE_SITE_KEY && !token) {
-      throw { message: 'Verifying you are human, please wait a moment and send again.' } satisfies SubmitFailure;
+      throw { message: i18n.t('respond:err_verifying') } satisfies SubmitFailure;
     }
     try {
       await submitFormResponse({
@@ -150,20 +153,19 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  const { t } = useTranslation('respond');
   const notFound = isRouteErrorResponse(error) && error.status === 404;
 
   return (
     <div className="min-h-dvh bg-background px-4 pt-24 text-center text-foreground">
       <h1 className="text-xl font-semibold">
-        {notFound ? 'Form not found' : 'Something went wrong'}
+        {notFound ? t('not_found_title') : t('error_title')}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        {notFound
-          ? 'This form does not exist or is no longer accepting answers.'
-          : 'Please try again in a moment.'}
+        {notFound ? t('not_found_body') : t('error_body')}
       </p>
       <a href="/" className="mt-6 inline-block text-sm font-medium text-primary hover:underline">
-        Go to Kurz
+        {t('go_to_kurz')}
       </a>
     </div>
   );
