@@ -24,7 +24,8 @@ export function meta() {
 }
 
 const PUBLISH = ['forms:publish', 'pages:publish'];
-const SENSITIVE = ['responses:read', FULL_SCOPE, ...PUBLISH];
+const PERSONAL = ['responses:read', 'appointments:read', 'appointments:write'];
+const SENSITIVE = [...PERSONAL, FULL_SCOPE, ...PUBLISH];
 
 const KEYS = [
   'client_id',
@@ -83,7 +84,7 @@ export default function AuthorizeApp() {
 
   const granted = Object.keys(enabled).filter(scope => enabled[scope]);
   const fullAccess = !!enabled[FULL_SCOPE];
-  const readsResponses = !!enabled['responses:read'];
+  const readsResponses = PERSONAL.some(scope => enabled[scope]);
   const publishes = PUBLISH.some(scope => enabled[scope]);
   const decide = (decision: 'allow' | 'deny') =>
     mutate({ params, decision, grantedScopes: fullAccess ? [FULL_SCOPE] : granted });
@@ -126,7 +127,7 @@ export default function AuthorizeApp() {
                     checked={fullAccess ? true : !!enabled[scope]}
                     disabled={
                       (fullAccess && scope !== FULL_SCOPE) ||
-                      (scope === 'responses:read' && publishes) ||
+                      (PERSONAL.includes(scope) && publishes) ||
                       (PUBLISH.includes(scope) && readsResponses)
                     }
                     onChange={event => {
@@ -148,8 +149,8 @@ export default function AuthorizeApp() {
               </MantineAlert>
             )}
 
-            {!fullAccess && (preview.data.scopes.includes('responses:read') && preview.data.scopes.some(scope => PUBLISH.includes(scope))) && (
-              <MantineAlert mt="md" color="blue" variant="light" title="Reading responses and publishing are exclusive">
+            {!fullAccess && (preview.data.scopes.some(scope => PERSONAL.includes(scope)) && preview.data.scopes.some(scope => PUBLISH.includes(scope))) && (
+              <MantineAlert mt="md" color="blue" variant="light" title="Reading personal data and publishing are exclusive">
                 Text typed by respondents is untrusted. To keep it from steering what gets published, an app can read
                 responses or publish, never both.
               </MantineAlert>

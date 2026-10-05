@@ -10,9 +10,9 @@ Kurz exposes shortlinks, bio pages and forms to AI apps through a remote MCP ser
 
 ## What it can do
 
-- Scopes are opt-in per connection: `shortlinks`, `pages` and `forms` as `:read` or `:write` (write includes read), `forms:publish` and `pages:publish`, plus `responses:read`.
+- Scopes are opt-in per connection: `shortlinks`, `pages` and `forms` as `:read` or `:write` (write includes read), `forms:publish` and `pages:publish`, plus `responses:read`, and `appointments:read` or `appointments:write` (write includes read) when appointments are enabled for the account.
 - Pages and forms are created and edited as drafts. A live page or form accepts only theme and color changes; to edit anything else, unpublish it first (needs the publish scope) or use the dashboard. Deleting and duplicating stay in the dashboard.
-- Publishing and unpublishing need `forms:publish` or `pages:publish`, off by default, and a connection can never hold a publish scope together with `responses:read`: text typed by respondents is untrusted and must not be able to steer what goes online.
+- Publishing and unpublishing need `forms:publish` or `pages:publish`, off by default, and a connection can never hold a publish scope together with `responses:read` or an appointments scope: text typed by respondents is untrusted and must not be able to steer what goes online.
 - Forms have a layout (`one_at_a_time`, `page` or `steps`) and can group questions with `section` fields. Every form gets a short link on creation, returned by `get_form`.
 - `account:full` ("Full access") is a single opt-in scope, off by default and replacing every other permission: it adds update and delete for short links, deleting pages and forms, duplicating forms, applying templates, deleting responses, reading responses together with publishing, and lifts the draft-only and no-edits-after-responses limits. Deleting tools need the exact short code, slug or title repeated as `confirm`, are marked destructive so clients ask first, and are limited to 10 an hour. Account deletion, passwords and connected apps are not available through the MCP.
 - Without full access, a form with responses keeps its questions; only its texts can change.
