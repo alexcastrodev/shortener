@@ -1,1 +1,14 @@
-{}
+{
+    "dashboard": "Painel",
+    "pages": "Páginas de bio",
+    "forms": "Formulários",
+    "links": "Links",
+    "administration": "Administração",
+    "users": "Utilizadores",
+    "logout": "Terminar sessão",
+    "shortlinks": "Links curtos",
+    "audit_logs": "Registo de auditoria",
+    "moderation": "Moderação",
+    "admin": "Admin",
+    "account": "Conta"
+}

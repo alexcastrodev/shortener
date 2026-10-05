@@ -1,6 +1,12 @@
+import { useTranslation } from 'react-i18next';
 import { activeLocale } from './index';
 
 type DateInput = Date | string | number;
+
+export function useLocale() {
+  useTranslation();
+  return activeLocale();
+}
 
 const toDate = (value: DateInput) => (value instanceof Date ? value : new Date(value));
 

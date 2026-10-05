@@ -18,6 +18,7 @@ import { useMemo, useState } from 'react';
 import type { Shortlink } from '@internal/core/types/Shortlink';
 import type { AdminGetShortlinksResponse } from '@internal/core/actions/admin-shortlink/admin-shortlink.types';
 import { useTranslation } from 'react-i18next';
+import { formatDate, formatDateTime } from '../../i18n/format';
 
 export const ssr = false;
 
@@ -210,10 +211,10 @@ export default function AdminShortlinksPage() {
                     </span>
                   </Tooltip>
                   {shortlink.created_at && (
-                    <Tooltip label={new Date(shortlink.created_at).toLocaleString()}>
+                    <Tooltip label={formatDateTime(shortlink.created_at)}>
                       <span className="text-xs text-muted-foreground">
                         {t('created_on', {
-                          date: new Date(shortlink.created_at).toLocaleDateString('en-US', {
+                          date: formatDate(shortlink.created_at, {
                             day: 'numeric',
                             month: 'short',
                             year: 'numeric',
