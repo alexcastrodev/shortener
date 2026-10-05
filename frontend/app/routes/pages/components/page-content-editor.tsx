@@ -43,7 +43,7 @@ import {
 // appear (icon row, end of a section, bottom of the page). Nobody has to
 // know about "kinds": where you click decides what you add.
 
-type Header = Pick<Page, 'slug' | 'display_title' | 'bio' | 'theme' | 'avatar_url'>;
+type Header = Pick<Page, 'slug' | 'display_title' | 'bio' | 'theme' | 'custom_colors' | 'avatar_url'>;
 
 const linkSchema = z.object({
   label: z.string().trim().min(1, 'Required').max(80),
@@ -85,7 +85,7 @@ export function PageContentEditor({
   onChange,
   onPickTemplate,
 }: PageContentEditorProps) {
-  const theme = getBioTheme(header.theme);
+  const theme = getBioTheme(header.theme, header.custom_colors);
   const title = header.display_title || `@${header.slug}`;
   const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -182,7 +182,7 @@ export function PageContentEditor({
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className={`flex min-h-full flex-col ${theme.page}`}>
+      <div style={theme.style} className={`flex min-h-full flex-col ${theme.page}`}>
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center px-4 pt-10 pb-6">
           {header.avatar_url ? (
             <img src={header.avatar_url} alt="" className="h-24 w-24 rounded-full object-cover" />

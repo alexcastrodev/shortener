@@ -25,6 +25,8 @@
 #  fk_rails_...  (user_id => users.id)
 #
 class Page < ApplicationRecord
+  include CustomColors
+
   THEMES = ["default", "midnight", "sunset", "forest", "ocean", "paper"].freeze
   # Full-resolution phone photos (a 48MP HEIC can pass 40MB) are accepted
   # and shrunk in the background by OptimizeAvatarJob; only a small WebP

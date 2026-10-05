@@ -7,7 +7,7 @@ import { PagedForm } from './paged-form';
 
 export type RenderableForm = Pick<
   Form,
-  'title' | 'description' | 'thank_you_message' | 'theme' | 'layout' | 'fields'
+  'title' | 'description' | 'thank_you_message' | 'theme' | 'custom_colors' | 'layout' | 'fields'
 >;
 
 export type SubmitFailure = {
@@ -46,7 +46,7 @@ function SequentialForm({
   activeFieldId,
   onSelectField,
 }: Props) {
-  const theme = getBioTheme(form.theme);
+  const theme = getBioTheme(form.theme, form.custom_colors);
   const uid = useId();
   const questions = form.fields.filter(item => !isSection(item));
   const total = questions.length;
@@ -121,7 +121,7 @@ function SequentialForm({
 
   if (total === 0) {
     return (
-      <div className={shell}>
+      <div className={shell} style={theme.style}>
         <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
         <p className={`mt-3 ${theme.bio}`}>This form has no questions yet.</p>
         {footer}
@@ -131,7 +131,7 @@ function SequentialForm({
 
   if (step === -1) {
     return (
-      <div className={`${shell} justify-center`}>
+      <div className={`${shell} justify-center`} style={theme.style}>
         <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
         {form.description && (
           <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>{form.description}</p>
@@ -160,7 +160,7 @@ function SequentialForm({
 
   if (done) {
     return (
-      <div className={`${shell} justify-center`} role="status">
+      <div className={`${shell} justify-center`} style={theme.style} role="status">
         <h1 className={`text-2xl font-semibold ${theme.title}`}>Thank you</h1>
         <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>
           {form.thank_you_message || 'Your answers were sent.'}
@@ -188,7 +188,7 @@ function SequentialForm({
   return (
     <div
       ref={container}
-      className={shell}
+      className={shell} style={theme.style}
       onKeyDown={onKeyDown}
       onClick={mode === 'preview' ? () => onSelectField?.(field!.id) : undefined}
     >

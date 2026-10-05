@@ -99,6 +99,7 @@ class Api::Me::FormsController < ApplicationController
       description: @form.description,
       thank_you_message: @form.thank_you_message,
       theme: @form.theme,
+      custom_colors: @form.custom_colors,
       layout: @form.layout,
       fields: @form.fields.map { |field| Forms::FieldSchema.with_fresh_ids(field) },
     }

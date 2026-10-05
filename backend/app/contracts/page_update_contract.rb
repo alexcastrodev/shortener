@@ -4,6 +4,11 @@ class PageUpdateContract < ApplicationContract
     optional(:display_title).maybe(:string)
     optional(:bio).maybe(:string)
     optional(:theme).filled(:string)
+    optional(:custom_colors).maybe(:hash) do
+      required(:background).filled(:string)
+      required(:text).filled(:string)
+      required(:accent).filled(:string)
+    end
     optional(:published).filled(:bool)
     optional(:expires_at).maybe(:time)
   end

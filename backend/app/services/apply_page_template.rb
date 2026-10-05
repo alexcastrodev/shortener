@@ -15,7 +15,7 @@ module ApplyPageTemplate
           position: index + 1,
         )
       end
-      page.update!(theme: theme)
+      page.update!(theme: theme, custom_colors: nil)
     end
     page.page_links.reset
     page

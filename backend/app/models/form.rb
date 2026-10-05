@@ -1,4 +1,6 @@
 class Form < ApplicationRecord
+  include CustomColors
+
   MAX_CREATED_PER_DAY = 20
   TITLE_MAX = 120
   LAYOUTS = ["page", "one_at_a_time", "steps"].freeze

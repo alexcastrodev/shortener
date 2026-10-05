@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_070000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -78,6 +78,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_070000) do
     t.index ["user_id", "user_type"], name: "user_index"
   end
 
+  create_table "color_palettes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.jsonb "custom_colors", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_color_palettes_on_user_id"
+  end
+
   create_table "events", force: :cascade do |t|
     t.string "browser"
     t.datetime "clicked_at", null: false
@@ -134,6 +143,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_070000) do
     t.text "description"
     t.text "thank_you_message"
     t.string "theme", default: "default", null: false
+    t.jsonb "custom_colors"
     t.boolean "published", default: false, null: false
     t.jsonb "fields", default: [], null: false
     t.integer "responses_count", default: 0, null: false
@@ -291,6 +301,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_070000) do
   create_table "pages", force: :cascade do |t|
     t.text "bio"
     t.datetime "created_at", null: false
+    t.jsonb "custom_colors"
     t.datetime "deleted_at"
     t.string "display_title"
     t.datetime "expires_at"
@@ -491,6 +502,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_070000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "color_palettes", "users", on_delete: :cascade
   add_foreign_key "events", "shortlinks", on_delete: :cascade
   add_foreign_key "form_daily_stats", "forms", on_delete: :cascade
   add_foreign_key "form_responses", "forms", on_delete: :cascade

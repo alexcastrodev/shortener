@@ -156,6 +156,15 @@ RSpec.describe("MCP bio page tools", type: :request) do
       expect(draft.page_links.count).to(eq(1))
     end
 
+    it "edits custom colors, refuses invalid ones and clears them with null" do
+      colors = { background: "#112233", text: "#ffffff", accent: "#ff00aa" }
+
+      expect(data(tool("update_page", { id: draft.id, custom_colors: colors }))).to(include("custom_colors" => colors.stringify_keys))
+      expect(failed?(tool("update_page", { id: draft.id, custom_colors: colors.merge(accent: "red") }))).to(be(true))
+      expect(draft.reload.custom_colors["accent"]).to(eq("#ff00aa"))
+      expect(data(tool("update_page", { id: draft.id, custom_colors: nil }))).to(include("custom_colors" => nil))
+    end
+
     it "keeps markup in text fields inert" do
       reply = tool("update_page", { id: draft.id, bio: "<script>alert(1)</script>", display_title: "<b>x</b>" })
 

@@ -4,7 +4,7 @@ class PublicFormSerializer < BaseSerializer
   FIELD_KEYS = ["id", "type", "label", "help", "required", "choices", "max_choices", "scale", "min", "max"].freeze
   CHOICE_KEYS = ["id", "label"].freeze
 
-  attributes :title, :description, :thank_you_message, :theme, :layout
+  attributes :title, :description, :thank_you_message, :theme, :custom_colors, :layout
 
   attribute :fields do |form|
     form.fields.map do |field|

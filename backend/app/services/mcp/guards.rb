@@ -32,7 +32,7 @@ module Mcp
     end
 
     def contract!(contract_class, attributes)
-      result = contract_class.new.call(attributes.compact)
+      result = contract_class.new.call(attributes.reject { |key, value| value.nil? && key.to_sym != :custom_colors })
       raise Mcp::ToolError.new("invalid_input", result.errors.to_h.map { |key, messages| "#{key} #{Array(messages).join(", ")}" }.join("; ")) if result.errors.any?
 
       result.to_h

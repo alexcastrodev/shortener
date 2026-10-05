@@ -33,6 +33,7 @@ module Mcp
           description: form.description && Mcp::Content.clean(form.description, max: 1000),
           thank_you_message: form.thank_you_message && Mcp::Content.clean(form.thank_you_message, max: 500),
           theme: form.theme,
+          custom_colors: form.custom_colors,
           layout: form.layout,
           short_url: form.shortlink&.short_url,
           fields: form.fields.map { |field| field_json(field) },

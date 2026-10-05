@@ -59,7 +59,7 @@ function failureFor(error: SubmitFormResponseError): SubmitFailure {
 
 export default function PublicForm({ loaderData }: Route.ComponentProps) {
   const { form, publicId } = loaderData;
-  const theme = getBioTheme(form.theme);
+  const theme = getBioTheme(form.theme, form.custom_colors);
   const idempotencyKey = useRef(crypto.randomUUID());
   const turnstile = useRef<TurnstileHandle>(null);
   const [token, setToken] = useState<string | null>(null);
