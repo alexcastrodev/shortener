@@ -17,6 +17,10 @@ production:
     class: ExpireInactiveShortlinksJob
     queue: default
     schedule: at 3am every day
+  cleanup_orphan_form_uploads:
+    class: CleanupOrphanFormUploadsJob
+    queue: default
+    schedule: every 15 minutes
   purge_mcp_tool_calls:
     class: PurgeMcpToolCallsJob
     queue: default

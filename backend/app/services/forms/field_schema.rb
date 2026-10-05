@@ -2,7 +2,7 @@ module Forms
   module FieldSchema
     extend self
 
-    TYPES = ["short_text", "long_text", "email", "number", "single_choice", "multiple_choice", "yes_no", "rating", "date", "section"].freeze
+    TYPES = ["short_text", "long_text", "email", "number", "single_choice", "multiple_choice", "yes_no", "rating", "date", "image", "section"].freeze
     CHOICE_TYPES = ["single_choice", "multiple_choice"].freeze
     ID_LENGTH = 8
     ID_FORMAT = /\A[A-Za-z0-9]{#{ID_LENGTH}}\z/

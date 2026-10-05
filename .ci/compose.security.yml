@@ -19,9 +19,12 @@ x-api-env: &api-env
   # Dummy DSN (no route out of the network): makes production boot run config/initializers/sentry.rb.
   SENTRY_DSN: http://key@localhost/1
   SENTRY_LOGGER: "1"
+  IMGPROC_URL: http://imgproc:8080
 
 networks:
   sec:
+    internal: true
+  imgnet:
     internal: true
 
 services:
@@ -61,6 +64,24 @@ services:
       db: { condition: service_healthy }
       cache: { condition: service_healthy }
 
+  imgproc:
+    image: kurzsec-api
+    command: ["bundle", "exec", "puma", "-b", "tcp://0.0.0.0:8080", "-t", "2:2", "imgproc/config.ru"]
+    environment:
+      SKIP_DB_PREPARE: "1"
+    networks: [imgnet]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    cpus: 1
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/up"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+
   api:
     image: kurzsec-api
     environment: *api-env
@@ -68,8 +89,10 @@ services:
       sec:
         # The production hostname, so Host-header checks use the real value.
         aliases: [api.kurz.fyi]
+      imgnet:
     depends_on:
       migrate: { condition: service_completed_successfully }
+      imgproc: { condition: service_healthy }
     healthcheck:
       test: ["CMD", "curl", "-fsS", "-H", "Host: api.kurz.fyi", "http://localhost/up"]
       interval: 3s
@@ -84,7 +107,7 @@ services:
       SENTRY_DSN: ""
     volumes:
       - ./security:/security:ro
-    networks: [sec]
+    networks: [sec, imgnet]
     profiles: [tools]
     depends_on:
       migrate: { condition: service_completed_successfully }

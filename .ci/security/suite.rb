@@ -160,7 +160,7 @@ end
 
 check("A04", "the public form JSON has exactly the whitelisted keys and leaks nothing; missing, draft and SQL-looking ids share one 404") do
   response = anonymous(:get, "/api/public/forms/#{PUBLIC['public_id']}")
-  expect_eq(["description", "fields", "thank_you_message", "theme", "title"], response.json["form"].keys.sort)
+  expect_eq(["description", "fields", "layout", "thank_you_message", "theme", "title"], response.json["form"].keys.sort)
   ["user_id", "responses_count", "published", "created_at", "updated_at", "public_id", "owner-a@sec.test"].each { |leak| expect(!response.body.include?(leak), "leaked #{leak}") }
   expect(!response.headers.key?("set-cookie"), "Set-Cookie")
   missing = anonymous(:get, "/api/public/forms/ZZZZZZZZZZZZ")
@@ -396,7 +396,7 @@ check("MC08", "MCP shortlink tools on the real stack: scopes decide the tool lis
     reply = mcp_tool(access, "create_shortlink", { original_url: "https://example.com", extra => "x" })
     expect(reply["error"] || reply.dig("result", "isError"), "accepted key #{extra}")
   end
-  expect_eq(0, sql("select count(*) from shortlinks where user_id = #{TENANTS[:a].id}").to_i, "nothing stored yet")
+  expect_eq(0, sql("select count(*) from shortlinks where user_id = #{TENANTS[:a].id} and original_url not like '%/f/%'").to_i, "nothing stored yet")
 
   first = mcp_tool(access, "create_shortlink", { original_url: "https://example.com/harness", title: "<b>x</b>" })
   expect_eq(false, first.dig("result", "isError"), "create")
@@ -405,15 +405,17 @@ check("MC08", "MCP shortlink tools on the real stack: scopes decide the tool lis
   19.times { |i| mcp_tool(access, "create_shortlink", { original_url: "https://example.com/#{i}" }) }
   limited = mcp_tool(access, "create_shortlink", { original_url: "https://example.com/over" })
   expect_eq("rate_limited", limited.dig("result", "structuredContent", "error"), "21st")
-  expect_eq(16, sql("select count(*) from shortlinks where user_id = #{TENANTS[:a].id}").to_i, "stored: 20 attempts an hour, and the 4 refused hostile URLs count as attempts")
+  expect_eq(16, sql("select count(*) from shortlinks where user_id = #{TENANTS[:a].id} and original_url not like '%/f/%'").to_i, "stored: 20 attempts an hour, and the 4 refused hostile URLs count as attempts")
 
-  foreign = sql("select id from shortlinks where user_id = #{TENANTS[:a].id} limit 1").to_i
+  foreign = sql("select id from shortlinks where user_id = #{TENANTS[:a].id} and original_url not like '%/f/%' limit 1").to_i
   other_grant = OauthGrant.create!(user: TENANTS[:b], oauth_client: client, scopes: ["shortlinks:read"], resource: "https://api.kurz.fyi/mcp")
   other_access, = OauthAccessToken.issue(other_grant)
   stolen = mcp_tool(other_access, "get_shortlink_statistics", { id: foreign })
   missing = mcp_tool(other_access, "get_shortlink_statistics", { id: 999_999 })
   expect_eq(missing.dig("result", "structuredContent"), stolen.dig("result", "structuredContent"), "cross tenant looks like missing")
-  expect(mcp_tool(other_access, "list_shortlinks").dig("result", "structuredContent", "shortlinks").empty?, "B lists A's links")
+  a_ids = sql("select coalesce(string_agg(id::text, ','), '') from shortlinks where user_id = #{TENANTS[:a].id}").split(",").map(&:to_i)
+  listed = mcp_tool(other_access, "list_shortlinks").dig("result", "structuredContent", "shortlinks").map { |link| link["id"] }
+  expect((listed & a_ids).empty?, "B lists A's links")
 
   calls = rows("select tool, status from mcp_tool_calls where oauth_grant_id = #{grant.id}")
   expect(calls.any? { |tool, _| tool == "create_shortlink" }, "no audit rows")
@@ -529,6 +531,57 @@ check("MC11", "MCP response tools on the real stack: respondent text arrives unt
 
   other_form = Form.where.not(user_id: user.id).first
   expect(!foreign.to_json.include?(other_form.title), "foreign title leaked")
+end
+
+check("D01", "form image uploads on the real stack: real images become WebP with metadata stripped, hostile files are refused before the sandbox, tokens are single use and private, ActiveStorage never serves the blob") do
+  owner = TENANTS[:a]
+  stranger = TENANTS[:b]
+  form = Form.create!(user: owner, title: "Uploads", published: true, fields: [{ "id" => "photo001", "type" => "image", "label" => "Photo" }])
+  upload_path = "/api/public/forms/#{form.public_id}/fields/photo001/uploads"
+  multipart = lambda do |bytes, name = "a.png", type = "image/png"|
+    boundary = "----harness#{SecureRandom.hex(8)}"
+    body = "--#{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"#{name}\"\r\nContent-Type: #{type}\r\n\r\n".b + bytes.b + "\r\n--#{boundary}--\r\n".b
+    http(:post, upload_path, raw: body, headers: { "Content-Type" => "multipart/form-data; boundary=#{boundary}" })
+  end
+
+  base = Vips::Image.black(40, 30).bandjoin([0, 0]).copy(interpretation: :srgb)
+  jpeg = base.write_to_buffer(".jpg", Q: 80)
+  tiff = "II*\x00\x08\x00\x00\x00".b + [1].pack("v") + [0x010F, 2, 13, 26].pack("vvVV") + [0].pack("V") + "SecretCamera\x00".b
+  tagged = jpeg.byteslice(0, 2) + "\xFF\xE1".b + [8 + tiff.bytesize].pack("n") + "Exif\x00\x00".b + tiff + jpeg.byteslice(2..)
+
+  created = multipart.call(tagged, "photo.jpg", "image/jpeg")
+  expect_eq(201, created.status, "upload")
+  token = created.json["token"]
+  expect(token.to_s.match?(/\A[A-Za-z0-9]{24}\z/), "token shape")
+
+  hostile = ["<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>", "<html><script>1</script></html>", "%PDF-1.7 x", "GIF89a<script>", "PK\x03\x04zip", "<?php system($_GET[0]); ?>", "\x00\x00\x00\x18ftypmp42".b + "\x00" * 20, "#FITS" + "\x00" * 50]
+  hostile.each { |bytes| expect_eq(422, multipart.call(bytes, "evil.png").status, bytes[0, 10].inspect) }
+  expect_eq(422, multipart.call(base.write_to_buffer(".png").byteslice(0, 30)).status, "corrupt png")
+  expect_eq(1, sql("select count(*) from form_uploads where form_id = #{form.id}").to_i, "rows after hostile uploads")
+
+  answered = http(:post, "/api/public/forms/#{form.public_id}/responses", body: { answers: { "photo001" => token } })
+  expect_eq(201, answered.status, "submit with token")
+  expect_eq(422, http(:post, "/api/public/forms/#{form.public_id}/responses", body: { answers: { "photo001" => token } }).status, "token reused")
+
+  url = "/api/me/forms/#{form.id}/uploads/#{token}"
+  expect_eq(401, http(:get, url).status, "anonymous download")
+  expect_eq(404, http(:get, url, token: SessionToken.issue(stranger)).status, "other tenant")
+  download = http(:get, url, token: SessionToken.issue(owner))
+  expect_eq(200, download.status, "owner download")
+  expect(download.body.b.start_with?("RIFF".b) && download.body.b[8, 4] == "WEBP".b, "not WebP")
+  expect(!download.body.b.include?("SecretCamera"), "EXIF survived")
+  expect(download.headers["content-disposition"].to_s.start_with?("attachment"), "not an attachment")
+  expect(download.headers["cache-control"].to_s.include?("no-store") && download.headers["cache-control"].to_s.include?("private"), "cacheable download")
+  expect_eq("nosniff", download.headers["x-content-type-options"], "nosniff")
+  expect_eq("default-src 'none'; sandbox", download.headers["content-security-policy"], "csp")
+
+  blob = FormUpload.find_by!(token: token).file.blob
+  sid = blob.signed_id
+  ["/rails/active_storage/blobs/redirect/#{sid}/image.webp", "/rails/active_storage/blobs/proxy/#{sid}/image.webp"].each do |path|
+    expect(http(:get, path).status != 200, "active storage served #{path}")
+  end
+  expect(!database_text.values.join(" ").include?("SecretCamera"), "metadata in the database")
+  expect(!blob.filename.to_s.include?("photo"), "client filename kept")
 end
 
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")
