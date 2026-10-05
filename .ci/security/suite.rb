@@ -420,6 +420,46 @@ check("MC08", "MCP shortlink tools on the real stack: scopes decide the tool lis
   expect(!database_text["mcp_tool_calls"].include?("example.com"), "arguments stored in mcp_tool_calls")
 end
 
+check("MC09", "MCP bio page tools on the real stack: drafts only, published pages untouched (SQL checksum), unsafe URLs and community templates refused, no publish/delete tool exists") do
+  client = OauthClient.create!(client_name: "Pages", redirect_uris: ["https://claude.ai/api/mcp/auth_callback"])
+  grant = OauthGrant.create!(user: TENANTS[:admin], oauth_client: client, scopes: ["pages:read", "pages:write"], resource: "https://api.kurz.fyi/mcp")
+  access, = OauthAccessToken.issue(grant)
+  accept = { "Accept" => "application/json, text/event-stream" }
+  names = http(:post, "/mcp", body: { jsonrpc: "2.0", id: 1, method: "tools/list" }, token: access, headers: accept).json.dig("result", "tools").map { |t| t["name"] }
+  expect(names.grep(/publish|delete|destroy/).empty?, "dangerous tool: #{names.grep(/publish|delete|destroy/)}")
+  expect(names.include?("create_page") && names.include?("apply_page_template"), "page tools missing")
+
+  created = mcp_tool(access, "create_page", { slug: "mcp-draft-#{rand(10_000)}", display_title: "Draft", template: "creator" })
+  expect_eq(false, created.dig("result", "structuredContent", "published"), "created as draft")
+  id = created.dig("result", "structuredContent", "id")
+  expect_eq(1, sql("select count(*) from pages where id = #{id} and published = false").to_i, "stored as draft")
+  expect(mcp_tool(access, "create_page", { slug: "mcp-live-#{rand(10_000)}", published: true }).then { |r| r["error"] || r.dig("result", "isError") }, "published: true accepted")
+  expect(mcp_tool(access, "create_page", { slug: "mcp-exp-#{rand(10_000)}", expires_at: "2030-01-01T00:00:00Z" }).then { |r| r["error"] || r.dig("result", "isError") }, "expires_at accepted")
+
+  live = Page.create!(user: TENANTS[:admin], slug: "live-#{rand(100_000)}", published: true, bio: "live")
+  link = live.page_links.create!(kind: "link", label: "Live", url: "https://example.com/live")
+  checksum = -> { sql("select md5(string_agg(p::text, '|')) from pages p where p.id = #{live.id}") + sql("select md5(coalesce(string_agg(l::text, '|' order by l.id), '')) from page_links l where l.page_id = #{live.id}") }
+  before = checksum.call
+  [["update_page", { id: live.id, bio: "hacked" }], ["add_page_link", { page_id: live.id, label: "x", url: "https://evil.example" }],
+   ["update_page_link", { page_id: live.id, id: link.id, url: "https://evil.example" }], ["remove_page_link", { page_id: live.id, id: link.id }],
+   ["reorder_page_links", { page_id: live.id, ids: [link.id] }], ["apply_page_template", { page_id: live.id, template: "business" }]].each do |name, args|
+    expect_eq("page_published", mcp_tool(access, name, args).dig("result", "structuredContent", "error"), name)
+  end
+  expect_eq(before, checksum.call, "the published page changed")
+
+  ["javascript:alert(1)", "data:text/html,x", "java\tscript:x"].each do |bad|
+    reply = mcp_tool(access, "add_page_link", { page_id: id, label: "x", url: bad })
+    expect(reply["error"] || reply.dig("result", "isError"), "accepted #{bad.inspect}")
+  end
+  community = PageTemplate.create!(user: TENANTS[:b], name: "Community", description: "d", theme: "forest", items: [], visibility: "public")
+  expect(mcp_tool(access, "apply_page_template", { page_id: id, template: "community-#{community.id}" }).dig("result", "isError"), "community template accepted")
+  expect(!mcp_tool(access, "list_page_templates").dig("result", "structuredContent", "templates").map { |t| t["id"] }.any? { |t| t.start_with?("community-") }, "community listed")
+
+  other = OauthGrant.create!(user: TENANTS[:b], oauth_client: client, scopes: ["pages:read", "pages:write"], resource: "https://api.kurz.fyi/mcp")
+  other_access, = OauthAccessToken.issue(other)
+  expect_eq(mcp_tool(other_access, "get_page", { id: 999_999 }).dig("result", "structuredContent"), mcp_tool(other_access, "get_page", { id: id }).dig("result", "structuredContent"), "cross tenant looks missing")
+end
+
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")
 puts "== #{Harness.results.count { |r| r[2] == 'PASS' }}/#{Harness.results.size} checks passed"
 exit(Harness.failed? ? 1 : 0)
