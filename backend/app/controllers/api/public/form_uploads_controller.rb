@@ -25,6 +25,8 @@ class Api::Public::FormUploadsController < ApplicationController
     problem = ImageUpload.basic_error(file, max_size: MAX_SIZE)
     return render(json: { error: "invalid_image", message: problem }, status: :unprocessable_entity) if problem
 
+    return unavailable if FormUpload.over_budget?
+
     webp = Imgproc.convert(File.binread(file.tempfile.path))
     upload = @form.uploads.create!(field_id: @field["id"])
     attach(upload, webp)

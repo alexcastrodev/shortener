@@ -39,12 +39,15 @@ services:
       - S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}
       - S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
       - S3_BUCKET=${S3_BUCKET}
+      - S3_FORMS_BUCKET=${S3_FORMS_BUCKET:-}
+      - IMGPROC_URL=http://imgproc:8080
       - MCP_ENABLED=${MCP_ENABLED:-}
       - OAUTH_ISSUER=${OAUTH_ISSUER:-https://api.kurz.fyi}
       - MCP_REDIRECT_HOSTS=${MCP_REDIRECT_HOSTS:-claude.ai,claude.com,chatgpt.com}
       - MCP_ALLOWED_ORIGINS=${MCP_ALLOWED_ORIGINS:-}
     networks:
       - proxy_net
+      - imgnet
     deploy:
       replicas: 2
       resources:
@@ -117,12 +120,41 @@ services:
       - S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}
       - S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
       - S3_BUCKET=${S3_BUCKET}
+      - S3_FORMS_BUCKET=${S3_FORMS_BUCKET:-}
     deploy:
       resources:
         limits:
           cpus: '1'
           memory: 1024M
   
+  imgproc:
+    image: pizito:5001/shortener:latest
+    command: bundle exec puma -b tcp://0.0.0.0:8080 -t 2:2 imgproc/config.ru
+    user: "1000:1000"
+    read_only: true
+    cap_drop:
+      - ALL
+    environment:
+      - SKIP_DB_PREPARE=1
+    networks:
+      - imgnet
+    volumes:
+      - type: tmpfs
+        target: /tmp
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/up"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1024M
+
   serveless:
     image: pizito:5001/shortener-edge:latest
     working_dir: /app
@@ -140,3 +172,6 @@ services:
 networks:
   proxy_net:
     external: true
+  imgnet:
+    driver: overlay
+    internal: true

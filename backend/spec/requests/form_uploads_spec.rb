@@ -118,6 +118,19 @@ RSpec.describe("Form image uploads", type: :request) do
       end
     end
 
+    it "stops accepting uploads once the total stored reaches the cap, without touching the sandbox" do
+      stub_const("FormUpload::MAX_TOTAL_BYTES", 100)
+      upload
+      expect(response).to(have_http_status(:created))
+      Rails.cache.clear
+
+      upload
+
+      expect(response).to(have_http_status(:service_unavailable))
+      expect(JSON.parse(response.body)).to(eq("error" => "uploads_unavailable"))
+      expect(a_request(:post, "http://imgproc.test/convert")).to(have_been_made.once)
+    end
+
     it "limits uploads per IP" do
       15.times { upload }
       expect(response).to(have_http_status(:created))
