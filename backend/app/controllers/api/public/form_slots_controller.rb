@@ -33,13 +33,7 @@ class Api::Public::FormSlotsController < ApplicationController
   end
 
   def slots_for(form, booking, service, from, to)
-    rules = booking["rules"]
-    zone = Time.find_zone!(rules["time_zone"])
-    stored = AppointmentSlot.where(form_id: form.id, starts_at: zone.local(from.year, from.month, from.day).utc..zone.local(to.year, to.month, to.day).end_of_day.utc)
-    booked = stored.where(service_key: service["id"]).pluck(:starts_at, :booked).to_h { |time, count| [time.to_i, count] }
-    totals = stored.pluck(:starts_at, :booked).each_with_object(Hash.new(0)) { |(time, count), sums| sums[time.in_time_zone(zone).to_date] += count }
-
-    Appointments::Slots.call(service: service, rules: rules, from: from, to: to, booked: booked, day_totals: totals).map do |slot|
+    Appointments::FreeSlots.call(form: form, booking: booking, service: service, from: from, to: to).map do |slot|
       { starts_at: slot[:starts_at].iso8601, date: slot[:date].iso8601, time: slot[:time], remaining: slot[:remaining] }
     end
   end

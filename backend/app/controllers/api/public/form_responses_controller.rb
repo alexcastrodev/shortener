@@ -28,17 +28,25 @@ class Api::Public::FormResponsesController < ApplicationController
       idempotency_key: request.request_parameters["idempotency_key"],
       meta: meta,
       version: request.request_parameters["form_version"],
+      client: { time_zone: request.request_parameters["client_time_zone"], locale: request.request_parameters["client_locale"] },
     )
 
     if result.errors
       render(json: { errors: { answers: result.errors.fetch("answers", result.errors) } }, status: :unprocessable_entity)
     else
-      render(json: { ok: true }, status: result.created ? :created : :ok)
+      body = { ok: true }
+      appointments = Appointments::Book.summary(result.response)
+      body[:appointments] = appointments if appointments.any?
+      render(json: body, status: result.created ? :created : :ok)
     end
   end
 
   rescue_from Forms::SubmitResponse::FormChanged do |error|
     render(json: { error: "form_changed", form: JSON.parse(PublicFormSerializer.new(error.definition).serialize)["form"] }, status: :conflict)
+  end
+
+  rescue_from Appointments::Book::Full do |error|
+    render(json: { error: "slot_full", starts_at: error.starts_at.iso8601 }, status: :conflict)
   end
 
   private
