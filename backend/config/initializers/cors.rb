@@ -14,6 +14,16 @@ allowed_origins << "http://localhost:5173" unless Rails.env.production?
 
 Rails.application.config.middleware.insert_before(0, Rack::Cors) do
   allow do
+    origins "*"
+
+    resource "/.well-known/*", headers: :any, methods: [:get, :options], credentials: false
+    resource "/oauth/token", headers: :any, methods: [:post, :options], credentials: false
+    resource "/oauth/register", headers: :any, methods: [:post, :options], credentials: false
+    resource "/oauth/revoke", headers: :any, methods: [:post, :options], credentials: false
+    resource "/mcp", headers: :any, methods: [:get, :post, :delete, :options], credentials: false, expose: ["WWW-Authenticate", "Mcp-Session-Id"]
+  end
+
+  allow do
     origins(*allowed_origins.compact_blank.uniq)
 
     resource "*",

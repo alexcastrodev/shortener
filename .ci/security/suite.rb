@@ -259,6 +259,64 @@ check("F4", "owner responses: exact keys, cursor, summary matches the rows, dele
   expect(!database_text.values.join(" ").include?("CNRY-"), "deleted answers still in the database")
 end
 
+def form_post(path, params, ip: Harness.ip)
+  http(:post, path, raw: URI.encode_www_form(params), headers: { "Content-Type" => "application/x-www-form-urlencoded" }, ip: ip)
+end
+
+check("E01", "OAuth metadata comes from config (a forged forwarded host is refused), S256 only, no-store, CORS open without credentials") do
+  expect_eq(403, anonymous(:get, "/.well-known/oauth-authorization-server", headers: { "X-Forwarded-Host" => "evil.example" }).status, "forged forwarded host")
+  response = anonymous(:get, "/.well-known/oauth-authorization-server", headers: { "Origin" => "https://claude.ai" })
+  expect_eq(200, response.status)
+  expect_eq(["S256"], response.json["code_challenge_methods_supported"])
+  expect_eq("https://api.kurz.fyi", response.json["issuer"])
+  expect_eq("no-store", response.headers["cache-control"])
+  expect_eq("*", response.headers["access-control-allow-origin"])
+  expect(!response.headers.key?("access-control-allow-credentials"), "credentials allowed")
+  expect_eq("https://api.kurz.fyi/mcp", anonymous(:get, "/.well-known/oauth-protected-resource", headers: { "Host" => "api.kurz.fyi" }).json["resource"])
+end
+
+check("E11", "client registration: hostile names stay inert, bad redirect URIs are refused, one IP is limited to 10 an hour") do
+  ip = "192.0.2.77"
+  ok = anonymous(:post, "/oauth/register", { client_name: "<script>x</script>\u202EClaude", redirect_uris: ["https://claude.ai/api/mcp/auth_callback"] }, ip: ip)
+  expect_eq(201, ok.status)
+  expect_eq("<script>x</script>Claude", ok.json["client_name"])
+  expect_eq(400, anonymous(:post, "/oauth/register", { client_name: "x", redirect_uris: ["https://evil.example/cb"] }, ip: ip).status, "evil redirect")
+  8.times { anonymous(:post, "/oauth/register", { client_name: "x", redirect_uris: ["https://claude.ai/cb"] }, ip: ip) }
+  expect_eq(429, anonymous(:post, "/oauth/register", { client_name: "x", redirect_uris: ["https://claude.ai/cb"] }, ip: ip).status, "11th")
+end
+
+check("E04", "token flow on the real stack: PKCE exchange, code replay revokes, refresh rotation, reuse revokes, only digests stored") do
+  client = OauthClient.create!(client_name: "Harness", redirect_uris: ["https://claude.ai/api/mcp/auth_callback"])
+  grant = OauthGrant.create!(user: TENANTS[:a], oauth_client: client, scopes: ["forms:read"], resource: "https://api.kurz.fyi/mcp")
+  verifier = SecureRandom.urlsafe_base64(48)
+  challenge = Base64.urlsafe_encode64(OpenSSL::Digest::SHA256.digest(verifier), padding: false)
+  code = OauthAuthorizationCode.issue(grant: grant, code_challenge: challenge, redirect_uri: "https://claude.ai/api/mcp/auth_callback")
+  exchange = ->(c, v = verifier) { form_post("/oauth/token", { grant_type: "authorization_code", code: c, redirect_uri: "https://claude.ai/api/mcp/auth_callback", client_id: client.client_id, code_verifier: v }) }
+
+  first = exchange.call(code)
+  expect_eq(200, first.status, "exchange")
+  expect_eq("no-store", first.headers["cache-control"])
+  tokens = first.json
+  database = database_text.values.join(" ")
+  expect(!database.include?(tokens["access_token"]) && !database.include?(tokens["refresh_token"]) && !database.include?(code), "raw token in the database")
+
+  expect_eq("invalid_grant", exchange.call(code).json["error"], "replay")
+  expect(!grant.reload.active?, "grant still active after replay")
+
+  grant.update_columns(revoked_at: nil)
+  code2 = OauthAuthorizationCode.issue(grant: grant, code_challenge: challenge, redirect_uri: "https://claude.ai/api/mcp/auth_callback")
+  expect_eq("invalid_grant", exchange.call(code2, "wrong" * 12).json["error"], "bad verifier")
+
+  code3 = OauthAuthorizationCode.issue(grant: grant, code_challenge: challenge, redirect_uri: "https://claude.ai/api/mcp/auth_callback")
+  pair = exchange.call(code3).json
+  refreshed = form_post("/oauth/token", { grant_type: "refresh_token", refresh_token: pair["refresh_token"], client_id: client.client_id })
+  expect_eq(200, refreshed.status, "refresh")
+  reuse = form_post("/oauth/token", { grant_type: "refresh_token", refresh_token: pair["refresh_token"], client_id: client.client_id })
+  expect_eq("invalid_grant", reuse.json["error"], "reuse")
+  expect_eq("invalid_grant", form_post("/oauth/token", { grant_type: "refresh_token", refresh_token: refreshed.json["refresh_token"], client_id: client.client_id }).json["error"], "newest after reuse")
+  expect_eq(415, http(:post, "/oauth/token", body: { grant_type: "authorization_code" }).status, "json body")
+end
+
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")
 puts "== #{Harness.results.count { |r| r[2] == 'PASS' }}/#{Harness.results.size} checks passed"
 exit(Harness.failed? ? 1 : 0)
