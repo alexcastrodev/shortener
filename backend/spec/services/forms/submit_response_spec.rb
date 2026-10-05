@@ -26,6 +26,15 @@ RSpec.describe(Forms::SubmitResponse) do
     expect(form.reload.responses_count).to(eq(1))
   end
 
+  it "ignores sections, which have no answer" do
+    form.update!(fields: [{ "id" => "sect0001", "type" => "section", "label" => "About you" }] + fields)
+
+    result = submit({ "name0001" => "Ana", "sect0001" => "x" })
+
+    expect(result.errors).to(be_nil)
+    expect(result.response.answers).to(eq("name0001" => "Ana"))
+  end
+
   it "leaves unanswered optional questions out" do
     result = submit({ "name0001" => "Ana" })
 

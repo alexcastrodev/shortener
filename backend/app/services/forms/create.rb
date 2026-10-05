@@ -11,7 +11,7 @@ module Forms
       user.with_lock do
         raise LimitReached if created_today >= Form::MAX_CREATED_PER_DAY
 
-        user.forms.create!(attributes)
+        user.forms.create!(attributes).tap(&:ensure_shortlink!)
       end
     end
 

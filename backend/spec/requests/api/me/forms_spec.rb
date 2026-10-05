@@ -49,6 +49,101 @@ RSpec.describe("/api/me/forms", type: :request) do
       expect(response).to(have_http_status(:ok))
       expect(json["form"].map { |f| f["id"] }).to(eq([newer.id, older.id]))
     end
+
+    describe "filters, sorting and counts" do
+      let!(:alpha) { make_form(title: "Alpha survey", published: true, responses_count: 5) }
+      let!(:beta) { make_form(title: "beta 100% form", responses_count: 9) }
+      let!(:gamma) { make_form(title: "Gamma survey", published: true, responses_count: 1) }
+
+      def ids
+        JSON.parse(response.body)["form"].map { |f| f["title"] }
+      end
+
+      it "filters by status and searches by title, treating wildcards literally" do
+        get "/api/me/forms", params: { status: "live" }, headers: auth_headers
+        expect(ids).to(match_array(["Alpha survey", "Gamma survey"]))
+
+        get "/api/me/forms", params: { status: "draft" }, headers: auth_headers
+        expect(ids).to(eq(["beta 100% form"]))
+
+        get "/api/me/forms", params: { q: "SURVEY" }, headers: auth_headers
+        expect(ids).to(match_array(["Alpha survey", "Gamma survey"]))
+
+        get "/api/me/forms", params: { q: "100%" }, headers: auth_headers
+        expect(ids).to(eq(["beta 100% form"]))
+
+        get "/api/me/forms", params: { q: "%" }, headers: auth_headers
+        expect(ids).to(eq(["beta 100% form"]))
+      end
+
+      it "sorts by name or responses and ignores unknown sorts" do
+        get "/api/me/forms", params: { sort: "name" }, headers: auth_headers
+        expect(ids).to(eq(["Alpha survey", "beta 100% form", "Gamma survey"]))
+
+        get "/api/me/forms", params: { sort: "responses" }, headers: auth_headers
+        expect(ids).to(eq(["beta 100% form", "Alpha survey", "Gamma survey"]))
+
+        get "/api/me/forms", params: { sort: "drop table" }, headers: auth_headers
+        expect(response).to(have_http_status(:ok))
+      end
+
+      it "reports counts that ignore the filters and never include other users" do
+        make_form(user: other_user, published: true, responses_count: 100)
+
+        get "/api/me/forms", params: { status: "draft", q: "beta" }, headers: auth_headers
+
+        expect(json["meta"]).to(eq("total" => 3, "live" => 2, "draft" => 1, "responses" => 15))
+      end
+    end
+  end
+
+  describe "short link" do
+    before do
+      allow(ENV).to(receive(:[]).and_call_original)
+      allow(ENV).to(receive(:[]).with("FRONTEND_URL").and_return("https://kurz.test"))
+      allow(ENV).to(receive(:[]).with("EDGE_API").and_return("https://edge.test"))
+    end
+
+    it "gives every new form a short link to its public page, owned by the creator" do
+      expect { post_form(title: "Contact") }.to(change { current_user.shortlinks.count }.by(1))
+
+      link = Form.find(form_json["id"]).shortlink
+      expect(link).to(have_attributes(user: current_user, original_url: "https://kurz.test/f/#{form_json["public_id"]}", title: "Contact"))
+      expect(form_json).to(include("shortlink_id" => link.id, "short_url" => "https://edge.test/#{link.short_code}"))
+    end
+
+    it "creates the link on publish for a form that has none, and only once" do
+      form = make_form(fields: [field])
+      expect(form.shortlink).to(be_nil)
+
+      post "/api/me/forms/#{form.id}/publish", headers: auth_headers
+      first = form.reload.shortlink
+      expect(first).to(be_present)
+
+      post "/api/me/forms/#{form.id}/unpublish", headers: auth_headers
+      post "/api/me/forms/#{form.id}/publish", headers: auth_headers
+      expect(form.reload.shortlink).to(eq(first))
+    end
+
+    it "removes the link when the form is deleted" do
+      post_form(title: "Contact")
+      form = Form.find(form_json["id"])
+      link = form.shortlink
+
+      delete "/api/me/forms/#{form.id}", headers: auth_headers
+
+      expect(response).to(have_http_status(:no_content))
+      expect(Shortlink.exists?(link.id)).to(be(false))
+    end
+
+    it "copies a form without sharing its link" do
+      post_form(title: "Contact")
+      original = Form.find(form_json["id"])
+
+      post "/api/me/forms/#{original.id}/duplicate", headers: auth_headers
+
+      expect(Form.find(JSON.parse(response.body)["form"]["id"]).shortlink).not_to(eq(original.shortlink))
+    end
   end
 
   describe "POST /api/me/forms" do
@@ -56,7 +151,7 @@ RSpec.describe("/api/me/forms", type: :request) do
       post_form(title: "Contact", description: "Say hi")
 
       expect(response).to(have_http_status(:created))
-      expect(form_json.keys).to(match_array(["id", "created_at", "updated_at", "public_id", "title", "description", "thank_you_message", "theme", "published", "fields", "responses_count", "public_url"]))
+      expect(form_json.keys).to(match_array(["id", "created_at", "updated_at", "public_id", "title", "description", "thank_you_message", "theme", "layout", "published", "fields", "responses_count", "public_url", "shortlink_id", "short_url"]))
       expect(form_json).to(include("title" => "Contact", "published" => false, "fields" => [], "responses_count" => 0))
       expect(form_json["public_id"]).to(match(/\A[A-Za-z0-9]{12}\z/))
     end
@@ -124,6 +219,22 @@ RSpec.describe("/api/me/forms", type: :request) do
       delete "/api/me/forms/#{form.id}", headers: auth_headers
       expect(response).to(have_http_status(:no_content))
       expect(Form.exists?(form.id)).to(be(false))
+    end
+
+    it "updates the layout and rejects unknown ones" do
+      patch "/api/me/forms/#{form.id}", params: { layout: "steps" }, headers: auth_headers, as: :json
+      expect(form.reload.layout).to(eq("steps"))
+
+      patch "/api/me/forms/#{form.id}", params: { layout: "grid" }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(form.reload.layout).to(eq("steps"))
+    end
+
+    it "does not publish a form that only has sections" do
+      form.update!(fields: [{ "id" => "sect0001", "type" => "section", "label" => "Intro" }])
+
+      post "/api/me/forms/#{form.id}/publish", headers: auth_headers
+      expect(response).to(have_http_status(:unprocessable_entity))
     end
 
     it "does not let update change published, fields, owner or counters" do

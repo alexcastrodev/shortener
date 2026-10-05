@@ -22,7 +22,7 @@ RSpec.describe("/api/public/forms", type: :request) do
 
     expect(response).to(have_http_status(:ok))
     expect(json.keys).to(eq(["form"]))
-    expect(json["form"].keys).to(match_array(["title", "description", "thank_you_message", "theme", "fields"]))
+    expect(json["form"].keys).to(match_array(["title", "description", "thank_you_message", "theme", "layout", "fields"]))
     expect(json["form"]).to(include("title" => "Survey", "theme" => "ocean"))
     expect(json["form"]["fields"].flat_map(&:keys).uniq).to(match_array(["id", "type", "label", "help", "required", "choices", "max_choices", "scale", "min", "max"]))
     expect(json["form"]["fields"][1]["choices"].first.keys).to(match_array(["id", "label"]))

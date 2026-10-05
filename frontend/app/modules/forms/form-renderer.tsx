@@ -1,11 +1,13 @@
-import { useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { Form } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
-import { FieldInput, type Answer } from './field-inputs';
+import { FieldInput, focusFirstInput, isBlank, type Answer } from './field-inputs';
+import { isSection, sectionOf } from './field-types';
+import { PagedForm } from './paged-form';
 
 export type RenderableForm = Pick<
   Form,
-  'title' | 'description' | 'thank_you_message' | 'theme' | 'fields'
+  'title' | 'description' | 'thank_you_message' | 'theme' | 'layout' | 'fields'
 >;
 
 export type SubmitFailure = {
@@ -13,29 +15,58 @@ export type SubmitFailure = {
   fieldErrors?: Record<string, string[]>;
 };
 
-type Props = {
+export type Props = {
   form: RenderableForm;
   mode: 'preview' | 'live';
   onSubmit?: (answers: Record<string, Answer>) => Promise<void> | void;
   onStart?: () => void;
   lastStepSlot?: ReactNode;
   footer?: ReactNode;
+  activeFieldId?: string | null;
+  onSelectField?: (id: string) => void;
 };
 
-const isBlank = (value: Answer) =>
-  value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
+export function FormRenderer(props: Props) {
+  return props.form.layout === 'one_at_a_time' ? (
+    <SequentialForm {...props} />
+  ) : (
+    <PagedForm {...props} />
+  );
+}
 
-export function FormRenderer({ form, mode, onSubmit, onStart, lastStepSlot, footer }: Props) {
+function SequentialForm({
+  form,
+  mode,
+  onSubmit,
+  onStart,
+  lastStepSlot,
+  footer,
+  activeFieldId,
+  onSelectField,
+}: Props) {
   const theme = getBioTheme(form.theme);
   const uid = useId();
-  const total = form.fields.length;
-  const [step, setStep] = useState(-1);
+  const questions = form.fields.filter(item => !isSection(item));
+  const total = questions.length;
+  const activeAt = form.fields.findIndex(item => item.id === activeFieldId);
+  const activeQuestion =
+    activeAt < 0 ? undefined : form.fields.slice(activeAt).find(item => !isSection(item));
+  const activeIndex = activeQuestion ? questions.indexOf(activeQuestion) : -1;
+  const [step, setStep] = useState(activeIndex);
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const container = useRef<HTMLDivElement>(null);
 
-  const field = step >= 0 && step < total ? form.fields[step] : null;
+  useEffect(() => {
+    if (activeIndex >= 0) setStep(activeIndex);
+  }, [activeIndex]);
+
+  useEffect(() => {
+    if (mode === 'live' && step >= 0 && step < total) focusFirstInput(container.current);
+  }, [mode, step, total]);
+
+  const field = step >= 0 && step < total ? questions[step] : null;
   const done = step >= total && total > 0;
   const shell = `flex flex-col px-[max(1.25rem,calc((100%-36rem)/2))] py-8 ${theme.page} ${
     mode === 'live' ? 'min-h-dvh' : 'min-h-full'
@@ -61,7 +92,7 @@ export function FormRenderer({ form, mode, onSubmit, onStart, lastStepSlot, foot
       } catch (failure) {
         const { message, fieldErrors } = (failure ?? {}) as SubmitFailure;
         const invalid = fieldErrors
-          ? form.fields.findIndex(item => fieldErrors[item.id])
+          ? questions.findIndex(item => fieldErrors[item.id])
           : -1;
         if (invalid >= 0) setStep(invalid);
         setError(
@@ -106,6 +137,7 @@ export function FormRenderer({ form, mode, onSubmit, onStart, lastStepSlot, foot
         <div className="mt-8">
           <button
             type="button"
+            autoFocus={mode === 'live'}
             className={primary}
             onClick={() => {
               onStart?.();
@@ -114,6 +146,10 @@ export function FormRenderer({ form, mode, onSubmit, onStart, lastStepSlot, foot
           >
             Start
           </button>
+          <span className={`ml-4 hidden text-xs sm:inline ${theme.bio}`}>press Enter ↵</span>
+          <span className={`ml-4 text-sm ${theme.bio}`}>
+            ~{Math.max(1, Math.ceil(total / 4))} min
+          </span>
         </div>
         {footer}
       </div>
@@ -148,7 +184,12 @@ export function FormRenderer({ form, mode, onSubmit, onStart, lastStepSlot, foot
 
   const inputId = `${uid}-${field!.id}`;
   return (
-    <div ref={container} className={shell} onKeyDown={onKeyDown}>
+    <div
+      ref={container}
+      className={shell}
+      onKeyDown={onKeyDown}
+      onClick={mode === 'preview' ? () => onSelectField?.(field!.id) : undefined}
+    >
       <div
         role="progressbar"
         aria-label="Progress"
@@ -163,9 +204,17 @@ export function FormRenderer({ form, mode, onSubmit, onStart, lastStepSlot, foot
         />
       </div>
       <p aria-live="polite" className={`mb-2 text-xs ${theme.bio}`}>
-        Question {step + 1} of {total}
+        {sectionOf(form.fields, field!.id) && (
+          <span className="mr-2 font-mono uppercase">{sectionOf(form.fields, field!.id)}</span>
+        )}
+        <span className="sr-only">
+          Question {step + 1} of {total}
+        </span>
       </p>
       <label htmlFor={inputId} className={`text-xl font-semibold ${theme.title}`}>
+        <span aria-hidden="true" className={`mr-3 font-mono text-xs ${theme.bio}`}>
+          {String(step + 1).padStart(2, '0')} →
+        </span>
         {field!.label}
         {field!.required && <span aria-hidden="true"> *</span>}
       </label>
@@ -192,20 +241,27 @@ export function FormRenderer({ form, mode, onSubmit, onStart, lastStepSlot, foot
           {error}
         </p>
       )}
-      <div className="mt-8 flex items-center justify-between gap-3">
-        <button
-          type="button"
-          className={`text-sm underline ${theme.footer}`}
-          onClick={() => {
-            setError(null);
-            setStep(step - 1);
-          }}
-        >
-          Back
-        </button>
+      <div className="mt-8 flex items-center gap-3">
+        {step > 0 && (
+          <button
+            type="button"
+            aria-label="Back"
+            className={`min-h-11 rounded-lg px-4 ${theme.button}`}
+            onClick={() => {
+              setError(null);
+              setStep(step - 1);
+            }}
+          >
+            ←
+          </button>
+        )}
         <button type="button" className={primary} disabled={submitting} onClick={() => void next()}>
-          {step === total - 1 ? (submitting ? 'Sending…' : 'Submit') : 'OK'}
+          {step === total - 1 ? (submitting ? 'Sending…' : 'Submit') : 'Next'}
         </button>
+        <span className={`hidden text-xs sm:inline ${theme.bio}`}>press Enter ↵</span>
+        <span className={`ml-auto font-mono text-xs ${theme.bio}`}>
+          {step + 1} / {total}
+        </span>
       </div>
       {footer}
     </div>

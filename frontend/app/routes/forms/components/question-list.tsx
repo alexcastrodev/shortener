@@ -4,19 +4,17 @@ import {
   Droppable,
   type DropResult,
 } from '@hello-pangea/dnd';
-import { ActionIcon, Badge, Button, Group, Menu, Modal } from '@mantine/core';
+import { ActionIcon, Group } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import {
   IconArrowDown,
   IconArrowUp,
+  IconCopy,
   IconGripVertical,
-  IconPencil,
-  IconPlus,
   IconTrash,
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { Card } from '@internal/ui';
 import { getFormKey } from '@internal/core/actions/get-form/get-form.hook';
 import { getFormsKey } from '@internal/core/actions/get-forms/get-forms.hook';
@@ -27,19 +25,44 @@ import { useReorderFormFields } from '@internal/core/actions/reorder-form-fields
 import type {
   Form,
   FormField,
+  FormFieldInput,
   FormFieldType,
 } from '@internal/core/types/Form';
-import { FIELD_TYPES, fieldTypeLabel } from '../../../modules/forms/field-types';
+import { FIELD_TYPES, fieldTypeLabel, isChoiceType, isSection } from '../../../modules/forms/field-types';
 import { formErrorMessage } from '../../../modules/forms/form-errors';
 import { QuestionEditor } from './question-editor';
 
-type Editing =
-  | { mode: 'new'; type: FormFieldType }
-  | { mode: 'edit'; field: FormField };
+const defaultsFor = (type: FormFieldType): FormFieldInput => ({
+  type,
+  label: type === 'section' ? 'New section' : 'New question',
+  ...(isChoiceType(type)
+    ? { choices: [1, 2, 3].map(n => ({ label: `Option ${n}` })) }
+    : {}),
+  ...(type === 'rating' ? { scale: 5 as const } : {}),
+});
 
-export function QuestionList({ form }: { form: Form }) {
+const copyOf = (field: FormField): FormFieldInput => ({
+  type: field.type,
+  label: `${field.label} (copy)`.slice(0, 300),
+  help: field.help,
+  required: field.required,
+  max_choices: field.max_choices,
+  scale: field.scale,
+  min: field.min,
+  max: field.max,
+  choices: field.choices?.map(({ label }) => ({ label })),
+});
+
+export function QuestionList({
+  form,
+  selectedId,
+  onSelect,
+}: {
+  form: Form;
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+}) {
   const queryClient = useQueryClient();
-  const [editing, setEditing] = useState<Editing | null>(null);
 
   const onSuccess = (updated: Form) => {
     queryClient.setQueryData(getFormKey(form.id), updated);
@@ -55,15 +78,12 @@ export function QuestionList({ form }: { form: Form }) {
   const { mutate: create, isPending: isCreating } = useCreateFormField({
     onSuccess: updated => {
       onSuccess(updated);
-      setEditing(null);
+      onSelect(updated.fields.at(-1)?.id ?? null);
     },
     onError,
   });
   const { mutate: update, isPending: isUpdating } = useUpdateFormField({
-    onSuccess: updated => {
-      onSuccess(updated);
-      setEditing(null);
-    },
+    onSuccess,
     onError,
   });
   const { mutate: remove } = useDeleteFormField({ onSuccess, onError });
@@ -110,34 +130,15 @@ export function QuestionList({ form }: { form: Form }) {
     });
   };
 
-  const editingType = editing?.mode === 'edit' ? editing.field.type : editing?.type;
+  const numbers = form.fields.reduce<number[]>(
+    (acc, field) => [...acc, (acc.at(-1) ?? 0) + (isSection(field) ? 0 : 1)],
+    []
+  );
 
   return (
-    <Card className="max-w-2xl p-5 sm:p-6">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="font-semibold">Questions</h2>
-        <Menu position="bottom-end" withinPortal>
-          <Menu.Target>
-            <Button size="xs" color="brand" leftSection={<IconPlus size={14} />}>
-              Add question
-            </Button>
-          </Menu.Target>
-          <Menu.Dropdown>
-            {FIELD_TYPES.map(item => (
-              <Menu.Item
-                key={item.type}
-                onClick={() => setEditing({ mode: 'new', type: item.type })}
-              >
-                <span className="block text-sm">{item.label}</span>
-                <span className="block text-xs text-muted-foreground">{item.hint}</span>
-              </Menu.Item>
-            ))}
-          </Menu.Dropdown>
-        </Menu>
-      </div>
-
+    <Card className="p-5 sm:p-6">
       {form.fields.length === 0 && (
-        <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+        <p className="mb-4 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
           No questions yet. Add the first one to be able to publish.
         </p>
       )}
@@ -150,102 +151,127 @@ export function QuestionList({ form }: { form: Form }) {
               {...provided.droppableProps}
               className="space-y-2"
             >
-              {form.fields.map((field, index) => (
-                <Draggable key={field.id} draggableId={field.id} index={index}>
-                  {(drag, snapshot) => (
-                    <li
-                      ref={drag.innerRef}
-                      {...drag.draggableProps}
-                      className={`flex items-center gap-3 rounded-lg border border-border bg-card p-3 ${
-                        snapshot.isDragging ? 'shadow-2xl' : ''
-                      }`}
-                    >
-                      <span
-                        {...drag.dragHandleProps}
-                        aria-label={`Drag to reorder ${field.label}`}
-                        className="flex h-8 w-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground active:cursor-grabbing"
+              {form.fields.map((field, index) => {
+                const open = field.id === selectedId;
+                return (
+                  <Draggable key={field.id} draggableId={field.id} index={index}>
+                    {(drag, snapshot) => (
+                      <li
+                        ref={drag.innerRef}
+                        {...drag.draggableProps}
+                        className={`rounded-lg border bg-card ${
+                          open ? 'border-primary' : 'border-border'
+                        } ${snapshot.isDragging ? 'shadow-2xl' : ''}`}
                       >
-                        <IconGripVertical size={16} />
-                      </span>
-                      <span className="w-4 text-center text-xs text-muted-foreground">
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">
-                          {field.label}
-                          {field.required && <span className="text-red-500"> *</span>}
-                        </p>
-                        <Badge size="xs" variant="light" color="gray" mt={2}>
-                          {fieldTypeLabel(field.type)}
-                        </Badge>
-                      </div>
-                      <Group gap={2} wrap="nowrap">
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          aria-label={`Move question ${index + 1} up`}
-                          disabled={index === 0 || isReordering}
-                          onClick={() => move(index, -1)}
-                        >
-                          <IconArrowUp size={16} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          aria-label={`Move question ${index + 1} down`}
-                          disabled={index === form.fields.length - 1 || isReordering}
-                          onClick={() => move(index, 1)}
-                        >
-                          <IconArrowDown size={16} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          aria-label={`Edit question ${index + 1}`}
-                          onClick={() => setEditing({ mode: 'edit', field })}
-                        >
-                          <IconPencil size={16} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="subtle"
-                          color="red"
-                          aria-label={`Remove question ${index + 1}`}
-                          onClick={() => confirmRemove(field)}
-                        >
-                          <IconTrash size={16} />
-                        </ActionIcon>
-                      </Group>
-                    </li>
-                  )}
-                </Draggable>
-              ))}
+                        <div className="flex items-center gap-3 p-3">
+                          <span
+                            {...drag.dragHandleProps}
+                            aria-label={`Drag to reorder ${field.label}`}
+                            className="flex h-8 w-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground active:cursor-grabbing"
+                          >
+                            <IconGripVertical size={16} />
+                          </span>
+                          <span className="w-5 text-center font-mono text-xs text-muted-foreground">
+                            {isSection(field)
+                              ? '§'
+                              : String(numbers[index]).padStart(2, '0')}
+                          </span>
+                          <button
+                            type="button"
+                            aria-expanded={open}
+                            onClick={() => onSelect(open ? null : field.id)}
+                            className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                          >
+                            <span
+                              className={`truncate text-sm ${
+                                isSection(field) ? 'font-bold' : 'font-medium'
+                              }`}
+                            >
+                              {field.label}
+                              {field.required && <span className="text-red-500"> *</span>}
+                            </span>
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                              {fieldTypeLabel(field.type)}
+                            </span>
+                          </button>
+                          <Group gap={2} wrap="nowrap">
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              aria-label={`Move question ${index + 1} up`}
+                              disabled={index === 0 || isReordering}
+                              onClick={() => move(index, -1)}
+                            >
+                              <IconArrowUp size={16} />
+                            </ActionIcon>
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              aria-label={`Move question ${index + 1} down`}
+                              disabled={index === form.fields.length - 1 || isReordering}
+                              onClick={() => move(index, 1)}
+                            >
+                              <IconArrowDown size={16} />
+                            </ActionIcon>
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              aria-label={`Duplicate question ${index + 1}`}
+                              disabled={isCreating}
+                              onClick={() => create({ formId: form.id, data: copyOf(field) })}
+                            >
+                              <IconCopy size={16} />
+                            </ActionIcon>
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              aria-label={`Remove question ${index + 1}`}
+                              onClick={() => confirmRemove(field)}
+                            >
+                              <IconTrash size={16} />
+                            </ActionIcon>
+                          </Group>
+                        </div>
+                        {open && (
+                          <div className="border-t border-border p-4">
+                            <QuestionEditor
+                              key={field.id}
+                              type={field.type}
+                              field={field}
+                              loading={isUpdating}
+                              onCancel={() => onSelect(null)}
+                              onSubmit={data =>
+                                update({ formId: form.id, fieldId: field.id, data })
+                              }
+                            />
+                          </div>
+                        )}
+                      </li>
+                    )}
+                  </Draggable>
+                );
+              })}
               {provided.placeholder}
             </ol>
           )}
         </Droppable>
       </DragDropContext>
 
-      <Modal
-        opened={!!editing}
-        onClose={() => setEditing(null)}
-        title={editing?.mode === 'edit' ? 'Edit question' : 'New question'}
-        centered
-      >
-        {editing && editingType && (
-          <QuestionEditor
-            key={editing.mode === 'edit' ? editing.field.id : `new-${editingType}`}
-            type={editingType}
-            field={editing.mode === 'edit' ? editing.field : undefined}
-            loading={isCreating || isUpdating}
-            onCancel={() => setEditing(null)}
-            onSubmit={input =>
-              editing.mode === 'edit'
-                ? update({ formId: form.id, fieldId: editing.field.id, data: input })
-                : create({ formId: form.id, data: input })
-            }
-          />
-        )}
-      </Modal>
+      <p className="mt-5 mb-2 text-xs text-muted-foreground">Add field</p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {FIELD_TYPES.map(item => (
+          <button
+            key={item.type}
+            type="button"
+            disabled={isCreating}
+            title={item.hint}
+            onClick={() => create({ formId: form.id, data: defaultsFor(item.type) })}
+            className="rounded-lg border border-border bg-card px-3 py-2 text-left text-sm hover:border-primary disabled:opacity-50"
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
     </Card>
   );
 }

@@ -8,9 +8,24 @@ class Api::Me::FormsController < ApplicationController
     render(json: { error: "forms_daily_limit" }, status: :too_many_requests)
   end
 
+  SORTS = {
+    "edited" => [{ updated_at: :desc, id: :desc }],
+    "name" => [Form.arel_table[:title].lower.asc, { id: :asc }],
+    "responses" => [{ responses_count: :desc, id: :desc }],
+  }.freeze
+  SEARCH_MAX = 100
+
   def index
-    forms = policy_scope(Form).order(created_at: :desc)
-    render(json: FormSerializer.new(forms).serialize, status: :ok)
+    owned = policy_scope(Form)
+    forms = filtered(owned).includes(:shortlink).order(*SORTS.fetch(params[:sort].to_s, SORTS["edited"]))
+    counts = owned.group(:published).count
+    meta = {
+      total: counts.values.sum,
+      live: counts.fetch(true, 0),
+      draft: counts.fetch(false, 0),
+      responses: owned.sum(:responses_count),
+    }
+    render(json: JSON.parse(FormSerializer.new(forms).serialize).merge("meta" => meta), status: :ok)
   end
 
   def show
@@ -45,8 +60,9 @@ class Api::Me::FormsController < ApplicationController
   end
 
   def publish
-    return render(json: { errors: { fields: ["must have at least one question to publish"] } }, status: :unprocessable_entity) if @form.fields.empty?
+    return render(json: { errors: { fields: ["must have at least one question to publish"] } }, status: :unprocessable_entity) if @form.fields.none? { |field| Forms::FieldSchema.answerable?(field) }
 
+    @form.ensure_shortlink!
     @form.update!(published: true)
     render(json: FormSerializer.new(@form).serialize, status: :ok)
   end
@@ -71,12 +87,19 @@ class Api::Me::FormsController < ApplicationController
 
   private
 
+  def filtered(scope)
+    scope = scope.where(published: params[:status] == "live") if ["live", "draft"].include?(params[:status])
+    term = params[:q].to_s.strip.first(SEARCH_MAX)
+    term.present? ? scope.where("forms.title ILIKE ?", "%#{Form.sanitize_sql_like(term)}%") : scope
+  end
+
   def duplicate_attributes
     {
       title: "Copy of #{@form.title}".first(Form::TITLE_MAX),
       description: @form.description,
       thank_you_message: @form.thank_you_message,
       theme: @form.theme,
+      layout: @form.layout,
       fields: @form.fields.map { |field| Forms::FieldSchema.with_fresh_ids(field) },
     }
   end

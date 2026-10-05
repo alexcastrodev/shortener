@@ -32,7 +32,7 @@ module Forms
     def cast_all
       values = {}
       errors = {}
-      form.fields.each do |field|
+      form.fields.select { |field| FieldSchema.answerable?(field) }.each do |field|
         value, error = FieldSchema.cast_answer(field, answers[field["id"]])
         if error
           errors[field["id"]] = [error.to_s]

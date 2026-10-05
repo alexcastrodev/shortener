@@ -23,6 +23,7 @@ RSpec.describe(Forms::FieldSchema) do
         field("yes_no"),
         field("rating", scale: 10),
         field("date"),
+        field("section", help: "Intro"),
       ].each_with_index.map { |f, i| f.merge("id" => "field00#{i}") }
 
       expect(described_class.definition_errors(fields)).to(eq([]))
