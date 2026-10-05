@@ -14,7 +14,7 @@ RSpec.describe("GET /api/public/pages/:slug", type: :request) do
 
     expect(response).to(have_http_status(:ok))
     body = JSON.parse(response.body)["page"]
-    expect(body.keys).to(match_array(["slug", "display_title", "bio", "theme", "avatar_url", "links"]))
+    expect(body.keys).to(match_array(["slug", "display_title", "bio", "theme", "custom_colors", "avatar_url", "links"]))
     expect(body["links"].map { |l| l["id"] }).to(eq([active.id]))
     expect(body["links"].first.keys).to(match_array(["id", "kind", "label", "url", "icon"]))
   end

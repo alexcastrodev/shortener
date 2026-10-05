@@ -76,6 +76,7 @@ Rails.application.routes.draw do
         end
       end
       resources :page_templates, only: [:index, :create, :update, :destroy]
+      resources :color_palettes, only: [:index, :create, :destroy]
       resources :community_templates, only: [:index] do
         member { post "report", to: "community_templates#report" }
       end

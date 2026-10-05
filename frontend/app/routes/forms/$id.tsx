@@ -63,6 +63,9 @@ const schema = z.object({
   description: z.string().max(1000),
   thank_you_message: z.string().max(500),
   theme: z.enum(PAGE_THEMES),
+  custom_colors: z
+    .object({ background: z.string(), text: z.string(), accent: z.string() })
+    .nullable(),
   layout: z.enum(FORM_LAYOUTS),
 });
 
@@ -129,6 +132,7 @@ function Builder({ form: current }: { form: Form }) {
     description: current.description ?? '',
     thank_you_message: current.thank_you_message ?? '',
     theme: current.theme,
+    custom_colors: current.custom_colors ?? null,
     layout: current.layout,
   };
 
@@ -400,7 +404,9 @@ function Builder({ form: current }: { form: Form }) {
               />
               <ThemePicker
                 value={form.values.theme}
+                colors={form.values.custom_colors}
                 onChange={theme => form.setFieldValue('theme', theme)}
+                onColorsChange={colors => form.setFieldValue('custom_colors', colors)}
               />
               <Group justify="space-between">
                 <Button
@@ -476,6 +482,7 @@ function Builder({ form: current }: { form: Form }) {
                     description: form.values.description || null,
                     thank_you_message: form.values.thank_you_message || null,
                     theme: form.values.theme,
+                    custom_colors: form.values.custom_colors,
                     layout: form.values.layout,
                     fields: current.fields,
                   }}

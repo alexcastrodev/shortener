@@ -3,13 +3,14 @@ module Mcp
     class UpdatePage < Mcp::BaseTool
       tool_name "update_page"
       title "Edit a bio page draft"
-      description "Edits the title, bio, theme or address of an unpublished page. Published pages must be edited in the dashboard."
+      description "Edits the title, bio, theme (or custom_colors) or address of an unpublished page. Published pages must be edited in the dashboard."
       input_schema(
         properties: {
           id: { type: "integer", minimum: 1 },
           display_title: { type: "string", maxLength: 80 },
           bio: { type: "string", maxLength: 300 },
           theme: { type: "string", enum: Page::THEMES },
+          custom_colors: CustomColors::JSON_SCHEMA,
           slug: { type: "string", maxLength: 30 },
         },
         required: ["id"],

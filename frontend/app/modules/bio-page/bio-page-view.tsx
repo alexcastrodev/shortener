@@ -34,7 +34,7 @@ function groupLinks(links: ViewLink[]) {
 }
 
 interface BioPageViewProps {
-  page: Pick<PublicPage, 'slug' | 'display_title' | 'bio' | 'theme' | 'avatar_url'> & {
+  page: Pick<PublicPage, 'slug' | 'display_title' | 'bio' | 'theme' | 'custom_colors' | 'avatar_url'> & {
     links: ViewLink[];
   };
   onLinkClick?: (linkId: number) => void;
@@ -51,13 +51,14 @@ export function BioPageView({
   preview,
   pulseLinkId,
 }: BioPageViewProps) {
-  const theme = getBioTheme(page.theme);
+  const theme = getBioTheme(page.theme, page.custom_colors);
   const { socials, groups } = groupLinks(page.links);
   const title = page.display_title || `@${page.slug}`;
   const initial = title.replace('@', '').charAt(0).toUpperCase();
 
   return (
     <div
+      style={theme.style}
       className={`flex flex-col ${preview ? 'h-full min-h-full' : 'min-h-screen'} ${theme.page}`}
     >
       <div

@@ -29,7 +29,7 @@ export function PagedForm({
   activeFieldId,
   onSelectField,
 }: Props) {
-  const theme = getBioTheme(form.theme);
+  const theme = getBioTheme(form.theme, form.custom_colors);
   const uid = useId();
   const pages = splitPages(form.fields, form.layout);
   const [page, setPage] = useState(0);
@@ -106,7 +106,7 @@ export function PagedForm({
 
   if (form.fields.every(isSection)) {
     return (
-      <div className={shell}>
+      <div className={shell} style={theme.style}>
         <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
         <p className={`mt-3 ${theme.bio}`}>This form has no questions yet.</p>
         {footer}
@@ -116,7 +116,7 @@ export function PagedForm({
 
   if (done) {
     return (
-      <div className={`${shell} justify-center`} role="status">
+      <div className={`${shell} justify-center`} style={theme.style} role="status">
         <h1 className={`text-2xl font-semibold ${theme.title}`}>Thank you</h1>
         <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>
           {form.thank_you_message || 'Your answers were sent.'}
@@ -148,7 +148,7 @@ export function PagedForm({
     .filter(item => !isSection(item)).length;
 
   return (
-    <div ref={root} className={shell}>
+    <div ref={root} className={shell} style={theme.style}>
       {pages.length > 1 && (
         <div
           role="progressbar"

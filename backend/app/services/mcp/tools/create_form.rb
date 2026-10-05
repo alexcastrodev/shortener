@@ -10,6 +10,7 @@ module Mcp
           description: { type: "string", maxLength: 1000 },
           thank_you_message: { type: "string", maxLength: 500 },
           theme: { type: "string", enum: Page::THEMES },
+          custom_colors: CustomColors::JSON_SCHEMA,
           layout: { type: "string", enum: Form::LAYOUTS },
         },
         required: ["title"],

@@ -10,6 +10,7 @@ module Mcp
           display_title: { type: "string", maxLength: 80 },
           bio: { type: "string", maxLength: 300 },
           theme: { type: "string", enum: Page::THEMES },
+          custom_colors: CustomColors::JSON_SCHEMA,
           template: { type: "string", maxLength: 40 },
         },
         required: ["slug"],
@@ -18,8 +19,8 @@ module Mcp
       annotations(read_only_hint: false, destructive_hint: false, idempotent_hint: false, open_world_hint: false)
       requires "pages:write", writes: true, limits: [[10, 1.hour], [50, 1.day]]
 
-      def self.perform(user:, slug:, display_title: nil, bio: nil, theme: nil, template: nil)
-        attributes = Mcp::Guards.contract!(PageContract, { slug: slug, display_title: display_title, bio: bio, theme: theme })
+      def self.perform(user:, slug:, display_title: nil, bio: nil, theme: nil, custom_colors: nil, template: nil)
+        attributes = Mcp::Guards.contract!(PageContract, { slug: slug, display_title: display_title, bio: bio, theme: theme, custom_colors: custom_colors })
         template_data = PageToolHelpers.find_template(user, template) if template.present?
         page = user.pages.new(attributes.merge(published: false))
         Page.transaction do

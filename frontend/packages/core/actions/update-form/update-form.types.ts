@@ -1,11 +1,12 @@
 import type { Form, FormLayout } from '../../types/Form';
-import type { PageTheme } from '../../types/Page';
+import type { CustomColors, PageTheme } from '../../types/Page';
 
 export interface UpdateFormRequestBody {
   title?: string;
   description?: string | null;
   thank_you_message?: string | null;
   theme?: PageTheme;
+  custom_colors?: CustomColors | null;
   layout?: FormLayout;
 }
 

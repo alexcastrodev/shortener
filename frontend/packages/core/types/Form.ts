@@ -1,4 +1,4 @@
-import type { PageTheme } from './Page';
+import type { CustomColors, PageTheme } from './Page';
 
 export type FormFieldType =
   | 'short_text'
@@ -38,6 +38,7 @@ export type Form = {
   description: string | null;
   thank_you_message: string | null;
   theme: PageTheme;
+  custom_colors?: CustomColors | null;
   layout: FormLayout;
   published: boolean;
   fields: FormField[];
@@ -71,7 +72,7 @@ export type FormFieldInput = {
 
 export type PublicForm = Pick<
   Form,
-  'title' | 'description' | 'thank_you_message' | 'theme' | 'layout' | 'fields'
+  'title' | 'description' | 'thank_you_message' | 'theme' | 'custom_colors' | 'layout' | 'fields'
 >;
 
 export type FormResponseAnswer = {

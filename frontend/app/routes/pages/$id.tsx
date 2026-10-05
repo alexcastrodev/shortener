@@ -72,6 +72,9 @@ const pageSchema = z.object({
   display_title: z.string().max(80),
   bio: z.string().max(300),
   theme: z.enum(PAGE_THEMES),
+  custom_colors: z
+    .object({ background: z.string(), text: z.string(), accent: z.string() })
+    .nullable(),
   published: z.boolean(),
   expires_at: z.string().refine(isFutureDateTimeLocal, 'Must be in the future'),
 });
@@ -141,6 +144,7 @@ function Editor({ page }: { page: Page }) {
       display_title: page.display_title ?? '',
       bio: page.bio ?? '',
       theme: page.theme,
+      custom_colors: page.custom_colors ?? null,
       published: page.published,
       expires_at: isoToDateTimeLocal(page.expires_at),
     },
@@ -155,6 +159,7 @@ function Editor({ page }: { page: Page }) {
     display_title: page.display_title ?? '',
     bio: page.bio ?? '',
     theme: page.theme,
+    custom_colors: page.custom_colors ?? null,
     published: page.published,
     expires_at: isoToDateTimeLocal(page.expires_at),
   };
@@ -291,7 +296,9 @@ function Editor({ page }: { page: Page }) {
                 />
                 <ThemePicker
                   value={form.values.theme}
+                  colors={form.values.custom_colors}
                   onChange={theme => form.setFieldValue('theme', theme)}
+                  onColorsChange={colors => form.setFieldValue('custom_colors', colors)}
                 />
                 <Switch
                   label="Published"
@@ -337,6 +344,7 @@ function Editor({ page }: { page: Page }) {
                 display_title: form.values.display_title,
                 bio: form.values.bio,
                 theme: form.values.theme,
+                custom_colors: form.values.custom_colors,
                 avatar_url: page.avatar_url,
               }}
               links={links}

@@ -34,7 +34,7 @@ class PageSerializer < BaseSerializer
   #------------
   # Attributes
   #------------
-  attributes :slug, :display_title, :bio, :theme, :published
+  attributes :slug, :display_title, :bio, :theme, :custom_colors, :published
 
   attribute :expires_at do |page|
     page.expires_at&.iso8601

@@ -15,6 +15,7 @@ module Mcp
           display_title: page.display_title && Mcp::Content.clean(page.display_title, max: 80),
           bio: page.bio && Mcp::Content.clean(page.bio, max: 300),
           theme: page.theme,
+          custom_colors: page.custom_colors,
           published: page.published,
           public_url: page.public_url,
           dashboard_url: "#{ENV.fetch("FRONTEND_URL", "https://kurz.fyi")}/app/pages/#{page.id}",

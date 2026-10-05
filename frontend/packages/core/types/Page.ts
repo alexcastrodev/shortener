@@ -9,6 +9,18 @@ export const PAGE_THEMES = [
 
 export type PageTheme = (typeof PAGE_THEMES)[number];
 
+export type CustomColors = {
+  background: string;
+  text: string;
+  accent: string;
+};
+
+export type ColorPalette = {
+  id: number;
+  name: string;
+  custom_colors: CustomColors;
+};
+
 // link: a button; social: an icon in the row under the page title;
 // header: a section title (no URL) grouping the items below it.
 export type PageLinkKind = 'link' | 'social' | 'header';
@@ -32,6 +44,7 @@ export type Page = {
   display_title?: string | null;
   bio?: string | null;
   theme: PageTheme;
+  custom_colors?: CustomColors | null;
   published: boolean;
   expires_at?: string | null;
   public_url: string;
@@ -57,6 +70,7 @@ export type PublicPage = {
   display_title?: string | null;
   bio?: string | null;
   theme: PageTheme;
+  custom_colors?: CustomColors | null;
   avatar_url?: string | null;
   links: PublicPageLink[];
 };

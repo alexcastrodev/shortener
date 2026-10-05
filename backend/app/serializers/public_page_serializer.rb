@@ -5,7 +5,7 @@
 class PublicPageSerializer < BaseSerializer
   root_key :page
 
-  attributes :slug, :display_title, :bio, :theme, :avatar_url
+  attributes :slug, :display_title, :bio, :theme, :custom_colors, :avatar_url
 
   attribute :links do |page|
     page.page_links.select { |link| link.active && link.safe }.map do |link|

@@ -1,4 +1,5 @@
-import type { PageTheme } from '@internal/core/types/Page';
+import type { CSSProperties } from 'react';
+import type { CustomColors, PageTheme } from '@internal/core/types/Page';
 
 export interface BioTheme {
   name: string;
@@ -9,6 +10,7 @@ export interface BioTheme {
   button: string;
   footer: string;
   swatch: string;
+  style?: CSSProperties;
 }
 
 // A fixed set of presets instead of free-form colors: every combination
@@ -85,6 +87,55 @@ export const BIO_THEMES: Record<PageTheme, BioTheme> = {
   },
 };
 
-export function getBioTheme(theme: string | undefined): BioTheme {
+const HEX = /^#[0-9a-f]{6}$/i;
+
+function luminance(hex: string) {
+  const [r, g, b] = [1, 3, 5].map(start => {
+    const channel = parseInt(hex.slice(start, start + 2), 16) / 255;
+    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function contrastRatio(a: string, b: string) {
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (high + 0.05) / (low + 0.05);
+}
+
+function onColor(hex: string) {
+  return contrastRatio(hex, '#000000') >= contrastRatio(hex, '#ffffff')
+    ? '#000000'
+    : '#ffffff';
+}
+
+export function customTheme({ background, text, accent }: CustomColors): BioTheme {
+  return {
+    name: 'Custom',
+    page: 'bg-[var(--k-bg)] text-[var(--k-text)]',
+    avatar: 'bg-[var(--k-accent)] text-[var(--k-on-accent)]',
+    title: 'text-[var(--k-text)]',
+    bio: 'text-[var(--k-muted)]',
+    button:
+      'border border-[var(--k-border)] bg-[var(--k-accent)] text-[var(--k-on-accent)] hover:opacity-90',
+    footer: 'text-[var(--k-muted)] hover:text-[var(--k-text)]',
+    swatch: 'bg-[var(--k-bg)]',
+    style: {
+      '--k-bg': background,
+      '--k-text': text,
+      '--k-accent': accent,
+      '--k-on-accent': onColor(accent),
+      '--k-muted': 'color-mix(in srgb, var(--k-text) 75%, var(--k-bg))',
+      '--k-border': 'color-mix(in srgb, var(--k-text) 30%, var(--k-bg))',
+    } as CSSProperties,
+  };
+}
+
+export function getBioTheme(
+  theme: string | undefined,
+  colors?: CustomColors | null,
+): BioTheme {
+  if (colors && Object.values(colors).every(hex => HEX.test(hex))) {
+    return customTheme(colors);
+  }
   return BIO_THEMES[theme as PageTheme] ?? BIO_THEMES.default;
 }
