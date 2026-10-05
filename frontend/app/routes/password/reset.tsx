@@ -2,6 +2,7 @@ import { goAfterLogin } from '../../modules/oauth/return-to';
 import { Button, PinInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MetaFunction } from 'react-router';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { usePasswordReset } from '@internal/core/actions/password-reset/password-reset.hook';
@@ -25,6 +26,7 @@ export const meta: MetaFunction = () => {
 };
 
 export default function ResetPassword() {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const { setUser } = useUserState();
   const location = useLocation();
@@ -43,7 +45,7 @@ export default function ResetPassword() {
       setUser(user);
       notifications.show({
         color: 'green',
-        message: 'Password updated. Other sessions were signed out.',
+        message: t('password_updated'),
       });
       goAfterLogin(navigate);
     },
@@ -55,11 +57,12 @@ export default function ResetPassword() {
 
   return (
     <AuthShell
-      title="Choose a new password"
+      title={t('reset_title')}
       subtitle={
         <>
-          If <span className="font-medium text-foreground">{email}</span> has an
-          account, a code is on its way.
+          {t('reset_sent_prefix')}{' '}
+          <span className="font-medium text-foreground">{email}</span>{' '}
+          {t('reset_sent_suffix')}
         </>
       }
       footer={
@@ -68,7 +71,7 @@ export default function ResetPassword() {
           state={{ email }}
           className="hover:underline"
         >
-          Didn&apos;t get it? Send again
+          {t('resend')}
         </Link>
       }
     >
@@ -83,7 +86,7 @@ export default function ResetPassword() {
         }}
       >
         <div>
-          <p className="mb-2 text-sm font-medium">Code</p>
+          <p className="mb-2 text-sm font-medium">{t('code_label')}</p>
           <PinInput
             length={7}
             type="number"
@@ -97,7 +100,7 @@ export default function ResetPassword() {
           />
         </div>
         <NewPasswordFields
-          label="New password"
+          label={t('new_password_label')}
           size="md"
           fields={newPassword.fields}
         />
@@ -109,7 +112,7 @@ export default function ResetPassword() {
           loading={reset.isPending}
           disabled={code.length !== 7}
         >
-          Save and log in
+          {t('save_and_login')}
         </Button>
       </form>
     </AuthShell>
