@@ -4,19 +4,11 @@ import {
   IconClick,
   IconLink,
 } from '@tabler/icons-react';
-import type { LinksFunction, MetaFunction } from 'react-router';
+import type { MetaFunction } from 'react-router';
 import { Layout } from '../layout/web-layout';
 import { BioShowcase } from '../modules/bio-page';
 import { ClickGlobe, FeatureBento, HeroConsole } from '../modules/landing';
 import { OG_IMAGE, SITE_URL, ogImageMeta } from '../modules/seo';
-
-// Geist (display and mono) is only used on the landing page.
-export const links: LinksFunction = () => [
-  {
-    rel: 'stylesheet',
-    href: 'https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap',
-  },
-];
 
 export const meta: MetaFunction = () => {
   const title = 'Kurz · Short links and bio pages';
