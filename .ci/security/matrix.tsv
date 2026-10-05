@@ -92,6 +92,9 @@ owner	PATCH	/api/me/shortlinks/:id
 owner	PUT	/api/me/shortlinks/:id
 owner	GET	/api/me/shortlinks/:shortlink_id/qr_code
 owner	GET	/api/me/shortlinks/:shortlink_id/statistics
+public	GET	/.well-known/oauth-authorization-server
+public	GET	/.well-known/oauth-protected-resource
+public	GET	/.well-known/oauth-protected-resource/mcp
 public	GET	/api/public/forms/:public_id
 public	POST	/api/public/forms/:public_id/events
 public	POST	/api/public/forms/:public_id/responses
@@ -99,6 +102,9 @@ public	GET	/api/public/pages/:slug
 public	POST	/api/public/pages/:slug/links/:page_link_id/click
 public	GET	/api/public/shortlinks/:short_code
 public	POST	/api/public/shortlinks/:short_code/unlock
+public	POST	/oauth/register
+public	POST	/oauth/revoke
+public	POST	/oauth/token
 storage	GET	/rails/active_storage/blobs/:signed_id/*filename
 storage	GET	/rails/active_storage/blobs/proxy/:signed_id/*filename
 storage	GET	/rails/active_storage/blobs/redirect/:signed_id/*filename

@@ -15,6 +15,7 @@ x-api-env: &api-env
   FRONTEND_URL: https://kurz.fyi
   SKIP_DB_PREPARE: "1"
   LOG_REQUESTS: "false"
+  MCP_ENABLED: "true"
   # Dummy DSN (no route out of the network): makes production boot run config/initializers/sentry.rb.
   SENTRY_DSN: http://key@localhost/1
   SENTRY_LOGGER: "1"

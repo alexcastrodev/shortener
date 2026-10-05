@@ -8,6 +8,13 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
 
+  get "/.well-known/oauth-protected-resource", to: "well_known/oauth#protected_resource", format: false
+  get "/.well-known/oauth-protected-resource/mcp", to: "well_known/oauth#protected_resource", format: false
+  get "/.well-known/oauth-authorization-server", to: "well_known/oauth#authorization_server", format: false
+  post "/oauth/register", to: "oauth/registrations#create", format: false
+  post "/oauth/token", to: "oauth/tokens#create", format: false
+  post "/oauth/revoke", to: "oauth/revocations#create", format: false
+
   namespace :api do
     post "login_request", to: "sessions#create"
     post "login_verify", to: "sessions#verify"
