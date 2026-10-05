@@ -21,6 +21,10 @@ production:
     class: CleanupOrphanFormUploadsJob
     queue: default
     schedule: every 15 minutes
+  purge_old_ip_addresses:
+    class: PurgeOldIpAddressesJob
+    queue: default
+    schedule: at 4:15am every day
   purge_deleted_accounts:
     class: PurgeDeletedAccountsJob
     queue: default

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_000100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -73,6 +73,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000100) do
     t.integer "version", default: 0
     t.index ["associated_type", "associated_id"], name: "associated_index"
     t.index ["auditable_type", "auditable_id", "version"], name: "auditable_index"
+    t.index ["created_at"], name: "index_audits_ip_retention", where: "(remote_address IS NOT NULL)"
     t.index ["created_at"], name: "index_audits_on_created_at"
     t.index ["request_uuid"], name: "index_audits_on_request_uuid"
     t.index ["user_id", "user_type"], name: "user_index"
@@ -97,6 +98,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000100) do
     t.string "region"
     t.bigint "shortlink_id", null: false
     t.string "user_agent"
+    t.index ["clicked_at"], name: "index_events_ip_retention", where: "(ip_address IS NOT NULL)"
     t.index ["shortlink_id"], name: "index_events_on_shortlink_id"
   end
 
@@ -247,6 +249,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_000100) do
     t.string "referer"
     t.string "region"
     t.string "user_agent"
+    t.index ["clicked_at"], name: "index_page_link_clicks_ip_retention", where: "(ip_address IS NOT NULL)"
     t.index ["page_link_id", "clicked_at"], name: "index_page_link_clicks_on_page_link_id_and_clicked_at"
     t.index ["page_link_id"], name: "index_page_link_clicks_on_page_link_id"
   end
