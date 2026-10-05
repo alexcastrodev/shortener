@@ -317,6 +317,34 @@ check("E04", "token flow on the real stack: PKCE exchange, code replay revokes, 
   expect_eq(415, http(:post, "/oauth/token", body: { grant_type: "authorization_code" }).status, "json body")
 end
 
+check("E12", "consent: needs a cookie session plus the CSRF header, never redirects for a bad client or redirect URI, issues a code that exchanges, lists and revokes the app") do
+  client = OauthClient.create!(client_name: "Consent", redirect_uris: ["https://claude.ai/api/mcp/auth_callback"])
+  verifier = SecureRandom.urlsafe_base64(48)
+  challenge = Base64.urlsafe_encode64(OpenSSL::Digest::SHA256.digest(verifier), padding: false)
+  params = { client_id: client.client_id, redirect_uri: "https://claude.ai/api/mcp/auth_callback", response_type: "code", code_challenge: challenge, code_challenge_method: "S256", scope: "forms:read responses:read", state: "s1" }
+  query = URI.encode_www_form(params)
+  expect_eq(401, anonymous(:get, "/api/me/oauth/authorization?#{query}").status, "anonymous")
+  expect_eq(200, as(:a, :get, "/api/me/oauth/authorization?#{query}").status, "preview")
+  bad = as(:a, :get, "/api/me/oauth/authorization?#{URI.encode_www_form(params.merge(redirect_uri: 'https://evil.example/cb'))}")
+  expect_eq([400, false], [bad.status, bad.json.key?("redirect_to")])
+  cookie_only = http(:post, "/api/me/oauth/authorization", body: params.merge(decision: "allow", granted_scopes: ["forms:read"]), headers: { "Cookie" => "kurz_session=#{token(:a)}" })
+  expect_eq(403, cookie_only.status, "csrf")
+
+  decision = as(:a, :post, "/api/me/oauth/authorization", params.merge(decision: "allow", granted_scopes: ["forms:read"]), headers: { "X-Requested-With" => "XMLHttpRequest" })
+  expect_eq(200, decision.status, "decision")
+  target = Rack::Utils.parse_query(URI.parse(decision.json["redirect_to"]).query)
+  expect_eq(["s1", "https://api.kurz.fyi"], [target["state"], target["iss"]])
+  exchanged = form_post("/oauth/token", { grant_type: "authorization_code", code: target["code"], redirect_uri: params[:redirect_uri], client_id: client.client_id, code_verifier: verifier })
+  expect_eq([200, "forms:read"], [exchanged.status, exchanged.json["scope"]], "exchange")
+
+  listed = as(:a, :get, "/api/me/oauth_grants").json["oauth_grant"]
+  mine = listed.find { |g| g["client_name"] == "Consent" }
+  expect(!mine.nil? && mine.keys.sort == ["client_name", "connected_at", "id", "last_used_at", "redirect_host", "scopes"], "listing")
+  expect_eq(404, as(:b, :delete, "/api/me/oauth_grants/#{mine['id']}", nil, headers: { "X-Requested-With" => "XMLHttpRequest" }).status, "other tenant")
+  expect_eq(204, as(:a, :delete, "/api/me/oauth_grants/#{mine['id']}", nil, headers: { "X-Requested-With" => "XMLHttpRequest" }).status, "revoke")
+  expect_eq("invalid_grant", form_post("/oauth/token", { grant_type: "refresh_token", refresh_token: exchanged.json["refresh_token"], client_id: client.client_id }).json["error"], "refresh after revoke")
+end
+
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")
 puts "== #{Harness.results.count { |r| r[2] == 'PASS' }}/#{Harness.results.size} checks passed"
 exit(Harness.failed? ? 1 : 0)

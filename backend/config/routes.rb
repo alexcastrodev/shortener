@@ -54,6 +54,8 @@ Rails.application.routes.draw do
         get "qr_code", to: "shortlinks#qr_code"
       end
       resource :password, only: [:update]
+      resource :oauth_authorization, path: "oauth/authorization", only: [:show, :create], controller: "oauth_authorizations"
+      resources :oauth_grants, only: [:index, :destroy]
       resources :form_templates, only: [:index]
       resources :forms, only: [:index, :show, :create, :update, :destroy] do
         member do
