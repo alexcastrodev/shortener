@@ -20,6 +20,7 @@ module CustomColors
 
   def custom_colors_shape
     return if custom_colors.nil?
+
     valid = custom_colors.is_a?(Hash) && custom_colors.keys.sort == KEYS.sort && custom_colors.values.all? { |hex| hex.match?(HEX) }
     errors.add(:custom_colors, "must have #{KEYS.join(", ")} as #RRGGBB") unless valid
   end
