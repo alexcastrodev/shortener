@@ -35,14 +35,9 @@ class Mcp::EndpointController < ActionController::API
     token = OauthAccessToken.authenticate(raw.strip)
     grant = token&.oauth_grant
     return unless grant&.active? && grant.resource == Oauth::Config.resource
-    return unless grant.user.active? && grant.user.session_current?(grant.created_at.to_i) && beta_user?(grant.user)
+    return unless grant.user.active? && grant.user.session_current?(grant.created_at.to_i)
 
     grant
-  end
-
-  def beta_user?(user)
-    emails = ENV.fetch("MCP_BETA_EMAILS", "").split(",").map { |email| email.strip.downcase }.reject(&:empty?)
-    emails.empty? || emails.include?(user.email.to_s.downcase)
   end
 
   def challenge
