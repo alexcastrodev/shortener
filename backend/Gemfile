@@ -26,6 +26,8 @@ gem "jbuilder"
 gem "brakeman", require: false, group: [:development, :test]
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
+
+gem "caxlsx", "~> 4.2"
 # Active Storage backend for the SeaweedFS S3 gateway
 gem "aws-sdk-s3", require: false
 # QR codes for shortlinks and bio pages, rendered as SVG

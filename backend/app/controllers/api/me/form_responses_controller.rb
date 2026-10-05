@@ -2,8 +2,16 @@ class Api::Me::FormResponsesController < ApplicationController
   include FormLookup
 
   MAX_LIMIT = 50
+  XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet".freeze
 
   before_action :authenticate_user!, prepend: true
+
+  rate_limit to: 10,
+    within: 1.hour,
+    only: :export,
+    name: "form_export",
+    by: -> { current_user&.id },
+    with: -> { render(json: { error: "rate_limited" }, status: :too_many_requests) }
 
   def index
     limit = params[:limit].to_i.clamp(1, MAX_LIMIT)
@@ -39,6 +47,14 @@ class Api::Me::FormResponsesController < ApplicationController
     @form.responses.delete_all
     @form.update_column(:responses_count, 0)
     head(:no_content)
+  end
+
+  def export
+    file = Forms::Export.call(form: @form, days: params[:days])
+    response.headers["Cache-Control"] = "private, no-store"
+    send_data(file, type: XLSX_TYPE, disposition: "attachment", filename: "#{@form.title.parameterize.presence || "form"}-responses.xlsx")
+  rescue Forms::Export::TooLarge
+    render(json: { error: "export_too_large", message: "Too many responses to export at once: choose a shorter period" }, status: :payload_too_large)
   end
 
   def summary
