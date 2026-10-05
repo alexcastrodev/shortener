@@ -17,6 +17,10 @@ production:
     class: ExpireInactiveShortlinksJob
     queue: default
     schedule: at 3am every day
+  purge_mcp_tool_calls:
+    class: PurgeMcpToolCallsJob
+    queue: default
+    schedule: at 4am every day
   expire_scheduled_shortlinks:
     class: ExpireScheduledShortlinksJob
     queue: default
