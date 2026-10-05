@@ -1,13 +1,14 @@
+import { forwardVisitor } from '../../utils/forward-visitor';
 import type { GetPublicPageResponse } from './get-public-page.types';
 import type { PublicPage } from '../../types/Page';
 
 // Runs inside SSR loaders, so it uses plain fetch instead of publicApi: the
 // axios instances read the session token from a Zustand store persisted in
 // localStorage, which does not exist on the server. Returns null on 404.
-export async function getPublicPage(slug: string): Promise<PublicPage | null> {
+export async function getPublicPage(slug: string, request?: Request): Promise<PublicPage | null> {
   const response = await fetch(
     `${import.meta.env.VITE_BASE_URL}/api/public/pages/${encodeURIComponent(slug)}`,
-    { headers: { Accept: 'application/json' } }
+    { headers: { Accept: 'application/json', ...forwardVisitor(request) } }
   );
 
   if (response.status === 404) return null;
