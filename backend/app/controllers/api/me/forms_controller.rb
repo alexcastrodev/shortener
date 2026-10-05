@@ -63,6 +63,8 @@ class Api::Me::FormsController < ApplicationController
     render(json: FormSerializer.new(Forms::Publish.call(form: @form)).serialize, status: :ok)
   rescue Forms::Publish::NoQuestions
     render(json: { errors: { fields: ["must have at least one question to publish"] } }, status: :unprocessable_entity)
+  rescue Forms::Publish::Blocked => e
+    render(json: { errors: { fields: e.messages } }, status: :unprocessable_entity)
   end
 
   def apply_template

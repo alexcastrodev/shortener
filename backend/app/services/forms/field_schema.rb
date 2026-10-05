@@ -2,7 +2,7 @@ module Forms
   module FieldSchema
     extend self
 
-    TYPES = ["short_text", "long_text", "email", "number", "single_choice", "multiple_choice", "yes_no", "rating", "date", "image", "section"].freeze
+    TYPES = ["short_text", "long_text", "email", "number", "single_choice", "multiple_choice", "yes_no", "rating", "date", "image", "section", "booking"].freeze
     CHOICE_TYPES = ["single_choice", "multiple_choice"].freeze
     ID_LENGTH = 8
     ID_FORMAT = /\A[A-Za-z0-9]{#{ID_LENGTH}}\z/
@@ -23,6 +23,7 @@ module Forms
       "multiple_choice" => ["choices", "max_choices"],
       "rating" => ["scale"],
       "number" => ["min", "max"],
+      "booking" => ["services", "rules"],
     }.freeze
 
     def definition_errors(fields)
@@ -42,6 +43,7 @@ module Forms
         seen[field["id"]] = true
         errors.concat(field_errors(field).map { |message| "#{label} #{message}" })
       end
+      errors << "only one booking question is allowed" if fields.count { |raw| raw.is_a?(Hash) && raw.stringify_keys["type"] == "booking" } > 1
       errors
     end
 
@@ -53,7 +55,7 @@ module Forms
       field = field.stringify_keys
       field["id"] ||= new_id
       field["choices"] = field["choices"].map { |choice| choice.stringify_keys.tap { |c| c["id"] ||= new_id } } if field["choices"].is_a?(Array)
-      field
+      BookingSchema.with_new_ids(field)
     end
 
     def with_fresh_ids(field)
@@ -109,6 +111,7 @@ module Forms
       when "single_choice", "multiple_choice" then choice_errors(field)
       when "rating" then RATING_SCALES.include?(field["scale"]) ? [] : ["scale must be 5 or 10"]
       when "number" then number_bound_errors(field)
+      when "booking" then BookingSchema.errors(field)
       else []
       end
     end
