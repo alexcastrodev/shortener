@@ -69,6 +69,7 @@ Rails.application.routes.draw do
         end
         resources :responses, only: [:index, :show, :destroy], controller: "form_responses"
         delete "responses", to: "form_responses#destroy_all"
+        get "responses_export", to: "form_responses#export", format: false
         get :summary, to: "form_responses#summary"
         get "uploads/:id", to: "form_uploads#show", as: :upload, format: false
         resources :fields, only: [:create, :update, :destroy], controller: "form_fields" do

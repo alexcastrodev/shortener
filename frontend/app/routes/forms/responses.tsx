@@ -30,6 +30,7 @@ import {
 } from '@internal/core/actions/get-form-responses/get-form-responses.hook';
 import { getFormResponses } from '@internal/core/actions/get-form-responses/get-form-responses.service';
 import { getFormUpload } from '@internal/core/actions/get-form-upload/get-form-upload.service';
+import { exportFormResponses } from '@internal/core/actions/export-form-responses/export-form-responses.service';
 import { useGetShortlinkDetails } from '@internal/core/actions/get-shortlink-details/get-shortlink-details.hook';
 import { useEventStatistics } from '@internal/core/actions/get-event-statistics/get-event-statistics.hook';
 import { useGetFormSummary } from '@internal/core/actions/get-form-summary/get-form-summary.hook';
@@ -164,6 +165,29 @@ export default function FormResponsesPage() {
   const stats = summary.data;
   const inPeriod = stats?.funnel.completions ?? total;
 
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const blob = await exportFormResponses(id, days);
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${(form?.title ?? 'form').replace(/[^\w-]+/g, '-')}-responses.xlsx`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (failure) {
+      const status = (failure as { response?: { status?: number } })?.response?.status;
+      if (status === 413) {
+        notifications.show({ color: 'red', message: 'Too many responses to export at once. Choose a shorter period.' });
+      } else if (status === 429) {
+        notifications.show({ color: 'red', message: 'Too many exports. Please wait a while and try again.' });
+      } else {
+        onError(failure);
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const exportCsv = async () => {
     setExporting(true);
     try {
@@ -292,15 +316,17 @@ export default function FormResponsesPage() {
           >
             Edit form
           </Button>
-          <Button
-            color="brand"
-            loading={exporting}
-            disabled={total === 0}
-            leftSection={<IconDownload size={16} />}
-            onClick={exportCsv}
-          >
-            Export CSV
-          </Button>
+          <Menu position="bottom-end" withinPortal>
+            <Menu.Target>
+              <Button color="brand" loading={exporting} disabled={total === 0} leftSection={<IconDownload size={16} />}>
+                Export
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item onClick={exportExcel}>Excel (.xlsx)</Menu.Item>
+              <Menu.Item onClick={exportCsv}>CSV</Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
           <Menu position="bottom-end" withinPortal>
             <Menu.Target>
               <ActionIcon variant="default" size="lg" aria-label="More actions">
