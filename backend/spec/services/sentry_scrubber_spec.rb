@@ -26,6 +26,19 @@ RSpec.describe(SentryScrubber) do
     expect(scrubbed).to(include("api.kurz.fyi/api/x"))
   end
 
+  it "scrubs transaction events, which carry no exception" do
+    transaction = Sentry::Event.new(configuration: config)
+    transaction.rack_env = Rack::MockRequest.env_for("https://api.kurz.fyi/api/x?q=#{canary}", "HTTP_COOKIE" => "kurz_session=#{canary}", "REMOTE_ADDR" => "203.0.113.77")
+    transaction.breadcrumbs = Sentry::BreadcrumbBuffer.new(5)
+    transaction.breadcrumbs.record(Sentry::Breadcrumb.new(message: canary))
+
+    expect(transaction).not_to(respond_to(:exception))
+    scrubbed = described_class.event(transaction).to_h.to_s
+
+    expect(scrubbed).not_to(include(canary))
+    expect(scrubbed).not_to(include("203.0.113.77"))
+  end
+
   it "drops noisy log lines and keeps the rest" do
     log = ->(body) { Sentry::LogEvent.new(configuration: config, level: :info, body: body) }
 

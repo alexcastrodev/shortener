@@ -16,7 +16,7 @@ module SentryScrubber
       request.url = request.url&.split("?")&.first
     end
     event.breadcrumbs = nil
-    event.exception&.values&.each { |e| e.value = e.value&.sub(PG_DETAIL, "DETAIL: [FILTERED]") }
+    event.exception.values.each { |e| e.value = e.value&.sub(PG_DETAIL, "DETAIL: [FILTERED]") } if event.respond_to?(:exception) && event.exception
     event
   end
 
