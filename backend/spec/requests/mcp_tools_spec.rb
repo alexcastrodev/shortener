@@ -54,12 +54,12 @@ RSpec.describe("MCP shortlink tools", type: :request) do
       expect(tools.find { |t| t["name"] == "list_shortlinks" }["annotations"]).to(include("readOnlyHint" => true))
     end
 
-    it "hides write tools from a read-only grant and everything from an unrelated grant" do
+    it "hides write tools from a read-only grant and shortlink tools from another resource's grant" do
       grant.update!(scopes: ["shortlinks:read"])
       expect(rpc("tools/list").dig("result", "tools").map { |t| t["name"] }).to(match_array(["list_shortlinks", "get_shortlink_statistics"]))
 
       grant.update!(scopes: ["forms:read"])
-      expect(rpc("tools/list").dig("result", "tools")).to(eq([]))
+      expect(rpc("tools/list").dig("result", "tools").map { |t| t["name"] }.grep(/shortlink/)).to(eq([]))
     end
 
     it "lets write scope imply read for the same resource" do
