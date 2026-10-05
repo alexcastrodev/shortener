@@ -31,7 +31,7 @@ RSpec.describe("the booking question", type: :request) do
       current_user.update!(time_zone: "Europe/Lisbon")
       add_booking
       expect(response).to(have_http_status(:created))
-      expect(booking_field).to(include("services" => [], "rules" => { "time_zone" => "Europe/Lisbon", "approval" => "auto" }))
+      expect(booking_field).to(include("services" => [], "rules" => { "time_zone" => "Europe/Lisbon", "approval" => "auto", "min_notice_minutes" => 0, "window_days" => 60, "buffer_minutes" => 0 }))
     end
 
     it "refuses it when the feature is off" do
@@ -103,7 +103,7 @@ RSpec.describe("the booking question", type: :request) do
       field = booking_field
       patch("/api/me/forms/#{form.id}/fields/#{field["id"]}", params: { rules: { time_zone: "America/Sao_Paulo" } }, headers: auth_headers, as: :json)
       expect(response).to(have_http_status(:ok))
-      expect(booking_field["rules"]).to(eq("time_zone" => "America/Sao_Paulo", "approval" => "auto"))
+      expect(booking_field["rules"]).to(include("time_zone" => "America/Sao_Paulo", "approval" => "auto", "window_days" => 60))
     end
 
     {
