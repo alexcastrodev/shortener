@@ -27,6 +27,7 @@ class Api::Public::FormResponsesController < ApplicationController
       answers: request.request_parameters["answers"],
       idempotency_key: request.request_parameters["idempotency_key"],
       meta: meta,
+      version: request.request_parameters["form_version"],
     )
 
     if result.errors
@@ -34,6 +35,10 @@ class Api::Public::FormResponsesController < ApplicationController
     else
       render(json: { ok: true }, status: result.created ? :created : :ok)
     end
+  end
+
+  rescue_from Forms::SubmitResponse::FormChanged do |error|
+    render(json: { error: "form_changed", form: JSON.parse(PublicFormSerializer.new(error.definition).serialize)["form"] }, status: :conflict)
   end
 
   private
