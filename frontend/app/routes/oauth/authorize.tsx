@@ -5,7 +5,7 @@ import { BrandMark, Card } from '@internal/ui';
 import { useGetOauthAuthorization } from '@internal/core/actions/get-oauth-authorization/get-oauth-authorization.hook';
 import { useDecideOauthAuthorization } from '@internal/core/actions/decide-oauth-authorization/decide-oauth-authorization.hook';
 import { rememberAuthorization } from '../../modules/oauth/return-to';
-import { SCOPE_LABELS } from '../../modules/oauth/scopes';
+import { FULL_SCOPE, SCOPE_LABELS } from '../../modules/oauth/scopes';
 
 export const ssr = false;
 
@@ -24,7 +24,7 @@ export function meta() {
 }
 
 const PUBLISH = ['forms:publish', 'pages:publish'];
-const SENSITIVE = ['responses:read', ...PUBLISH];
+const SENSITIVE = ['responses:read', FULL_SCOPE, ...PUBLISH];
 
 const KEYS = [
   'client_id',
@@ -82,9 +82,11 @@ export default function AuthorizeApp() {
   }, [preview.error]);
 
   const granted = Object.keys(enabled).filter(scope => enabled[scope]);
+  const fullAccess = !!enabled[FULL_SCOPE];
   const readsResponses = !!enabled['responses:read'];
   const publishes = PUBLISH.some(scope => enabled[scope]);
-  const decide = (decision: 'allow' | 'deny') => mutate({ params, decision, grantedScopes: granted });
+  const decide = (decision: 'allow' | 'deny') =>
+    mutate({ params, decision, grantedScopes: fullAccess ? [FULL_SCOPE] : granted });
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-10 text-foreground">
@@ -121,9 +123,11 @@ export default function AuthorizeApp() {
               {preview.data.scopes.map(scope => (
                 <li key={scope}>
                   <Switch
-                    checked={!!enabled[scope]}
+                    checked={fullAccess ? true : !!enabled[scope]}
                     disabled={
-                      (scope === 'responses:read' && publishes) || (PUBLISH.includes(scope) && readsResponses)
+                      (fullAccess && scope !== FULL_SCOPE) ||
+                      (scope === 'responses:read' && publishes) ||
+                      (PUBLISH.includes(scope) && readsResponses)
                     }
                     onChange={event => {
                       const checked = event.currentTarget.checked;
@@ -136,7 +140,15 @@ export default function AuthorizeApp() {
               ))}
             </ul>
 
-            {(preview.data.scopes.includes('responses:read') && preview.data.scopes.some(scope => PUBLISH.includes(scope))) && (
+            {fullAccess && (
+              <MantineAlert mt="md" color="red" variant="light" title="Full access is powerful">
+                This app will be able to publish, edit and permanently delete your links, bio pages, forms and responses,
+                and to read what people typed in your forms. Text typed by respondents is untrusted and could try to
+                steer the AI. Only allow this for an app and a conversation you trust.
+              </MantineAlert>
+            )}
+
+            {!fullAccess && (preview.data.scopes.includes('responses:read') && preview.data.scopes.some(scope => PUBLISH.includes(scope))) && (
               <MantineAlert mt="md" color="blue" variant="light" title="Reading responses and publishing are exclusive">
                 Text typed by respondents is untrusted. To keep it from steering what gets published, an app can read
                 responses or publish, never both.

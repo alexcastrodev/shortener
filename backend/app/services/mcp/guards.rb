@@ -8,9 +8,19 @@ module Mcp
 
     def draft_page(user, id)
       page = page(user, id)
-      raise Mcp::ToolError.new("page_published", "This page is published: edit it in the dashboard") if page.published
+      raise Mcp::ToolError.new("page_published", "This page is published: edit it in the dashboard") if page.published && !full?
 
       page
+    end
+
+    def full?
+      Mcp::Current.full == true
+    end
+
+    def confirm!(expected, given, label)
+      return if expected.to_s.strip.present? && expected.to_s.strip == given.to_s.strip
+
+      raise Mcp::ToolError.new("confirmation_mismatch", "To confirm, repeat the exact #{label} of the item you mean to delete")
     end
 
     def form(user, id)
@@ -19,7 +29,7 @@ module Mcp
 
     def draft_form(user, id)
       form = form(user, id)
-      raise Mcp::ToolError.new("form_published", "This form is published: edit it in the dashboard") if form.published
+      raise Mcp::ToolError.new("form_published", "This form is published: edit it in the dashboard") if form.published && !full?
 
       form
     end
@@ -28,21 +38,21 @@ module Mcp
 
     def editable_page(user, id, keys)
       page = page(user, id)
-      raise Mcp::ToolError.new("page_published", "This page is published: only its theme and colors can be changed here, edit the rest in the dashboard or unpublish it first") if page.published && (keys.map(&:to_sym) - STYLE_KEYS).any?
+      raise Mcp::ToolError.new("page_published", "This page is published: only its theme and colors can be changed here, edit the rest in the dashboard or unpublish it first") if page.published && !full? && (keys.map(&:to_sym) - STYLE_KEYS).any?
 
       page
     end
 
     def editable_form(user, id, keys)
       form = form(user, id)
-      raise Mcp::ToolError.new("form_published", "This form is published: only its theme and colors can be changed here, edit the rest in the dashboard or unpublish it first") if form.published && (keys.map(&:to_sym) - STYLE_KEYS).any?
+      raise Mcp::ToolError.new("form_published", "This form is published: only its theme and colors can be changed here, edit the rest in the dashboard or unpublish it first") if form.published && !full? && (keys.map(&:to_sym) - STYLE_KEYS).any?
 
       form
     end
 
     def structural_form(user, id)
       form = draft_form(user, id)
-      raise Mcp::ToolError.new("form_has_responses", "This form already has responses: duplicate it in the dashboard to change its questions") if form.responses_count.positive?
+      raise Mcp::ToolError.new("form_has_responses", "This form already has responses: duplicate it in the dashboard to change its questions") if form.responses_count.positive? && !full?
 
       form
     end

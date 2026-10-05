@@ -1,5 +1,6 @@
 class OauthGrant < ApplicationRecord
-  SCOPES = ["forms:read", "forms:write", "forms:publish", "responses:read", "shortlinks:read", "shortlinks:write", "pages:read", "pages:write", "pages:publish"].freeze
+  SCOPES = ["forms:read", "forms:write", "forms:publish", "responses:read", "shortlinks:read", "shortlinks:write", "pages:read", "pages:write", "pages:publish", "account:full"].freeze
+  FULL_SCOPE = "account:full".freeze
   PUBLISH_SCOPES = ["forms:publish", "pages:publish"].freeze
 
   audited only: [:scopes, :revoked_at]

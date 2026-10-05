@@ -668,6 +668,34 @@ check("MC12", "MCP publishing on the real stack: only a publish scope sees the t
   expect_eq(404, http(:get, "/api/public/forms/#{form.public_id}").status, "unpublished form still reachable")
 end
 
+check("MC13", "MCP full access on the real stack: only account:full lists the destructive tools, deleting needs the exact name, other tenants are untouchable, deleting a form removes its responses") do
+  client = OauthClient.create!(client_name: "Full", redirect_uris: ["https://claude.ai/api/mcp/auth_callback"])
+  owner = User.create!(email: "full-#{SecureRandom.hex(4)}@example.test", verified_at: Time.current)
+  accept = { "Accept" => "application/json, text/event-stream" }
+  tools_of = lambda do |token|
+    http(:post, "/mcp", body: { jsonrpc: "2.0", id: 1, method: "tools/list" }, token: token, headers: accept).json.dig("result", "tools").map { |t| t["name"] }
+  end
+  destructive = ["delete_shortlink", "delete_page", "delete_form", "delete_response", "delete_all_responses", "update_shortlink", "duplicate_form", "apply_form_template"]
+  wide, = OauthAccessToken.issue(OauthGrant.create!(user: owner, oauth_client: client, scopes: ["forms:read", "forms:write", "forms:publish", "pages:read", "pages:write", "pages:publish", "shortlinks:read", "shortlinks:write"], resource: "https://api.kurz.fyi/mcp"))
+  expect((tools_of.call(wide) & destructive).empty?, "granular scopes list destructive tools")
+
+  full, = OauthAccessToken.issue(OauthGrant.create!(user: owner, oauth_client: client, scopes: ["account:full"], resource: "https://api.kurz.fyi/mcp"))
+  expect_eq(destructive.sort, (tools_of.call(full) & destructive).sort, "full lists the destructive tools")
+
+  form = Form.create!(user: owner, title: "Doomed", published: true, fields: [{ "id" => "text0001", "type" => "short_text", "label" => "Q" }])
+  FormResponse.create!(form: form, answers: { "text0001" => "CNRY-full-delete" })
+  expect_eq("confirmation_mismatch", mcp_tool(full, "delete_form", { id: form.id, confirm: "doomed" }).dig("result", "structuredContent", "error"), "wrong confirmation")
+  expect(Form.exists?(form.id), "form deleted without the exact title")
+
+  foreign = Form.create!(user: TENANTS[:b], title: "Foreign", fields: [{ "id" => "text0001", "type" => "short_text", "label" => "Q" }])
+  expect_eq("not_found", mcp_tool(full, "delete_form", { id: foreign.id, confirm: "Foreign" }).dig("result", "structuredContent", "error"), "foreign form")
+  expect(Form.exists?(foreign.id), "foreign form deleted")
+
+  expect_eq(true, mcp_tool(full, "delete_form", { id: form.id, confirm: "Doomed" }).dig("result", "structuredContent", "deleted"), "deleted")
+  expect_eq(0, sql("select count(*) from form_responses where form_id = #{form.id}").to_i, "responses left behind")
+  expect(!database_text["mcp_tool_calls"].include?("CNRY"), "answer in the call log")
+end
+
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")
 puts "== #{Harness.results.count { |r| r[2] == 'PASS' }}/#{Harness.results.size} checks passed"
 exit(Harness.failed? ? 1 : 0)
