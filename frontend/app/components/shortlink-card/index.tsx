@@ -198,7 +198,7 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
 
         <div className="flex items-center justify-between border-t border-border pt-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Tooltip label={t('click_count') || 'Click count'}>
+            <Tooltip label={t('click_count')}>
               <Badge
                 size="md"
                 variant="light"
@@ -231,7 +231,7 @@ export function ShortlinkCard({ shortlink }: ShortlinkCardListItemProps) {
 
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">{t('last_access') || 'Last access'}</p>
+            <p className="text-xs text-muted-foreground">{t('last_accessed')}</p>
             <span className="text-xs text-muted-foreground">
               {formattedDate}
             </span>
