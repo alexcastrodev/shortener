@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { data, isRouteErrorResponse } from 'react-router';
 import { getPublicForm } from '@internal/core/actions/get-public-form/get-public-form.service';
 import { submitFormResponse } from '@internal/core/actions/submit-form-response/submit-form-response.service';
+import { trackFormEvent } from '@internal/core/actions/track-form-event/track-form-event.service';
 import type { SubmitFormResponseError } from '@internal/core/actions/submit-form-response/submit-form-response.types';
 import { getBioTheme } from '../../modules/bio-page/themes';
 import {
@@ -62,6 +63,14 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
   const turnstile = useRef<TurnstileHandle>(null);
   const [token, setToken] = useState<string | null>(null);
   const [website, setWebsite] = useState('');
+  const viewed = useRef(false);
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (viewed.current) return;
+    viewed.current = true;
+    trackFormEvent(publicId, 'view');
+  }, [publicId]);
 
   const onSubmit = async (answers: Record<string, unknown>) => {
     if (TURNSTILE_SITE_KEY && !token) {
@@ -88,6 +97,11 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
       mode="live"
       form={form}
       onSubmit={onSubmit}
+      onStart={() => {
+        if (started.current) return;
+        started.current = true;
+        trackFormEvent(publicId, 'start');
+      }}
       lastStepSlot={
         <>
           <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">

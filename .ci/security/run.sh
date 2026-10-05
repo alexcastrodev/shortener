@@ -33,5 +33,11 @@ echo "== oracle: $fivexx request(s) ended in 5xx"
 # Canary oracle: an answer typed by a respondent must never reach the API logs.
 leaks=$($C logs api 2>&1 | grep -c 'CNRY-' || true)
 echo "== oracle: $leaks log line(s) carry a respondent canary"
+[ "$leaks" = 0 ] || $C logs api 2>&1 | grep 'CNRY-' | head -3 | cut -c1-400
 [ "$leaks" = 0 ] || rc=1
+
+ips=$($C logs api 2>&1 | grep -cE '203\.0\.113\.77|2001:db8:dead:beef' || true)
+echo "== oracle: $ips log line(s) carry the visitor IP canary"
+[ "$ips" = 0 ] || $C logs api 2>&1 | grep -E '203\.0\.113\.77|2001:db8:dead:beef' | head -3 | cut -c1-400
+[ "$ips" = 0 ] || rc=1
 exit "$rc"

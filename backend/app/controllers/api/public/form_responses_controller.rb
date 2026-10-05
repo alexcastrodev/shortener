@@ -1,11 +1,8 @@
 class Api::Public::FormResponsesController < ApplicationController
   include ClientIp
+  include PublicJsonEndpoint
 
-  BODY_LIMIT = 64.kilobytes
   PUBLIC_ID = /\A[A-Za-z0-9]{#{Form::PUBLIC_ID_LENGTH}}\z/
-
-  prepend_before_action :require_json
-  prepend_before_action :limit_body
 
   rate_limit to: 30,
     within: 10.minutes,
@@ -40,18 +37,6 @@ class Api::Public::FormResponsesController < ApplicationController
   end
 
   private
-
-  def limit_body
-    return head(413) if request.content_length.to_i > BODY_LIMIT
-
-    body = request.body.read(BODY_LIMIT + 1).to_s
-    request.body.rewind
-    head(413) if body.bytesize > BODY_LIMIT
-  end
-
-  def require_json
-    head(415) unless request.media_type == "application/json"
-  end
 
   def load_form
     raise ActiveRecord::RecordNotFound unless params[:public_id].to_s.match?(PUBLIC_ID)

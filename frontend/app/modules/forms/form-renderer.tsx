@@ -17,6 +17,7 @@ type Props = {
   form: RenderableForm;
   mode: 'preview' | 'live';
   onSubmit?: (answers: Record<string, Answer>) => Promise<void> | void;
+  onStart?: () => void;
   lastStepSlot?: ReactNode;
   footer?: ReactNode;
 };
@@ -24,7 +25,7 @@ type Props = {
 const isBlank = (value: Answer) =>
   value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
 
-export function FormRenderer({ form, mode, onSubmit, lastStepSlot, footer }: Props) {
+export function FormRenderer({ form, mode, onSubmit, onStart, lastStepSlot, footer }: Props) {
   const theme = getBioTheme(form.theme);
   const uid = useId();
   const total = form.fields.length;
@@ -103,7 +104,14 @@ export function FormRenderer({ form, mode, onSubmit, lastStepSlot, footer }: Pro
           <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>{form.description}</p>
         )}
         <div className="mt-8">
-          <button type="button" className={primary} onClick={() => setStep(0)}>
+          <button
+            type="button"
+            className={primary}
+            onClick={() => {
+              onStart?.();
+              setStep(0);
+            }}
+          >
             Start
           </button>
         </div>

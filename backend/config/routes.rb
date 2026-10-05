@@ -84,6 +84,7 @@ Rails.application.routes.draw do
       end
       resources :forms, only: [:show], param: :public_id, format: false
       post "forms/:public_id/responses", to: "form_responses#create", as: :form_responses, format: false
+      post "forms/:public_id/events", to: "form_events#create", as: :form_events, format: false
       get "shortlinks/:short_code", to: "shortlink_unlocks#show", as: :locked_shortlink
       post "shortlinks/:short_code/unlock", to: "shortlink_unlocks#create", as: :shortlink_unlock
     end
