@@ -39,6 +39,10 @@ module Mcp
         finish(grant, started, error_response("rate_limited", "Too many calls, try again later"))
       rescue Mcp::ToolError => e
         finish(grant, started, error_response(e.code, e.message))
+      rescue Forms::LimitReached
+        finish(grant, started, error_response("forms_daily_limit", "Daily limit of new forms reached"))
+      rescue ActiveRecord::RecordInvalid => e
+        finish(grant, started, error_response("invalid_input", e.record.errors.full_messages.to_sentence))
       rescue ActiveRecord::RecordNotFound
         finish(grant, started, error_response("not_found", "Not found"))
       rescue StandardError => e

@@ -18,6 +18,16 @@ module Mcp
         RemovePageLink,
         ReorderPageLinks,
         ApplyPageTemplate,
+        ListForms,
+        GetForm,
+        ListFormTemplates,
+        CreateForm,
+        CreateFormFromTemplate,
+        UpdateForm,
+        AddField,
+        UpdateField,
+        RemoveField,
+        ReorderFields,
       ]
     end
 

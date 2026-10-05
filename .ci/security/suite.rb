@@ -386,7 +386,7 @@ check("MC08", "MCP shortlink tools on the real stack: scopes decide the tool lis
   readonly = OauthGrant.create!(user: TENANTS[:a], oauth_client: client, scopes: ["forms:read"], resource: "https://api.kurz.fyi/mcp")
   ro_access, = OauthAccessToken.issue(readonly)
   ro = http(:post, "/mcp", body: { jsonrpc: "2.0", id: 1, method: "tools/list" }, token: ro_access, headers: { "Accept" => "application/json, text/event-stream" }).json
-  expect_eq([], ro.dig("result", "tools"), "unrelated scope")
+  expect_eq(["get_form", "list_form_templates", "list_forms"], ro.dig("result", "tools").map { |t| t["name"] }.sort, "forms:read grant sees only the read tools of forms")
 
   ["javascript:alert(1)", "data:text/html,x", "java\tscript:x", "file:///etc/passwd"].each do |bad|
     reply = mcp_tool(access, "create_shortlink", { original_url: bad })
@@ -458,6 +458,49 @@ check("MC09", "MCP bio page tools on the real stack: drafts only, published page
   other = OauthGrant.create!(user: TENANTS[:b], oauth_client: client, scopes: ["pages:read", "pages:write"], resource: "https://api.kurz.fyi/mcp")
   other_access, = OauthAccessToken.issue(other)
   expect_eq(mcp_tool(other_access, "get_page", { id: 999_999 }).dig("result", "structuredContent"), mcp_tool(other_access, "get_page", { id: id }).dig("result", "structuredContent"), "cross tenant looks missing")
+end
+
+check("MC10", "MCP form tools on the real stack: drafts only, a published form and a form with responses stay byte-identical, 20 forms a day, no tool reads responses, answers never reach the tool results or the call log") do
+  client = OauthClient.create!(client_name: "Forms", redirect_uris: ["https://claude.ai/api/mcp/auth_callback"])
+  grant = OauthGrant.create!(user: TENANTS[:deactivated], oauth_client: client, scopes: ["forms:read", "forms:write"], resource: "https://api.kurz.fyi/mcp")
+  TENANTS[:deactivated].update_columns(deactivated_at: nil)
+  access, = OauthAccessToken.issue(grant)
+  accept = { "Accept" => "application/json, text/event-stream" }
+  names = http(:post, "/mcp", body: { jsonrpc: "2.0", id: 1, method: "tools/list" }, token: access, headers: accept).json.dig("result", "tools").map { |t| t["name"] }
+  expect(names.grep(/publish|delete|destroy|duplicate|response/).empty?, "dangerous tool: #{names.grep(/publish|delete|destroy|duplicate|response/)}")
+  expect(names.include?("create_form") && names.include?("add_field") && names.include?("list_forms"), "form tools missing")
+
+  draft = mcp_tool(access, "create_form_from_template", { template: "contact" }).dig("result", "structuredContent")
+  expect_eq(false, draft["published"], "created as draft")
+  expect_eq(1, sql("select count(*) from forms where id = #{draft['id']} and published = false").to_i, "stored as draft")
+  ["published", "public_id", "fields", "user_id"].each do |key|
+    reply = mcp_tool(access, "create_form", { title: "x", key => (key == "fields" ? [] : "x") })
+    expect(reply["error"] || reply.dig("result", "isError"), "accepted #{key}")
+  end
+
+  user = TENANTS[:deactivated]
+  live = Form.create!(user: user, title: "Live", published: true, fields: [{ "id" => "abcd1234", "type" => "short_text", "label" => "Q" }])
+  answered = Form.create!(user: user, title: "Answered", fields: [{ "id" => "wxyz5678", "type" => "short_text", "label" => "Q" }])
+  FormResponse.create!(form: answered, answers: { "wxyz5678" => "CNRY-mcp-answer-0001" })
+  checksum = ->(form) { sql("select md5(f::text) from forms f where f.id = #{form.id}") }
+  before = [checksum.call(live), checksum.call(answered)]
+  [[live, "update_form", { id: live.id, title: "hacked" }], [live, "add_field", { form_id: live.id, type: "yes_no", label: "x" }],
+   [live, "remove_field", { form_id: live.id, field_id: "abcd1234" }], [live, "reorder_fields", { form_id: live.id, ids: ["abcd1234"] }],
+   [answered, "add_field", { form_id: answered.id, type: "yes_no", label: "x" }], [answered, "update_field", { form_id: answered.id, field_id: "wxyz5678", label: "x" }],
+   [answered, "remove_field", { form_id: answered.id, field_id: "wxyz5678" }], [answered, "reorder_fields", { form_id: answered.id, ids: ["wxyz5678"] }]].each do |form, name, args|
+    expect(["form_published", "form_has_responses"].include?(mcp_tool(access, name, args).dig("result", "structuredContent", "error")), "#{name} on #{form.title}")
+  end
+  expect_eq(before, [checksum.call(live), checksum.call(answered)], "forms changed")
+
+  shown = mcp_tool(access, "get_form", { id: answered.id })
+  expect(!shown.to_json.include?("CNRY"), "answer in get_form")
+  expect(!mcp_tool(access, "list_forms").to_json.include?("CNRY"), "answer in list_forms")
+  expect(!database_text["mcp_tool_calls"].include?("CNRY"), "answer in the call log")
+
+  18.times { mcp_tool(access, "create_form", { title: "bulk" }) }
+  limited = mcp_tool(access, "create_form", { title: "over" })
+  expect(["forms_daily_limit", "rate_limited"].include?(limited.dig("result", "structuredContent", "error")), "quota: #{limited.dig('result', 'structuredContent').inspect}")
+  expect(sql("select count(*) from forms where user_id = #{user.id} and created_at > now() - interval '1 day'").to_i <= 20, "more than 20 forms in a day")
 end
 
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")

@@ -128,7 +128,7 @@ RSpec.describe("POST /mcp", type: :request) do
       expect(response.headers["Cache-Control"]).to(eq("no-store"))
 
       call({ jsonrpc: "2.0", id: 2, method: "tools/list" })
-      expect(json.dig("result", "tools").map { |t| t["name"] }).to(eq([]))
+      expect(json.dig("result", "tools").map { |t| t["name"] }).to(match_array(["list_forms", "get_form", "list_form_templates"]))
     end
 
     it "answers an unknown method with a JSON-RPC error, never a 5xx" do
