@@ -65,7 +65,7 @@ module Appointments
         user_id: form.user_id,
         kind: "appointment_created",
         event_key: group,
-        appointment_id: first.id,
+        source: first,
         payload: { form_id: form.id, response_id: response.id, group_key: group, sessions: rows.size },
       )
       response.appointments.order(:id)

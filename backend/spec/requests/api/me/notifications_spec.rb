@@ -16,7 +16,7 @@ RSpec.describe("/api/me/notifications", type: :request) do
   end
 
   def make(user: current_user, key: SecureRandom.hex(4), **attrs)
-    Notification.notify_owner(user_id: user.id, kind: "appointment_created", event_key: key, appointment_id: nil, payload: { form_id: 1 }).tap { |row| row.update!(attrs) if attrs.any? }
+    Notification.notify_owner(user_id: user.id, kind: "appointment_created", event_key: key, source: nil, payload: { form_id: 1 }).tap { |row| row.update!(attrs) if attrs.any? }
   end
 
   describe "listing" do

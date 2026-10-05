@@ -7,14 +7,14 @@ class Notification < ApplicationRecord
   scope :in_app, -> { where(channel: "in_app") }
   scope :unread, -> { where(read_at: nil) }
 
-  def self.notify_owner(user_id:, kind:, event_key:, appointment_id:, payload:)
+  def self.notify_owner(user_id:, kind:, event_key:, source:, payload:)
     create!(
       channel: "in_app",
       kind: kind,
       recipient_kind: "owner",
       user_id: user_id,
       event_key: event_key,
-      appointment_id: appointment_id,
+      appointment: source,
       payload: payload,
       status: "sent",
       sent_at: Time.current,
