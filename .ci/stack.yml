@@ -42,6 +42,7 @@ services:
       - S3_FORMS_BUCKET=${S3_FORMS_BUCKET:-}
       - IMGPROC_URL=http://imgproc:8080
       - MCP_ENABLED=${MCP_ENABLED:-}
+      - SSR_FORWARD_SECRET=${SSR_FORWARD_SECRET:-}
       - OAUTH_ISSUER=${OAUTH_ISSUER:-https://api.kurz.fyi}
       - MCP_REDIRECT_HOSTS=${MCP_REDIRECT_HOSTS:-claude.ai,claude.com,chatgpt.com}
       - MCP_ALLOWED_ORIGINS=${MCP_ALLOWED_ORIGINS:-}

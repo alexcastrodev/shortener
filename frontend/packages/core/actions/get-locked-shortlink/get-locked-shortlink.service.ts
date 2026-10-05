@@ -1,14 +1,16 @@
+import { forwardVisitor } from '../../utils/forward-visitor';
 import type { LockedShortlink } from './get-locked-shortlink.types';
 
 // Runs inside an SSR loader: plain fetch, no session store (see
 // get-public-page). Returns null when the link does not exist, has no
 // password, or no longer works.
 export async function getLockedShortlink(
-  shortCode: string
+  shortCode: string,
+  request?: Request
 ): Promise<LockedShortlink | null> {
   const response = await fetch(
     `${import.meta.env.VITE_BASE_URL}/api/public/shortlinks/${encodeURIComponent(shortCode)}`,
-    { headers: { Accept: 'application/json' } }
+    { headers: { Accept: 'application/json', ...forwardVisitor(request) } }
   );
 
   if (response.status === 404) return null;

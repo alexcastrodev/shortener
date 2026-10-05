@@ -3,6 +3,7 @@ services:
     image: pizito:5001/shortener-frontend:latest
     environment:
       - PORT=80
+      - SSR_FORWARD_SECRET=${SSR_FORWARD_SECRET:-}
     networks:
       - proxy_net
     deploy:

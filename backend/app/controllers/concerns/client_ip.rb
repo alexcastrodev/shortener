@@ -1,17 +1,27 @@
-# Public traffic reaches the API through Cloudflare Tunnel, which sets
-# CF-Connecting-IP to the real client IP (same rule as the edge function's
-# extractIpAddress). request.remote_ip is only a fallback for local
-# development, where there is no tunnel.
 module ClientIp
   extend ActiveSupport::Concern
 
   private
 
-  # Only a well-formed IP is trusted: the value is used as a rate-limit key and stored.
   def client_ip
-    header = request.headers["CF-Connecting-IP"].to_s.strip
-    IPAddr.new(header).to_s
+    forwarded_ip || cloudflare_ip || request.remote_ip
+  end
+
+  def cloudflare_ip
+    well_formed(request.headers["CF-Connecting-IP"])
+  end
+
+  def forwarded_ip
+    secret = ENV["SSR_FORWARD_SECRET"].to_s
+    given = request.headers["X-Ssr-Secret"].to_s
+    return if secret.empty? || given.empty? || !ActiveSupport::SecurityUtils.secure_compare(given, secret)
+
+    well_formed(request.headers["X-Visitor-Ip"])
+  end
+
+  def well_formed(value)
+    IPAddr.new(value.to_s.strip).to_s
   rescue IPAddr::InvalidAddressError, IPAddr::AddressFamilyError
-    request.remote_ip
+    nil
   end
 end

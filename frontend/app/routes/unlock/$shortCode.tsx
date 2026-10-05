@@ -7,8 +7,8 @@ import { getLockedShortlink } from '@internal/core/actions/get-locked-shortlink/
 import { useUnlockShortlink } from '@internal/core/actions/unlock-shortlink/unlock-shortlink.hook';
 import type { Route } from './+types/$shortCode';
 
-export async function loader({ params }: Route.LoaderArgs) {
-  const shortlink = await getLockedShortlink(params.shortCode);
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const shortlink = await getLockedShortlink(params.shortCode, request);
   if (!shortlink) throw data('Link not found', { status: 404 });
 
   return { shortCode: shortlink.short_code };

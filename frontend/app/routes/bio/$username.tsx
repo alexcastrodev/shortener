@@ -5,8 +5,8 @@ import { BioPageView } from '../../modules/bio-page';
 import type { Route } from './+types/$username';
 import { ogImageMeta } from '../../modules/seo';
 
-export async function loader({ params }: Route.LoaderArgs) {
-  const page = await getPublicPage(params.username);
+export async function loader({ params, request }: Route.LoaderArgs) {
+  const page = await getPublicPage(params.username, request);
   if (!page) throw data('Page not found', { status: 404 });
 
   return { page };
