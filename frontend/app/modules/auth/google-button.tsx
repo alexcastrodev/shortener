@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GoogleLogo, ProviderButton } from './provider-button';
 
 // "Continue with Google" drawn by us, so it always matches the other sign-in
@@ -53,6 +54,7 @@ export function GoogleButton({
   onCode: (code: string) => void;
   pending?: boolean;
 }) {
+  const { t } = useTranslation('auth');
   const [opening, setOpening] = useState(false);
   const onCodeRef = useRef(onCode);
   onCodeRef.current = onCode;
@@ -87,7 +89,7 @@ export function GoogleButton({
       onClick={open}
       loading={opening || pending}
     >
-      Continue with Google
+      {t('continue_with_google')}
     </ProviderButton>
   );
 }

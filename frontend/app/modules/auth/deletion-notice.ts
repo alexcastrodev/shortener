@@ -1,13 +1,14 @@
 import { notifications } from '@mantine/notifications';
+import i18n from '../../i18n';
 
 export function announceRestore(response: { deletion_cancelled?: boolean }) {
   clearScheduledDeletion();
   if (!response.deletion_cancelled) return;
   notifications.show({
     color: 'green',
-    title: 'Welcome back',
+    title: i18n.t('auth:welcome_back'),
     autoClose: 12000,
-    message: 'Your account was scheduled for deletion. Signing in cancelled it: your links, bio pages and forms are back online.',
+    message: i18n.t('auth:restored_message'),
   });
 }
 

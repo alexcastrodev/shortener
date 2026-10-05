@@ -5,6 +5,7 @@ import { useUserState } from '@internal/core/states/use-user-state';
 import { announceRestore } from './deletion-notice';
 import { notifyError } from '@internal/core/utils/notify';
 import { explainAuthError, type AuthError } from './auth-errors';
+import i18n from '../../i18n';
 
 // Exchanges Google's ID token for a Kurz session, then goes to the app.
 export function useGoogleSignIn() {
@@ -21,8 +22,8 @@ export function useGoogleSignIn() {
       const authError = error as AuthError;
       if (authError?.response?.status === 403) {
         notifyError(
-          'Your account has been deactivated.',
-          'Account deactivated'
+          i18n.t('auth:deactivated_short'),
+          i18n.t('auth:deactivated_title')
         );
         return;
       }

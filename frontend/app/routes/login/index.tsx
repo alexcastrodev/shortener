@@ -13,6 +13,8 @@ import {
 } from '@mantine/core';
 import { IconAlertTriangle, IconMail } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatDate } from '../../i18n/format';
 import type { MetaFunction } from 'react-router';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useLoginPassword } from '@internal/core/actions/login-password/login-password.hook';
@@ -46,6 +48,7 @@ export const meta: MetaFunction = () => {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Login() {
+  const { t } = useTranslation('auth');
   const navigate = useNavigate();
   const { setUser } = useUserState();
   const [searchParams] = useSearchParams();
@@ -96,15 +99,15 @@ export default function Login() {
 
   return (
     <AuthShell
-      title="Log in to Kurz"
+      title={t('login_title')}
       subtitle={
         <>
-          Don&apos;t have an account?{' '}
+          {t('login_no_account')}{' '}
           <Link
             to="/signup"
             className="font-semibold text-primary underline underline-offset-4 hover:text-foreground"
           >
-            Sign up
+            {t('sign_up')}
           </Link>
           .
         </>
@@ -113,7 +116,7 @@ export default function Login() {
       {scheduledFor && (
         <Alert
           icon={<IconAlertTriangle size={18} />}
-          title="Your account is scheduled for deletion"
+          title={t('scheduled_title')}
           color="yellow"
           className="mb-6"
           withCloseButton
@@ -122,22 +125,20 @@ export default function Login() {
             setScheduledFor(null);
           }}
         >
-          It will be permanently deleted on{' '}
-          {scheduledFor.toLocaleDateString('en-US', { dateStyle: 'long' })}.
-          Until then your links, bio pages and forms are offline. Sign in again
-          before that date to cancel the deletion and bring everything back.
+          {t('scheduled_body', {
+            date: formatDate(scheduledFor, { dateStyle: 'long' }),
+          })}
         </Alert>
       )}
 
       {deactivated && (
         <Alert
           icon={<IconAlertTriangle size={18} />}
-          title="Account deactivated"
+          title={t('deactivated_title')}
           color="red"
           className="mb-6"
         >
-          Your account has been deactivated. If you believe this is a mistake,
-          contact{' '}
+          {t('deactivated_body')}{' '}
           <a
             href="mailto:kurz.fyi@gmail.com"
             className="font-semibold underline"
@@ -156,7 +157,7 @@ export default function Login() {
           to="/signup"
           icon={<IconMail size={18} stroke={1.9} className="text-[#1f1f1f]" />}
         >
-          Sign up with email
+          {t('sign_up_with_email')}
         </ProviderButton>
       </div>
       <AuthDivider />
@@ -179,7 +180,7 @@ export default function Login() {
         }}
       >
         <TextInput
-          label="Email"
+          label={t('email_label')}
           type="email"
           size="md"
           placeholder="do.you.know@university.kurz.fyi"
@@ -194,14 +195,14 @@ export default function Login() {
             <div style={styles}>
               <div className="mb-1 flex items-center justify-between">
                 <label htmlFor="password" className="text-sm font-medium">
-                  Password
+                  {t('password_label')}
                 </label>
                 <Link
                   to="/password/forgot"
                   state={{ email: email.trim() }}
                   className="text-sm font-semibold text-foreground hover:underline"
                 >
-                  Forgot your password?
+                  {t('forgot_password')}
                 </Link>
               </div>
               <PasswordInput
@@ -226,8 +227,8 @@ export default function Login() {
           disabled={!emailReady || !password || checking || busy}
         >
           {checking && emailReady && password
-            ? 'Checking your browser…'
-            : 'Log in'}
+            ? t('checking_browser')
+            : t('log_in')}
         </Button>
       </form>
 
@@ -242,7 +243,7 @@ export default function Login() {
         disabled={checking || busy}
         onClick={() => {
           if (!emailReady) {
-            notifyError('Enter your email first, then we send you a code.');
+            notifyError(t('enter_email_first'));
             return;
           }
           codeRequest.mutate({
@@ -251,7 +252,7 @@ export default function Login() {
           });
         }}
       >
-        Email me a sign-in code instead
+        {t('email_code_instead')}
       </Button>
     </AuthShell>
   );

@@ -6,15 +6,17 @@ import home from './en/home.json';
 import dashboard from './en/dashboard.json';
 import admin from './en/admin.json';
 import links from './en/links.json';
+import auth from './en/auth.json';
 import menuPt from './pt-PT/menu.json';
 import homePt from './pt-PT/home.json';
 import dashboardPt from './pt-PT/dashboard.json';
 import adminPt from './pt-PT/admin.json';
 import linksPt from './pt-PT/links.json';
+import authPt from './pt-PT/auth.json';
 
 export const resources = {
-  en: { menu, home, dashboard, admin, links },
-  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt },
+  en: { menu, home, dashboard, admin, links, auth },
+  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt },
 } as const;
 
 i18n.use(initReactI18next).init({
