@@ -10,7 +10,7 @@ module Mcp
 
       def self.perform(user:, id:)
         form = Mcp::Guards.form(user, id)
-        form.update!(published: false)
+        Forms::Unpublish.call(form: form)
         FormToolHelpers.form_json(form)
       end
     end

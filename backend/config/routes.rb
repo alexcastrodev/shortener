@@ -69,6 +69,7 @@ Rails.application.routes.draw do
         member do
           post :publish
           post :unpublish
+          post :discard
           post :apply_template
           post :duplicate
         end

@@ -10,10 +10,11 @@ module Mcp
 
       def self.perform(user:, id:)
         form = Mcp::Guards.form(user, id)
-        raise Mcp::ToolError.new("no_questions", "The form needs at least one question before it can be published") if form.fields.none? { |field| Forms::FieldSchema.answerable?(field) }
-
-        form.ensure_shortlink!
-        form.update!(published: true)
+        begin
+          Forms::Publish.call(form: form)
+        rescue Forms::Publish::NoQuestions
+          raise Mcp::ToolError.new("no_questions", "The form needs at least one question before it can be published")
+        end
         FormToolHelpers.form_json(form).merge(public_url: form.public_url)
       end
     end
