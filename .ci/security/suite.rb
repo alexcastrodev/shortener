@@ -85,7 +85,7 @@ end
 
 check("G07", "form tables hold no IP, user agent or referrer; responses have only the allowed columns; nothing form-related is audited") do
   expect_eq(
-    ["answers", "browser", "country", "created_at", "form_id", "id", "idempotency_key", "platform", "source"],
+    ["answers", "browser", "country", "created_at", "form_id", "id", "idempotency_key", "platform", "published_version", "source"],
     rows("select column_name from information_schema.columns where table_name = 'form_responses' order by 1").flatten
   )
   leaky = rows("select table_name || '.' || column_name from information_schema.columns where table_name like 'form%' and column_name ~* '(^ip|_ip$|ip_address|user_agent|referer|referrer)'")

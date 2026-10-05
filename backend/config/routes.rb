@@ -60,6 +60,7 @@ Rails.application.routes.draw do
         get "qr_code", to: "shortlinks#qr_code"
       end
       resource :password, only: [:update]
+      post "appointments/generate_times", to: "appointment_times#create"
       post "data_export", to: "users#export", format: false
       resource :oauth_authorization, path: "oauth/authorization", only: [:show, :create], controller: "oauth_authorizations"
       resources :oauth_grants, only: [:index, :destroy]
