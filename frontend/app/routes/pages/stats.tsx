@@ -16,7 +16,7 @@ import {
   IconLock,
 } from '@tabler/icons-react';
 import { useClipboard } from '@mantine/hooks';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Card, PageContainer } from '@internal/ui';
 import { useGetPage } from '@internal/core/actions/get-page/get-page.hook';
@@ -27,6 +27,13 @@ import type {
   PageStatisticsPeriod,
 } from '@internal/core/actions/get-page-statistics/get-page-statistics.types';
 import { socialNetworkById } from '../../modules/bio-page';
+import {
+  BarList as SharedBarList,
+  StatCard,
+  countryLabel,
+  formatDay,
+  share,
+} from '../../components/stats';
 
 export const ssr = false;
 
@@ -40,99 +47,22 @@ const PERIODS: { label: string; value: PageStatisticsPeriod }[] = [
   { label: '90 days', value: 90 },
 ];
 
-const countryNames =
-  typeof Intl !== 'undefined' && 'DisplayNames' in Intl
-    ? new Intl.DisplayNames(['en'], { type: 'region' })
-    : undefined;
-
-function countryLabel(code: string) {
-  if (!/^[A-Z]{2}$/.test(code)) return code;
-  const flag = String.fromCodePoint(
-    ...[...code].map(char => 0x1f1e6 + char.charCodeAt(0) - 65)
-  );
-  return `${flag} ${countryNames?.of(code) ?? code}`;
-}
-
-function formatDay(date: string) {
-  return new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  });
-}
-
-function share(part: number, total: number) {
-  return total > 0 ? Math.round((part / total) * 100) : 0;
-}
-
-function StatCard({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: ReactNode;
-  hint?: ReactNode;
-}) {
-  return (
-    <Card className="min-w-0 p-4">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 truncate text-2xl font-semibold tracking-tight text-foreground">
-        {value}
-      </p>
-      {hint && (
-        <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p>
-      )}
-    </Card>
-  );
-}
-
-// A ranked list with a bar behind each row, sized against the largest.
 function BarList({
-  title,
   items,
-  label = item => item.name,
-  empty = 'No clicks in this period.',
+  ...rest
 }: {
   title: string;
   items: PageStatisticsBucket[];
-  label?: (item: PageStatisticsBucket) => ReactNode;
+  label?: (item: PageStatisticsBucket) => React.ReactNode;
   empty?: string;
 }) {
-  const max = Math.max(1, ...items.map(item => item.clicks));
-  const total = items.reduce((sum, item) => sum + item.clicks, 0);
-
   return (
-    <Card className="min-w-0 p-5">
-      <h2 className="mb-4 text-sm font-semibold text-foreground">{title}</h2>
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{empty}</p>
-      ) : (
-        <ul className="space-y-1.5">
-          {items.map(item => (
-            <li
-              key={item.name}
-              className="relative flex items-center justify-between gap-3 rounded-md px-2.5 py-1.5 text-sm"
-            >
-              <span
-                className="absolute inset-y-0 left-0 rounded-md bg-primary/15"
-                style={{ width: `${(item.clicks / max) * 100}%` }}
-                aria-hidden="true"
-              />
-              <span className="relative min-w-0 truncate text-foreground">
-                {label(item)}
-              </span>
-              <span className="relative shrink-0 tabular-nums text-muted-foreground">
-                <span className="font-semibold text-foreground">
-                  {item.clicks}
-                </span>{' '}
-                · {share(item.clicks, total)}%
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Card>
+    <SharedBarList
+      {...rest}
+      empty={rest.empty ?? 'No clicks in this period.'}
+      items={items.map(item => ({ name: item.name, value: item.clicks }))}
+      label={rest.label ? item => rest.label!({ name: item.name, clicks: item.value }) : undefined}
+    />
   );
 }
 

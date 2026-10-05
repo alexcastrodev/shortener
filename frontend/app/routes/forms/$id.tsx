@@ -10,7 +10,7 @@ import {
 import { useForm } from '@mantine/form';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconArrowLeft, IconTrash } from '@tabler/icons-react';
+import { IconArrowLeft, IconChartBar, IconExternalLink, IconTrash } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
@@ -163,6 +163,25 @@ function Builder({ form: current }: { form: Form }) {
           Forms
         </Button>
         <Group gap="xs">
+          <Button
+            variant="default"
+            leftSection={<IconChartBar size={16} />}
+            onClick={() => navigate(`/app/forms/${current.id}/responses`)}
+          >
+            Responses ({current.responses_count})
+          </Button>
+          {current.published && (
+            <Button
+              component="a"
+              href={`/f/${current.public_id}`}
+              target="_blank"
+              rel="noreferrer"
+              variant="default"
+              rightSection={<IconExternalLink size={16} />}
+            >
+              View form
+            </Button>
+          )}
           <Badge variant="light" color={current.published ? 'teal' : 'gray'}>
             {current.published ? 'Published' : 'Draft'}
           </Badge>

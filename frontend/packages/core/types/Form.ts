@@ -65,3 +65,60 @@ export type PublicForm = Pick<
   Form,
   'title' | 'description' | 'thank_you_message' | 'theme' | 'fields'
 >;
+
+export type FormResponseAnswer = {
+  id: string;
+  label: string;
+  type: FormFieldType;
+  value: string | number | boolean | string[] | null;
+};
+
+export type FormResponse = {
+  id: number;
+  country: string | null;
+  platform: string | null;
+  browser: string | null;
+  source: string | null;
+  submitted_at: string;
+  answers: FormResponseAnswer[];
+};
+
+export type FormSummaryBucket = { name: string; count: number };
+
+export type FormFieldSummary = {
+  id: string;
+  type: FormFieldType;
+  label: string;
+  answered: number;
+  samples?: string[];
+  min?: number;
+  max?: number;
+  average?: number | null;
+  yes?: number;
+  no?: number;
+  first?: string;
+  last?: string;
+  choices?: { id: string | null; label: string; count: number }[];
+  distribution?: { rating: number; count: number }[];
+};
+
+export type FormSummary = {
+  period_days: number | 'all';
+  funnel: {
+    views: number;
+    unique_views: number;
+    starts: number;
+    completions: number;
+    completion_rate: number | null;
+  };
+  timeline: { date: string; views: number; responses: number }[];
+  audience: {
+    sources: FormSummaryBucket[];
+    devices: FormSummaryBucket[];
+    browsers: FormSummaryBucket[];
+    countries: FormSummaryBucket[];
+  };
+  fields: FormFieldSummary[];
+};
+
+export type FormSummaryPeriod = 7 | 30 | 90 | 'all';
