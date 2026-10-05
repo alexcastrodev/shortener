@@ -43,11 +43,17 @@ module Mcp
         ListResponses,
         GetResponse,
         GetSummary,
+        GetBookingConfig,
+        PreviewAvailability,
+        GenerateTimeSlots,
+        ListAppointments,
+        GetAppointment,
+        GetAgenda,
       ]
     end
 
-    def for_scopes(scopes)
-      all.select { |tool| tool.allowed?(scopes) }
+    def for_scopes(scopes, user: nil)
+      all.select { |tool| tool.allowed?(scopes) && (!tool.required_scope.to_s.start_with?("appointments:") || Appointments::Config.enabled_for?(user)) }
     end
 
     def shortlink(link)

@@ -10,7 +10,7 @@ Kurz exposes shortlinks, bio pages and forms to AI apps through a remote MCP ser
 
 ## What it can do
 
-- Scopes are opt-in per connection: `shortlinks`, `pages` and `forms` as `:read` or `:write` (write includes read), `forms:publish` and `pages:publish`, plus `responses:read`, and `appointments:read` or `appointments:write` (write includes read) when appointments are enabled for the account.
+- Scopes are opt-in per connection: `shortlinks`, `pages` and `forms` as `:read` or `:write` (write includes read), `forms:publish` and `pages:publish`, plus `responses:read`, and `appointments:read` or `appointments:write` (write includes read) when appointments are enabled for the account. With `appointments:read` the app can read the booking setup, preview availability, generate time lists (a pure calculation), and list, open and read the agenda of appointments; names and emails are returned marked as untrusted and count toward the same daily budget of records as responses. Nothing can change an appointment through the MCP yet.
 - Pages and forms are created and edited as drafts. A live page or form accepts only theme and color changes; to edit anything else, unpublish it first (needs the publish scope) or use the dashboard. Deleting and duplicating stay in the dashboard.
 - Publishing and unpublishing need `forms:publish` or `pages:publish`, off by default, and a connection can never hold a publish scope together with `responses:read` or an appointments scope: text typed by respondents is untrusted and must not be able to steer what goes online.
 - Forms have a layout (`one_at_a_time`, `page` or `steps`) and can group questions with `section` fields. Every form gets a short link on creation, returned by `get_form`.
