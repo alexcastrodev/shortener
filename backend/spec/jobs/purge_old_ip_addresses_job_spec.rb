@@ -8,10 +8,10 @@ RSpec.describe(PurgeOldIpAddressesJob) do
   let(:page) { Page.create!(user: user, slug: "ip-page") }
   let(:page_link) { page.page_links.create!(label: "L", url: "https://example.com", kind: "link", position: 0) }
 
-  it "clears IP addresses older than 90 days and keeps everything else, including recent IPs" do
-    old_event = Event.create!(shortlink: link, ip_address: "198.51.100.1", country_code: "PT", clicked_at: 91.days.ago)
-    new_event = Event.create!(shortlink: link, ip_address: "198.51.100.2", clicked_at: 89.days.ago)
-    old_click = PageLinkClick.create!(page_link: page_link, ip_address: "198.51.100.3", country_code: "PT", clicked_at: 120.days.ago)
+  it "clears IP, user agent and referrer older than 90 days and keeps the coarse fields and recent rows" do
+    old_event = Event.create!(shortlink: link, ip_address: "198.51.100.1", user_agent: "Mozilla/5.0 old", referer: "https://old.example/path?q=1", country_code: "PT", browser: "Chrome", clicked_at: 91.days.ago)
+    new_event = Event.create!(shortlink: link, ip_address: "198.51.100.2", user_agent: "Mozilla/5.0 new", referer: "https://new.example/", clicked_at: 89.days.ago)
+    old_click = PageLinkClick.create!(page_link: page_link, ip_address: "198.51.100.3", user_agent: "Mozilla/5.0 old", referer: "https://old.example/", country_code: "PT", clicked_at: 120.days.ago)
     new_click = PageLinkClick.create!(page_link: page_link, ip_address: "198.51.100.4", clicked_at: 1.day.ago)
     old_audit = Audited::Audit.create!(auditable: link, action: "update", remote_address: "198.51.100.5", created_at: 100.days.ago, audited_changes: {})
     new_audit = Audited::Audit.create!(auditable: link, action: "update", remote_address: "198.51.100.6", audited_changes: {})
@@ -19,11 +19,18 @@ RSpec.describe(PurgeOldIpAddressesJob) do
     described_class.perform_now
 
     expect(old_event.reload.ip_address).to(be_nil)
+    expect(old_event.user_agent).to(be_nil)
+    expect(old_event.referer).to(be_nil)
     expect(old_event.country_code).to(eq("PT"))
+    expect(old_event.browser).to(eq("Chrome"))
     expect(old_event.shortlink_id).to(eq(link.id))
     expect(old_click.reload.ip_address).to(be_nil)
+    expect(old_click.user_agent).to(be_nil)
+    expect(old_click.referer).to(be_nil)
     expect(old_audit.reload.remote_address).to(be_nil)
     expect(new_event.reload.ip_address).to(eq("198.51.100.2"))
+    expect(new_event.user_agent).to(eq("Mozilla/5.0 new"))
+    expect(new_event.referer).to(eq("https://new.example/"))
     expect(new_click.reload.ip_address).to(eq("198.51.100.4"))
     expect(new_audit.reload.remote_address).to(eq("198.51.100.6"))
   end
