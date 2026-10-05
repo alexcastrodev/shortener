@@ -57,3 +57,7 @@ production:
     class: CleanupUnverifiedUsersJob
     queue: default
     schedule: every day at 3:30am
+  purge_old_notifications:
+    class: PurgeOldNotificationsJob
+    queue: default
+    schedule: at 4:45am every day
