@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_040100) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_050000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -55,6 +55,67 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_040100) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "appointment_slots", force: :cascade do |t|
+    t.bigint "form_id", null: false
+    t.string "service_key", null: false
+    t.datetime "starts_at", null: false
+    t.integer "capacity"
+    t.integer "booked", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["form_id", "service_key", "starts_at"], name: "index_appointment_slots_on_form_service_start", unique: true
+    t.index ["form_id"], name: "index_appointment_slots_on_form_id"
+    t.check_constraint "booked >= 0", name: "appointment_slots_booked_non_negative"
+    t.check_constraint "capacity IS NULL OR booked <= capacity", name: "appointment_slots_booked_within_capacity"
+  end
+
+  create_table "appointment_tokens", force: :cascade do |t|
+    t.bigint "appointment_id", null: false
+    t.string "purpose", null: false
+    t.string "digest", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "used_at"
+    t.datetime "created_at", null: false
+    t.index ["appointment_id"], name: "index_appointment_tokens_on_appointment_id"
+    t.index ["digest"], name: "index_appointment_tokens_on_digest", unique: true
+    t.check_constraint "purpose::text = ANY (ARRAY['manage'::character varying, 'approve'::character varying, 'decline'::character varying]::text[])", name: "appointment_tokens_purpose_known"
+  end
+
+  create_table "appointments", force: :cascade do |t|
+    t.bigint "form_id", null: false
+    t.bigint "response_id", null: false
+    t.bigint "slot_id", null: false
+    t.uuid "group_key", null: false
+    t.string "status", null: false
+    t.string "client_name"
+    t.string "client_email"
+    t.string "client_phone"
+    t.jsonb "snapshot", default: {}, null: false
+    t.integer "published_version"
+    t.datetime "expires_at"
+    t.datetime "decided_at"
+    t.string "decided_by"
+    t.text "decision_message"
+    t.text "cancel_reason"
+    t.string "cancelled_by"
+    t.bigint "rescheduled_from_id"
+    t.string "client_time_zone"
+    t.string "client_locale"
+    t.datetime "reminder_sent_at"
+    t.datetime "owner_nudged_at"
+    t.datetime "created_at", null: false
+    t.index ["expires_at"], name: "index_appointments_pending_expires_at", where: "((status)::text = 'pending'::text)"
+    t.index ["form_id", "status"], name: "index_appointments_on_form_id_and_status"
+    t.index ["form_id"], name: "index_appointments_on_form_id"
+    t.index ["group_key"], name: "index_appointments_on_group_key"
+    t.index ["rescheduled_from_id"], name: "index_appointments_on_rescheduled_from_id"
+    t.index ["response_id"], name: "index_appointments_on_response_id"
+    t.index ["slot_id"], name: "index_appointments_on_slot_id"
+    t.check_constraint "cancelled_by IS NULL OR (cancelled_by::text = ANY (ARRAY['owner'::character varying, 'client'::character varying, 'system'::character varying]::text[]))", name: "appointments_cancelled_by_known"
+    t.check_constraint "decided_by IS NULL OR (decided_by::text = ANY (ARRAY['owner'::character varying, 'timeout'::character varying, 'client'::character varying]::text[]))", name: "appointments_decided_by_known"
+    t.check_constraint "jsonb_typeof(snapshot) = 'object'::text", name: "appointments_snapshot_is_object"
   end
 
   create_table "audits", force: :cascade do |t|
@@ -513,6 +574,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_040100) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "appointment_slots", "forms", on_delete: :cascade
+  add_foreign_key "appointment_tokens", "appointments", on_delete: :cascade
+  add_foreign_key "appointments", "appointment_slots", column: "slot_id"
+  add_foreign_key "appointments", "appointments", column: "rescheduled_from_id", on_delete: :nullify
+  add_foreign_key "appointments", "form_responses", column: "response_id", on_delete: :cascade
+  add_foreign_key "appointments", "forms", on_delete: :cascade
   add_foreign_key "color_palettes", "users", on_delete: :cascade
   add_foreign_key "events", "shortlinks", on_delete: :cascade
   add_foreign_key "form_daily_stats", "forms", on_delete: :cascade
