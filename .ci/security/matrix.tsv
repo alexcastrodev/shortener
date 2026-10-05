@@ -61,6 +61,10 @@ owner	POST	/api/me/forms/:id/apply_template
 owner	POST	/api/me/forms/:id/duplicate
 owner	POST	/api/me/forms/:id/publish
 owner	POST	/api/me/forms/:id/unpublish
+owner	GET	/api/me/oauth/authorization
+owner	POST	/api/me/oauth/authorization
+owner	GET	/api/me/oauth_grants
+owner	DELETE	/api/me/oauth_grants/:id
 owner	GET	/api/me/page_templates
 owner	POST	/api/me/page_templates
 owner	DELETE	/api/me/page_templates/:id
