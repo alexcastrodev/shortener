@@ -17,7 +17,7 @@ RSpec.describe(FormResponse, type: :model) do
   end
 
   it "has only created_at as its timestamp and no personal columns" do
-    expect(FormResponse.column_names).to(match_array(["id", "form_id", "answers", "country", "platform", "browser", "source", "idempotency_key", "created_at"]))
+    expect(FormResponse.column_names).to(match_array(["id", "form_id", "answers", "country", "platform", "browser", "source", "idempotency_key", "created_at", "published_version"]))
     expect(respond.created_at).to(be_present)
   end
 

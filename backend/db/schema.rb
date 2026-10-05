@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_040100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -121,6 +121,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_030000) do
     t.string "source"
     t.string "idempotency_key", limit: 64
     t.datetime "created_at", null: false
+    t.integer "published_version"
     t.index ["form_id", "created_at"], name: "index_form_responses_on_form_id_and_created_at"
     t.index ["form_id", "id"], name: "index_form_responses_on_form_id_and_id"
     t.index ["form_id", "idempotency_key"], name: "index_form_responses_on_form_and_idempotency_key", unique: true, where: "(idempotency_key IS NOT NULL)"
@@ -154,6 +155,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_030000) do
     t.datetime "updated_at", null: false
     t.string "layout", default: "one_at_a_time", null: false
     t.bigint "shortlink_id"
+    t.jsonb "published_snapshot"
+    t.integer "published_version", default: 0, null: false
+    t.string "published_digest"
     t.index ["public_id"], name: "index_forms_on_public_id", unique: true
     t.index ["shortlink_id"], name: "index_forms_on_shortlink_id"
     t.index ["user_id", "created_at"], name: "index_forms_on_user_id_and_created_at"
