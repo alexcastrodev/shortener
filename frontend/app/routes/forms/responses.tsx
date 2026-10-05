@@ -20,7 +20,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Card, PageContainer } from '@internal/ui';
 import { useGetForm } from '@internal/core/actions/get-form/get-form.hook';
@@ -29,6 +29,7 @@ import {
   useGetFormResponses,
 } from '@internal/core/actions/get-form-responses/get-form-responses.hook';
 import { getFormResponses } from '@internal/core/actions/get-form-responses/get-form-responses.service';
+import { getFormUpload } from '@internal/core/actions/get-form-upload/get-form-upload.service';
 import { useGetShortlinkDetails } from '@internal/core/actions/get-shortlink-details/get-shortlink-details.hook';
 import { useEventStatistics } from '@internal/core/actions/get-event-statistics/get-event-statistics.hook';
 import { useGetFormSummary } from '@internal/core/actions/get-form-summary/get-form-summary.hook';
@@ -68,8 +69,33 @@ const TABLE_QUESTIONS = 4;
 
 type Tab = 'summary' | 'responses';
 
-function formatAnswer(value: FormResponse['answers'][number]['value']) {
+function ResponseImage({ formId, token }: { formId: string; token: string }) {
+  const [state, setState] = useState<{ url?: string; failed?: boolean }>({});
+
+  useEffect(() => {
+    let url: string | undefined;
+    let cancelled = false;
+    getFormUpload(formId, token)
+      .then(blob => {
+        if (cancelled) return;
+        url = URL.createObjectURL(blob);
+        setState({ url });
+      })
+      .catch(() => !cancelled && setState({ failed: true }));
+    return () => {
+      cancelled = true;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [formId, token]);
+
+  if (state.failed) return <p className="mt-0.5 text-sm text-muted-foreground">Image unavailable</p>;
+  if (!state.url) return <p className="mt-0.5 text-sm text-muted-foreground">Loading image…</p>;
+  return <img src={state.url} alt="Uploaded by the respondent" className="mt-1 max-h-80 max-w-full rounded-md border border-border" />;
+}
+
+function formatAnswer(value: FormResponse['answers'][number]['value'], type?: string) {
   if (value === null || value === undefined) return '—';
+  if (type === 'image') return 'Image';
   if (Array.isArray(value)) return value.join(', ');
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   return String(value);
@@ -132,7 +158,7 @@ export default function FormResponsesPage() {
   const needle = query.trim().toLowerCase();
   const visible = needle
     ? rows.filter(row =>
-        row.answers.some(answer => formatAnswer(answer.value).toLowerCase().includes(needle))
+        row.answers.some(answer => formatAnswer(answer.value, answer.type).toLowerCase().includes(needle))
       )
     : rows;
   const stats = summary.data;
@@ -153,7 +179,7 @@ export default function FormResponsesPage() {
         const byId = new Map(row.answers.map(answer => [answer.id, answer.value]));
         return [
           row.submitted_at,
-          ...questions.map(q => (byId.has(q.id) ? formatAnswer(byId.get(q.id)!) : '')),
+          ...questions.map(q => (byId.has(q.id) ? formatAnswer(byId.get(q.id)!, q.type) : '')),
           row.source ?? '',
           row.platform ?? '',
           row.browser ?? '',
@@ -430,7 +456,7 @@ export default function FormResponsesPage() {
                         <td className="whitespace-nowrap px-4 py-3">{formatWhen(row.submitted_at)}</td>
                         {questions.slice(0, TABLE_QUESTIONS).map(question => (
                           <td key={question.id} className="max-w-[220px] truncate px-4 py-3">
-                            {formatAnswer(byId.get(question.id) ?? null)}
+                            {formatAnswer(byId.get(question.id) ?? null, question.type)}
                           </td>
                         ))}
                         <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
@@ -470,7 +496,11 @@ export default function FormResponsesPage() {
             {open.answers.map(answer => (
               <div key={answer.id}>
                 <p className="text-xs font-medium text-muted-foreground">{answer.label}</p>
-                <p className="mt-0.5 whitespace-pre-line text-sm">{formatAnswer(answer.value)}</p>
+                {answer.type === 'image' && typeof answer.value === 'string' ? (
+                  <ResponseImage formId={id} token={answer.value} />
+                ) : (
+                  <p className="mt-0.5 whitespace-pre-line text-sm">{formatAnswer(answer.value, answer.type)}</p>
+                )}
               </div>
             ))}
             <Button variant="subtle" color="red" c="red.5" leftSection={<IconTrash size={16} />} onClick={() => confirmDeleteOne(open)}>

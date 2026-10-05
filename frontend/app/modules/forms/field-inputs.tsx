@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import type { BioTheme } from '../bio-page/themes';
 import type { FormField } from '@internal/core/types/Form';
 
@@ -16,18 +17,21 @@ export function focusFirstInput(root: HTMLElement | null) {
   );
 }
 
+export type UploadImage = (fieldId: string, file: File) => Promise<string>;
+
 type Props = {
   field: FormField;
   value: Answer;
   onChange: (value: Answer) => void;
   theme: BioTheme;
   inputId: string;
+  upload?: UploadImage;
 };
 
 const inputBase =
   'w-full rounded-lg px-3 py-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-current';
 
-export function FieldInput({ field, value, onChange, theme, inputId }: Props) {
+export function FieldInput({ field, value, onChange, theme, inputId, upload }: Props) {
   const common = { id: inputId, 'aria-describedby': `${inputId}-help` };
 
   switch (field.type) {
@@ -184,7 +188,82 @@ export function FieldInput({ field, value, onChange, theme, inputId }: Props) {
         </fieldset>
       );
     }
+    case 'image':
+      return (
+        <ImageInput
+          field={field}
+          value={value as string | undefined}
+          onChange={onChange}
+          theme={theme}
+          inputId={inputId}
+          upload={upload}
+        />
+      );
     default:
       return null;
   }
+}
+
+const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+
+function uploadMessage(status?: number) {
+  if (status === 503) return 'Image uploads are unavailable right now. You can send the form without it.';
+  if (status === 429) return 'Too many uploads. Please wait a few minutes and try again.';
+  if (status === 413) return 'That file is too large (10 MB at most).';
+  return 'That file could not be used. Choose a PNG, JPEG, WebP or HEIC image up to 10 MB.';
+}
+
+function ImageInput({ field, value, onChange, theme, inputId, upload }: Props & { value: string | undefined }) {
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+
+  const choose = async (file: File | undefined) => {
+    if (!file || !upload) return;
+    setProblem(null);
+    if (file.size > IMAGE_MAX_BYTES) {
+      setProblem(uploadMessage(413));
+      return;
+    }
+    setBusy(true);
+    try {
+      onChange(await upload(field.id, file));
+      setName(file.name);
+    } catch (failure) {
+      setProblem(uploadMessage((failure as { status?: number })?.status));
+    } finally {
+      setBusy(false);
+      if (input.current) input.current.value = '';
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <input
+        ref={input}
+        id={inputId}
+        aria-describedby={`${inputId}-help`}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
+        disabled={busy || !upload}
+        onChange={event => void choose(event.target.files?.[0])}
+        className={`${inputBase} ${theme.button}`}
+      />
+      {busy && <p className={`text-sm ${theme.bio}`}>Uploading…</p>}
+      {value && !busy && (
+        <p className={`flex items-center gap-3 text-sm ${theme.bio}`}>
+          <span className="truncate">Attached{name ? `: ${name}` : ''}</span>
+          <button type="button" className="underline" onClick={() => { setName(''); onChange(undefined); }}>
+            Remove
+          </button>
+        </p>
+      )}
+      {problem && (
+        <p role="alert" className="text-sm text-red-500">
+          {problem}
+        </p>
+      )}
+    </div>
+  );
 }

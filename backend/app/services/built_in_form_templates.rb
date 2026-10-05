@@ -75,6 +75,7 @@ module BuiltInFormTemplates
         question("short_text", "What went wrong?", required: true),
         question("long_text", "Steps to reproduce", required: true),
         question("single_choice", "How severe is it?", required: true, choices: options("Minor", "Annoying", "Blocks my work")),
+        question("image", "Screenshot", help: "Optional. PNG, JPEG, WebP or HEIC."),
         question("email", "Your e-mail", help: "So we can follow up."),
       ],
     },

@@ -5,6 +5,7 @@ import {
   IconCircleDot,
   IconHash,
   IconHeading,
+  IconPhoto,
   IconLetterT,
   IconSquareCheck,
   IconStar,
@@ -23,6 +24,7 @@ export const FIELD_TYPES: { type: FormFieldType; label: string; hint: string }[]
   { type: 'yes_no', label: 'Yes / No', hint: 'Two answers' },
   { type: 'rating', label: 'Rating', hint: '1 to 5 or 1 to 10' },
   { type: 'date', label: 'Date', hint: 'A calendar date' },
+  { type: 'image', label: 'Image', hint: 'A photo upload (PNG, JPEG, WebP or HEIC)' },
   { type: 'section', label: 'Section', hint: 'A heading that groups questions' },
 ];
 
@@ -54,5 +56,6 @@ export const FIELD_ICONS: Record<FormFieldType, Icon> = {
   yes_no: IconToggleLeft,
   rating: IconStar,
   date: IconCalendar,
+  image: IconPhoto,
   section: IconHeading,
 };

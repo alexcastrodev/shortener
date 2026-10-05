@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { Form } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
-import { FieldInput, focusFirstInput, isBlank, type Answer } from './field-inputs';
+import { FieldInput, focusFirstInput, isBlank, type Answer, type UploadImage } from './field-inputs';
 import { isSection, sectionOf } from './field-types';
 import { PagedForm } from './paged-form';
 
@@ -19,6 +19,7 @@ export type Props = {
   form: RenderableForm;
   mode: 'preview' | 'live';
   onSubmit?: (answers: Record<string, Answer>) => Promise<void> | void;
+  onUploadImage?: UploadImage;
   onStart?: () => void;
   lastStepSlot?: ReactNode;
   footer?: ReactNode;
@@ -38,6 +39,7 @@ function SequentialForm({
   form,
   mode,
   onSubmit,
+  onUploadImage,
   onStart,
   lastStepSlot,
   footer,
@@ -231,6 +233,7 @@ function SequentialForm({
         }}
         theme={theme}
         inputId={inputId}
+        upload={mode === 'live' ? onUploadImage : undefined}
       />
       {step === total - 1 && lastStepSlot}
       {error && (
