@@ -28,6 +28,10 @@ class Api::Me::OauthAuthorizationsController < ApplicationController
     granted = Array(params[:granted_scopes]).map(&:to_s).uniq & request_data.scopes
     return render(json: { redirect_to: request_data.redirect_url(error: "access_denied") }) if granted.empty?
 
+    if granted.include?("responses:read") && granted.intersect?(OauthGrant::PUBLISH_SCOPES)
+      return render(json: { error: "conflicting_scopes", message: "Reading responses cannot be combined with publishing" }, status: :unprocessable_entity)
+    end
+
     grant = OauthGrant.create!(user: current_user, oauth_client: request_data.client, scopes: granted, resource: request_data.resource)
     code = OauthAuthorizationCode.issue(grant: grant, code_challenge: request_data.code_challenge, redirect_uri: request_data.redirect_uri)
     render(json: { redirect_to: request_data.redirect_url(code: code) })

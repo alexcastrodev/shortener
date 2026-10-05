@@ -3,7 +3,7 @@ module Mcp
     class UpdateForm < Mcp::BaseTool
       tool_name "update_form"
       title "Edit a form draft"
-      description "Edits the title, description, thank-you message, theme (or custom_colors) or layout (one_at_a_time, page or steps) of an unpublished form."
+      description "Edits the title, description, thank-you message, theme (or custom_colors) or layout (one_at_a_time, page or steps) of a form. A published form accepts only theme and custom_colors changes; unpublish it to edit the rest."
       input_schema(
         properties: {
           id: { type: "integer", minimum: 1 },
@@ -21,7 +21,7 @@ module Mcp
       requires "forms:write", writes: true
 
       def self.perform(user:, id:, **changes)
-        form = Mcp::Guards.draft_form(user, id)
+        form = Mcp::Guards.editable_form(user, id, changes.keys)
         form.update!(Mcp::Guards.contract!(FormUpdateContract, changes))
         FormToolHelpers.form_json(form)
       end

@@ -24,6 +24,22 @@ module Mcp
       form
     end
 
+    STYLE_KEYS = [:theme, :custom_colors].freeze
+
+    def editable_page(user, id, keys)
+      page = page(user, id)
+      raise Mcp::ToolError.new("page_published", "This page is published: only its theme and colors can be changed here, edit the rest in the dashboard or unpublish it first") if page.published && (keys.map(&:to_sym) - STYLE_KEYS).any?
+
+      page
+    end
+
+    def editable_form(user, id, keys)
+      form = form(user, id)
+      raise Mcp::ToolError.new("form_published", "This form is published: only its theme and colors can be changed here, edit the rest in the dashboard or unpublish it first") if form.published && (keys.map(&:to_sym) - STYLE_KEYS).any?
+
+      form
+    end
+
     def structural_form(user, id)
       form = draft_form(user, id)
       raise Mcp::ToolError.new("form_has_responses", "This form already has responses: duplicate it in the dashboard to change its questions") if form.responses_count.positive?

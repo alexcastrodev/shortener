@@ -3,7 +3,7 @@ module Mcp
     class UpdatePage < Mcp::BaseTool
       tool_name "update_page"
       title "Edit a bio page draft"
-      description "Edits the title, bio, theme (or custom_colors) or address of an unpublished page. Published pages must be edited in the dashboard."
+      description "Edits the title, bio, theme (or custom_colors) or address of a bio page. A published page accepts only theme and custom_colors changes; unpublish it to edit the rest."
       input_schema(
         properties: {
           id: { type: "integer", minimum: 1 },
@@ -20,7 +20,7 @@ module Mcp
       requires "pages:write", writes: true
 
       def self.perform(user:, id:, **changes)
-        page = Mcp::Guards.draft_page(user, id)
+        page = Mcp::Guards.editable_page(user, id, changes.keys)
         attributes = Mcp::Guards.contract!(PageUpdateContract, changes)
         page.assign_attributes(attributes)
         Mcp::Guards.saved!(page)
