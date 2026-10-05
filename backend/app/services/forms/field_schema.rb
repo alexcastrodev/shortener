@@ -2,7 +2,7 @@ module Forms
   module FieldSchema
     extend self
 
-    TYPES = ["short_text", "long_text", "email", "number", "single_choice", "multiple_choice", "yes_no", "rating", "date"].freeze
+    TYPES = ["short_text", "long_text", "email", "number", "single_choice", "multiple_choice", "yes_no", "rating", "date", "section"].freeze
     CHOICE_TYPES = ["single_choice", "multiple_choice"].freeze
     ID_LENGTH = 8
     ID_FORMAT = /\A[A-Za-z0-9]{#{ID_LENGTH}}\z/
@@ -43,6 +43,10 @@ module Forms
         errors.concat(field_errors(field).map { |message| "#{label} #{message}" })
       end
       errors
+    end
+
+    def answerable?(field)
+      field.stringify_keys["type"] != "section"
     end
 
     def with_new_ids(field)

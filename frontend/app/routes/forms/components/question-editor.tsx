@@ -71,7 +71,7 @@ function toInput(type: FormFieldType, values: Values, creating: boolean): FormFi
   const input: FormFieldInput = {
     label: values.label.trim(),
     help: values.help.trim() || (creating ? undefined : null),
-    required: values.required,
+    required: type === 'section' ? false : values.required,
   };
   if (creating) input.type = type;
 
@@ -121,16 +121,27 @@ export function QuestionEditor({
         <p className="text-xs font-medium text-muted-foreground">
           {fieldTypeLabel(type)}
         </p>
-        <TextInput label="Question" required data-autofocus {...form.getInputProps('label')} />
         <TextInput
-          label="Help text"
-          description="Optional, shown under the question."
+          label={type === 'section' ? 'Section title' : 'Question'}
+          required
+          data-autofocus
+          {...form.getInputProps('label')}
+        />
+        <TextInput
+          label={type === 'section' ? 'Description' : 'Help text'}
+          description={
+            type === 'section'
+              ? 'Optional, shown under the title.'
+              : 'Optional, shown under the question.'
+          }
           {...form.getInputProps('help')}
         />
-        <Switch
-          label="Required"
-          {...form.getInputProps('required', { type: 'checkbox' })}
-        />
+        {type !== 'section' && (
+          <Switch
+            label="Required"
+            {...form.getInputProps('required', { type: 'checkbox' })}
+          />
+        )}
 
         {isChoiceType(type) && (
           <Stack gap="xs">
@@ -207,7 +218,7 @@ export function QuestionEditor({
             Cancel
           </Button>
           <Button type="submit" color="brand" loading={loading}>
-            {creating ? 'Add question' : 'Save question'}
+            {creating ? 'Add' : 'Save'} {type === 'section' ? 'section' : 'question'}
           </Button>
         </Group>
       </Stack>

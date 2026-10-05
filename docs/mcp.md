@@ -12,6 +12,7 @@ Kurz exposes shortlinks, bio pages and forms to AI apps through a remote MCP ser
 
 - Scopes are opt-in per connection: `shortlinks`, `pages` and `forms` as `:read` or `:write` (write includes read), plus `responses:read`.
 - Pages and forms are created and edited as drafts only. Publishing, deleting, duplicating and editing live content stay in the dashboard.
+- Forms have a layout (`one_at_a_time`, `page` or `steps`) and can group questions with `section` fields. Every form gets a short link on creation, returned by `get_form`.
 - A form with responses keeps its questions; only its texts can change.
 - `responses:read` is separate from `forms:read`. Text typed by respondents is returned marked as untrusted data, capped in size, and counts toward a daily budget of 2000 records. No IP, user agent, country or device is exposed.
 - Every call is logged as metadata only (tool, status, duration, records returned) and purged after 90 days. Each call is cancelled after 5 seconds in the database.

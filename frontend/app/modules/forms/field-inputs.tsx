@@ -3,6 +3,19 @@ import type { FormField } from '@internal/core/types/Form';
 
 export type Answer = string | number | boolean | string[] | undefined;
 
+export const isBlank = (value: Answer) =>
+  value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
+
+export function focusFirstInput(root: HTMLElement | null) {
+  requestAnimationFrame(() =>
+    root
+      ?.querySelector<HTMLElement>(
+        'input:not([type=radio]):not([type=checkbox]), textarea, select'
+      )
+      ?.focus({ preventScroll: true })
+  );
+}
+
 type Props = {
   field: FormField;
   value: Answer;

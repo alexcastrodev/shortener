@@ -8,11 +8,12 @@ export interface FormResponsesPage {
 
 export async function getFormResponses(
   formId: number | string,
-  before?: number | null
+  before?: number | null,
+  days?: number | 'all'
 ): Promise<FormResponsesPage> {
   const response = await api.get<FormResponsesPage>(
     `/api/me/forms/${formId}/responses`,
-    { params: before ? { before } : undefined }
+    { params: { before: before ?? undefined, days: days === 'all' ? undefined : days } }
   );
   return response.data;
 }

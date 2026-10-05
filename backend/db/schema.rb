@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_060000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -127,7 +127,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_030000) do
     t.integer "responses_count", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "layout", default: "one_at_a_time", null: false
+    t.bigint "shortlink_id"
     t.index ["public_id"], name: "index_forms_on_public_id", unique: true
+    t.index ["shortlink_id"], name: "index_forms_on_shortlink_id"
     t.index ["user_id", "created_at"], name: "index_forms_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_forms_on_user_id"
     t.check_constraint "jsonb_typeof(fields) = 'array'::text", name: "forms_fields_is_array"
@@ -479,6 +482,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_030000) do
   add_foreign_key "events", "shortlinks", on_delete: :cascade
   add_foreign_key "form_daily_stats", "forms", on_delete: :cascade
   add_foreign_key "form_responses", "forms", on_delete: :cascade
+  add_foreign_key "forms", "shortlinks", on_delete: :nullify
   add_foreign_key "forms", "users", on_delete: :cascade
   add_foreign_key "identities", "users", on_delete: :cascade
   add_foreign_key "mcp_tool_calls", "oauth_grants", on_delete: :cascade

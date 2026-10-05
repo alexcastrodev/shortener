@@ -9,6 +9,7 @@ class Api::Me::FormResponsesController < ApplicationController
     limit = params[:limit].to_i.clamp(1, MAX_LIMIT)
     limit = MAX_LIMIT unless params[:limit].present?
     scope = @form.responses.order(id: :desc)
+    scope = scope.where(created_at: (params[:days].to_i - 1).days.ago.utc.beginning_of_day..) if Forms::Summary::PERIODS.include?(params[:days].to_i)
     scope = scope.where(id: ...params[:before].to_i) if params[:before].present?
     rows = scope.limit(limit + 1).to_a
     more = rows.size > limit

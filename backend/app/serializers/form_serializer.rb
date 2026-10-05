@@ -3,5 +3,9 @@ class FormSerializer < BaseSerializer
   with_timestamps
   root_key_for_collection :form
 
-  attributes :public_id, :title, :description, :thank_you_message, :theme, :published, :fields, :responses_count, :public_url
+  attributes :public_id, :title, :description, :thank_you_message, :theme, :layout, :published, :fields, :responses_count, :public_url, :shortlink_id
+
+  attribute :short_url do |form|
+    form.shortlink&.short_url
+  end
 end

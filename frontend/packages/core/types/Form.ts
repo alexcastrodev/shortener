@@ -9,7 +9,11 @@ export type FormFieldType =
   | 'multiple_choice'
   | 'yes_no'
   | 'rating'
-  | 'date';
+  | 'date'
+  | 'section';
+
+export const FORM_LAYOUTS = ['page', 'one_at_a_time', 'steps'] as const;
+export type FormLayout = (typeof FORM_LAYOUTS)[number];
 
 export type FormChoice = { id: string; label: string };
 
@@ -33,10 +37,13 @@ export type Form = {
   description: string | null;
   thank_you_message: string | null;
   theme: PageTheme;
+  layout: FormLayout;
   published: boolean;
   fields: FormField[];
   responses_count: number;
   public_url: string;
+  shortlink_id: number | null;
+  short_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -63,7 +70,7 @@ export type FormFieldInput = {
 
 export type PublicForm = Pick<
   Form,
-  'title' | 'description' | 'thank_you_message' | 'theme' | 'fields'
+  'title' | 'description' | 'thank_you_message' | 'theme' | 'layout' | 'fields'
 >;
 
 export type FormResponseAnswer = {

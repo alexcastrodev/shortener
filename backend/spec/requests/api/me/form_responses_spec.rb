@@ -65,6 +65,21 @@ RSpec.describe("/api/me/forms/:id/responses and summary", type: :request) do
       expect(json["response"].size).to(eq(1))
     end
 
+    it "limits the list to the requested period and ignores unknown ones" do
+      recent = respond({ "name0001" => "recent" })
+      old = respond({ "name0001" => "old" })
+      old.update_columns(created_at: 40.days.ago)
+
+      get "/api/me/forms/#{form.id}/responses", params: { days: 30 }, headers: auth_headers
+      expect(json["response"].map { |row| row["id"] }).to(eq([recent.id]))
+
+      get "/api/me/forms/#{form.id}/responses", params: { days: 90 }, headers: auth_headers
+      expect(json["response"].size).to(eq(2))
+
+      get "/api/me/forms/#{form.id}/responses", params: { days: 5 }, headers: auth_headers
+      expect(json["response"].size).to(eq(2))
+    end
+
     it "drops answers whose question was removed" do
       respond({ "name0001" => "keep", "gone0000" => "old" })
 

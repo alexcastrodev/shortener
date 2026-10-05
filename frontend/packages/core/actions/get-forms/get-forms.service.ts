@@ -1,11 +1,15 @@
 import type { AxiosResponse } from 'axios';
 import { api } from '../api';
-import type { GetFormsResponse } from './get-forms.types';
-import type { Form } from '../../types/Form';
+import type { GetFormsParams, GetFormsResponse } from './get-forms.types';
 
-export async function getForms(): Promise<Form[]> {
-  const response: AxiosResponse<GetFormsResponse> =
-    await api.get('/api/me/forms');
+export async function getForms(params: GetFormsParams = {}): Promise<GetFormsResponse> {
+  const response: AxiosResponse<GetFormsResponse> = await api.get('/api/me/forms', {
+    params: {
+      q: params.q || undefined,
+      status: params.status === 'all' ? undefined : params.status,
+      sort: params.sort,
+    },
+  });
 
-  return response.data.form;
+  return response.data;
 }

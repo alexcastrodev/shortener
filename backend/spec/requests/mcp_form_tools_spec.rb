@@ -108,6 +108,20 @@ RSpec.describe("MCP form tools", type: :request) do
       expect(data(tool("update_form", { id: draft.id, title: "Renamed", thank_you_message: "Thanks" }))).to(include("title" => "Renamed", "thank_you_message" => "Thanks", "published" => false))
     end
 
+    it "adds sections without counting them as questions and sets the layout" do
+      data(tool("add_field", { form_id: draft.id, type: "section", label: "About you", help: "Two quick questions" }))
+      result = data(tool("add_field", { form_id: draft.id }.merge(text_field)))
+
+      expect(result).to(include("questions" => 1, "sections" => 1))
+      expect(result["fields"].first).to(include("type" => "section", "label" => "About you", "help" => "Two quick questions"))
+
+      updated = data(tool("update_form", { id: draft.id, layout: "steps" }))
+      expect(updated).to(include("layout" => "steps"))
+      expect(updated).to(have_key("short_url"))
+      expect(failed?(tool("update_form", { id: draft.id, layout: "grid" }))).to(be(true))
+      expect(draft.reload.layout).to(eq("steps"))
+    end
+
     it "refuses invalid questions without changing the form" do
       before = snapshot(draft)
       [
