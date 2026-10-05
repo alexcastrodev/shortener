@@ -14,6 +14,10 @@ import {
   getLoggedUserKey,
   useGetLoggedUser,
 } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
+import { getOauthGrantsKey, useGetOauthGrants } from '@internal/core/actions/get-oauth-grants/get-oauth-grants.hook';
+import { useRevokeOauthGrant } from '@internal/core/actions/revoke-oauth-grant/revoke-oauth-grant.hook';
+import { SCOPE_LABELS } from '../modules/oauth/scopes';
+import { modals } from '@mantine/modals';
 import { useUpdatePassword } from '@internal/core/actions/update-password/update-password.hook';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { notifyError } from '@internal/core/utils/notify';
@@ -143,6 +147,55 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
   );
 }
 
+function ConnectedApps() {
+  const queryClient = useQueryClient();
+  const { data: grants } = useGetOauthGrants();
+  const { mutate: revoke } = useRevokeOauthGrant({
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: getOauthGrantsKey }),
+  });
+  const mcpUrl = `${import.meta.env.VITE_BASE_URL}/mcp`;
+
+  const confirmRevoke = (id: number, name: string) =>
+    modals.openConfirmModal({
+      title: 'Disconnect app?',
+      centered: true,
+      children: <p className="text-sm">{name} will lose access on its next request.</p>,
+      labels: { confirm: 'Disconnect', cancel: 'Keep it' },
+      confirmProps: { color: 'red' },
+      onConfirm: () => revoke(id),
+    });
+
+  return (
+    <Card className="p-5 sm:p-6">
+      <h2 className="font-semibold text-foreground">Connected apps</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        AI apps you allowed to work with your account. Connector URL:{' '}
+        <code className="break-all rounded bg-muted px-1.5 py-0.5 text-xs">{mcpUrl}</code>
+      </p>
+      {grants?.length === 0 && <p className="mt-4 text-sm text-muted-foreground">No apps connected.</p>}
+      <ul className="mt-4 space-y-3">
+        {grants?.map(grant => (
+          <li key={grant.id} className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{grant.client_name}</p>
+              <p className="text-xs text-muted-foreground">
+                {grant.redirect_host} · connected {new Date(grant.connected_at).toLocaleDateString('en-US')}
+                {grant.last_used_at && ` · last used ${new Date(grant.last_used_at).toLocaleDateString('en-US')}`}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {grant.scopes.map(scope => SCOPE_LABELS[scope]?.label ?? scope).join(' · ')}
+              </p>
+            </div>
+            <Button variant="default" size="xs" className="shrink-0 self-start" onClick={() => confirmRevoke(grant.id, grant.client_name)}>
+              Disconnect
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 export default function AccountPage() {
   const { data, isLoading } = useGetLoggedUser();
   const logout = useLogout();
@@ -216,6 +269,8 @@ export default function AccountPage() {
             </Button>
           </Card>
         )}
+
+        <ConnectedApps />
 
         <PasswordSection hasPassword={!!user.has_password} />
       </div>

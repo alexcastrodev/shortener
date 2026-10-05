@@ -1,3 +1,4 @@
+import { goAfterLogin } from '../oauth/return-to';
 import { useNavigate } from 'react-router';
 import { useLoginGoogle } from '@internal/core/actions/login-google/login-google.hook';
 import { useUserState } from '@internal/core/states/use-user-state';
@@ -12,7 +13,7 @@ export function useGoogleSignIn() {
   const mutation = useLoginGoogle({
     onSuccess: ({ user }) => {
       setUser(user);
-      navigate('/app');
+      goAfterLogin(navigate);
     },
     onError: error => {
       const authError = error as AuthError;

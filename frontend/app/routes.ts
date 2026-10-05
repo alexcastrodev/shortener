@@ -15,6 +15,7 @@ export default [
     route('u/:username', 'routes/bio/$username.tsx'),
     route('s/:shortCode', 'routes/unlock/$shortCode.tsx'),
     route('f/:publicId', 'routes/f/$publicId.tsx'),
+    route('oauth/authorize', 'routes/oauth/authorize.tsx'),
   ]),
   layout('layout/index.tsx', [
     ...prefix('app', [
