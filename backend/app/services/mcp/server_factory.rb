@@ -8,7 +8,7 @@ module Mcp
       server = MCP::Server.new(
         name: "kurz",
         version: "1.0.0",
-        tools: Mcp::Tools.for_scopes(grant.scopes),
+        tools: Mcp::Tools.for_scopes(grant.scopes, user: grant.user),
         server_context: { user: grant.user, grant: grant, scopes: grant.scopes },
       )
       transport = MCP::Server::Transports::StreamableHTTPTransport.new(
