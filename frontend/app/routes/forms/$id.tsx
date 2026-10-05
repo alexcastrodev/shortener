@@ -106,9 +106,9 @@ export default function FormBuilder() {
 }
 
 const LAYOUT_OPTIONS = [
+  { value: 'page', label: 'Single page', hint: 'Everything at once', icon: IconScript },
   { value: 'one_at_a_time', label: 'One per screen', hint: 'Conversational', icon: IconPointer },
   { value: 'steps', label: 'Steps', hint: 'Split by section', icon: IconListDetails },
-  { value: 'page', label: 'Single page', hint: 'Everything at once', icon: IconScript },
 ] as const;
 
 function Builder({ form: current }: { form: Form }) {
