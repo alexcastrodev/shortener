@@ -1,0 +1,15 @@
+{
+  "bio_pages": "Bio pages",
+  "your_pages": "Your pages",
+  "no_pages": "No pages yet. Pick an address to create your first one.",
+  "unpublished": "Unpublished",
+  "open_page": "Open {{slug}}",
+  "new_page": "New page",
+  "address": "Address",
+  "title_optional": "Title (optional)",
+  "create_page": "Create page",
+  "create_failed": "Could not create page",
+  "slug_rule": "3–30 characters: letters, numbers, \".\", \"_\" or \"-\"",
+  "generic_error": "Something went wrong, please try again later.",
+  "address_placeholder": "yourname"
+}

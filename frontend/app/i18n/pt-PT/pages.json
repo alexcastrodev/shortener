@@ -1,0 +1,15 @@
+{
+  "bio_pages": "Páginas de bio",
+  "your_pages": "As suas páginas",
+  "no_pages": "Ainda não tem páginas. Escolha um endereço para criar a primeira.",
+  "unpublished": "Não publicada",
+  "open_page": "Abrir {{slug}}",
+  "new_page": "Nova página",
+  "address": "Endereço",
+  "title_optional": "Título (opcional)",
+  "create_page": "Criar página",
+  "create_failed": "Não foi possível criar a página",
+  "slug_rule": "3 a 30 caracteres: letras, números, \".\", \"_\" ou \"-\"",
+  "generic_error": "Algo correu mal, tente novamente mais tarde.",
+  "address_placeholder": "oseunome"
+}
