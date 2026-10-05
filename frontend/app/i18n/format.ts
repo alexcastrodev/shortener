@@ -18,6 +18,22 @@ export function formatDateTime(value: DateInput, options: Intl.DateTimeFormatOpt
   return new Intl.DateTimeFormat(activeLocale(), options).format(toDate(value));
 }
 
+const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ['year', 31536000],
+  ['month', 2592000],
+  ['week', 604800],
+  ['day', 86400],
+  ['hour', 3600],
+  ['minute', 60],
+];
+
+export function formatRelative(value: DateInput, now: number = Date.now()) {
+  const seconds = Math.round((toDate(value).getTime() - now) / 1000);
+  const formatter = new Intl.RelativeTimeFormat(activeLocale(), { numeric: 'auto' });
+  const [unit, size] = UNITS.find(([, size]) => Math.abs(seconds) >= size) ?? ['second', 1];
+  return formatter.format(Math.round(seconds / size), unit);
+}
+
 export function formatNumber(value: number, options?: Intl.NumberFormatOptions) {
   return new Intl.NumberFormat(activeLocale(), options).format(value);
 }
