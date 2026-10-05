@@ -37,6 +37,9 @@ internal	GET	/rails/conductor/action_mailbox/inbound_emails/sources/new
 internal	GET	/recede_historical_location
 internal	GET	/refresh_historical_location
 internal	GET	/resume_historical_location
+mcp	DELETE	/mcp
+mcp	GET	/mcp
+mcp	POST	/mcp
 owner	GET	/api/me
 owner	GET	/api/me/community_templates
 owner	POST	/api/me/community_templates/:id/report
