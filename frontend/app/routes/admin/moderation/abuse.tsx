@@ -23,6 +23,7 @@ export function meta() {
 const KIND_LABELS = {
   same_text: 'Same title and bio',
   same_links: 'Same set of links',
+  form_flood: 'Form flooded, unpublished automatically',
 };
 
 function formatDate(value: string) {
@@ -83,8 +84,9 @@ export default function ModerationAbusePage() {
           ]}
         />
         <p className="text-sm text-muted-foreground sm:ml-auto">
-          Three or more new accounts publishing the same page within a day.
-          Checked hourly.
+          Pages: three or more new accounts publishing the same page within a
+          day (checked hourly). Forms: unpublished automatically after a flood
+          of responses or uploads in an hour (checked every 10 minutes).
         </p>
       </div>
 
@@ -123,9 +125,32 @@ export default function ModerationAbusePage() {
                 </Badge>
               </div>
 
-              <p className="mt-4 mb-2 text-xs font-medium text-muted-foreground">
-                Pages
-              </p>
+              {signal.forms.length > 0 && (
+                <>
+                  <p className="mt-4 mb-2 text-xs font-medium text-muted-foreground">
+                    Forms
+                  </p>
+                  <ul className="space-y-1 text-sm">
+                    {signal.forms.map(form => (
+                      <li key={form.id} className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-foreground">{form.title}</span>
+                        <Badge size="xs" color="gray" variant="light">
+                          {form.responses_count.toLocaleString()} responses
+                        </Badge>
+                        <Badge size="xs" color={form.published ? 'teal' : 'gray'} variant="light">
+                          {form.published ? 'published' : 'unpublished'}
+                        </Badge>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {signal.pages.length > 0 && (
+                <p className="mt-4 mb-2 text-xs font-medium text-muted-foreground">
+                  Pages
+                </p>
+              )}
               <ul className="space-y-1 text-sm">
                 {signal.pages.map(page => (
                   <li key={page.id} className="flex min-w-0 items-center gap-2">

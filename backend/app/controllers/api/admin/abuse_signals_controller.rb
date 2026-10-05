@@ -1,4 +1,4 @@
-# Signals raised by DetectPageAbuseJob. Deactivating an owner goes through
+# Signals raised by DetectPageAbuseJob and DetectFormAbuseJob. Deactivating an owner goes through
 # the existing POST /api/admin/users/:id/toggle_active.
 class Api::Admin::AbuseSignalsController < ApplicationController
   before_action :authenticate_user!
@@ -13,7 +13,9 @@ class Api::Admin::AbuseSignalsController < ApplicationController
     users = User.where(id: signals.flat_map(&:user_ids)).index_by(&:id)
     pages = Page.with_deleted.where(id: signals.flat_map(&:page_ids)).index_by(&:id)
 
-    render(json: { abuse_signal: signals.map { |signal| serialize(signal, users, pages) } }, status: :ok)
+    forms = Form.where(id: signals.flat_map(&:form_ids)).index_by(&:id)
+
+    render(json: { abuse_signal: signals.map { |signal| serialize(signal, users, pages, forms) } }, status: :ok)
   end
 
   # POST /api/admin/abuse_signals/:id/dismiss
@@ -28,7 +30,7 @@ class Api::Admin::AbuseSignalsController < ApplicationController
 
   private
 
-  def serialize(signal, users, pages)
+  def serialize(signal, users, pages, forms)
     {
       "id" => signal.id,
       "kind" => signal.kind,
@@ -47,6 +49,9 @@ class Api::Admin::AbuseSignalsController < ApplicationController
           "published" => page.published,
           "deleted" => page.deleted_at.present?,
         }
+      end,
+      "forms" => signal.form_ids.filter_map { |id| forms[id] }.map do |form|
+        { "id" => form.id, "title" => form.title, "user_id" => form.user_id, "published" => form.published, "responses_count" => form.responses_count }
       end,
     }
   end
