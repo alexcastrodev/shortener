@@ -94,5 +94,12 @@
   "exc_note": "Nota (só você vê)",
   "err_exc_from": "Escolha a data",
   "err_exc_range": "O fim não pode ser antes do início",
-  "err_exc_times": "Adicione pelo menos um horário"
+  "err_exc_times": "Adicione pelo menos um horário",
+  "wd_title": "Horários diferentes em alguns dias",
+  "wd_hint": "Um dia com horários próprios ignora os horários acima. Deixe um dia sem nenhum horário para o fechar.",
+  "wd_own": "Horários próprios",
+  "wd_closed": "Sem horários: fechado nesse dia",
+  "wd_add_time": "Adicionar horário",
+  "wd_remove_time": "Remover o horário {{time}}",
+  "wd_times": "Horários de {{day}}"
 }

@@ -186,3 +186,34 @@ test('removing every exception sends an empty list so the server clears them', (
   values.exceptions = [];
   assert.deepEqual(toBookingInput(values, false).exceptions, []);
 });
+
+test('weekday times load, are sent only for days the service runs, and an empty list closes the day', () => {
+  const values = initialValues({
+    ...field,
+    services: [
+      {
+        ...field.services![0],
+        times_by_day: { mon: ['14:00', '09:00'], wed: [] },
+      },
+    ],
+  });
+  assert.deepEqual(
+    values.services[0].byDay.mon.map(time => time.value),
+    ['14:00', '09:00']
+  );
+  assert.deepEqual(values.services[0].byDay.wed, []);
+  assert.deepEqual(toBookingInput(values, false).services![0].times_by_day, {
+    mon: ['09:00', '14:00'],
+    wed: [],
+  });
+
+  values.services[0].days = ['mon'];
+  assert.deepEqual(toBookingInput(values, false).services![0].times_by_day, {
+    mon: ['09:00', '14:00'],
+  });
+});
+
+test('a service without weekday times sends none, so the general times apply', () => {
+  const [sent] = toBookingInput(initialValues(field), false).services!;
+  assert.equal('times_by_day' in sent, false);
+});

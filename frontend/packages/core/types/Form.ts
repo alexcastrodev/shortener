@@ -33,6 +33,7 @@ export type BookingService = {
   capacity?: number | null;
   days: string[];
   times: string[];
+  times_by_day?: Record<string, string[]>;
 };
 
 export type BookingRules = {
