@@ -36,7 +36,7 @@ RSpec.describe("GET /api/me/agenda", type: :request) do
     slot.update!(booked: slot.booked + count)
     count.times do
       response = FormResponse.create!(form: form, answers: {})
-      Appointment.create!(form: form, response: response, slot: slot, group_key: SecureRandom.uuid, status: status, client_name: name, client_email: "#{name.downcase}@example.com", snapshot: { "name" => "Haircut" })
+      Appointment.create!(form: form, response: response, slot: slot, group_key: SecureRandom.uuid, status: status, client_name: name, client_email: "#{name.downcase}@example.com", snapshot: { "name" => "Haircut", "duration" => 60 })
     end
   end
 
@@ -87,6 +87,15 @@ RSpec.describe("GET /api/me/agenda", type: :request) do
     expect(future.map { |session| session["starts_at"] }).to(eq(["2026-11-05T09:00:00Z", "2026-11-05T15:00:00Z", "2026-11-06T09:00:00Z", "2026-11-06T15:00:00Z"]))
     expect(future.first).to(include("booked" => 2, "capacity" => 2))
     expect(future[1]).to(include("booked" => 0, "pending" => 0, "appointments" => []))
+  end
+
+  it "gives every session its length in minutes, from the booking when there is one and from the service otherwise" do
+    form = booking_form
+    book(form, Time.utc(2026, 11, 2, 9))
+    agenda
+    booked = json["sessions"].find { |session| session["starts_at"] == "2026-11-02T09:00:00Z" }
+    projected = json["sessions"].find { |session| session["starts_at"] == "2026-11-05T09:00:00Z" }
+    expect([booked["duration"], projected["duration"]]).to(eq([60, 60]))
   end
 
   it "does not project into the past or onto closed days" do
