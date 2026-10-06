@@ -1,11 +1,12 @@
 import { Alert as MantineAlert, Button, Switch } from '@mantine/core';
 import { IconShieldCheck } from '@tabler/icons-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BrandMark, Card } from '@internal/ui';
 import { useGetOauthAuthorization } from '@internal/core/actions/get-oauth-authorization/get-oauth-authorization.hook';
 import { useDecideOauthAuthorization } from '@internal/core/actions/decide-oauth-authorization/decide-oauth-authorization.hook';
 import { rememberAuthorization } from '../../modules/oauth/return-to';
-import { FULL_SCOPE, SCOPE_LABELS } from '../../modules/oauth/scopes';
+import { FULL_SCOPE, scopeHint, scopeLabel } from '../../modules/oauth/scopes';
 
 export const ssr = false;
 
@@ -48,6 +49,7 @@ function safeRedirect(url: string) {
 }
 
 export default function AuthorizeApp() {
+  const { t } = useTranslation('oauth');
   const [search, setSearch] = useState('');
   const [enabled, setEnabled] = useState<Record<string, boolean>>({});
 
@@ -99,9 +101,9 @@ export default function AuthorizeApp() {
           <div className="h-32 animate-pulse rounded-md bg-muted" />
         ) : preview.error ? (
           <div role="alert">
-            <h1 className="text-lg font-semibold">We cannot connect this app</h1>
+            <h1 className="text-lg font-semibold">{t('unavailable_title')}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              The request is not valid. Go back to the app and try again.
+              {t('unavailable_body')}
             </p>
           </div>
         ) : preview.data ? (
@@ -110,14 +112,14 @@ export default function AuthorizeApp() {
               <IconShieldCheck size={20} stroke={1.8} />
             </div>
             <h1 className="text-lg font-semibold">
-              <span className="break-words">{preview.data.client.name}</span> wants to access your Kurz account
+              <span className="break-words">{preview.data.client.name}</span> {t('wants_access')}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Unverified app. After you allow, it returns to{' '}
+              {t('unverified')}{' '}
               <strong className="text-foreground">{preview.data.client.redirect_host}</strong>.
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Signed in as <strong className="text-foreground">{preview.data.email}</strong>
+              {t('signed_in_as')} <strong className="text-foreground">{preview.data.email}</strong>
             </p>
 
             <ul className="mt-5 space-y-3">
@@ -134,41 +136,37 @@ export default function AuthorizeApp() {
                       const checked = event.currentTarget.checked;
                       setEnabled(current => ({ ...current, [scope]: checked }));
                     }}
-                    label={SCOPE_LABELS[scope]?.label ?? scope}
-                    description={SCOPE_LABELS[scope]?.hint}
+                    label={scopeLabel(scope, t)}
+                    description={scopeHint(scope, t)}
                   />
                 </li>
               ))}
             </ul>
 
             {fullAccess && (
-              <MantineAlert mt="md" color="red" variant="light" title="Full access is powerful">
-                This app will be able to publish, edit and permanently delete your links, bio pages, forms and responses,
-                and to read what people typed in your forms. Text typed by respondents is untrusted and could try to
-                steer the AI. Only allow this for an app and a conversation you trust.
+              <MantineAlert mt="md" color="red" variant="light" title={t('full_title')}>
+                {t('full_body')}
               </MantineAlert>
             )}
 
             {!fullAccess && (preview.data.scopes.some(scope => PERSONAL.includes(scope)) && preview.data.scopes.some(scope => PUBLISH.includes(scope))) && (
-              <MantineAlert mt="md" color="blue" variant="light" title="Reading personal data and publishing are exclusive">
-                Text typed by respondents is untrusted. To keep it from steering what gets published, an app can read
-                responses or publish, never both.
+              <MantineAlert mt="md" color="blue" variant="light" title={t('exclusive_title')}>
+                {t('exclusive_body')}
               </MantineAlert>
             )}
 
             {preview.data.scopes.includes('responses:read') && (
-              <MantineAlert mt="md" color="yellow" variant="light" title="Respondents' personal data">
-                Reading responses sends what people typed in your forms to the AI service behind this app.
-                Only turn this on if you are allowed to share that data. Text typed by respondents is untrusted.
+              <MantineAlert mt="md" color="yellow" variant="light" title={t('personal_title')}>
+                {t('personal_body')}
               </MantineAlert>
             )}
 
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="default" disabled={isPending} onClick={() => decide('deny')}>
-                Deny
+                {t('deny')}
               </Button>
               <Button color="brand" loading={isPending} disabled={granted.length === 0} onClick={() => decide('allow')}>
-                Allow
+                {t('allow')}
               </Button>
             </div>
           </>
