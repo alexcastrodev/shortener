@@ -41,7 +41,7 @@ RSpec.describe("managing a booking from its link", type: :request) do
   end
 
   def token_for(appointment, expires_at: now + 30.days)
-    AppointmentToken.issue(appointment: appointment, expires_at: expires_at)
+    AppointmentToken.issue(booking: appointment, expires_at: expires_at)
   end
 
   def json = JSON.parse(response.body)

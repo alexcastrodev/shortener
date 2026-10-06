@@ -3,9 +3,9 @@ class AppointmentToken < ApplicationRecord
 
   belongs_to :appointment
 
-  def self.issue(appointment:, expires_at:, purpose: "manage")
+  def self.issue(booking:, expires_at:, purpose: "manage")
     raw = SecureRandom.urlsafe_base64(32)
-    create!(appointment: appointment, purpose: purpose, digest: digest(raw), expires_at: expires_at, created_at: Time.current)
+    create!(appointment: booking, purpose: purpose, digest: digest(raw), expires_at: expires_at, created_at: Time.current)
     raw
   end
 

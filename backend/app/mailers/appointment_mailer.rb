@@ -7,7 +7,7 @@ class AppointmentMailer < ApplicationMailer
     zone = Appointments::Book.valid_zone(@first.client_time_zone) || "UTC"
     @sessions = sessions(zone)
     last = @appointments.map { |appointment| appointment.slot.starts_at }.max
-    @manage_url = "#{frontend_url}/m/#{AppointmentToken.issue(appointment: @first, expires_at: last + 7.days)}"
+    @manage_url = "#{frontend_url}/m/#{AppointmentToken.issue(booking: @first, expires_at: last + 7.days)}"
 
     with_recipient_locale(nil, @first.client_locale) do
       mail(
