@@ -66,6 +66,7 @@ class User < ApplicationRecord
   has_many :shortlinks, dependent: :destroy
   has_many :pages, dependent: :destroy
   has_many :forms, dependent: :destroy
+  has_one :calendar_feed, dependent: :delete
   has_many :page_templates, dependent: :destroy
   has_many :color_palettes, dependent: :destroy
   has_many :push_subscriptions, dependent: :delete_all

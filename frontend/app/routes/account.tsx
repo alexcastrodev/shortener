@@ -31,6 +31,7 @@ import { explainAuthError, type AuthError } from '../modules/auth/auth-errors';
 import { rememberScheduledDeletion } from '../modules/auth/deletion-notice';
 import { useLogout } from '../modules/auth/use-logout';
 import { NoticeSettings } from '../modules/notices/notice-settings';
+import { CalendarFeedCard } from '../modules/calendar-feed';
 import { LanguageCard } from '../i18n/language-switcher';
 import { useSubmitLock } from '../modules/auth/use-submit-lock';
 import {
@@ -461,6 +462,7 @@ export default function AccountPage() {
         <LanguageCard />
 
         {user.appointments_enabled && <NoticeSettings />}
+        {user.appointments_enabled && <CalendarFeedCard />}
 
         <ConnectedApps />
 

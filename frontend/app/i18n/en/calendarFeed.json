@@ -1,0 +1,15 @@
+{
+  "title": "Calendar feed",
+  "hint": "Subscribe to your confirmed bookings in Google Calendar, Apple Calendar or Outlook. Anyone with the address can read them, so keep it private.",
+  "enable": "Create address",
+  "replace": "Create a new address",
+  "replace_hint": "A new address stops the old one working. Revoke it if it was shared by mistake.",
+  "revoke": "Revoke",
+  "address": "Calendar address",
+  "once": "This address is shown only now. Copy it and add it to your calendar app as a subscription.",
+  "copy": "Copy",
+  "copied": "Copied",
+  "last_read": "Last read by a calendar app: {{when}}",
+  "never_read": "No calendar app has read it yet.",
+  "error": "Something went wrong, please try again."
+}

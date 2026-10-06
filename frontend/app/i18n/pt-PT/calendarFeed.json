@@ -1,0 +1,15 @@
+{
+  "title": "Feed do calendário",
+  "hint": "Subscreva as suas marcações confirmadas no Google Calendar, no Calendário da Apple ou no Outlook. Quem tiver o endereço pode lê-las, por isso mantenha-o privado.",
+  "enable": "Criar endereço",
+  "replace": "Criar um novo endereço",
+  "replace_hint": "Um novo endereço deixa o antigo de funcionar. Revogue-o se foi partilhado por engano.",
+  "revoke": "Revogar",
+  "address": "Endereço do calendário",
+  "once": "Este endereço só aparece agora. Copie-o e adicione-o à sua aplicação de calendário como subscrição.",
+  "copy": "Copiar",
+  "copied": "Copiado",
+  "last_read": "Última leitura por uma aplicação de calendário: {{when}}",
+  "never_read": "Nenhuma aplicação de calendário o leu ainda.",
+  "error": "Algo correu mal, tente novamente."
+}
