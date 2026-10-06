@@ -99,6 +99,9 @@ export default function AgendaPage() {
   const isXl = useMediaQuery('(min-width: 1536px)', false, {
     getInitialValueInEffect: false,
   });
+  const canDrag = useMediaQuery('(hover: hover) and (pointer: fine)', false, {
+    getInitialValueInEffect: false,
+  });
   const [chosenView, setView] = useState<View>('week');
   const view: View = isPhone ? 'day' : chosenView;
   const [anchor, setAnchor] = useState(() => todayIn(fallbackZone));
@@ -394,7 +397,7 @@ export default function AgendaPage() {
           .join(', ')}
         onClick={() => setSelected(isSelected ? null : id)}
         draggable={
-          isXl &&
+          canDrag &&
           clientsOf(session).length > 0 &&
           new Date(session.starts_at) > new Date()
         }
