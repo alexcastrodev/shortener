@@ -3,11 +3,12 @@ module Notifications
     include Callable
 
     BUDGET_SHARE = 0.8
+    SHARES = { "appointment_reminder" => 0.5 }.freeze
     LEASE = 10.minutes
     RETRY_IN = 5.minutes
     GIVE_UP_AFTER = 24.hours
     TRANSIENT = [Socket::ResolutionError, Net::OpenTimeout, Net::ReadTimeout, Errno::ECONNREFUSED, Errno::ECONNRESET, Net::SMTPServerBusy].freeze
-    TEMPLATES = { ["appointment_confirmed", "client"] => :confirmed, ["appointment_created", "owner"] => :new_booking, ["appointment_cancelled", "client"] => :cancelled }.freeze
+    TEMPLATES = { ["appointment_confirmed", "client"] => :confirmed, ["appointment_created", "owner"] => :new_booking, ["appointment_cancelled", "client"] => :cancelled, ["appointment_reminder", "client"] => :reminder }.freeze
 
     def initialize(id:)
       @id = id
@@ -20,7 +21,9 @@ module Notifications
       template = TEMPLATES[[notification.kind, notification.recipient_kind]]
       return finish(notification, "failed", "unsupported") unless template && notification.appointment
 
-      budget = MailBudget.reserve(new_address: false, share: BUDGET_SHARE)
+      return finish(notification, "failed", "not_confirmed") if notification.kind == "appointment_reminder" && !Appointment.exists?(group_key: notification.event_key, status: "confirmed")
+
+      budget = MailBudget.reserve(new_address: false, share: SHARES.fetch(notification.kind, BUDGET_SHARE))
       return retry_later(notification, "budget:#{budget.reason}") unless budget.ok?
 
       AppointmentMailer.with(notification: notification).public_send(template).deliver_now
