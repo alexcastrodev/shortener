@@ -34,6 +34,7 @@ import {
   HOUR_PX,
   NO_CATEGORY,
   addMonths,
+  canReceive,
   cascadeSpan,
   categoryColors,
   categoryOf,
@@ -237,38 +238,38 @@ export default function AgendaPage() {
     (waitingOnly ? 1 : 0) + hiddenForms.size + hiddenCategories.size;
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: getAgendaKey });
-  const [dragged, setDragged] = useState<AgendaAppointment | null>(null);
-  const draggedFrom = dragged
-    ? (scoped.find(session =>
-        session.appointments.some(item => item.id === dragged.id)
-      ) ?? null)
-    : null;
+  const [drag, setDrag] = useState<{
+    from: AgendaSession;
+    clients: AgendaAppointment[];
+  } | null>(null);
   const accepts = (session: AgendaSession) =>
-    draggedFrom !== null &&
-    session.form_id === draggedFrom.form_id &&
-    session.service_id === draggedFrom.service_id &&
-    session.starts_at !== draggedFrom.starts_at &&
-    new Date(session.starts_at) > new Date() &&
-    (session.capacity === null || session.booked < session.capacity);
+    drag !== null && canReceive(drag.from, drag.clients.length, session);
+  const clientsOf = (session: AgendaSession) =>
+    session.appointments.filter(item => item.status !== 'unverified');
   const drop = async (session: AgendaSession) => {
-    if (!dragged) return;
-    setDragged(null);
-    try {
-      await act({
-        id: dragged.id,
-        action: 'reschedule',
-        data: {
-          date: session.date,
-          time: clock(minutesOfDay(session.starts_at, zone)),
-        },
-      });
-      notifications.show({ message: t('done_reschedule'), color: 'teal' });
-    } catch (error) {
-      notifications.show({
-        message: agendaErrorText(t, error),
-        color: 'red',
-      });
+    if (!drag) return;
+    const { clients } = drag;
+    setDrag(null);
+    let failure: unknown = null;
+    for (const client of clients) {
+      try {
+        await act({
+          id: client.id,
+          action: 'reschedule',
+          data: {
+            date: session.date,
+            time: clock(minutesOfDay(session.starts_at, zone)),
+          },
+        });
+      } catch (error) {
+        failure ??= error;
+      }
     }
+    notifications.show(
+      failure
+        ? { message: agendaErrorText(t, failure), color: 'red' }
+        : { message: t('done_reschedule'), color: 'teal' }
+    );
     refresh();
   };
   const approveAll = async () => {
@@ -392,6 +393,17 @@ export default function AgendaPage() {
           .filter(Boolean)
           .join(', ')}
         onClick={() => setSelected(isSelected ? null : id)}
+        draggable={
+          isXl &&
+          clientsOf(session).length > 0 &&
+          new Date(session.starts_at) > new Date()
+        }
+        onDragStart={event => {
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', id);
+          setDrag({ from: session, clients: clientsOf(session) });
+        }}
+        onDragEnd={() => setDrag(null)}
         onDragOver={event => {
           if (accepts(session)) event.preventDefault();
         }}
@@ -441,7 +453,13 @@ export default function AgendaPage() {
       onClose={() => setSelected(null)}
       onChanged={refresh}
       onDialog={setDialogOpen}
-      onDragAppointment={setDragged}
+      onDragAppointment={appointment =>
+        setDrag(
+          appointment && lastChosen.current
+            ? { from: lastChosen.current, clients: [appointment] }
+            : null
+        )
+      }
     />
   );
 
