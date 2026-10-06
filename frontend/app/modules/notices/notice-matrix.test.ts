@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { NoticePreference } from '@internal/core/actions/get-notification-preferences/get-notification-preferences.types';
-import { SHOWN_CHANNELS, cell, change, eventsOf } from './notice-matrix.ts';
+import { cell, change, eventsOf, shownChannels } from './notice-matrix.ts';
 
 const preferences: NoticePreference[] = [
   {
@@ -63,6 +63,7 @@ test('a change sends one cell', () => {
   });
 });
 
-test('only the bell and the email are shown until push can be turned on per device', () => {
-  assert.deepEqual(SHOWN_CHANNELS, ['in_app', 'email']);
+test('push is a column only when the server can send it', () => {
+  assert.deepEqual(shownChannels(false), ['in_app', 'email']);
+  assert.deepEqual(shownChannels(true), ['in_app', 'email', 'push']);
 });

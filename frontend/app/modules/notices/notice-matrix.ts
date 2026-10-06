@@ -3,7 +3,8 @@ import type {
   NoticePreference,
 } from '@internal/core/actions/get-notification-preferences/get-notification-preferences.types';
 
-export const SHOWN_CHANNELS: NoticeChannel[] = ['in_app', 'email'];
+export const shownChannels = (pushAvailable: boolean): NoticeChannel[] =>
+  pushAvailable ? ['in_app', 'email', 'push'] : ['in_app', 'email'];
 
 export function eventsOf(preferences: NoticePreference[]) {
   return [...new Set(preferences.map(item => item.kind))];

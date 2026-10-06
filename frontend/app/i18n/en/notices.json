@@ -12,5 +12,16 @@
   "event_unknown": "Other",
   "not_available": "Not available",
   "footnote": "A dash means that notice is not sent that way. Your clients always receive their own emails.",
-  "error": "Could not save. Try again."
+  "error": "Could not save. Try again.",
+  "channel_push": "On this device",
+  "device_title": "Notices on this device",
+  "device_on": "Turned on for this device.",
+  "device_off": "Turned off for this device.",
+  "device_enable": "Turn on",
+  "device_disable": "Turn off",
+  "device_server_off": "Device notices are not available yet.",
+  "device_unsupported": "This browser cannot show notices when Kurz is closed.",
+  "device_ios": "On iPhone and iPad, add Kurz to your Home Screen first, then open it from there and turn this on.",
+  "device_denied": "Notices are blocked for this site. Allow them in the browser settings, then try again.",
+  "device_error": "Could not change this device. Try again."
 }
