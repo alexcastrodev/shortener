@@ -1,0 +1,16 @@
+{
+  "title": "Avisos sobre marcações",
+  "hint": "Escolha como quer ser avisado de cada acontecimento.",
+  "event": "Acontecimento",
+  "channel_in_app": "No sino",
+  "channel_email": "E-mail",
+  "event_appointment_created": "Uma marcação nova",
+  "event_appointment_requested": "Uma marcação que precisa da sua aprovação",
+  "event_appointment_cancelled": "Uma marcação cancelada pelo cliente",
+  "event_appointment_expired": "Um pedido que expirou",
+  "event_appointment_auto_confirmed": "Um pedido confirmado automaticamente",
+  "event_unknown": "Outro",
+  "not_available": "Indisponível",
+  "footnote": "Um traço significa que esse aviso não é enviado dessa forma. Os seus clientes recebem sempre os próprios e-mails.",
+  "error": "Não foi possível guardar. Tente de novo."
+}

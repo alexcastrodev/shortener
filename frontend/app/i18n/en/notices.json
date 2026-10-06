@@ -1,0 +1,16 @@
+{
+  "title": "Notices about bookings",
+  "hint": "Choose how you want to be told about each event.",
+  "event": "Event",
+  "channel_in_app": "In the bell",
+  "channel_email": "Email",
+  "event_appointment_created": "A new booking",
+  "event_appointment_requested": "A booking that needs your approval",
+  "event_appointment_cancelled": "A booking cancelled by the client",
+  "event_appointment_expired": "A request that expired",
+  "event_appointment_auto_confirmed": "A request confirmed automatically",
+  "event_unknown": "Other",
+  "not_available": "Not available",
+  "footnote": "A dash means that notice is not sent that way. Your clients always receive their own emails.",
+  "error": "Could not save. Try again."
+}
