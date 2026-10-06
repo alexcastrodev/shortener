@@ -51,9 +51,17 @@ pt-PT:
       title: "Há uma marcação à espera da sua aprovação"
       intro: "%{name} pediu para marcar %{service}:"
       email: "E-mail: %{email}"
+      decide: "Aprovar ou recusar: %{url}"
+      decide_link: "Aprovar ou recusar"
       deadline: "Sem resposta até %{deadline}, o pedido é recusado e o horário é libertado."
       see: "Ver nas suas respostas: %{url}"
       see_link: "Ver nas suas respostas"
+    declined:
+      subject: "Não confirmada: %{service}"
+      title: "O seu pedido de marcação foi recusado"
+      intro: "%{service} não pôde ser confirmado para:"
+      message: "Mensagem de quem organiza: %{message}"
+      reply: "Tem dúvidas? Responda a este e-mail para falar com quem organiza."
     reminder:
       subject: "Lembrete: %{service}, %{time}"
       title: "A sua marcação aproxima-se"

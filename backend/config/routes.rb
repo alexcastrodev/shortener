@@ -118,6 +118,8 @@ Rails.application.routes.draw do
       get "forms/:public_id/slots", to: "form_slots#index", as: :form_slots, format: false
       get "appointments/:token", to: "appointments#show", as: :appointment, format: false
       post "appointments/:token/cancel", to: "appointments#cancel", as: :appointment_cancel, format: false
+      get "appointment_decisions/:token", to: "appointment_decisions#show", as: :appointment_decision, format: false
+      post "appointment_decisions/:token", to: "appointment_decisions#create", as: :appointment_decision_create, format: false
       post "forms/:public_id/responses", to: "form_responses#create", as: :form_responses, format: false
       post "forms/:public_id/events", to: "form_events#create", as: :form_events, format: false
       post "forms/:public_id/fields/:field_id/uploads", to: "form_uploads#create", as: :form_uploads, format: false
