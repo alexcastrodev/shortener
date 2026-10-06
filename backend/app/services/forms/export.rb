@@ -54,9 +54,14 @@ module Forms
       when "multiple_choice" then Array(raw).map { |id| label(field, id) }.join(", ")
       when "yes_no" then raw ? "Yes" : "No"
       when "image" then "Image"
+      when "booking" then sessions(raw)
       when "number", "rating" then raw.is_a?(Numeric) ? raw : raw.to_s
       else raw.to_s
       end
+    end
+
+    def sessions(raw)
+      Array(raw.is_a?(Hash) ? raw["sessions"] : nil).map { |session| "#{session["date"]} #{session["time"]}" }.join(", ")
     end
 
     def label(field, id)
