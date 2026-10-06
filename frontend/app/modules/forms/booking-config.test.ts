@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FormField } from '@internal/core/types/Form';
 import {
+  blankException,
   blankService,
   initialValues,
   toBookingInput,
@@ -123,4 +124,65 @@ test('a price is sent with an upper-case currency', () => {
   const [sent] = toBookingInput(values, true).services!;
   assert.equal(sent.price, 12.5);
   assert.equal(sent.currency, 'EUR');
+});
+
+test('days off load into the screen and come back without changes', () => {
+  const withExceptions: FormField = {
+    ...field,
+    exceptions: [
+      {
+        id: 'exc00001',
+        from: '2026-12-24',
+        to: '2026-12-26',
+        kind: 'closed',
+        note: 'Christmas',
+      },
+      {
+        id: 'exc00002',
+        from: '2026-12-31',
+        to: '2026-12-31',
+        kind: 'special',
+        times: ['14:00', '10:00'],
+        service_ids: ['svc00001'],
+      },
+    ],
+  };
+  const values = initialValues(withExceptions);
+  assert.equal(values.exceptions[1].to, '');
+  const sent = toBookingInput(values, false).exceptions;
+  assert.deepEqual(sent, [
+    {
+      id: 'exc00001',
+      from: '2026-12-24',
+      to: '2026-12-26',
+      kind: 'closed',
+      note: 'Christmas',
+    },
+    {
+      id: 'exc00002',
+      from: '2026-12-31',
+      kind: 'special',
+      times: ['10:00', '14:00'],
+      service_ids: ['svc00001'],
+    },
+  ]);
+});
+
+test('a new exception is closed by default and a closed day sends no times or services', () => {
+  const values = initialValues();
+  const item = blankException();
+  item.from = '2026-11-11';
+  values.exceptions = [item];
+  assert.deepEqual(toBookingInput(values, true).exceptions, [
+    { from: '2026-11-11', kind: 'closed' },
+  ]);
+});
+
+test('removing every exception sends an empty list so the server clears them', () => {
+  const values = initialValues({
+    ...field,
+    exceptions: [{ id: 'exc00001', from: '2026-12-24', kind: 'closed' }],
+  });
+  values.exceptions = [];
+  assert.deepEqual(toBookingInput(values, false).exceptions, []);
 });

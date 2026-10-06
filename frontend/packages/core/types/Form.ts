@@ -46,6 +46,18 @@ export type BookingRules = {
   max_per_day?: number | null;
 };
 
+export type BookingException = {
+  id: string;
+  from: string;
+  to?: string | null;
+  kind: 'closed' | 'special';
+  times?: string[];
+  service_ids?: string[];
+  note?: string | null;
+};
+
+export type BookingExceptionInput = Omit<BookingException, 'id'> & { id?: string };
+
 export type BookingServiceInput = Omit<BookingService, 'id'> & { id?: string };
 
 export type FormField = {
@@ -61,6 +73,7 @@ export type FormField = {
   max?: number;
   services?: BookingService[];
   rules?: BookingRules;
+  exceptions?: BookingException[];
   time_zone?: string;
 };
 
@@ -103,6 +116,7 @@ export type FormFieldInput = {
   max?: number | null;
   services?: BookingServiceInput[];
   rules?: Partial<BookingRules>;
+  exceptions?: BookingExceptionInput[];
 };
 
 export type PublicForm = Pick<

@@ -16,6 +16,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
 import type { FormField, FormFieldInput } from '@internal/core/types/Form';
+import { ExceptionsSection } from './exceptions-section';
 import { TimeGeneratorPanel } from './time-generator-panel';
 import {
   DAYS,
@@ -46,6 +47,37 @@ export function BookingEditor({
       z.object({
         label: z.string().trim().min(1).max(300),
         help: z.string().max(500),
+        exceptions: z.array(
+          z
+            .object({
+              kind: z.enum(['closed', 'special']),
+              from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('err_exc_from')),
+              to: z.string(),
+              times: z.array(z.object({ value: z.string() })),
+            })
+            .check(ctx => {
+              const { kind, from, to, times } = ctx.value;
+              if (to && from && to < from) {
+                ctx.issues.push({
+                  code: 'custom',
+                  message: t('err_exc_range'),
+                  path: ['to'],
+                  input: to,
+                });
+              }
+              if (
+                kind === 'special' &&
+                !times.some(time => TIME.test(time.value))
+              ) {
+                ctx.issues.push({
+                  code: 'custom',
+                  message: t('err_exc_times'),
+                  path: ['times'],
+                  input: times,
+                });
+              }
+            })
+        ),
         services: z.array(
           z
             .object({
@@ -306,6 +338,8 @@ export function BookingEditor({
             </Button>
           </div>
         </Stack>
+
+        <ExceptionsSection form={form} />
 
         <Stack gap="sm">
           <p className="text-sm font-medium">{t('rules_title')}</p>
