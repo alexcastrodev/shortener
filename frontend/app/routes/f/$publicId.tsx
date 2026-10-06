@@ -4,6 +4,7 @@ import i18n from '../../i18n';
 import { data, isRouteErrorResponse } from 'react-router';
 import { getPublicForm } from '@internal/core/actions/get-public-form/get-public-form.service';
 import { submitFormResponse } from '@internal/core/actions/submit-form-response/submit-form-response.service';
+import { joinWaitlist } from '@internal/core/actions/waitlist/waitlist.service';
 import { getFormSlots } from '@internal/core/actions/get-form-slots/get-form-slots.service';
 import { uploadFormImage } from '@internal/core/actions/upload-form-image/upload-form-image.service';
 import { trackFormEvent } from '@internal/core/actions/track-form-event/track-form-event.service';
@@ -108,6 +109,19 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
       onSubmit={onSubmit}
       onUploadImage={(fieldId, file) => uploadFormImage(publicId, fieldId, file)}
       loadSlots={(service, from, to) => getFormSlots(publicId, service, from, to)}
+      joinWaitlist={async join => {
+        try {
+          await joinWaitlist(publicId, {
+            ...join,
+            turnstile_token: token,
+            website,
+            client_locale: i18n.language,
+            client_time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          });
+        } finally {
+          turnstile.current?.reset();
+        }
+      }}
       onStart={() => {
         if (started.current) return;
         started.current = true;

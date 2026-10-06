@@ -29,5 +29,8 @@
   "export_too_large": "Demasiadas marcações para exportar de uma vez. Reduza as datas.",
   "export_failed": "Não foi possível exportar. Tente de novo.",
   "reason": "Motivo: {{reason}}",
-  "status_unverified": "A aguardar confirmação do e-mail"
+  "status_unverified": "A aguardar confirmação do e-mail",
+  "waitlist_title": "Lista de espera",
+  "waitlist_waiting": "À espera",
+  "waitlist_offered": "Lugar oferecido"
 }

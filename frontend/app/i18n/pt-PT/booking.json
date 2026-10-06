@@ -155,5 +155,8 @@
   "monthly_hint": "O cliente escolhe o mês, os dias da semana e a hora, e todos os dias correspondentes ficam marcados de uma vez. Folgas são saltadas; se outro dia estiver ocupado, nada fica marcado.",
   "monthly_price": "Preço mensal (só informativo, não há cobrança)",
   "monthly_price_hint": "Aparece ao lado da opção. O Kurz não cobra pagamentos.",
-  "monthly_price_needs_currency": "Preencha a moeda acima para mostrar um preço mensal."
+  "monthly_price_needs_currency": "Preencha a moeda acima para mostrar um preço mensal.",
+  "waitlist": "Lista de espera para horários cheios",
+  "waitlist_hint": "Os clientes podem entrar na fila de um horário cheio. Quando abre um lugar fica guardado para o primeiro da fila. Exige um formulário em que só nome, e-mail e marcação são obrigatórios.",
+  "waitlist_confirm": "Tempo para confirmar um lugar"
 }

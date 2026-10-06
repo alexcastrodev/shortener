@@ -1,0 +1,19 @@
+{
+  "title": "Lista de espera",
+  "service": "Serviço",
+  "when": "Quando",
+  "waiting": "Está na fila. Se abrir um lugar avisamos por e-mail e terá um tempo limitado para confirmar.",
+  "offered": "Há um lugar guardado para si até {{until}}. Confirme antes disso.",
+  "confirm": "Confirmar a minha marcação",
+  "working": "A processar…",
+  "leave": "Sair da lista de espera",
+  "claimed": "A sua marcação está confirmada. Enviámos-lhe os detalhes por e-mail.",
+  "unavailable": "Este horário já não está disponível, por isso o lugar passou para a pessoa seguinte.",
+  "expired": "O tempo para confirmar acabou e o lugar passou para a pessoa seguinte.",
+  "left": "Saiu da lista de espera.",
+  "failed": "Algo correu mal, tente novamente.",
+  "not_found_title": "Ligação não encontrada",
+  "not_found_body": "Esta ligação não existe ou já expirou.",
+  "error_title": "Algo correu mal",
+  "error_body": "Tente novamente dentro de instantes."
+}

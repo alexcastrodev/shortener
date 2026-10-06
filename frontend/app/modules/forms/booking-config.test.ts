@@ -79,6 +79,8 @@ test('saving keeps service ids, orders days and times, and sends the rules', () 
     approval_within_minutes: null,
     reminder_minutes: [1440],
     verify_email: false,
+    waitlist: false,
+    waitlist_confirm_minutes: null,
     max_per_day: 8,
   });
 });
@@ -98,6 +100,8 @@ test('creating sends the type; automatic approval sends no deadline', () => {
     approval_within_minutes: null,
     reminder_minutes: [1440],
     verify_email: false,
+    waitlist: false,
+    waitlist_confirm_minutes: null,
   });
 });
 
@@ -412,4 +416,14 @@ test('the monthly offer is sent with its informative price only when the service
   });
   assert.equal(loaded.services[0].monthly, true);
   assert.equal(loaded.services[0].monthlyPrice, 80);
+});
+
+test('the waiting list is sent with its confirmation time, or cleared', () => {
+  const on = { ...initialValues(field), waitlist: true, waitlist_confirm_minutes: 90 };
+  assert.equal(toBookingInput(on, false).rules?.waitlist, true);
+  assert.equal(toBookingInput(on, false).rules?.waitlist_confirm_minutes, 90);
+  const off = { ...on, waitlist: false };
+  assert.equal(toBookingInput(off, false).rules?.waitlist, false);
+  assert.equal(toBookingInput(off, false).rules?.waitlist_confirm_minutes, null);
+  assert.equal(initialValues(field).waitlist_confirm_minutes, 120);
 });

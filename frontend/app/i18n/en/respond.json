@@ -72,5 +72,15 @@
   "monthly_day_fri": "Fri",
   "monthly_day_sat": "Sat",
   "monthly_day_sun": "Sun",
-  "receipt_skipped": "Skipped, not available: {{dates}}"
+  "receipt_skipped": "Skipped, not available: {{dates}}",
+  "waitlist_title": "Is your time full?",
+  "waitlist_hint": "Join the waiting list. If a place opens we email you, and you have a limited time to confirm.",
+  "waitlist_name": "Your name",
+  "waitlist_email": "Your email",
+  "waitlist_join": "Join the waiting list",
+  "waitlist_joined": "You are on the waiting list for {{when}}. We sent you an email.",
+  "waitlist_not_full": "This time has room now: pick it above.",
+  "waitlist_list_full": "The waiting list for this time is full.",
+  "waitlist_invalid": "Check your name and email.",
+  "waitlist_failed": "We could not add you. Please try again."
 }

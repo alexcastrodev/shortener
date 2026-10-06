@@ -55,6 +55,7 @@ import {
 import { FIELD_ICONS, isSection } from '../../modules/forms/field-types';
 import { formErrorMessage } from '../../modules/forms/form-errors';
 import { AppointmentsTab } from './components/appointments-tab';
+import { WaitlistList } from './components/waitlist-list';
 import type { Route } from './+types/responses';
 
 export const ssr = false;
@@ -377,7 +378,14 @@ export default function FormResponsesPage() {
       </div>
 
       {tab === 'appointments' && hasBooking && form && (
-        <AppointmentsTab formId={form.id} title={form.title} timeZone={bookingZone} />
+        <>
+          <WaitlistList
+            formId={form.id}
+            enabled={form.fields.some(field => field.type === 'booking' && field.rules?.waitlist === true)}
+            timeZone={bookingZone}
+          />
+          <AppointmentsTab formId={form.id} title={form.title} timeZone={bookingZone} />
+        </>
       )}
 
       {tab === 'summary' &&
