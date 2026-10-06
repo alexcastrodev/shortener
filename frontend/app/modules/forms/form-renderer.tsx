@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Form } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
 import { FieldInput, focusFirstInput, isBlank, type Answer, type UploadImage } from './field-inputs';
+import type { LoadSlots } from './booking-input';
 import { isSection, sectionOf } from './field-types';
 import { PagedForm } from './paged-form';
 
@@ -21,6 +22,7 @@ export type Props = {
   mode: 'preview' | 'live';
   onSubmit?: (answers: Record<string, Answer>) => Promise<void> | void;
   onUploadImage?: UploadImage;
+  loadSlots?: LoadSlots;
   onStart?: () => void;
   lastStepSlot?: ReactNode;
   footer?: ReactNode;
@@ -41,6 +43,7 @@ function SequentialForm({
   mode,
   onSubmit,
   onUploadImage,
+  loadSlots,
   onStart,
   lastStepSlot,
   footer,
@@ -101,7 +104,9 @@ function SequentialForm({
         if (invalid >= 0) setStep(invalid);
         setError(
           invalid >= 0
-            ? t('check_answer')
+            ? fieldErrors![questions[invalid].id][0] === 'unavailable'
+              ? t('booking_taken')
+              : t('check_answer')
             : (message ?? t('send_failed'))
         );
       } finally {
@@ -236,6 +241,8 @@ function SequentialForm({
         theme={theme}
         inputId={inputId}
         upload={mode === 'live' ? onUploadImage : undefined}
+        loadSlots={mode === 'live' ? loadSlots : undefined}
+        invalid={error ?? undefined}
       />
       {step === total - 1 && lastStepSlot}
       {error && (

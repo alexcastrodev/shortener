@@ -4,6 +4,7 @@ import i18n from '../../i18n';
 import { data, isRouteErrorResponse } from 'react-router';
 import { getPublicForm } from '@internal/core/actions/get-public-form/get-public-form.service';
 import { submitFormResponse } from '@internal/core/actions/submit-form-response/submit-form-response.service';
+import { getFormSlots } from '@internal/core/actions/get-form-slots/get-form-slots.service';
 import { uploadFormImage } from '@internal/core/actions/upload-form-image/upload-form-image.service';
 import { trackFormEvent } from '@internal/core/actions/track-form-event/track-form-event.service';
 import type { SubmitFormResponseError } from '@internal/core/actions/submit-form-response/submit-form-response.types';
@@ -88,6 +89,8 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
         turnstileToken: token,
         website,
         referer: document.referrer,
+        clientTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        clientLocale: i18n.language,
       });
     } catch (error) {
       throw failureFor(error as SubmitFormResponseError);
@@ -102,6 +105,7 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
       form={form}
       onSubmit={onSubmit}
       onUploadImage={(fieldId, file) => uploadFormImage(publicId, fieldId, file)}
+      loadSlots={(service, from, to) => getFormSlots(publicId, service, from, to)}
       onStart={() => {
         if (started.current) return;
         started.current = true;

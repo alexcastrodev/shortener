@@ -24,6 +24,7 @@ export function PagedForm({
   mode,
   onSubmit,
   onUploadImage,
+  loadSlots,
   onStart,
   lastStepSlot,
   footer,
@@ -92,7 +93,7 @@ export function PagedForm({
           ? form.fields.find(item => fieldErrors[item.id])
           : undefined;
         if (failing) {
-          setErrors({ [failing.id]: t('check_answer') });
+          setErrors({ [failing.id]: fieldErrors![failing.id][0] === 'unavailable' ? t('booking_taken') : t('check_answer') });
           setPage(Math.max(0, pages.findIndex(fields => fields.includes(failing))));
         }
         setFormError(
@@ -229,6 +230,8 @@ export function PagedForm({
                 theme={theme}
                 inputId={inputId}
                 upload={mode === 'live' ? onUploadImage : undefined}
+                loadSlots={mode === 'live' ? loadSlots : undefined}
+                invalid={errors[field.id]}
               />
               {errors[field.id] && (
                 <p role="alert" className={`mt-3 inline-block ${alertClass}`}>
