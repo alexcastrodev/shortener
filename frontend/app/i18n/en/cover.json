@@ -1,0 +1,16 @@
+{
+  "title": "Cover image",
+  "hint": "Shown at the top of the form, in every layout.",
+  "choose": "Choose image",
+  "replace": "Replace image",
+  "remove": "Remove",
+  "limits": "PNG, JPEG or WebP, up to 5 MB.",
+  "position": "Vertical position",
+  "intro": "Start with an intro screen",
+  "intro_hint": "Shows the cover, title, description and a start button before the questions.",
+  "start_label": "Start button text",
+  "start_label_hint": "Leave empty for the default text.",
+  "start_placeholder": "Start",
+  "preview_alt": "Current cover image",
+  "error": "Cover image"
+}

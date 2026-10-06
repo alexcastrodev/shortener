@@ -151,7 +151,7 @@ RSpec.describe("/api/me/forms", type: :request) do
       post_form(title: "Contact", description: "Say hi")
 
       expect(response).to(have_http_status(:created))
-      expect(form_json.keys).to(match_array(["id", "created_at", "updated_at", "public_id", "title", "description", "thank_you_message", "theme", "custom_colors", "layout", "published", "fields", "responses_count", "public_url", "shortlink_id", "published_version", "has_unpublished_changes", "short_url"]))
+      expect(form_json.keys).to(match_array(["id", "created_at", "updated_at", "public_id", "title", "description", "thank_you_message", "theme", "custom_colors", "layout", "published", "fields", "responses_count", "public_url", "shortlink_id", "published_version", "cover_position", "intro_enabled", "start_label", "cover_token", "has_unpublished_changes", "short_url"]))
       expect(form_json).to(include("title" => "Contact", "published" => false, "fields" => [], "responses_count" => 0))
       expect(form_json["public_id"]).to(match(/\A[A-Za-z0-9]{12}\z/))
     end

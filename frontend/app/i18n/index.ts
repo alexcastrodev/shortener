@@ -22,6 +22,7 @@ import booking from './en/booking.json';
 import agenda from './en/agenda.json';
 import notices from './en/notices.json';
 import appointments from './en/appointments.json';
+import cover from './en/cover.json';
 import decide from './en/decide.json';
 import menuPt from './pt-PT/menu.json';
 import homePt from './pt-PT/home.json';
@@ -44,11 +45,12 @@ import bookingPt from './pt-PT/booking.json';
 import agendaPt from './pt-PT/agenda.json';
 import noticesPt from './pt-PT/notices.json';
 import appointmentsPt from './pt-PT/appointments.json';
+import coverPt from './pt-PT/cover.json';
 import decidePt from './pt-PT/decide.json';
 
 export const resources = {
-  en: { menu, home, dashboard, admin, links, auth, pages, forms, respond, settings, account, oauth, responses, templates, landing, notifications, manage, decide, booking, agenda, notices, appointments },
-  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt, settings: settingsPt, account: accountPt, oauth: oauthPt, responses: responsesPt, templates: templatesPt, landing: landingPt, notifications: notificationsPt, manage: managePt, decide: decidePt, booking: bookingPt, agenda: agendaPt, notices: noticesPt, appointments: appointmentsPt },
+  en: { menu, home, dashboard, admin, links, auth, pages, forms, respond, settings, account, oauth, responses, templates, landing, notifications, manage, decide, booking, agenda, notices, appointments, cover },
+  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt, settings: settingsPt, account: accountPt, oauth: oauthPt, responses: responsesPt, templates: templatesPt, landing: landingPt, notifications: notificationsPt, manage: managePt, decide: decidePt, booking: bookingPt, agenda: agendaPt, notices: noticesPt, appointments: appointmentsPt, cover: coverPt },
 } as const;
 
 i18n.use(initReactI18next).init({

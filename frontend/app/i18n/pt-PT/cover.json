@@ -1,0 +1,16 @@
+{
+  "title": "Imagem de capa",
+  "hint": "Aparece no topo do formulário, em qualquer layout.",
+  "choose": "Escolher imagem",
+  "replace": "Trocar imagem",
+  "remove": "Remover",
+  "limits": "PNG, JPEG ou WebP, até 5 MB.",
+  "position": "Posição vertical",
+  "intro": "Começar com uma introdução",
+  "intro_hint": "Mostra a capa, o título, a descrição e um botão de começar antes das perguntas.",
+  "start_label": "Texto do botão de começar",
+  "start_label_hint": "Deixe vazio para usar o texto padrão.",
+  "start_placeholder": "Começar",
+  "preview_alt": "Imagem de capa atual",
+  "error": "Imagem de capa"
+}

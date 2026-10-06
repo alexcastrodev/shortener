@@ -4,7 +4,7 @@ class PublicFormSerializer < BaseSerializer
   FIELD_KEYS = ["id", "type", "label", "help", "required", "choices", "max_choices", "scale", "min", "max"].freeze
   CHOICE_KEYS = ["id", "label"].freeze
 
-  attributes :title, :description, :thank_you_message, :theme, :custom_colors, :layout
+  attributes :title, :description, :thank_you_message, :theme, :custom_colors, :layout, :cover_token, :cover_position, :intro_enabled, :start_label
 
   attributes :published_version, if: proc { Forms::Snapshot.enabled? }
 

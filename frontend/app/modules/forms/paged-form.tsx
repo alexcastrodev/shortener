@@ -6,6 +6,7 @@ import { FieldInput, focusFirstInput, isBlank, type Answer } from './field-input
 import { isSection } from './field-types';
 import type { Props, SubmitFailure, SubmitFormReceipt } from './form-renderer';
 import { BookingReceipt } from './booking-receipt';
+import { FormCover } from './form-cover';
 
 const alertClass =
   'rounded-md bg-[#fee2e2] px-3 py-1.5 text-sm font-medium text-[#991b1b]';
@@ -22,6 +23,7 @@ function splitPages(fields: FormField[], layout: Props['form']['layout']) {
 
 export function PagedForm({
   form,
+  coverUrl,
   mode,
   onSubmit,
   onUploadImage,
@@ -43,6 +45,7 @@ export function PagedForm({
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [receipt, setReceipt] = useState<SubmitFormReceipt | null>(null);
+  const [introduced, setIntroduced] = useState(!form.intro_enabled);
   const started = useRef(false);
   const root = useRef<HTMLDivElement>(null);
   const current = Math.min(page, pages.length - 1);
@@ -58,6 +61,7 @@ export function PagedForm({
 
   useEffect(() => {
     if (!activeFieldId) return;
+    setIntroduced(true);
     const at = pages.findIndex(fields => fields.some(item => item.id === activeFieldId));
     if (at >= 0) setPage(at);
     requestAnimationFrame(() =>
@@ -148,6 +152,32 @@ export function PagedForm({
     );
   }
 
+  if (!introduced) {
+    return (
+      <div className={`${shell} justify-center`} style={theme.style}>
+        <FormCover url={coverUrl} position={form.cover_position} />
+        <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
+        {form.description && (
+          <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>{form.description}</p>
+        )}
+        <div className="mt-8">
+          <button
+            type="button"
+            autoFocus={mode === 'live'}
+            className={primary}
+            onClick={() => {
+              onStart?.();
+              setIntroduced(true);
+            }}
+          >
+            {form.start_label || t('start')}
+          </button>
+        </div>
+        {footer}
+      </div>
+    );
+  }
+
   let number = pages
     .slice(0, current)
     .flat()
@@ -172,6 +202,7 @@ export function PagedForm({
       )}
       {current === 0 && (
         <header className="mb-8">
+          {!form.intro_enabled && <FormCover url={coverUrl} position={form.cover_position} />}
           <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
           {form.description && (
             <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>{form.description}</p>

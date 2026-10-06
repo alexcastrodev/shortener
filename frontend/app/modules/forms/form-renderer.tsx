@@ -7,11 +7,12 @@ import type { LoadSlots } from './booking-input';
 import { isSection, sectionOf } from './field-types';
 import { PagedForm } from './paged-form';
 import { BookingReceipt } from './booking-receipt';
+import { FormCover } from './form-cover';
 import type { SubmitFormReceipt } from '@internal/core/actions/submit-form-response/submit-form-response.types';
 
 export type RenderableForm = Pick<
   Form,
-  'title' | 'description' | 'thank_you_message' | 'theme' | 'custom_colors' | 'layout' | 'fields'
+  'title' | 'description' | 'thank_you_message' | 'theme' | 'custom_colors' | 'layout' | 'fields' | 'cover_position' | 'intro_enabled' | 'start_label'
 >;
 
 export type { SubmitFormReceipt };
@@ -23,6 +24,7 @@ export type SubmitFailure = {
 
 export type Props = {
   form: RenderableForm;
+  coverUrl?: string | null;
   mode: 'preview' | 'live';
   onSubmit?: (answers: Record<string, Answer>) => Promise<SubmitFormReceipt | void> | SubmitFormReceipt | void;
   onUploadImage?: UploadImage;
@@ -44,6 +46,7 @@ export function FormRenderer(props: Props) {
 
 function SequentialForm({
   form,
+  coverUrl,
   mode,
   onSubmit,
   onUploadImage,
@@ -144,6 +147,7 @@ function SequentialForm({
   if (step === -1) {
     return (
       <div className={`${shell} justify-center`} style={theme.style}>
+        <FormCover url={coverUrl} position={form.cover_position} />
         <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
         {form.description && (
           <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>{form.description}</p>
@@ -158,7 +162,7 @@ function SequentialForm({
               setStep(0);
             }}
           >
-            {t('start')}
+            {form.start_label || t('start')}
           </button>
           <span className={`ml-4 hidden text-xs sm:inline ${theme.bio}`}>{t('press_enter')}</span>
           <span className={`ml-4 text-sm ${theme.bio}`}>

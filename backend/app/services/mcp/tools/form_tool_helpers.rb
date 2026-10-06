@@ -35,6 +35,9 @@ module Mcp
           theme: form.theme,
           custom_colors: form.custom_colors,
           layout: form.layout,
+          intro_enabled: form.intro_enabled,
+          start_label: form.start_label && Mcp::Content.clean(form.start_label, max: Form::START_LABEL_MAX),
+          has_cover: form.cover_token.present?,
           short_url: form.shortlink&.short_url,
           fields: form.fields.map { |field| field_json(field) },
         )

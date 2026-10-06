@@ -16,5 +16,5 @@ class FormUpload < ApplicationRecord
     end >= MAX_TOTAL_BYTES
   end
 
-  scope :orphaned, -> { where(response_id: nil, created_at: ...ORPHAN_AFTER.ago) }
+  scope :orphaned, -> { where(response_id: nil, created_at: ...ORPHAN_AFTER.ago).where.not(field_id: Form::COVER_FIELD) }
 end

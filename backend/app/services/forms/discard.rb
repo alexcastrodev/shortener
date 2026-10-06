@@ -12,8 +12,9 @@ module Forms
       raise NothingPublished if form.published_snapshot.blank?
 
       form.with_lock do
-        form.update!(form.published_snapshot.slice(*Snapshot::KEYS))
+        form.update!(Snapshot.stored(form).slice(*Snapshot::KEYS))
       end
+      Covers.prune(form)
       form
     end
 

@@ -10,5 +10,8 @@ class FormUpdateContract < ApplicationContract
       required(:accent).filled(:string)
     end
     optional(:layout).filled(:string)
+    optional(:cover_position).filled(:integer)
+    optional(:intro_enabled).filled(:bool)
+    optional(:start_label).maybe(:string)
   end
 end

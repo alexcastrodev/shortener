@@ -92,6 +92,10 @@ export type Form = {
   theme: PageTheme;
   custom_colors?: CustomColors | null;
   layout: FormLayout;
+  cover_token?: string | null;
+  cover_position?: number;
+  intro_enabled?: boolean;
+  start_label?: string | null;
   published: boolean;
   fields: FormField[];
   responses_count: number;
@@ -128,7 +132,7 @@ export type FormFieldInput = {
 
 export type PublicForm = Pick<
   Form,
-  'title' | 'description' | 'thank_you_message' | 'theme' | 'custom_colors' | 'layout' | 'fields'
+  'title' | 'description' | 'thank_you_message' | 'theme' | 'custom_colors' | 'layout' | 'fields' | 'cover_token' | 'cover_position' | 'intro_enabled' | 'start_label'
 >;
 
 export type FormResponseAnswer = {
