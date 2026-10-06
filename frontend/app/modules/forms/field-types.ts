@@ -2,6 +2,7 @@ import {
   IconAlignLeft,
   IconAt,
   IconCalendar,
+  IconCalendarEvent,
   IconCircleDot,
   IconHash,
   IconHeading,
@@ -57,5 +58,6 @@ export const FIELD_ICONS: Record<FormFieldType, Icon> = {
   rating: IconStar,
   date: IconCalendar,
   image: IconPhoto,
+  booking: IconCalendarEvent,
   section: IconHeading,
 };

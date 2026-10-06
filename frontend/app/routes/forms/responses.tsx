@@ -103,6 +103,7 @@ function formatAnswer(value: FormResponse['answers'][number]['value'], type?: st
   const t = i18n.getFixedT(null, 'responses');
   if (type === 'image') return t('answer_image');
   if (Array.isArray(value)) return value.join(', ');
+  if (typeof value === 'object') return value.sessions.map(session => `${session.date} ${session.time}`).join(', ');
   if (typeof value === 'boolean') return value ? t('answer_yes') : t('answer_no');
   return String(value);
 }
