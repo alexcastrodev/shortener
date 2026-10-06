@@ -72,11 +72,28 @@ class AppointmentMailer < ApplicationMailer
     @client_email = single_line(@first.client_email)
     @url = "#{frontend_url}/app/forms/#{@form.id}/responses"
     @deadline = @first.expires_at.in_time_zone(owner.time_zone).strftime("%Y-%m-%d %H:%M (#{owner.time_zone})")
+    last = @appointments.map { |appointment| appointment.slot.starts_at }.max
+    @decide_url = "#{frontend_url}/a/#{AppointmentToken.issue(booking: @first, expires_at: last + 7.days, purpose: "decide")}"
 
     with_recipient_locale(owner) do
       mail(
         to: owner.email,
         subject: I18n.t("appointment_mailer.new_request.subject", service: @service, name: @client_name.presence || I18n.t("appointment_mailer.new_booking.someone")),
+      )
+    end
+  end
+
+  def declined
+    load_group
+    zone = Appointments::Book.valid_zone(@first.client_time_zone) || "UTC"
+    @sessions = sessions(zone)
+    @message = @first.decision_message.to_s.strip.presence
+
+    with_recipient_locale(nil, @first.client_locale) do
+      mail(
+        to: @first.client_email,
+        reply_to: @form.user.email,
+        subject: I18n.t("appointment_mailer.declined.subject", service: @service),
       )
     end
   end

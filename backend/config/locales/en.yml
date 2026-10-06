@@ -83,9 +83,17 @@ en:
       title: "A booking is waiting for your approval"
       intro: "%{name} asked to book %{service}:"
       email: "Email: %{email}"
+      decide: "Approve or decline: %{url}"
+      decide_link: "Approve or decline"
       deadline: "Without an answer by %{deadline} the request is declined and the time is released."
       see: "See it in your responses: %{url}"
       see_link: "See it in your responses"
+    declined:
+      subject: "Not confirmed: %{service}"
+      title: "Your booking request was declined"
+      intro: "%{service} could not be confirmed for:"
+      message: "Message from the organizer: %{message}"
+      reply: "Questions? Reply to this email to reach the organizer."
     reminder:
       subject: "Reminder: %{service}, %{time}"
       title: "Your booking is coming up"
