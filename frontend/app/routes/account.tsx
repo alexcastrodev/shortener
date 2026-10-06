@@ -10,6 +10,8 @@ import {
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatDate } from '../i18n/format';
 import { Link, useNavigate } from 'react-router';
 import { Card, PageContainer } from '@internal/ui';
 import {
@@ -42,6 +44,7 @@ export function meta() {
 }
 
 function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
+  const { t } = useTranslation(['account', 'auth']);
   const queryClient = useQueryClient();
   const { setUser } = useUserState();
   const logout = useLogout();
@@ -59,9 +62,7 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
       newPassword.reset();
       notifications.show({
         color: 'green',
-        message: hasPassword
-          ? 'Password changed. Other sessions were signed out.'
-          : 'Password set. You can now log in with it.',
+        message: hasPassword ? t('pw_changed') : t('pw_set'),
       });
     },
     onError: error => {
@@ -83,12 +84,10 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
         </span>
         <div className="min-w-0">
           <h2 className="font-semibold text-foreground">
-            {hasPassword ? 'Password' : 'Set a password'}
+            {hasPassword ? t('pw_title_change') : t('pw_title_set')}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {hasPassword
-              ? 'Changing it signs you out everywhere else.'
-              : 'You sign in with emailed codes. Add a password to log in without waiting for an email.'}
+            {hasPassword ? t('pw_body_change') : t('pw_body_set')}
           </p>
         </div>
       </div>
@@ -96,8 +95,7 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
       {needsSignIn ? (
         <div className="mt-5 rounded-lg border border-border bg-muted/40 p-4 text-sm">
           <p className="text-foreground">
-            For your security, sign in again with an email code, then set your
-            password here.
+            {t('reauth_password')}
           </p>
           <Button
             className="mt-3"
@@ -106,7 +104,7 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
             leftSection={<IconLogout size={15} />}
             onClick={logout}
           >
-            Sign in again
+            {t('sign_in_again')}
           </Button>
         </div>
       ) : (
@@ -128,7 +126,7 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
         >
           {hasPassword && (
             <PasswordInput
-              label="Current password"
+              label={t('current_password')}
               autoComplete="current-password"
               value={current}
               onChange={event => setCurrent(event.currentTarget.value)}
@@ -136,7 +134,7 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
             />
           )}
           <NewPasswordFields
-            label={hasPassword ? 'New password' : 'Password'}
+            label={hasPassword ? t('auth:new_password_label') : t('auth:password_label')}
             fields={newPassword.fields}
           />
           <Button
@@ -145,7 +143,7 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
             loading={update.isPending}
             disabled={hasPassword && !current}
           >
-            {hasPassword ? 'Change password' : 'Set password'}
+            {hasPassword ? t('change_password') : t('set_password')}
           </Button>
         </form>
       )}
@@ -154,6 +152,7 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
 }
 
 function DownloadData({ hasPassword }: { hasPassword: boolean }) {
+  const { t } = useTranslation(['account', 'auth']);
   const logout = useLogout();
   const [current, setCurrent] = useState('');
   const [busy, setBusy] = useState(false);
@@ -172,10 +171,10 @@ function DownloadData({ hasPassword }: { hasPassword: boolean }) {
     } catch (failure) {
       const status = (failure as { response?: { status?: number } })?.response?.status;
       if (status === 403) setNeedsSignIn(true);
-      else if (status === 422) notifyError('That password is not correct.', 'Data not downloaded');
-      else if (status === 413) notifyError('There is too much data for one file. Export your biggest forms to Excel first.', 'Too much data');
-      else if (status === 429) notifyError('Too many downloads. Please try again in an hour.', 'Slow down');
-      else notifyError('We could not prepare your data. Please try again.', 'Download failed');
+      else if (status === 422) notifyError(t('wrong_password'), t('dl_wrong_password_title'));
+      else if (status === 413) notifyError(t('dl_too_much'), t('dl_too_much_title'));
+      else if (status === 429) notifyError(t('dl_rate'), t('auth:err_rate_limited_title'));
+      else notifyError(t('dl_failed'), t('dl_failed_title'));
     } finally {
       setBusy(false);
     }
@@ -188,19 +187,18 @@ function DownloadData({ hasPassword }: { hasPassword: boolean }) {
           <IconDownload size={18} stroke={1.8} />
         </span>
         <div className="min-w-0">
-          <h2 className="font-semibold text-foreground">Download your data</h2>
+          <h2 className="font-semibold text-foreground">{t('dl_title')}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            A JSON file with your account, short links, bio pages, forms and their responses, connected apps and
-            saved palettes. It leaves out passwords, tokens and your visitors’ IP addresses.
+            {t('dl_body')}
           </p>
         </div>
       </div>
 
       {needsSignIn ? (
         <div className="mt-5 rounded-lg border border-border bg-muted/40 p-4 text-sm">
-          <p className="text-foreground">For your security, sign in again with an email code, then download your data here.</p>
+          <p className="text-foreground">{t('reauth_download')}</p>
           <Button className="mt-3" variant="default" size="sm" leftSection={<IconLogout size={15} />} onClick={logout}>
-            Sign in again
+            {t('sign_in_again')}
           </Button>
         </div>
       ) : (
@@ -213,14 +211,14 @@ function DownloadData({ hasPassword }: { hasPassword: boolean }) {
         >
           {hasPassword && (
             <PasswordInput
-              label="Password"
+              label={t('auth:password_label')}
               autoComplete="current-password"
               value={current}
               onChange={event => setCurrent(event.currentTarget.value)}
             />
           )}
           <Button type="submit" variant="default" loading={busy} disabled={hasPassword && !current} leftSection={<IconDownload size={16} />}>
-            Download my data
+            {t('dl_button')}
           </Button>
         </form>
       )}
@@ -229,6 +227,7 @@ function DownloadData({ hasPassword }: { hasPassword: boolean }) {
 }
 
 function DeleteAccount({ email, hasPassword }: { email: string; hasPassword: boolean }) {
+  const { t } = useTranslation(['account', 'auth']);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { clear } = useUserState();
@@ -254,7 +253,7 @@ function DeleteAccount({ email, hasPassword }: { email: string; hasPassword: boo
         return;
       }
       if (code === 'invalid_current_password') {
-        notifyError('That password is not correct.', 'Account not deleted');
+        notifyError(t('wrong_password'), t('del_failed_title'));
         return;
       }
       const [message, title] = explainAuthError(authError);
@@ -271,25 +270,24 @@ function DeleteAccount({ email, hasPassword }: { email: string; hasPassword: boo
           <IconTrash size={18} stroke={1.8} />
         </span>
         <div className="min-w-0">
-          <h2 className="font-semibold text-foreground">Delete account</h2>
+          <h2 className="font-semibold text-foreground">{t('del_title')}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your links, bio pages, forms, responses and uploaded files go offline now and are
-            permanently deleted after 30 days. Signing in again before then cancels the deletion.
+            {t('del_body')}
           </p>
         </div>
       </div>
 
       {!open && (
         <Button className="mt-5" variant="default" color="red" c="red.5" onClick={() => setOpen(true)}>
-          Delete my account
+          {t('del_open')}
         </Button>
       )}
 
       {open && needsSignIn && (
         <div className="mt-5 rounded-lg border border-border bg-muted/40 p-4 text-sm">
-          <p className="text-foreground">For your security, sign in again with an email code, then delete your account here.</p>
+          <p className="text-foreground">{t('reauth_delete')}</p>
           <Button className="mt-3" variant="default" size="sm" leftSection={<IconLogout size={15} />} onClick={logout}>
-            Sign in again
+            {t('sign_in_again')}
           </Button>
         </div>
       )}
@@ -309,14 +307,14 @@ function DeleteAccount({ email, hasPassword }: { email: string; hasPassword: boo
           }}
         >
           <TextInput
-            label={`Type ${email} to confirm`}
+            label={t('type_to_confirm', { email })}
             autoComplete="off"
             value={confirm}
             onChange={event => setConfirm(event.currentTarget.value)}
           />
           {hasPassword && (
             <PasswordInput
-              label="Password"
+              label={t('auth:password_label')}
               autoComplete="current-password"
               value={current}
               onChange={event => setCurrent(event.currentTarget.value)}
@@ -324,10 +322,10 @@ function DeleteAccount({ email, hasPassword }: { email: string; hasPassword: boo
           )}
           <div className="flex gap-2">
             <Button type="submit" color="red" loading={remove.isPending} disabled={!matches || (hasPassword && !current)}>
-              Delete my account
+              {t('del_open')}
             </Button>
             <Button variant="default" onClick={() => setOpen(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
           </div>
         </form>
@@ -337,6 +335,7 @@ function DeleteAccount({ email, hasPassword }: { email: string; hasPassword: boo
 }
 
 function ConnectedApps() {
+  const { t } = useTranslation(['account', 'auth']);
   const queryClient = useQueryClient();
   const { data: grants } = useGetOauthGrants();
   const { mutate: revoke } = useRevokeOauthGrant({
@@ -346,37 +345,37 @@ function ConnectedApps() {
 
   const confirmRevoke = (id: number, name: string) =>
     modals.openConfirmModal({
-      title: 'Disconnect app?',
+      title: t('disconnect_title'),
       centered: true,
-      children: <p className="text-sm">{name} will lose access on its next request.</p>,
-      labels: { confirm: 'Disconnect', cancel: 'Keep it' },
+      children: <p className="text-sm">{t('disconnect_body', { name })}</p>,
+      labels: { confirm: t('disconnect'), cancel: t('keep_it') },
       confirmProps: { color: 'red' },
       onConfirm: () => revoke(id),
     });
 
   return (
     <Card className="p-5 sm:p-6">
-      <h2 className="font-semibold text-foreground">Connected apps</h2>
+      <h2 className="font-semibold text-foreground">{t('apps_title')}</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        AI apps you allowed to work with your account. Connector URL:{' '}
+        {t('apps_body')}{' '}
         <code className="break-all rounded bg-muted px-1.5 py-0.5 text-xs">{mcpUrl}</code>
       </p>
-      {grants?.length === 0 && <p className="mt-4 text-sm text-muted-foreground">No apps connected.</p>}
+      {grants?.length === 0 && <p className="mt-4 text-sm text-muted-foreground">{t('apps_none')}</p>}
       <ul className="mt-4 space-y-3">
         {grants?.map(grant => (
           <li key={grant.id} className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{grant.client_name}</p>
               <p className="text-xs text-muted-foreground">
-                {grant.redirect_host} · connected {new Date(grant.connected_at).toLocaleDateString('en-US')}
-                {grant.last_used_at && ` · last used ${new Date(grant.last_used_at).toLocaleDateString('en-US')}`}
+                {t('apps_connected', { host: grant.redirect_host, date: formatDate(grant.connected_at) })}
+                {grant.last_used_at && t('apps_last_used', { date: formatDate(grant.last_used_at) })}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {grant.scopes.map(scope => SCOPE_LABELS[scope]?.label ?? scope).join(' · ')}
               </p>
             </div>
             <Button variant="default" size="xs" className="shrink-0 self-start" onClick={() => confirmRevoke(grant.id, grant.client_name)}>
-              Disconnect
+              {t('disconnect')}
             </Button>
           </li>
         ))}
@@ -386,6 +385,7 @@ function ConnectedApps() {
 }
 
 export default function AccountPage() {
+  const { t } = useTranslation(['account', 'auth']);
   const { data, isLoading } = useGetLoggedUser();
   const logout = useLogout();
   const user = data?.user;
@@ -404,14 +404,14 @@ export default function AccountPage() {
         <div className="inline-flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
           <IconUserCircle size={21} stroke={1.8} />
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight">Account</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
       </div>
 
       <div className="max-w-2xl space-y-4">
         <Card className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground">
-              Signed in as
+              {t('signed_in_as')}
             </p>
             <p className="mt-1 truncate font-semibold text-foreground">
               {user.email}
@@ -419,13 +419,11 @@ export default function AccountPage() {
             <div className="mt-2 flex gap-1.5">
               {user.admin && (
                 <Badge variant="light" color="brand">
-                  Admin
+                  {t('admin_badge')}
                 </Badge>
               )}
               <Badge variant="light" color="gray">
-                {user.has_password
-                  ? 'Password + email code'
-                  : 'Email code only'}
+                {user.has_password ? t('badge_password') : t('badge_code_only')}
               </Badge>
             </div>
           </div>
@@ -435,16 +433,16 @@ export default function AccountPage() {
             onClick={logout}
             className="shrink-0"
           >
-            Log out
+            {t('log_out')}
           </Button>
         </Card>
 
         {user.admin && (
           <Card className="flex items-center justify-between gap-4 p-5 sm:p-6">
             <div className="min-w-0">
-              <p className="font-semibold text-foreground">Administration</p>
+              <p className="font-semibold text-foreground">{t('admin_title')}</p>
               <p className="text-sm text-muted-foreground">
-                Users, shortlinks, audit logs and moderation.
+                {t('admin_body')}
               </p>
             </div>
             <Button
@@ -454,7 +452,7 @@ export default function AccountPage() {
               leftSection={<IconSettings size={16} />}
               className="shrink-0"
             >
-              Open admin
+              {t('open_admin')}
             </Button>
           </Card>
         )}
