@@ -36,5 +36,17 @@
   "not_found_body": "Este formulário não existe ou já não aceita respostas.",
   "error_title": "Algo correu mal",
   "error_body": "Tente novamente dentro de instantes.",
-  "go_to_kurz": "Ir para o Kurz"
+  "go_to_kurz": "Ir para o Kurz",
+  "booking_service": "Serviço",
+  "booking_minutes": "{{count}} min",
+  "booking_pick": "Escolha um dia e uma hora",
+  "booking_loading": "A carregar os horários…",
+  "booking_none": "Sem horários disponíveis neste período.",
+  "booking_more_dates": "Mostrar mais datas",
+  "booking_zone": "Os horários são em {{zone}}",
+  "booking_summary": "A sua marcação",
+  "booking_preview": "Os horários disponíveis aparecem no formulário publicado.",
+  "booking_taken": "Esse horário acabou de ser ocupado. Escolha outro.",
+  "booking_load_failed": "Não conseguimos carregar os horários.",
+  "booking_retry": "Tentar novamente"
 }

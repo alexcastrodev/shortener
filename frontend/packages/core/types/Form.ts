@@ -24,6 +24,16 @@ export type FormLayout = (typeof FORM_LAYOUTS)[number];
 
 export type FormChoice = { id: string; label: string };
 
+export type BookingService = {
+  id: string;
+  name: string;
+  duration: number;
+  price?: number | null;
+  currency?: string | null;
+  days: string[];
+  times: string[];
+};
+
 export type FormField = {
   id: string;
   type: FormFieldType;
@@ -35,6 +45,8 @@ export type FormField = {
   scale?: 5 | 10;
   min?: number;
   max?: number;
+  services?: BookingService[];
+  time_zone?: string;
 };
 
 export type Form = {

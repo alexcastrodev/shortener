@@ -1,13 +1,18 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
+import type { BookingAnswer } from '@internal/core/types/Form';
+import { BookingInput, type LoadSlots } from './booking-input';
 import type { BioTheme } from '../bio-page/themes';
 import type { FormField } from '@internal/core/types/Form';
 
-export type Answer = string | number | boolean | string[] | undefined;
+export type Answer = string | number | boolean | string[] | BookingAnswer | undefined;
 
 export const isBlank = (value: Answer) =>
-  value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
+  value === undefined ||
+  value === '' ||
+  (Array.isArray(value) && value.length === 0) ||
+  (typeof value === 'object' && !Array.isArray(value) && value.sessions.length === 0);
 
 export function focusFirstInput(root: HTMLElement | null) {
   requestAnimationFrame(() =>
@@ -28,12 +33,14 @@ type Props = {
   theme: BioTheme;
   inputId: string;
   upload?: UploadImage;
+  loadSlots?: LoadSlots;
+  invalid?: string;
 };
 
 const inputBase =
   'w-full rounded-lg px-3 py-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-current';
 
-export function FieldInput({ field, value, onChange, theme, inputId, upload }: Props) {
+export function FieldInput({ field, value, onChange, theme, inputId, upload, loadSlots, invalid }: Props) {
   const { t } = useTranslation('respond');
   const common = { id: inputId, 'aria-describedby': `${inputId}-help` };
 
@@ -191,6 +198,18 @@ export function FieldInput({ field, value, onChange, theme, inputId, upload }: P
         </fieldset>
       );
     }
+    case 'booking':
+      return (
+        <BookingInput
+          field={field}
+          value={value as BookingAnswer | undefined}
+          onChange={onChange}
+          theme={theme}
+          inputId={inputId}
+          loadSlots={loadSlots}
+          reloadKey={invalid}
+        />
+      );
     case 'image':
       return (
         <ImageInput

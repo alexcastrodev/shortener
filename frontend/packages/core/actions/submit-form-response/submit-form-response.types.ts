@@ -5,6 +5,8 @@ export interface SubmitFormResponseParams {
   turnstileToken?: string | null;
   website?: string;
   referer?: string;
+  clientTimeZone?: string;
+  clientLocale?: string;
 }
 
 export interface SubmitFormResponseError {

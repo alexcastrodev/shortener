@@ -36,5 +36,17 @@
   "not_found_body": "This form does not exist or is no longer accepting answers.",
   "error_title": "Something went wrong",
   "error_body": "Please try again in a moment.",
-  "go_to_kurz": "Go to Kurz"
+  "go_to_kurz": "Go to Kurz",
+  "booking_service": "Service",
+  "booking_minutes": "{{count}} min",
+  "booking_pick": "Pick a day and a time",
+  "booking_loading": "Loading times…",
+  "booking_none": "No times available in this period.",
+  "booking_more_dates": "Show more dates",
+  "booking_zone": "Times are in {{zone}}",
+  "booking_summary": "Your booking",
+  "booking_preview": "Available times appear on the live form.",
+  "booking_taken": "That time was just taken. Please pick another.",
+  "booking_load_failed": "We could not load the times.",
+  "booking_retry": "Try again"
 }

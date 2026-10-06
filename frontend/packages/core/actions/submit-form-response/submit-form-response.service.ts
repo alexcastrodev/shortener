@@ -9,6 +9,8 @@ export async function submitFormResponse({
   turnstileToken,
   website,
   referer,
+  clientTimeZone,
+  clientLocale,
 }: SubmitFormResponseParams): Promise<void> {
   try {
     await publicApi.post(`/api/public/forms/${encodeURIComponent(publicId)}/responses`, {
@@ -17,6 +19,8 @@ export async function submitFormResponse({
       turnstile_token: turnstileToken || undefined,
       website: website || undefined,
       referer: referer || undefined,
+      client_time_zone: clientTimeZone || undefined,
+      client_locale: clientLocale || undefined,
     });
   } catch (error) {
     if (error instanceof AxiosError) {
