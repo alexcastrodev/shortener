@@ -32,6 +32,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router';
 import { z } from 'zod/v4';
 import { Alert, Card, PageContainer } from '@internal/ui';
@@ -48,6 +49,7 @@ import { FORM_LAYOUTS, type Form, type FormLayout } from '@internal/core/types/F
 import { PhoneFrame, ThemePicker } from '../../modules/bio-page';
 import { openQrCodeModal } from '../../modules/qr-code';
 import { FormRenderer } from '../../modules/forms/form-renderer';
+import i18n from '../../i18n';
 import { formErrorMessage } from '../../modules/forms/form-errors';
 import { isSection } from '../../modules/forms/field-types';
 import { QuestionList } from './components/question-list';
@@ -62,7 +64,7 @@ export function meta({}: Route.MetaArgs) {
 export const ssr = false;
 
 const schema = z.object({
-  title: z.string().trim().min(1, 'Give your form a title').max(120),
+  title: z.string().trim().min(1, i18n.t('forms:ed_title_required')).max(120),
   description: z.string().max(1000),
   thank_you_message: z.string().max(500),
   theme: z.enum(PAGE_THEMES),
@@ -82,22 +84,21 @@ const toRequest = (values: z.infer<typeof schema>) => ({
 
 function showError(error: unknown) {
   notifications.show({
-    title: 'Error',
+    title: i18n.t('forms:ed_error_title'),
     message: formErrorMessage(error),
     color: 'red',
   });
 }
 
 export default function FormBuilder() {
+  const { t } = useTranslation('forms');
   const { id = '' } = useParams();
   const { data: form, isLoading, error } = useGetForm(id);
 
   if (error) {
     return (
       <PageContainer>
-        <Alert title="Failed to load form">
-          We could not load this form. Please try again later.
-        </Alert>
+        <Alert title={t('ed_load_failed_title')}>{t('ed_load_failed_body')}</Alert>
       </PageContainer>
     );
   }
@@ -116,13 +117,13 @@ export default function FormBuilder() {
   return <Builder form={form} />;
 }
 
-const LAYOUT_OPTIONS = [
-  { value: 'page', label: 'Single page', hint: 'Everything at once', icon: IconScript },
-  { value: 'one_at_a_time', label: 'One per screen', hint: 'Conversational', icon: IconPointer },
-  { value: 'steps', label: 'Steps', hint: 'Split by section', icon: IconListDetails },
-] as const;
-
 function Builder({ form: current }: { form: Form }) {
+  const { t } = useTranslation('forms');
+  const layoutOptions = [
+    { value: 'page', label: t('ed_layout_page'), hint: t('ed_layout_page_hint'), icon: IconScript },
+    { value: 'one_at_a_time', label: t('ed_layout_one'), hint: t('ed_layout_one_hint'), icon: IconPointer },
+    { value: 'steps', label: t('ed_layout_steps'), hint: t('ed_layout_steps_hint'), icon: IconListDetails },
+  ] as const;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -184,7 +185,7 @@ function Builder({ form: current }: { form: Form }) {
     onSuccess: () => {
       refresh();
       form.resetDirty();
-      notifications.show({ message: 'Form saved', color: 'green' });
+      notifications.show({ message: t('ed_saved'), color: 'green' });
     },
     onError: showError,
   });
@@ -204,16 +205,14 @@ function Builder({ form: current }: { form: Form }) {
 
   const confirmDelete = () => {
     modals.openConfirmModal({
-      title: 'Delete form',
+      title: t('delete_confirm'),
       centered: true,
       children: (
         <p className="text-sm">
-          “{current.title}” and its {current.responses_count}{' '}
-          {current.responses_count === 1 ? 'response' : 'responses'} will be
-          deleted for good. This cannot be undone.
+          {t('delete_body', { title: current.title, count: current.responses_count })}
         </p>
       ),
-      labels: { confirm: 'Delete form', cancel: 'Cancel' },
+      labels: { confirm: t('delete_confirm'), cancel: t('ed_cancel') },
       confirmProps: { color: 'red' },
       onConfirm: () => remove(current.id),
     });
@@ -226,14 +225,14 @@ function Builder({ form: current }: { form: Form }) {
           <ActionIcon
             variant="default"
             size="lg"
-            aria-label="Back to forms"
+            aria-label={t('ed_back')}
             onClick={() => navigate('/app/forms')}
           >
             <IconArrowLeft size={16} />
           </ActionIcon>
           <div className="leading-tight">
-            <p className="text-xs text-muted-foreground">Forms</p>
-            <p className="text-sm font-semibold">{form.values.title || 'Untitled form'}</p>
+            <p className="text-xs text-muted-foreground">{t('forms')}</p>
+            <p className="text-sm font-semibold">{form.values.title || t('untitled_form')}</p>
           </div>
         </div>
         <Group gap="xs">
@@ -242,7 +241,7 @@ function Builder({ form: current }: { form: Form }) {
             leftSection={<IconChartBar size={16} />}
             onClick={() => navigate(`/app/forms/${current.id}/responses`)}
           >
-            Responses
+            {t('ed_responses')}
             <span className="ml-2 text-muted-foreground">{current.responses_count}</span>
           </Button>
           <div
@@ -253,18 +252,18 @@ function Builder({ form: current }: { form: Form }) {
             <span
               className="max-w-[200px] truncate font-mono text-xs text-muted-foreground"
               title={
-                current.published ? shareUrl : `${shareUrl} (goes live when you publish)`
+                current.published ? shareUrl : t('ed_goes_live', { url: shareUrl })
               }
             >
               {shareUrl.replace(/^https?:\/\//, '')}
             </span>
             <CopyButton value={shareUrl} timeout={1500}>
               {({ copied, copy }) => (
-                <Tooltip label={copied ? 'Copied' : 'Copy link'} withArrow>
+                <Tooltip label={copied ? t('ed_copied') : t('ed_copy_link')} withArrow>
                   <ActionIcon
                     variant="subtle"
                     color={copied ? 'green' : 'gray'}
-                    aria-label="Copy form link"
+                    aria-label={t('ed_copy_form_link')}
                     onClick={copy}
                   >
                     {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
@@ -273,11 +272,11 @@ function Builder({ form: current }: { form: Form }) {
               )}
             </CopyButton>
             {current.shortlink_id && (
-              <Tooltip label="QR code" withArrow>
+              <Tooltip label={t('ed_qr_code')} withArrow>
                 <ActionIcon
                   variant="subtle"
                   color="gray"
-                  aria-label="QR code of the form link"
+                  aria-label={t('ed_qr_code_of')}
                   onClick={() =>
                     openQrCodeModal({
                       resource: 'shortlinks',
@@ -292,7 +291,7 @@ function Builder({ form: current }: { form: Form }) {
               </Tooltip>
             )}
             {current.published && (
-              <Tooltip label="Open form" withArrow>
+              <Tooltip label={t('ed_open_form')} withArrow>
                 <ActionIcon
                   component="a"
                   href={`/f/${current.public_id}`}
@@ -300,7 +299,7 @@ function Builder({ form: current }: { form: Form }) {
                   rel="noreferrer"
                   variant="subtle"
                   color="gray"
-                  aria-label="Open the public form"
+                  aria-label={t('ed_open_public')}
                 >
                   <IconExternalLink size={16} />
                 </ActionIcon>
@@ -314,14 +313,14 @@ function Builder({ form: current }: { form: Form }) {
           >
             <Switch
               size="sm"
-              aria-label="Published"
+              aria-label={t('ed_published')}
               checked={current.published}
               disabled={isPublishing}
               onChange={event =>
                 setPublished({ id: current.id, published: event.currentTarget.checked })
               }
             />
-            {current.published ? 'Published' : 'Draft'}
+            {current.published ? t('ed_published') : t('draft')}
           </label>
         </Group>
       </div>
@@ -331,13 +330,12 @@ function Builder({ form: current }: { form: Form }) {
           <div>
             <div className="mb-4 flex items-center justify-between gap-2">
               <span className="font-mono text-xs tracking-widest text-muted-foreground">
-                EDITOR
+                {t('ed_editor')}
               </span>
               <Group gap="sm">
                 <span className="text-xs text-muted-foreground">
-                  {questionCount} {questionCount === 1 ? 'question' : 'questions'}
-                  {sectionCount > 0 &&
-                    ` · ${sectionCount} ${sectionCount === 1 ? 'section' : 'sections'}`}
+                  {t('question_count', { count: questionCount })}
+                  {sectionCount > 0 && ` · ${t('ed_section_count', { count: sectionCount })}`}
                 </span>
                 <Button
                   size="xs"
@@ -346,22 +344,22 @@ function Builder({ form: current }: { form: Form }) {
                   disabled={!form.isDirty()}
                   onClick={() => form.onSubmit(values => save({ id: current.id, data: toRequest(values) }))()}
                 >
-                  Save
+                  {t('ed_save')}
                 </Button>
               </Group>
             </div>
             <Stack gap="xs">
               <TextInput
-                aria-label="Title"
-                placeholder="Untitled form"
+                aria-label={t('ed_title_label')}
+                placeholder={t('untitled_form')}
                 size="lg"
                 styles={{ input: { fontWeight: 600 } }}
                 key={form.key('title')}
                 {...form.getInputProps('title')}
               />
               <Textarea
-                aria-label="Description"
-                placeholder="Shown on the first screen."
+                aria-label={t('ed_description_label')}
+                placeholder={t('ed_description_placeholder')}
                 autosize
                 minRows={1}
                 maxLength={1000}
@@ -385,7 +383,7 @@ function Builder({ form: current }: { form: Form }) {
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {name === 'questions' ? 'Questions' : 'Settings'}
+                {name === 'questions' ? t('ed_tab_questions') : t('ed_tab_settings')}
                 {name === 'questions' && (
                   <span className="ml-1.5 text-xs text-muted-foreground">{questionCount}</span>
                 )}
@@ -399,12 +397,12 @@ function Builder({ form: current }: { form: Form }) {
           <Card className="p-5 sm:p-6">
             <Stack gap="md">
               <div>
-                <p className="text-sm font-medium">Layout</p>
+                <p className="text-sm font-medium">{t('ed_layout')}</p>
                 <p className="mb-2 text-xs text-muted-foreground">
-                  How respondents move through the form.
+                  {t('ed_layout_hint')}
                 </p>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {LAYOUT_OPTIONS.map(option => (
+                  {layoutOptions.map(option => (
                     <button
                       key={option.value}
                       type="button"
@@ -431,8 +429,8 @@ function Builder({ form: current }: { form: Form }) {
                 onChanged={refresh}
               />
               <Textarea
-                label="Thank you message"
-                description="Shown after the form is submitted."
+                label={t('ed_thanks_label')}
+                description={t('ed_thanks_hint')}
                 autosize
                 minRows={2}
                 maxLength={500}
@@ -452,7 +450,7 @@ function Builder({ form: current }: { form: Form }) {
                   leftSection={<IconTrash size={16} />}
                   onClick={confirmDelete}
                 >
-                  Delete form
+                  {t('delete_confirm')}
                 </Button>
                 <Button
                   color="brand"
@@ -460,7 +458,7 @@ function Builder({ form: current }: { form: Form }) {
                   disabled={!form.isDirty()}
                   onClick={() => form.onSubmit(values => save({ id: current.id, data: toRequest(values) }))()}
                 >
-                  Save
+                  {t('ed_save')}
                 </Button>
               </Group>
             </Stack>
@@ -470,11 +468,11 @@ function Builder({ form: current }: { form: Form }) {
 
         <div className="lg:sticky lg:top-20 lg:self-start">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-semibold">Preview</p>
+            <p className="text-sm font-semibold">{t('ed_preview')}</p>
             <Group gap="xs">
               <SegmentedControl
                 size="xs"
-                aria-label="Device"
+                aria-label={t('ed_device')}
                 value={device}
                 onChange={value => setDevice(value as 'mobile' | 'desktop')}
                 data={[
@@ -482,7 +480,7 @@ function Builder({ form: current }: { form: Form }) {
                     value: 'mobile',
                     label: (
                       <span className="inline-flex items-center gap-1.5">
-                        <IconDeviceMobile size={14} /> Mobile
+                        <IconDeviceMobile size={14} /> {t('ed_mobile')}
                       </span>
                     ),
                   },
@@ -490,7 +488,7 @@ function Builder({ form: current }: { form: Form }) {
                     value: 'desktop',
                     label: (
                       <span className="inline-flex items-center gap-1.5">
-                        <IconDeviceDesktop size={14} /> Desktop
+                        <IconDeviceDesktop size={14} /> {t('ed_desktop')}
                       </span>
                     ),
                   },
@@ -502,7 +500,7 @@ function Builder({ form: current }: { form: Form }) {
                 leftSection={<IconRefresh size={14} />}
                 onClick={() => setRestarts(n => n + 1)}
               >
-                Restart
+                {t('ed_restart')}
               </Button>
             </Group>
           </div>
@@ -515,7 +513,7 @@ function Builder({ form: current }: { form: Form }) {
                   activeFieldId={selectedId}
                   onSelectField={setSelectedId}
                   form={{
-                    title: form.values.title || 'Untitled form',
+                    title: form.values.title || t('untitled_form'),
                     description: form.values.description || null,
                     thank_you_message: form.values.thank_you_message || null,
                     theme: form.values.theme,
@@ -530,7 +528,7 @@ function Builder({ form: current }: { form: Form }) {
                 />
               );
               return device === 'mobile' ? (
-                <PhoneFrame label="Form preview">{preview}</PhoneFrame>
+                <PhoneFrame label={t('ed_form_preview')}>{preview}</PhoneFrame>
               ) : (
                 <div className="overflow-hidden rounded-xl border border-border">
                   <div className="flex items-center gap-2 border-b border-border bg-muted/40 px-3 py-2">
@@ -550,7 +548,7 @@ function Builder({ form: current }: { form: Form }) {
             })()}
           </Card>
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            Click a question in the preview to edit it.
+            {t('ed_preview_hint')}
           </p>
         </div>
       </div>
@@ -559,7 +557,7 @@ function Builder({ form: current }: { form: Form }) {
           role="status"
           className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl"
         >
-          <span className="text-sm">You have unsaved changes</span>
+          <span className="text-sm">{t('ed_unsaved')}</span>
           <Group gap="xs">
             <Button
               size="xs"
@@ -569,7 +567,7 @@ function Builder({ form: current }: { form: Form }) {
                 form.resetDirty(serverValues);
               }}
             >
-              Discard
+              {t('ed_discard')}
             </Button>
             <Button
               size="xs"
@@ -577,7 +575,7 @@ function Builder({ form: current }: { form: Form }) {
               loading={isSaving}
               onClick={() => form.onSubmit(values => save({ id: current.id, data: toRequest(values) }))()}
             >
-              Save
+              {t('ed_save')}
             </Button>
           </Group>
         </div>

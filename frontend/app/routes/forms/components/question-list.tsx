@@ -15,6 +15,8 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 import { Card } from '@internal/ui';
 import { getFormKey } from '@internal/core/actions/get-form/get-form.hook';
 import { getFormsKey } from '@internal/core/actions/get-forms/get-forms.hook';
@@ -28,22 +30,27 @@ import type {
   FormFieldInput,
   FormFieldType,
 } from '@internal/core/types/Form';
-import { FIELD_TYPES, fieldTypeLabel, isChoiceType, isSection } from '../../../modules/forms/field-types';
+import { FIELD_TYPES, fieldTypeHint, fieldTypeLabel, isChoiceType, isSection } from '../../../modules/forms/field-types';
 import { formErrorMessage } from '../../../modules/forms/form-errors';
 import { QuestionEditor } from './question-editor';
 
 const defaultsFor = (type: FormFieldType): FormFieldInput => ({
   type,
-  label: type === 'section' ? 'New section' : type === 'booking' ? 'Pick a time' : 'New question',
+  label:
+    type === 'section'
+      ? i18n.t('forms:ed_new_section')
+      : type === 'booking'
+        ? i18n.t('forms:ed_new_booking')
+        : i18n.t('forms:ed_new_question'),
   ...(isChoiceType(type)
-    ? { choices: [1, 2, 3].map(n => ({ label: `Option ${n}` })) }
+    ? { choices: [1, 2, 3].map(n => ({ label: i18n.t('forms:ed_new_option', { n }) })) }
     : {}),
   ...(type === 'rating' ? { scale: 5 as const } : {}),
 });
 
 const copyOf = (field: FormField): FormFieldInput => ({
   type: field.type,
-  label: `${field.label} (copy)`.slice(0, 300),
+  label: i18n.t('forms:ed_copy_suffix', { label: field.label }).slice(0, 300),
   help: field.help,
   required: field.required,
   max_choices: field.max_choices,
@@ -62,9 +69,10 @@ export function QuestionList({
   selectedId: string | null;
   onSelect: (id: string | null) => void;
 }) {
+  const { t } = useTranslation('forms');
   const queryClient = useQueryClient();
   const hasBooking = form.fields.some(field => field.type === 'booking');
-  const addable = FIELD_TYPES.filter(item => item.type !== 'booking' || !hasBooking);
+  const addable = FIELD_TYPES.filter(type => type !== 'booking' || !hasBooking);
 
   const onSuccess = (updated: Form) => {
     queryClient.setQueryData(getFormKey(form.id), updated);
@@ -72,7 +80,7 @@ export function QuestionList({
   };
   const onError = (error: unknown) =>
     notifications.show({
-      title: 'Error',
+      title: t('ed_error_title'),
       message: formErrorMessage(error),
       color: 'red',
     });
@@ -123,10 +131,10 @@ export function QuestionList({
 
   const confirmRemove = (field: FormField) => {
     modals.openConfirmModal({
-      title: 'Remove question',
+      title: t('ed_remove_title'),
       centered: true,
-      children: <p className="text-sm">“{field.label}” will be removed from the form.</p>,
-      labels: { confirm: 'Remove', cancel: 'Keep it' },
+      children: <p className="text-sm">{t('ed_remove_body', { label: field.label })}</p>,
+      labels: { confirm: t('ed_remove_confirm'), cancel: t('ed_keep') },
       confirmProps: { color: 'red' },
       onConfirm: () => remove({ formId: form.id, fieldId: field.id }),
     });
@@ -141,7 +149,7 @@ export function QuestionList({
     <Card className="p-5 sm:p-6">
       {form.fields.length === 0 && (
         <p className="mb-4 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          No questions yet. Add the first one to be able to publish.
+          {t('ed_no_questions')}
         </p>
       )}
 
@@ -168,7 +176,7 @@ export function QuestionList({
                         <div className="flex items-center gap-3 p-3">
                           <span
                             {...drag.dragHandleProps}
-                            aria-label={`Drag to reorder ${field.label}`}
+                            aria-label={t('ed_drag', { label: field.label })}
                             className="flex h-8 w-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground active:cursor-grabbing"
                           >
                             <IconGripVertical size={16} />
@@ -200,7 +208,7 @@ export function QuestionList({
                             <ActionIcon
                               variant="subtle"
                               color="gray"
-                              aria-label={`Move question ${index + 1} up`}
+                              aria-label={t('ed_move_up', { n: index + 1 })}
                               disabled={index === 0 || isReordering}
                               onClick={() => move(index, -1)}
                             >
@@ -209,7 +217,7 @@ export function QuestionList({
                             <ActionIcon
                               variant="subtle"
                               color="gray"
-                              aria-label={`Move question ${index + 1} down`}
+                              aria-label={t('ed_move_down', { n: index + 1 })}
                               disabled={index === form.fields.length - 1 || isReordering}
                               onClick={() => move(index, 1)}
                             >
@@ -218,7 +226,7 @@ export function QuestionList({
                             <ActionIcon
                               variant="subtle"
                               color="gray"
-                              aria-label={`Duplicate question ${index + 1}`}
+                              aria-label={t('ed_duplicate_n', { n: index + 1 })}
                               disabled={isCreating || field.type === 'booking'}
                               onClick={() => create({ formId: form.id, data: copyOf(field) })}
                             >
@@ -227,7 +235,7 @@ export function QuestionList({
                             <ActionIcon
                               variant="subtle"
                               color="red"
-                              aria-label={`Remove question ${index + 1}`}
+                              aria-label={t('ed_remove_n', { n: index + 1 })}
                               onClick={() => confirmRemove(field)}
                             >
                               <IconTrash size={16} />
@@ -259,18 +267,18 @@ export function QuestionList({
         </Droppable>
       </DragDropContext>
 
-      <p className="mt-5 mb-2 text-xs text-muted-foreground">Add field</p>
+      <p className="mt-5 mb-2 text-xs text-muted-foreground">{t('ed_add_field')}</p>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {addable.map(item => (
+        {addable.map(type => (
           <button
-            key={item.type}
+            key={type}
             type="button"
             disabled={isCreating}
-            title={item.hint}
-            onClick={() => create({ formId: form.id, data: defaultsFor(item.type) })}
+            title={fieldTypeHint(type)}
+            onClick={() => create({ formId: form.id, data: defaultsFor(type) })}
             className="rounded-lg border border-border bg-card px-3 py-2 text-left text-sm hover:border-primary disabled:opacity-50"
           >
-            {item.label}
+            {fieldTypeLabel(type)}
           </button>
         ))}
       </div>
