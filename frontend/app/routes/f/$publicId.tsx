@@ -18,6 +18,7 @@ import {
   FormRenderer,
   type SubmitFailure,
 } from '../../modules/forms/form-renderer';
+import { publicCoverUrl } from '../../modules/forms/form-cover-url';
 import type { Route } from './+types/$publicId';
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -103,6 +104,7 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
     <FormRenderer
       mode="live"
       form={form}
+      coverUrl={publicCoverUrl(publicId, form.cover_token)}
       onSubmit={onSubmit}
       onUploadImage={(fieldId, file) => uploadFormImage(publicId, fieldId, file)}
       loadSlots={(service, from, to) => getFormSlots(publicId, service, from, to)}

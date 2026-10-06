@@ -64,7 +64,7 @@ RSpec.describe("public form read from the published snapshot", type: :request) d
 
   it "keeps the closed key list and hides the version when the flag is off" do
     allow(ENV).to(receive(:[]).with("FORM_DRAFTS_ENABLED").and_return(nil))
-    expect(public_form.keys).to(match_array(["title", "description", "thank_you_message", "theme", "custom_colors", "layout", "fields"]))
+    expect(public_form.keys).to(match_array(["title", "description", "thank_you_message", "theme", "custom_colors", "layout", "fields", "cover_token", "cover_position", "intro_enabled", "start_label"]))
   end
 
   it "stores the version the visitor saw and accepts a submission without one" do

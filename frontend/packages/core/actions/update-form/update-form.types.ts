@@ -8,6 +8,9 @@ export interface UpdateFormRequestBody {
   theme?: PageTheme;
   custom_colors?: CustomColors | null;
   layout?: FormLayout;
+  cover_position?: number;
+  intro_enabled?: boolean;
+  start_label?: string | null;
 }
 
 export interface UpdateFormParams {

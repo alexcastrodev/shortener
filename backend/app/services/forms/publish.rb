@@ -30,6 +30,7 @@ module Forms
         form.update!(published: true, published_snapshot: Snapshot.of(form), published_version: form.published_version + 1)
         Form.where(id: form.id).update_all(DIGEST_SQL)
       end
+      Covers.prune(form)
       form.reload
     end
 

@@ -30,6 +30,7 @@ import {
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useNavigate, useParams } from 'react-router';
 import { z } from 'zod/v4';
@@ -50,6 +51,8 @@ import { FormRenderer } from '../../modules/forms/form-renderer';
 import { formErrorMessage } from '../../modules/forms/form-errors';
 import { isSection } from '../../modules/forms/field-types';
 import { QuestionList } from './components/question-list';
+import { CoverSettings } from './components/cover-settings';
+import { getFormCover } from '@internal/core/actions/get-form-cover/get-form-cover.service';
 import type { Route } from './+types/$id';
 
 export function meta({}: Route.MetaArgs) {
@@ -67,6 +70,14 @@ const schema = z.object({
     .object({ background: z.string(), text: z.string(), accent: z.string() })
     .nullable(),
   layout: z.enum(FORM_LAYOUTS),
+  cover_position: z.number().int().min(0).max(100),
+  intro_enabled: z.boolean(),
+  start_label: z.string().max(40),
+});
+
+const toRequest = (values: z.infer<typeof schema>) => ({
+  ...values,
+  start_label: values.start_label.trim() || null,
 });
 
 function showError(error: unknown) {
@@ -118,6 +129,22 @@ function Builder({ form: current }: { form: Form }) {
   const [device, setDevice] = useState<'mobile' | 'desktop'>('mobile');
   const [restarts, setRestarts] = useState(0);
   const [tab, setTab] = useState<'questions' | 'settings'>('questions');
+  const { data: coverBlob } = useQuery({
+    queryKey: ['form-cover', current.id, current.cover_token],
+    queryFn: () => getFormCover(current.id),
+    enabled: Boolean(current.cover_token),
+    staleTime: Infinity,
+  });
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!coverBlob) {
+      setCoverUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(coverBlob);
+    setCoverUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverBlob]);
   const shareUrl = current.short_url ?? current.public_url;
   const sectionCount = current.fields.filter(isSection).length;
   const questionCount = current.fields.length - sectionCount;
@@ -134,6 +161,9 @@ function Builder({ form: current }: { form: Form }) {
     theme: current.theme,
     custom_colors: current.custom_colors ?? null,
     layout: current.layout,
+    cover_position: current.cover_position ?? 50,
+    intro_enabled: current.intro_enabled ?? false,
+    start_label: current.start_label ?? '',
   };
 
   const form = useForm({
@@ -314,7 +344,7 @@ function Builder({ form: current }: { form: Form }) {
                   color="brand"
                   loading={isSaving}
                   disabled={!form.isDirty()}
-                  onClick={() => form.onSubmit(values => save({ id: current.id, data: values }))()}
+                  onClick={() => form.onSubmit(values => save({ id: current.id, data: toRequest(values) }))()}
                 >
                   Save
                 </Button>
@@ -393,6 +423,13 @@ function Builder({ form: current }: { form: Form }) {
                   ))}
                 </div>
               </div>
+              <CoverSettings
+                formId={current.id}
+                hasCover={Boolean(current.cover_token)}
+                coverUrl={coverUrl}
+                form={form as never}
+                onChanged={refresh}
+              />
               <Textarea
                 label="Thank you message"
                 description="Shown after the form is submitted."
@@ -421,7 +458,7 @@ function Builder({ form: current }: { form: Form }) {
                   color="brand"
                   loading={isSaving}
                   disabled={!form.isDirty()}
-                  onClick={() => form.onSubmit(values => save({ id: current.id, data: values }))()}
+                  onClick={() => form.onSubmit(values => save({ id: current.id, data: toRequest(values) }))()}
                 >
                   Save
                 </Button>
@@ -473,7 +510,7 @@ function Builder({ form: current }: { form: Form }) {
             {(() => {
               const preview = (
                 <FormRenderer
-                  key={`${restarts}-${form.values.layout}-${current.fields.map(field => field.id).join('-')}`}
+                  key={`${restarts}-${form.values.layout}-${form.values.intro_enabled}-${current.fields.map(field => field.id).join('-')}`}
                   mode="preview"
                   activeFieldId={selectedId}
                   onSelectField={setSelectedId}
@@ -484,8 +521,12 @@ function Builder({ form: current }: { form: Form }) {
                     theme: form.values.theme,
                     custom_colors: form.values.custom_colors,
                     layout: form.values.layout,
+                    cover_position: form.values.cover_position,
+                    intro_enabled: form.values.intro_enabled,
+                    start_label: form.values.start_label || null,
                     fields: current.fields,
                   }}
+                  coverUrl={coverUrl}
                 />
               );
               return device === 'mobile' ? (
@@ -534,7 +575,7 @@ function Builder({ form: current }: { form: Form }) {
               size="xs"
               color="brand"
               loading={isSaving}
-              onClick={() => form.onSubmit(values => save({ id: current.id, data: values }))()}
+              onClick={() => form.onSubmit(values => save({ id: current.id, data: toRequest(values) }))()}
             >
               Save
             </Button>

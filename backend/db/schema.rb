@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -219,6 +219,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_110000) do
     t.jsonb "published_snapshot"
     t.integer "published_version", default: 0, null: false
     t.string "published_digest"
+    t.string "cover_token", limit: 24
+    t.integer "cover_position", default: 50, null: false
+    t.boolean "intro_enabled", default: false, null: false
+    t.string "start_label", limit: 40
     t.index ["public_id"], name: "index_forms_on_public_id", unique: true
     t.index ["shortlink_id"], name: "index_forms_on_shortlink_id"
     t.index ["user_id", "created_at"], name: "index_forms_on_user_id_and_created_at"
@@ -285,7 +289,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_110000) do
     t.index ["status", "next_attempt_at"], name: "index_notifications_pending", where: "((status)::text = 'pending'::text)"
     t.index ["user_id", "channel", "id"], name: "index_notifications_on_user_channel_id"
     t.index ["user_id"], name: "index_notifications_on_user_id"
-    t.check_constraint "channel::text = ANY (ARRAY['in_app'::character varying::text, 'email'::character varying::text, 'push'::character varying::text])", name: "notifications_channel_known"
+    t.check_constraint "channel::text = ANY (ARRAY['in_app'::character varying, 'email'::character varying, 'push'::character varying]::text[])", name: "notifications_channel_known"
     t.check_constraint "jsonb_typeof(payload) = 'object'::text", name: "notifications_payload_is_object"
     t.check_constraint "recipient_kind::text = 'owner'::text AND user_id IS NOT NULL OR recipient_kind::text = 'client'::text AND recipient_email IS NOT NULL", name: "notifications_has_recipient"
     t.check_constraint "recipient_kind::text = ANY (ARRAY['owner'::character varying::text, 'client'::character varying::text])", name: "notifications_recipient_kind_known"

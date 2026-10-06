@@ -4,6 +4,8 @@ class Form < ApplicationRecord
   MAX_CREATED_PER_DAY = 20
   TITLE_MAX = 120
   LAYOUTS = ["page", "one_at_a_time", "steps"].freeze
+  COVER_FIELD = "coverimg".freeze
+  START_LABEL_MAX = 40
   audited only: [:title, :published]
   PUBLIC_ID_LENGTH = 12
   before_validation(on: :create) { self.public_id ||= SecureRandom.alphanumeric(PUBLIC_ID_LENGTH) }
@@ -22,7 +24,13 @@ class Form < ApplicationRecord
   validates :thank_you_message, length: { maximum: 500 }
   validates :theme, inclusion: { in: Page::THEMES }
   validates :layout, inclusion: { in: LAYOUTS }
+  validates :cover_position, numericality: { only_integer: true, in: 0..100 }
+  validates :start_label, length: { maximum: START_LABEL_MAX }
   validate :field_definitions
+
+  def cover
+    uploads.find_by(token: cover_token, field_id: COVER_FIELD) if cover_token.present?
+  end
 
   def public_url
     "#{ENV["FRONTEND_URL"]}/f/#{public_id}"

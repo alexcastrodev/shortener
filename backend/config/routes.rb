@@ -98,6 +98,7 @@ Rails.application.routes.draw do
         get "appointments_export", to: "form_appointments#export", format: false
         get :summary, to: "form_responses#summary"
         get "uploads/:id", to: "form_uploads#show", as: :upload, format: false
+        resource :cover, only: [:show, :update, :destroy], controller: "form_covers", format: false
         resources :fields, only: [:create, :update, :destroy], controller: "form_fields" do
           collection { patch :reorder }
         end
@@ -128,6 +129,7 @@ Rails.application.routes.draw do
       end
       resources :forms, only: [:show], param: :public_id, format: false
       get "forms/:public_id/slots", to: "form_slots#index", as: :form_slots, format: false
+      get "forms/:public_id/cover/:token", to: "form_covers#show", as: :form_cover, format: false
       get "appointments/:token", to: "appointments#show", as: :appointment, format: false
       post "appointments/:token/cancel", to: "appointments#cancel", as: :appointment_cancel, format: false
       get "appointment_decisions/:token", to: "appointment_decisions#show", as: :appointment_decision, format: false

@@ -85,6 +85,10 @@ owner	GET	/api/me/forms/:form_id/appointments
 owner	GET	/api/me/forms/:form_id/appointments_export
 owner	GET	/api/me/forms/:form_id/summary
 owner	GET	/api/me/forms/:form_id/uploads/:id
+owner	DELETE	/api/me/forms/:form_id/cover
+owner	GET	/api/me/forms/:form_id/cover
+owner	PATCH	/api/me/forms/:form_id/cover
+owner	PUT	/api/me/forms/:form_id/cover
 owner	DELETE	/api/me/forms/:id
 owner	GET	/api/me/forms/:id
 owner	PATCH	/api/me/forms/:id
@@ -137,6 +141,7 @@ public	GET	/api/public/appointments/:token
 public	POST	/api/public/appointments/:token/cancel
 public	GET	/api/public/appointment_decisions/:token
 public	POST	/api/public/appointment_decisions/:token
+public	GET	/api/public/forms/:public_id/cover/:token
 public	GET	/api/public/forms/:public_id/slots
 public	POST	/api/public/forms/:public_id/events
 public	POST	/api/public/forms/:public_id/fields/:field_id/uploads
