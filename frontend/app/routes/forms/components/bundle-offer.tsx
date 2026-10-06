@@ -1,4 +1,4 @@
-import { Group, NumberInput, Switch } from '@mantine/core';
+import { NumberInput, Switch } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { useTranslation } from 'react-i18next';
 import type { Values } from '../../../modules/forms/booking-config.ts';
@@ -29,7 +29,7 @@ export function BundleOffer({
       />
       {service.bundle && (
         <>
-          <Group grow mt="xs" align="flex-start">
+          <div className="mt-3 grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
             <NumberInput
               label={t('bundle_take')}
               min={2}
@@ -44,7 +44,7 @@ export function BundleOffer({
               allowDecimal={false}
               {...form.getInputProps(`services.${index}.bundlePay`)}
             />
-          </Group>
+          </div>
           {service.bundleTake !== '' && service.bundlePay !== '' && (
             <p className="mt-1 text-xs text-muted-foreground">
               {t('bundle_example', {

@@ -25,7 +25,7 @@ export function ExceptionsSection({
   const savedServices = form.values.services.filter(service => service.id);
 
   return (
-    <Stack gap="sm">
+    <Stack gap="md" className="border-t border-border pt-6">
       <div>
         <p className="text-sm font-medium">{t('exc_title')}</p>
         <p className="text-xs text-muted-foreground">{t('exc_hint')}</p>
@@ -66,7 +66,7 @@ export function ExceptionsSection({
                 <IconTrash size={16} />
               </ActionIcon>
             </Group>
-            <Group grow align="flex-start">
+            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
               <TextInput
                 type="date"
                 label={t('exc_from')}
@@ -78,7 +78,7 @@ export function ExceptionsSection({
                 description={t('exc_to_hint')}
                 {...form.getInputProps(`exceptions.${index}.to`)}
               />
-            </Group>
+            </div>
             {item.kind === 'special' && (
               <div>
                 <p className="mb-1 text-sm font-medium">{t('exc_times')}</p>

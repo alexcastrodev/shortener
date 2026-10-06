@@ -274,8 +274,8 @@ export function BookingEditor({
   };
 
   const renderService = (service: ServiceValues, index: number) => (
-    <div key={service.key} className="rounded-lg border border-border p-3">
-      <Stack gap="sm">
+    <div key={service.key} className="rounded-lg border border-border p-4">
+      <Stack gap="md">
         <Group gap="xs" wrap="nowrap" align="flex-end">
           <TextInput
             className="flex-1"
@@ -308,7 +308,7 @@ export function BookingEditor({
             }
           />
         )}
-        <Group grow align="flex-start">
+        <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
           <NumberInput
             label={t('service_duration')}
             min={5}
@@ -324,8 +324,8 @@ export function BookingEditor({
             allowDecimal={false}
             {...form.getInputProps(`services.${index}.capacity`)}
           />
-        </Group>
-        <Group grow align="flex-start">
+        </div>
+        <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
           <NumberInput
             label={t('service_price')}
             min={0}
@@ -338,7 +338,7 @@ export function BookingEditor({
             placeholder="EUR"
             {...form.getInputProps(`services.${index}.currency`)}
           />
-        </Group>
+        </div>
         <div>
           <p className="mb-1 text-sm font-medium">{t('service_days')}</p>
           <Chip.Group
@@ -434,19 +434,21 @@ export function BookingEditor({
         onSubmit(toBookingInput(values, creating))
       )}
     >
-      <Stack gap="md">
-        <p className="text-xs font-medium text-muted-foreground">
-          {t('type_label')}
-        </p>
-        <TextInput
-          label={t('question_label')}
-          required
-          data-autofocus
-          {...form.getInputProps('label')}
-        />
-        <TextInput label={t('help_label')} {...form.getInputProps('help')} />
+      <Stack gap="xl">
+        <Stack gap="md">
+          <p className="text-xs font-medium text-muted-foreground">
+            {t('type_label')}
+          </p>
+          <TextInput
+            label={t('question_label')}
+            required
+            data-autofocus
+            {...form.getInputProps('label')}
+          />
+          <TextInput label={t('help_label')} {...form.getInputProps('help')} />
+        </Stack>
 
-        <Stack gap="sm">
+        <Stack gap="md" className="border-t border-border pt-6">
           <div>
             <p className="text-sm font-medium">{t('services_title')}</p>
             <p className="text-xs text-muted-foreground">
@@ -458,7 +460,7 @@ export function BookingEditor({
 
         <ExceptionsSection form={form} />
 
-        <Stack gap="sm">
+        <Stack gap="md" className="border-t border-border pt-6">
           <p className="text-sm font-medium">{t('rules_title')}</p>
           {field?.rules?.time_zone && (
             <div>
@@ -520,7 +522,7 @@ export function BookingEditor({
             </Stack>
           )}
           {form.values.approval === 'manual' && (
-            <Group grow align="flex-start">
+            <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
               <TimeoutInput
                 minutes={form.values.approval_timeout_minutes}
                 error={
@@ -546,7 +548,7 @@ export function BookingEditor({
                   }
                 />
               </div>
-            </Group>
+            </div>
           )}
           <Stack gap="xs">
             <Switch
@@ -594,7 +596,7 @@ export function BookingEditor({
               {t('reminders_hint')}
             </p>
           </div>
-          <Group grow align="flex-start">
+          <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-3">
             <NumberInput
               label={t('min_notice')}
               min={0}
@@ -616,10 +618,10 @@ export function BookingEditor({
               allowDecimal={false}
               {...form.getInputProps('max_per_day')}
             />
-          </Group>
+          </div>
         </Stack>
 
-        <Group justify="flex-end" gap="xs">
+        <Group justify="flex-end" gap="sm" className="border-t border-border pt-6">
           <Button variant="default" onClick={onCancel}>
             {t('cancel')}
           </Button>
