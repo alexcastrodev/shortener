@@ -6,11 +6,15 @@ import { FieldInput, focusFirstInput, isBlank, type Answer, type UploadImage } f
 import type { LoadSlots } from './booking-input';
 import { isSection, sectionOf } from './field-types';
 import { PagedForm } from './paged-form';
+import { BookingReceipt } from './booking-receipt';
+import type { SubmitFormReceipt } from '@internal/core/actions/submit-form-response/submit-form-response.types';
 
 export type RenderableForm = Pick<
   Form,
   'title' | 'description' | 'thank_you_message' | 'theme' | 'custom_colors' | 'layout' | 'fields'
 >;
+
+export type { SubmitFormReceipt };
 
 export type SubmitFailure = {
   message?: string;
@@ -20,7 +24,7 @@ export type SubmitFailure = {
 export type Props = {
   form: RenderableForm;
   mode: 'preview' | 'live';
-  onSubmit?: (answers: Record<string, Answer>) => Promise<void> | void;
+  onSubmit?: (answers: Record<string, Answer>) => Promise<SubmitFormReceipt | void> | SubmitFormReceipt | void;
   onUploadImage?: UploadImage;
   loadSlots?: LoadSlots;
   onStart?: () => void;
@@ -63,6 +67,7 @@ function SequentialForm({
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [receipt, setReceipt] = useState<SubmitFormReceipt | null>(null);
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -94,7 +99,7 @@ function SequentialForm({
     if (mode === 'live' && onSubmit) {
       setSubmitting(true);
       try {
-        await onSubmit(answers);
+        setReceipt((await onSubmit(answers)) ?? null);
         setStep(total);
       } catch (failure) {
         const { message, fieldErrors } = (failure ?? {}) as SubmitFailure;
@@ -172,6 +177,7 @@ function SequentialForm({
         <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>
           {form.thank_you_message || t('answers_sent')}
         </p>
+        <BookingReceipt receipt={receipt} linkClass={theme.footer} textClass={theme.bio} />
         {mode === 'preview' && (
           <div className="mt-8">
             <button

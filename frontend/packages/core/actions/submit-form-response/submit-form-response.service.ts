@@ -1,6 +1,6 @@
 import { AxiosError } from 'axios';
 import { publicApi } from '../api';
-import type { SubmitFormResponseParams } from './submit-form-response.types';
+import type { SubmitFormReceipt, SubmitFormResponseParams } from './submit-form-response.types';
 
 export async function submitFormResponse({
   publicId,
@@ -11,9 +11,9 @@ export async function submitFormResponse({
   referer,
   clientTimeZone,
   clientLocale,
-}: SubmitFormResponseParams): Promise<void> {
+}: SubmitFormResponseParams): Promise<SubmitFormReceipt> {
   try {
-    await publicApi.post(`/api/public/forms/${encodeURIComponent(publicId)}/responses`, {
+    const response = await publicApi.post<SubmitFormReceipt>(`/api/public/forms/${encodeURIComponent(publicId)}/responses`, {
       answers,
       idempotency_key: idempotencyKey,
       turnstile_token: turnstileToken || undefined,
@@ -22,6 +22,7 @@ export async function submitFormResponse({
       client_time_zone: clientTimeZone || undefined,
       client_locale: clientLocale || undefined,
     });
+    return { manage_url: response.data.manage_url, email_delivery: response.data.email_delivery };
   } catch (error) {
     if (error instanceof AxiosError) {
       throw { ...error.response?.data, status: error.response?.status };

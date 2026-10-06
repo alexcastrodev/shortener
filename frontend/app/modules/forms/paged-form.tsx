@@ -4,7 +4,8 @@ import type { FormField } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
 import { FieldInput, focusFirstInput, isBlank, type Answer } from './field-inputs';
 import { isSection } from './field-types';
-import type { Props, SubmitFailure } from './form-renderer';
+import type { Props, SubmitFailure, SubmitFormReceipt } from './form-renderer';
+import { BookingReceipt } from './booking-receipt';
 
 const alertClass =
   'rounded-md bg-[#fee2e2] px-3 py-1.5 text-sm font-medium text-[#991b1b]';
@@ -41,6 +42,7 @@ export function PagedForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [receipt, setReceipt] = useState<SubmitFormReceipt | null>(null);
   const started = useRef(false);
   const root = useRef<HTMLDivElement>(null);
   const current = Math.min(page, pages.length - 1);
@@ -85,7 +87,7 @@ export function PagedForm({
     if (mode === 'live' && onSubmit) {
       setSubmitting(true);
       try {
-        await onSubmit(answers);
+        setReceipt((await onSubmit(answers)) ?? null);
         setDone(true);
       } catch (failure) {
         const { message, fieldErrors } = (failure ?? {}) as SubmitFailure;
@@ -124,6 +126,7 @@ export function PagedForm({
         <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>
           {form.thank_you_message || t('answers_sent')}
         </p>
+        <BookingReceipt receipt={receipt} linkClass={theme.footer} textClass={theme.bio} />
         {mode === 'preview' && (
           <div className="mt-8">
             <button

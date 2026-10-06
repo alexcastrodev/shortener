@@ -82,7 +82,7 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
       throw { message: i18n.t('respond:err_verifying') } satisfies SubmitFailure;
     }
     try {
-      await submitFormResponse({
+      return await submitFormResponse({
         publicId,
         answers,
         idempotencyKey: idempotencyKey.current,

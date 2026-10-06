@@ -48,13 +48,22 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
     it "stores the response, reserves the place and confirms the appointment at once" do
       expect { book }.to(change(FormResponse, :count).by(1).and(change(Appointment, :count).by(1)))
       expect(response).to(have_http_status(:created))
-      expect(json).to(eq("ok" => true, "appointments" => [{ "starts_at" => "2026-11-03T09:00:00Z", "service" => "Haircut", "status" => "confirmed" }]))
+      expect(json.except("manage_url")).to(eq("ok" => true, "appointments" => [{ "starts_at" => "2026-11-03T09:00:00Z", "service" => "Haircut", "status" => "confirmed" }], "email_delivery" => "queued"))
       expect(slot_at(Time.utc(2026, 11, 3, 9))).to(have_attributes(booked: 1, capacity: 1))
 
       appointment = Appointment.last
       expect(appointment).to(have_attributes(status: "confirmed", client_name: "Ana", client_email: "ana@example.com", form_id: form.id, response_id: FormResponse.last.id, published_version: 1))
       expect(appointment.snapshot).to(eq("name" => "Haircut", "duration" => 60, "price" => 25, "currency" => "EUR"))
       expect(FormResponse.last.answers[name_id]).to(eq("Ana"))
+    end
+
+    it "hands back a manage link that opens exactly this booking" do
+      book(sessions(["2026-11-03", "09:00"], ["2026-11-04", "10:00"]))
+      token = json["manage_url"][%r{/m/(.+)\z}, 1]
+
+      expect(json["manage_url"]).to(start_with("https://kurz.fyi/m/"))
+      expect(AppointmentToken.resolve(token)).to(eq(Appointment.order(:id).first))
+      expect(AppointmentToken.last.expires_at).to(eq(Time.utc(2026, 11, 4, 10) + 7.days))
     end
 
     it "books several days at once under one group" do

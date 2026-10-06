@@ -75,6 +75,16 @@ module Appointments
       end
     end
 
+    def receipt(response, now: Time.current)
+      rows = response.appointments.includes(:slot).to_a
+      return if rows.empty?
+
+      first = rows.min_by(&:id)
+      last = rows.map { |row| row.slot.starts_at }.max
+      raw = AppointmentToken.issue(booking: first, expires_at: [last, now].max + 7.days)
+      { manage_url: "#{ENV.fetch("FRONTEND_URL", "https://kurz.fyi")}/m/#{raw}", email_delivery: first.client_email.present? ? "queued" : "none" }
+    end
+
     def valid_zone(value)
       value if value.is_a?(String) && TZInfo::Timezone.all_identifiers.include?(value)
     end
