@@ -18,7 +18,7 @@ export function BrandMark({
       href={href}
       aria-label="Kurz"
       className={cn(
-        'inline-flex items-center gap-2 text-foreground no-underline',
+        'inline-flex shrink-0 items-center gap-2 whitespace-nowrap text-foreground no-underline',
         className
       )}
       {...props}
