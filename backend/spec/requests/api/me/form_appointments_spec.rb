@@ -155,7 +155,7 @@ RSpec.describe("/api/me/forms/:id/appointments", type: :request) do
       expect(lines.drop(1).map { |line| line.split(",")[2] }).to(eq(['"Earlier"', '"Later"']))
     end
 
-    it "neutralises spreadsheet formulas and escapes quotes" do
+    it "V05: neutralises spreadsheet formulas and escapes quotes" do
       ["=HYPERLINK(\"http://evil\")", "+1+1", "-2", "@SUM(A1)", "\tcmd", "\rcmd"].each_with_index do |name, index|
         book(name: name, email: "x#{index}@example.com", at: Time.utc(2026, 11, 3, 9) + index.hours)
       end
@@ -167,7 +167,7 @@ RSpec.describe("/api/me/forms/:id/appointments", type: :request) do
       expect(body).not_to(match(/(\A|,|\n)"[=+\-@]/))
     end
 
-    it "downloads an Excel file with every cell stored as text" do
+    it "V05: downloads an Excel file with every cell stored as text" do
       book(name: "=1+1")
       export({ format_type: "xlsx" })
       expect(response).to(have_http_status(:ok))

@@ -24,7 +24,7 @@ RSpec.describe(Appointments::Slots) do
     expect(result.map { |slot| slot[:date] }.uniq.size).to(eq(62))
   end
 
-  it "skips a local time that does not exist on the day clocks go forward, and keeps the one that repeats on the day they go back" do
+  it "V16: skips a local time that does not exist on the day clocks go forward, and keeps the one that repeats on the day they go back" do
     spring = slots(zone: "Europe/Lisbon", from: Date.new(2026, 3, 29), to: Date.new(2026, 3, 29), now: Time.utc(2026, 3, 1))
     expect(spring.map { |slot| slot[:time] }).to(eq(["09:00", "23:30"]))
 
@@ -32,7 +32,7 @@ RSpec.describe(Appointments::Slots) do
     expect(fall.map { |slot| slot[:time] }).to(eq(["01:30", "09:00", "23:30"]))
   end
 
-  it "keeps the same wall-clock time across daylight saving" do
+  it "V16: keeps the same wall-clock time across daylight saving" do
     result = slots(zone: "Europe/Lisbon", from: Date.new(2026, 3, 28), to: Date.new(2026, 3, 30), now: Time.utc(2026, 3, 1))
     nine = result.select { |slot| slot[:time] == "09:00" }.map { |slot| slot[:starts_at].utc.hour }
     expect(nine).to(eq([9, 8, 8]))

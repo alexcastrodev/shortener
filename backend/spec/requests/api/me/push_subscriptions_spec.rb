@@ -67,7 +67,7 @@ RSpec.describe("/api/me/push_subscriptions", type: :request) do
       "ftp://fcm.googleapis.com/a",
       "not a url",
     ].each do |endpoint|
-      it "refuses #{endpoint}" do
+      it "V17: refuses #{endpoint}" do
         expect { subscribe(endpoint) }.not_to(change(PushSubscription, :count))
         expect(response).to(have_http_status(:unprocessable_entity))
       end
@@ -107,7 +107,7 @@ RSpec.describe("/api/me/push_subscriptions", type: :request) do
       expect(response).to(have_http_status(:created))
     end
 
-    it "moves a browser's subscription to whoever signs in there now" do
+    it "V20: moves a browser's subscription to whoever signs in there now" do
       PushSubscription.create!(user: other, endpoint: "https://fcm.googleapis.com/fcm/send/shared", p256dh: p256dh, auth: auth_secret)
       subscribe("https://fcm.googleapis.com/fcm/send/shared")
       expect(response).to(have_http_status(:created))
@@ -116,7 +116,7 @@ RSpec.describe("/api/me/push_subscriptions", type: :request) do
   end
 
   describe "listing and removing" do
-    it "lists only my subscriptions" do
+    it "V20: lists only my subscriptions" do
       mine = PushSubscription.create!(user: current_user, endpoint: "https://fcm.googleapis.com/fcm/send/mine", p256dh: p256dh, auth: auth_secret)
       PushSubscription.create!(user: other, endpoint: "https://fcm.googleapis.com/fcm/send/theirs", p256dh: p256dh, auth: auth_secret)
       get("/api/me/push_subscriptions", headers: auth_headers)
@@ -130,7 +130,7 @@ RSpec.describe("/api/me/push_subscriptions", type: :request) do
       expect(PushSubscription.count).to(eq(0))
     end
 
-    it "answers 404 for someone else's subscription and keeps it" do
+    it "V20: answers 404 for someone else's subscription and keeps it" do
       theirs = PushSubscription.create!(user: other, endpoint: "https://fcm.googleapis.com/fcm/send/theirs", p256dh: p256dh, auth: auth_secret)
       delete("/api/me/push_subscriptions/#{theirs.id}", headers: auth_headers)
       expect(response).to(have_http_status(:not_found))
