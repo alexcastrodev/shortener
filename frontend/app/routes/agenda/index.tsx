@@ -529,7 +529,7 @@ export default function AgendaPage() {
                     aria-label={`${formatDate(`${day}T12:00:00Z`, { dateStyle: 'full', timeZone: 'UTC' })}${withSessions.has(day) ? `, ${t('has_sessions')}` : ''}`}
                     onClick={() => pick(day)}
                     onKeyDown={event => onStripKey(event, day)}
-                    className="flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-primary"
+                    className="flex min-h-14 flex-1 items-center justify-center p-1 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-primary"
                   >
                     <span
                       className={`flex w-full flex-col items-center rounded-lg py-1.5 ${isAnchor ? 'bg-primary text-primary-foreground' : ''}`}
@@ -549,11 +549,11 @@ export default function AgendaPage() {
                       >
                         {Number(day.slice(8))}
                       </span>
+                      <span
+                        aria-hidden="true"
+                        className={`mt-0.5 size-1 rounded-full ${withSessions.has(day) ? (isAnchor ? 'bg-primary-foreground' : 'bg-primary') : ''}`}
+                      />
                     </span>
-                    <span
-                      aria-hidden="true"
-                      className={`size-1 rounded-full ${withSessions.has(day) ? 'bg-primary' : ''}`}
-                    />
                   </button>
                 );
               })}
