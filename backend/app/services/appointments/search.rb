@@ -2,7 +2,7 @@ module Appointments
   module Search
     extend self
 
-    STATUSES = ["pending", "confirmed", "cancelled", "declined", "expired"].freeze
+    STATUSES = ["pending", "confirmed", "cancelled", "declined", "expired", "rescheduled"].freeze
     MAX_EXPORT = 50_000
 
     def call(form:, status: nil, query: nil, from: nil, to: nil, zone: Time.zone)

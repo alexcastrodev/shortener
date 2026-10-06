@@ -1,0 +1,15 @@
+<%= t(".title") %>
+
+<%= t(".intro", service: @service) %>
+<%= t(".was", time: @was) %>
+<%= t(".now", time: @now) %>
+<% if @message %>
+
+<%= t(".message", message: @message) %>
+<% end %>
+
+<%= t(".reply") %>
+
+<%= t(".manage", url: @manage_url) %>
+
+Kurz · https://kurz.fyi

@@ -101,6 +101,16 @@ en:
       reply: "Questions? Reply to this email to reach the organizer."
       manage: "See or cancel your booking: %{url}"
       manage_link: "See or cancel your booking"
+    rescheduled:
+      subject: "Time changed: %{service}, %{time}"
+      title: "Your booking has a new time"
+      intro: "%{service} was moved."
+      was: "Was: %{time}"
+      now: "Now: %{time}"
+      message: "Message from the organizer: %{message}"
+      reply: "Questions? Reply to this email to reach the organizer."
+      manage: "See or cancel your booking: %{url}"
+      manage_link: "See or cancel your booking"
     cancelled:
       subject: "Cancelled: %{service}, %{time}"
       title: "Your booking was cancelled"

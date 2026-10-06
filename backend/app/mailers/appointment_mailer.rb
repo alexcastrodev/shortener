@@ -48,6 +48,26 @@ class AppointmentMailer < ApplicationMailer
     end
   end
 
+  def rescheduled
+    load_group
+    zone = Appointments::Book.valid_zone(@first.client_time_zone) || "UTC"
+    moved = params[:notification].appointment
+    old = Appointment.includes(:slot).find(moved.rescheduled_from_id)
+    @was = "#{old.slot.starts_at.in_time_zone(zone).strftime("%Y-%m-%d %H:%M")} (#{zone})"
+    @now = "#{moved.slot.starts_at.in_time_zone(zone).strftime("%Y-%m-%d %H:%M")} (#{zone})"
+    @message = moved.decision_message.to_s.strip.presence
+    last = @appointments.map { |appointment| appointment.slot.starts_at }.max
+    @manage_url = "#{frontend_url}/m/#{AppointmentToken.issue(booking: @first, expires_at: last + 7.days)}"
+
+    with_recipient_locale(nil, @first.client_locale) do
+      mail(
+        to: @first.client_email,
+        reply_to: @form.user.email,
+        subject: I18n.t("appointment_mailer.rescheduled.subject", service: @service, time: @now),
+      )
+    end
+  end
+
   def request_received
     load_group
     zone = Appointments::Book.valid_zone(@first.client_time_zone) || "UTC"
@@ -120,9 +140,9 @@ class AppointmentMailer < ApplicationMailer
 
   def load_group
     notification = params[:notification]
-    @appointments = Appointment.where(group_key: notification.event_key).includes(:slot).references(:slot).order("appointment_slots.starts_at").to_a
+    @appointments = Appointment.where(group_key: notification.appointment.group_key).where.not(status: "rescheduled").includes(:slot).references(:slot).order("appointment_slots.starts_at").to_a
     @first = @appointments.first
-    @form = @first.form
+    @form = Form.find(@first.form_id)
     @service = single_line(@first.snapshot["name"])
   end
 

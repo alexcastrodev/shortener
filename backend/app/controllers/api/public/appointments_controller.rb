@@ -38,7 +38,7 @@ class Api::Public::AppointmentsController < ApplicationController
   end
 
   def payload
-    rows = Appointment.where(group_key: @appointment.group_key).includes(:slot).order("appointment_slots.starts_at").references(:slot).to_a
+    rows = Appointment.where(group_key: @appointment.group_key).where.not(status: "rescheduled").includes(:slot).order("appointment_slots.starts_at").references(:slot).to_a
     first = rows.first
     {
       appointment: {
