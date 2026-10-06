@@ -73,10 +73,10 @@ function StatusBadge({ published }: { published: boolean }) {
 }
 
 export default function FormsIndex() {
-  const { t } = useTranslation('forms');
+  const { t, i18n } = useTranslation('forms');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: templates } = useGetFormTemplates();
+  const { data: templates } = useGetFormTemplates(i18n.language);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<Status>('all');
   const [sort, setSort] = useState<Sort>('edited');
@@ -251,6 +251,7 @@ export default function FormsIndex() {
                   create({
                     title: template.id ? template.name : t('untitled_form'),
                     template: template.id || undefined,
+                    locale: i18n.language,
                   })
                 }
                 className="rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary disabled:opacity-50"

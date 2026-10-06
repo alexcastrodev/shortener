@@ -38,6 +38,17 @@ RSpec.describe("/api/me/form_templates", type: :request) do
     expect(JSON.parse(response.body)["form"]["fields"].map { |f| f["label"] }).to(include("Vai comparecer?"))
   end
 
+  it "follows the language the page is shown in, when the owner never saved one, and ignores an unknown one" do
+    get "/api/me/form_templates", params: { locale: "pt-PT" }, headers: auth_headers
+    expect(JSON.parse(response.body)["form_template"].map { |t| t["name"] }).to(include("Contacto"))
+    get "/api/me/form_templates", params: { locale: "xx" }, headers: auth_headers
+    expect(JSON.parse(response.body)["form_template"].map { |t| t["name"] }).to(include("Contact"))
+
+    post "/api/me/forms", params: { title: "Meu", template: "contact", locale: "pt-PT" }, headers: auth_headers, as: :json
+    expect(response).to(have_http_status(:created))
+    expect(JSON.parse(response.body)["form"]["fields"].first["label"]).to(eq("O seu nome"))
+  end
+
   it "stays in English for an owner without a language, and for an AI app" do
     get "/api/me/form_templates", headers: auth_headers
     expect(JSON.parse(response.body)["form_template"].map { |t| t["name"] }).to(include("Contact"))

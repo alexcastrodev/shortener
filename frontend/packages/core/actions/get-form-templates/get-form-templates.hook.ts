@@ -6,11 +6,12 @@ import type { FormTemplate } from '../../types/Form';
 export const getFormTemplatesKey = ['get-form-templates'];
 
 export function useGetFormTemplates(
+  locale?: string,
   queryProps?: UseQueryOptions<FormTemplate[], ResponseError>
 ) {
   return useQuery<FormTemplate[], ResponseError>({
-    queryKey: getFormTemplatesKey,
-    queryFn: getFormTemplates,
+    queryKey: [...getFormTemplatesKey, locale],
+    queryFn: () => getFormTemplates(locale),
     staleTime: Infinity,
     ...queryProps,
   });
