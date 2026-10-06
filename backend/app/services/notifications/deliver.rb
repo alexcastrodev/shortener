@@ -7,7 +7,7 @@ module Notifications
     RETRY_IN = 5.minutes
     GIVE_UP_AFTER = 24.hours
     TRANSIENT = [Socket::ResolutionError, Net::OpenTimeout, Net::ReadTimeout, Errno::ECONNREFUSED, Errno::ECONNRESET, Net::SMTPServerBusy].freeze
-    TEMPLATES = { ["appointment_confirmed", "client"] => :confirmed, ["appointment_created", "owner"] => :new_booking }.freeze
+    TEMPLATES = { ["appointment_confirmed", "client"] => :confirmed, ["appointment_created", "owner"] => :new_booking, ["appointment_cancelled", "client"] => :cancelled }.freeze
 
     def initialize(id:)
       @id = id

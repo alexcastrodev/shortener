@@ -69,6 +69,13 @@ en:
       title: "Your booking is confirmed"
       intro: "%{service} is booked for:"
       reply: "Questions? Reply to this email to reach the organizer."
+      manage: "See or cancel your booking: %{url}"
+      manage_link: "See or cancel your booking"
+    cancelled:
+      subject: "Cancelled: %{service}, %{time}"
+      title: "Your booking was cancelled"
+      intro: "%{service} is cancelled for:"
+      reply: "Questions? Reply to this email to reach the organizer."
     new_booking:
       subject: "New booking: %{service}, %{name}"
       someone: "Someone"
