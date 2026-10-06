@@ -99,8 +99,9 @@ export default function Privacy() {
         <Section title="Who else receives data">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong className="text-foreground">Cloudflare</strong> delivers the site and runs a bot check on sign-in
-              and on forms, so it sees your IP address and browser details.
+              <strong className="text-foreground">Cloudflare</strong> (free plan) provides the domain name (DNS), passes
+              visits through to the site and runs a bot check on sign-in and on forms, so it sees your IP address and
+              browser details.
             </li>
             <li>
               <strong className="text-foreground">Resend</strong> sends emails, including sign-in codes and booking messages
