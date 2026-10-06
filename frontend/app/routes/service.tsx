@@ -53,7 +53,7 @@ export default function Service() {
           </p>
           <p>
             It runs on a home server. The only outside services it relies on are
-            the free plans of Cloudflare (for the domain name, DNS) and Resend
+            the free plans of Cloudflare (the domain name, DNS, and the bot check) and Resend
             (for sending email), so both have limits and no guarantees. There is
             no redundancy and no protection against a disaster that hits that
             machine: a power cut, a failed disk or a fire can take the service
