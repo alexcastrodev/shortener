@@ -40,10 +40,8 @@ class Api::Me::UsersController < ApplicationController
       return render(json: { error: "reauthentication_required" }, status: :forbidden)
     end
 
-    response.headers["Cache-Control"] = "private, no-store"
-    send_data(JSON.pretty_generate(Users::DataExport.call(user: @current_user)), type: "application/json", disposition: "attachment", filename: "kurz-data-#{Date.current.iso8601}.json")
-  rescue Users::DataExport::TooLarge
-    render(json: { error: "export_too_large", message: "There is too much data to export in one file. Export the forms with the most responses to Excel first, or contact the owner of the service." }, status: :payload_too_large)
+    SendDataExportJob.perform_later(@current_user.id)
+    render(json: { queued: true }, status: :accepted)
   end
 
   # DELETE /api/me  { confirm_email, current_password? }

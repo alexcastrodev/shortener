@@ -26,6 +26,16 @@ pt-PT:
       expires: "O código expira em %{minutes} minutos e só pode ser usado uma vez."
       footer: "Está a receber este e-mail porque %{reason}. Se não foi você, pode ignorá-lo."
   account_mailer:
+    data_export:
+      subject: "Os seus dados do Kurz"
+      title: "Os seus dados seguem em anexo"
+      body: "Pediu uma cópia dos seus dados. O ficheiro JSON em anexo tem a sua conta, ligações curtas, páginas de bio, formulários e respostas, aplicações ligadas e paletas guardadas."
+      leaves_out: "Não inclui palavras-passe, tokens nem os endereços IP dos seus visitantes."
+      not_you: "Se não pediu isto, inicie sessão e mude a palavra-passe: alguém pode ter acesso à sua conta."
+    data_export_too_large:
+      subject: "Os seus dados do Kurz são demasiado grandes para enviar"
+      title: "Não conseguimos enviar os seus dados"
+      body: "Há demasiados dados para um só e-mail. Exporte os maiores formulários para Excel a partir da página de respostas, ou responda a este endereço e enviamos-lhe uma cópia de outra forma."
     deletion_scheduled:
       subject: "A sua conta Kurz está marcada para eliminação"
       body: "Pediu para eliminar a conta Kurz %{email}. Os seus links, páginas de bio, formulários, respostas e ficheiros carregados estão offline neste momento e serão eliminados definitivamente a %{date}."

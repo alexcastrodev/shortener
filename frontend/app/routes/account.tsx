@@ -163,18 +163,13 @@ function DownloadData({ hasPassword }: { hasPassword: boolean }) {
   const download = async () => {
     setBusy(true);
     try {
-      const blob = await exportAccountData(hasPassword ? current : undefined);
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `kurz-data-${new Date().toISOString().slice(0, 10)}.json`;
-      link.click();
-      URL.revokeObjectURL(link.href);
+      await exportAccountData(hasPassword ? current : undefined);
+      notifications.show({ message: t('dl_sent'), color: 'green' });
       setCurrent('');
     } catch (failure) {
       const status = (failure as { response?: { status?: number } })?.response?.status;
       if (status === 403) setNeedsSignIn(true);
       else if (status === 422) notifyError(t('wrong_password'), t('dl_wrong_password_title'));
-      else if (status === 413) notifyError(t('dl_too_much'), t('dl_too_much_title'));
       else if (status === 429) notifyError(t('dl_rate'), t('auth:err_rate_limited_title'));
       else notifyError(t('dl_failed'), t('dl_failed_title'));
     } finally {
