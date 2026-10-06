@@ -18,6 +18,12 @@ module Forms
     CAPACITY = (1..1000)
     PRICE_MAX = 1_000_000
     CURRENCY = /\A[A-Z]{3}\z/
+    EXCEPTION_KEYS = ["id", "from", "to", "kind", "times", "service_ids", "note"].freeze
+    EXCEPTION_KINDS = ["closed", "special"].freeze
+    EXCEPTIONS_MAX = 100
+    EXCEPTION_NOTE_MAX = 200
+    EXCEPTION_SPAN_MAX = 366
+    DATE = /\A\d{4}-\d{2}-\d{2}\z/
 
     def errors(field)
       services = field["services"]
@@ -41,11 +47,13 @@ module Forms
         result.concat(service_errors(service).map { |message| "#{label} #{message}" })
       end
       result.concat(rule_errors(rules.stringify_keys))
+      result.concat(exception_errors(field["exceptions"], ids))
     end
 
     def defaults(attributes, user)
       attributes = attributes.stringify_keys
       attributes["services"] ||= []
+      attributes["exceptions"] ||= []
       rules = (attributes["rules"] || {}).stringify_keys
       rules["time_zone"] ||= user.time_zone
       rules["approval"] ||= "auto"
@@ -60,6 +68,7 @@ module Forms
     end
 
     def with_new_ids(field)
+      field = field.merge("exceptions" => field["exceptions"].map { |item| item.is_a?(Hash) ? item.stringify_keys.tap { |row| row["id"] ||= FieldSchema.new_id } : item }) if field["exceptions"].is_a?(Array)
       return field unless field["services"].is_a?(Array)
 
       field.merge("services" => field["services"].map { |service| service.is_a?(Hash) ? service.stringify_keys.tap { |item| item["id"] ||= FieldSchema.new_id } : service })
@@ -88,6 +97,55 @@ module Forms
     end
 
     private
+
+    def exception_errors(list, service_ids)
+      return [] if list.nil?
+      return ["exceptions must be a list"] unless list.is_a?(Array)
+
+      result = []
+      result << "can have at most #{EXCEPTIONS_MAX} exceptions" if list.size > EXCEPTIONS_MAX
+      seen = []
+      list.each_with_index do |raw, index|
+        label = "exception #{index + 1}"
+        unless raw.is_a?(Hash)
+          result << "#{label} must be an object"
+          next
+        end
+
+        item = raw.stringify_keys
+        result << "#{label} id is invalid or repeated" unless item["id"].to_s.match?(FieldSchema::ID_FORMAT) && !seen.include?(item["id"])
+        seen << item["id"]
+        result.concat(exception_item_errors(item, service_ids).map { |message| "#{label} #{message}" })
+      end
+      result
+    end
+
+    def exception_item_errors(item, service_ids)
+      result = []
+      result << "has unknown keys" unless (item.keys - EXCEPTION_KEYS).empty?
+      first = parse_date(item["from"])
+      last = parse_date(item["to"] || item["from"])
+      result << "dates must look like 2026-12-25" unless first && last
+      result << "must not end before it starts or last more than #{EXCEPTION_SPAN_MAX} days" if first && last && (last < first || (last - first) >= EXCEPTION_SPAN_MAX)
+      result << "kind must be one of #{EXCEPTION_KINDS.join(", ")}" unless EXCEPTION_KINDS.include?(item["kind"])
+      times = item["times"]
+      if item["kind"] == "special"
+        result << "needs unique HH:MM times (max #{TIMES_MAX})" unless times.is_a?(Array) && times.any? && times.size <= TIMES_MAX && times.all? { |time| time.is_a?(String) && time.match?(TIME) } && times.uniq.size == times.size
+      elsif !times.nil?
+        result << "closed days take no times"
+      end
+      ids = item["service_ids"]
+      result << "service_ids must list services of this question" unless ids.nil? || (ids.is_a?(Array) && ids.size <= SERVICES_MAX && (ids - service_ids).empty? && ids.uniq.size == ids.size)
+      note = item["note"]
+      result << "note is too long (max #{EXCEPTION_NOTE_MAX})" unless note.nil? || (note.is_a?(String) && note.length <= EXCEPTION_NOTE_MAX && !note.include?("\u0000"))
+      result
+    end
+
+    def parse_date(value)
+      Date.iso8601(value) if value.is_a?(String) && value.match?(DATE)
+    rescue Date::Error
+      nil
+    end
 
     def service_errors(service)
       result = []

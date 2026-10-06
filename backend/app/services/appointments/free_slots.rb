@@ -9,7 +9,7 @@ module Appointments
       booked = stored.where(service_key: service["id"]).pluck(:starts_at, :booked).to_h { |time, count| [time.to_i, count] }
       totals = stored.pluck(:starts_at, :booked).each_with_object(Hash.new(0)) { |(time, count), sums| sums[time.in_time_zone(zone).to_date] += count }
 
-      Slots.call(service: service, rules: rules, from: from, to: to, now: now, booked: booked, day_totals: totals)
+      Slots.call(service: service, rules: rules, from: from, to: to, now: now, booked: booked, day_totals: totals, exceptions: booking["exceptions"].to_a)
     end
   end
 end
