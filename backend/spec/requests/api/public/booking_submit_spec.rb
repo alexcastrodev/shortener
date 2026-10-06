@@ -53,7 +53,7 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
 
       appointment = Appointment.last
       expect(appointment).to(have_attributes(status: "confirmed", client_name: "Ana", client_email: "ana@example.com", form_id: form.id, response_id: FormResponse.last.id, published_version: 1))
-      expect(appointment.snapshot).to(eq("name" => "Haircut", "duration" => 60, "price" => 25, "currency" => "EUR"))
+      expect(appointment.snapshot).to(eq("name" => "Haircut", "duration" => 60, "price" => 25, "currency" => "EUR", "total" => 25.0, "free_sessions" => 0, "sessions" => 1))
       expect(FormResponse.last.answers[name_id]).to(eq("Ana"))
     end
 
