@@ -30,9 +30,23 @@ export type BookingService = {
   duration: number;
   price?: number | null;
   currency?: string | null;
+  capacity?: number | null;
   days: string[];
   times: string[];
 };
+
+export type BookingRules = {
+  time_zone: string;
+  approval: 'auto' | 'manual';
+  approval_timeout_minutes?: number;
+  approval_on_timeout?: 'decline' | 'accept';
+  min_notice_minutes?: number;
+  window_days?: number;
+  buffer_minutes?: number;
+  max_per_day?: number | null;
+};
+
+export type BookingServiceInput = Omit<BookingService, 'id'> & { id?: string };
 
 export type FormField = {
   id: string;
@@ -46,6 +60,7 @@ export type FormField = {
   min?: number;
   max?: number;
   services?: BookingService[];
+  rules?: BookingRules;
   time_zone?: string;
 };
 
@@ -86,6 +101,8 @@ export type FormFieldInput = {
   scale?: 5 | 10;
   min?: number | null;
   max?: number | null;
+  services?: BookingServiceInput[];
+  rules?: Partial<BookingRules>;
 };
 
 export type PublicForm = Pick<

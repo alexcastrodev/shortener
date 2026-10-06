@@ -16,6 +16,7 @@ import {
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card } from '@internal/ui';
+import { useUserState } from '@internal/core/states/use-user-state';
 import { getFormKey } from '@internal/core/actions/get-form/get-form.hook';
 import { getFormsKey } from '@internal/core/actions/get-forms/get-forms.hook';
 import { useCreateFormField } from '@internal/core/actions/create-form-field/create-form-field.hook';
@@ -34,7 +35,7 @@ import { QuestionEditor } from './question-editor';
 
 const defaultsFor = (type: FormFieldType): FormFieldInput => ({
   type,
-  label: type === 'section' ? 'New section' : 'New question',
+  label: type === 'section' ? 'New section' : type === 'booking' ? 'Pick a time' : 'New question',
   ...(isChoiceType(type)
     ? { choices: [1, 2, 3].map(n => ({ label: `Option ${n}` })) }
     : {}),
@@ -63,6 +64,9 @@ export function QuestionList({
   onSelect: (id: string | null) => void;
 }) {
   const queryClient = useQueryClient();
+  const bookingAllowed = useUserState(state => state.user?.appointments_enabled === true);
+  const hasBooking = form.fields.some(field => field.type === 'booking');
+  const addable = FIELD_TYPES.filter(item => item.type !== 'booking' || (bookingAllowed && !hasBooking));
 
   const onSuccess = (updated: Form) => {
     queryClient.setQueryData(getFormKey(form.id), updated);
@@ -217,7 +221,7 @@ export function QuestionList({
                               variant="subtle"
                               color="gray"
                               aria-label={`Duplicate question ${index + 1}`}
-                              disabled={isCreating}
+                              disabled={isCreating || field.type === 'booking'}
                               onClick={() => create({ formId: form.id, data: copyOf(field) })}
                             >
                               <IconCopy size={16} />
@@ -259,7 +263,7 @@ export function QuestionList({
 
       <p className="mt-5 mb-2 text-xs text-muted-foreground">Add field</p>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {FIELD_TYPES.map(item => (
+        {addable.map(item => (
           <button
             key={item.type}
             type="button"

@@ -26,6 +26,7 @@ export const FIELD_TYPES: { type: FormFieldType; label: string; hint: string }[]
   { type: 'rating', label: 'Rating', hint: '1 to 5 or 1 to 10' },
   { type: 'date', label: 'Date', hint: 'A calendar date' },
   { type: 'image', label: 'Image', hint: 'A photo upload (PNG, JPEG, WebP or HEIC)' },
+  { type: 'booking', label: 'Booking', hint: 'Let people book a time' },
   { type: 'section', label: 'Section', hint: 'A heading that groups questions' },
 ];
 
