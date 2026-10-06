@@ -3,7 +3,7 @@ class NotificationPreference < ApplicationRecord
   SUPPORTED = {
     "appointment_created" => ["in_app", "email", "push"],
     "appointment_requested" => ["in_app", "email", "push"],
-    "appointment_cancelled" => ["in_app", "push"],
+    "appointment_cancelled" => ["in_app", "email", "push"],
     "appointment_expired" => ["in_app", "push"],
     "appointment_auto_confirmed" => ["in_app", "push"],
   }.freeze

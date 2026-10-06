@@ -42,10 +42,11 @@ module Appointments
       payload = { form_id: first.form_id, response_id: first.response_id, group_key: first.group_key, sessions: rows.size, cancelled_ids: rows.map(&:id) }
       Notification.notify_owner(user_id: first.form.user_id, kind: "appointment_cancelled", event_key: key, source: first, payload: payload) if by == "client"
       queued = []
+      queued << Notification.queue_email(kind: "appointment_cancelled", event_key: key, source: first, recipient_kind: "owner", user_id: first.form.user_id, payload: payload) if by == "client"
       if first.client_email.present?
         queued << Notification.queue_email(kind: "appointment_cancelled", event_key: key, source: first, recipient_kind: "client", recipient_email: first.client_email, payload: payload)
       end
-      ids = queued.map(&:id)
+      ids = queued.compact.map(&:id)
       ActiveRecord.after_all_transactions_commit { ids.each { |id| NotificationDeliveryJob.perform_later(id) } }
     end
   end

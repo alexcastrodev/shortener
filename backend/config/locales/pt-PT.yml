@@ -108,6 +108,14 @@ pt-PT:
       title: "A sua marcação foi cancelada"
       intro: "%{service} foi cancelado para:"
       reply: "Tem dúvidas? Responda a este e-mail para falar com quem organiza."
+    owner_cancelled:
+      subject: "Marcação cancelada: %{service}, %{name}"
+      title: "Uma marcação foi cancelada"
+      intro: "%{name} cancelou %{service}:"
+      reason: "Motivo: %{reason}"
+      email: "E-mail: %{email}"
+      see: "Veja nas suas respostas: %{url}"
+      see_link: "Ver nas suas respostas"
     new_booking:
       subject: "Nova marcação: %{service}, %{name}"
       someone: "Alguém"
