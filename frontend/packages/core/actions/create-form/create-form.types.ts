@@ -7,6 +7,7 @@ export interface CreateFormRequestBody {
   thank_you_message?: string;
   theme?: PageTheme;
   template?: string;
+  locale?: string;
 }
 
 export interface CreateFormResponse {

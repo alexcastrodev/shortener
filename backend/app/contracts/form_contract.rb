@@ -11,5 +11,6 @@ class FormContract < ApplicationContract
     end
     optional(:layout).filled(:string)
     optional(:template).maybe(:string)
+    optional(:locale).maybe(:string)
   end
 end
