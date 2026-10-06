@@ -24,6 +24,10 @@ import {
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import i18n from '../../../i18n';
+import type templatesEn from '../../../i18n/en/templates.json';
 import {
   getPageTemplatesKey,
   useGetPageTemplates,
@@ -60,11 +64,13 @@ interface GalleryProps {
 
 type PreviewPage = Pick<Page, 'slug' | 'display_title' | 'avatar_url'>;
 
-const REPORT_REASONS: { value: PageTemplateReportReason; label: string }[] = [
-  { value: 'spam', label: 'Spam or scam' },
-  { value: 'offensive', label: 'Offensive content' },
-  { value: 'impersonation', label: 'Impersonation' },
-  { value: 'other', label: 'Something else' },
+type TemplatesKey = keyof typeof templatesEn;
+
+const REPORT_REASONS: { value: PageTemplateReportReason; label: TemplatesKey }[] = [
+  { value: 'spam', label: 'reason_spam' },
+  { value: 'offensive', label: 'reason_offensive' },
+  { value: 'impersonation', label: 'reason_impersonation' },
+  { value: 'other', label: 'reason_else' },
 ];
 
 function errorMessage(error: unknown, fallback: string) {
@@ -152,11 +158,12 @@ export function TemplatePreview({
 }
 
 function AuthorLine({ template }: { template: PageTemplate }) {
+  const { t } = useTranslation('templates');
   if (!template.author) return null;
   const { label, slug } = template.author;
   return (
     <p className="truncate text-xs text-muted-foreground">
-      by{' '}
+      {t('by_author')}{' '}
       {slug ? (
         <a
           href={`/u/${slug}`}
@@ -173,9 +180,8 @@ function AuthorLine({ template }: { template: PageTemplate }) {
   );
 }
 
-function usesLabel(count: number) {
-  if (count === 0) return 'Not used yet';
-  return count === 1 ? 'Used once' : `Used ${count} times`;
+function usesLabel(count: number, t: TFunction<'templates'>) {
+  return count === 0 ? t('uses_none') : t('uses', { count });
 }
 
 // Same format as the API's author label.
@@ -204,6 +210,7 @@ function TemplateCard({
   meta?: React.ReactNode;
   actions?: React.ReactNode;
 }) {
+  const { t } = useTranslation('templates');
   return (
     <div className="flex min-w-0 flex-col gap-3 rounded-xl border border-border p-3 transition-colors hover:border-primary/40">
       <TemplatePreview
@@ -234,7 +241,7 @@ function TemplateCard({
         loading={busy}
         onClick={onUse}
       >
-        Use this template
+        {t('use_template')}
       </Button>
     </div>
   );
@@ -249,6 +256,7 @@ function PublishDialog({
   template: PageTemplate;
   page: Page;
 }) {
+  const { t } = useTranslation('templates');
   const { data: pages } = useQuery(
     { queryKey: getPagesKey, queryFn: getPages },
     queryClient
@@ -269,13 +277,13 @@ function PublishDialog({
         queryClient.invalidateQueries({ queryKey: getCommunityTemplatesKey });
         modals.close('publish-template');
         notifications.show({
-          message: 'Published to the Community.',
+          message: t('published_toast'),
           color: 'green',
         });
       },
       onError: error =>
         notifications.show({
-          message: errorMessage(error, 'Could not publish the template.'),
+          message: errorMessage(error, t('publish_failed')),
           color: 'red',
         }),
     },
@@ -299,20 +307,17 @@ function PublishDialog({
       <div className="flex gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
         <IconInfoCircle size={18} className="mt-0.5 shrink-0 text-primary" />
         <p>
-          <span className="font-semibold">
-            Texts and links are replaced by placeholders
-          </span>{' '}
-          in the public version. Only the layout and theme are shared. Your copy
-          keeps everything.
+          <span className="font-semibold">{t('publish_info_title')}</span>{' '}
+          {t('publish_info_body')}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="min-w-0 space-y-2">
           <p className="text-xs font-semibold">
-            Your template{' '}
+            {t('your_template')}{' '}
             <span className="font-normal text-muted-foreground">
-              · only you
+              {t('only_you')}
             </span>
           </p>
           <TemplatePreview
@@ -322,7 +327,7 @@ function PublishDialog({
           />
         </div>
         <div className="min-w-0 space-y-2">
-          <p className="text-xs font-semibold">What the community gets</p>
+          <p className="text-xs font-semibold">{t('community_gets')}</p>
           <TemplatePreview
             page={{
               slug: 'your-page',
@@ -336,9 +341,9 @@ function PublishDialog({
       </div>
 
       <Textarea
-        label="Description"
-        description="Optional, public. Links are not allowed."
-        placeholder="e.g. Clean layout for musicians"
+        label={t('description_label')}
+        description={t('description_hint')}
+        placeholder={t('description_ph')}
         maxLength={140}
         autosize
         minRows={2}
@@ -348,13 +353,12 @@ function PublishDialog({
 
       {visiblePages.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
-          Templates are credited to one of your published pages. Publish a page
-          first.
+          {t('publish_need_page')}
         </p>
       ) : (
         <Select
-          label="Credit"
-          description="Your email is never shown."
+          label={t('credit_label')}
+          description={t('credit_hint')}
           data={visiblePages.map(candidate => ({
             value: String(candidate.id),
             label: creditLabel(candidate),
@@ -367,9 +371,9 @@ function PublishDialog({
       )}
       {authorPage && (
         <p className="text-xs text-muted-foreground">
-          Shown as:{' '}
+          {t('shown_as')}{' '}
           <span className="font-medium text-foreground">
-            by {creditLabel(authorPage)}
+            {t('credit_by', { credit: creditLabel(authorPage) })}
           </span>
         </p>
       )}
@@ -379,7 +383,7 @@ function PublishDialog({
           variant="default"
           onClick={() => modals.close('publish-template')}
         >
-          Cancel
+          {t('cancel')}
         </Button>
         <Button
           type="submit"
@@ -387,7 +391,7 @@ function PublishDialog({
           loading={isPending}
           disabled={!authorPage}
         >
-          Publish
+          {t('publish')}
         </Button>
       </div>
     </form>
@@ -399,7 +403,7 @@ function openPublishDialog(template: PageTemplate, page: Page) {
     modalId: 'publish-template',
     title: (
       <span className="font-semibold">
-        Publish “{template.name}” to the Community
+        {i18n.t('templates:publish_title', { name: template.name })}
       </span>
     ),
     size: 'lg',
@@ -419,6 +423,7 @@ function CommunityTab({
   applying?: string;
   onUse: (template: PageTemplate) => void;
 }) {
+  const { t } = useTranslation('templates');
   const [sort, setSort] = useState<CommunityTemplatesSort>('popular');
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useGetCommunityTemplates(sort, queryClient);
@@ -428,12 +433,12 @@ function CommunityTab({
     {
       onSuccess: () =>
         notifications.show({
-          message: 'Thanks for the report. We will take a look.',
+          message: t('report_thanks'),
           color: 'green',
         }),
       onError: () =>
         notifications.show({
-          message: 'You already reported this template.',
+          message: t('report_dup'),
           color: 'yellow',
         }),
     },
@@ -444,15 +449,15 @@ function CommunityTab({
     <div>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted-foreground">
-          Layouts shared by other people. You get a copy with placeholders.
+          {t('community_intro')}
         </p>
         <SegmentedControl
           size="xs"
           value={sort}
           onChange={value => setSort(value as CommunityTemplatesSort)}
           data={[
-            { label: 'Popular', value: 'popular' },
-            { label: 'New', value: 'new' },
+            { label: t('sort_popular'), value: 'popular' },
+            { label: t('sort_new'), value: 'new' },
           ]}
         />
       </div>
@@ -465,10 +470,10 @@ function CommunityTab({
         <div className="rounded-xl border border-dashed border-border p-8 text-center">
           <IconUsersGroup size={28} className="mx-auto text-muted-foreground" />
           <p className="mt-3 text-sm font-semibold">
-            No Community templates yet
+            {t('community_empty_title')}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Save a page as a template in the Yours tab and publish it.
+            {t('community_empty_body')}
           </p>
         </div>
       ) : (
@@ -485,14 +490,14 @@ function CommunityTab({
                   <>
                     <AuthorLine template={template} />
                     <p className="text-xs text-muted-foreground">
-                      {usesLabel(template.uses_count ?? 0)}
+                      {usesLabel(template.uses_count ?? 0, t)}
                     </p>
                   </>
                 }
                 badges={
                   template.mine ? (
                     <Badge size="xs" color="gray" variant="light">
-                      Yours
+                      {t('yours_badge')}
                     </Badge>
                   ) : undefined
                 }
@@ -504,13 +509,13 @@ function CommunityTab({
                           variant="subtle"
                           color="gray"
                           size={26}
-                          aria-label={`More for ${template.name}`}
+                          aria-label={t('more_for', { name: template.name })}
                         >
                           <IconDots size={16} />
                         </ActionIcon>
                       </Menu.Target>
                       <Menu.Dropdown>
-                        <Menu.Label>Report template</Menu.Label>
+                        <Menu.Label>{t('report_title')}</Menu.Label>
                         {REPORT_REASONS.map(reason => (
                           <Menu.Item
                             key={reason.value}
@@ -519,7 +524,7 @@ function CommunityTab({
                               report({ id: template.id, reason: reason.value })
                             }
                           >
-                            {reason.label}
+                            {t(reason.label)}
                           </Menu.Item>
                         ))}
                       </Menu.Dropdown>
@@ -537,7 +542,7 @@ function CommunityTab({
                 loading={isFetchingNextPage}
                 onClick={() => fetchNextPage()}
               >
-                Load more
+                {t('load_more')}
               </Button>
             </div>
           )}
@@ -548,6 +553,7 @@ function CommunityTab({
 }
 
 function Gallery({ page, onApplied }: GalleryProps) {
+  const { t } = useTranslation('templates');
   const { data: templates, isLoading } = useGetPageTemplates(queryClient);
   const [applying, setApplying] = useState<string>();
   const [name, setName] = useState('');
@@ -558,8 +564,7 @@ function Gallery({ page, onApplied }: GalleryProps) {
       onSuccess: (_data, variables) => {
         modals.closeAll();
         notifications.show({
-          message:
-            'Template applied. Placeholder links are hidden until you edit them.',
+          message: t('applied'),
           color: 'green',
         });
         if (variables.template.startsWith('community-')) {
@@ -569,7 +574,7 @@ function Gallery({ page, onApplied }: GalleryProps) {
       },
       onError: () =>
         notifications.show({
-          message: 'Could not apply the template.',
+          message: t('apply_failed'),
           color: 'red',
         }),
       onSettled: () => setApplying(undefined),
@@ -583,13 +588,13 @@ function Gallery({ page, onApplied }: GalleryProps) {
         setName('');
         queryClient.invalidateQueries({ queryKey: getPageTemplatesKey });
         notifications.show({
-          message: 'Saved to your templates.',
+          message: t('saved'),
           color: 'green',
         });
       },
       onError: error =>
         notifications.show({
-          message: errorMessage(error, 'Could not save the template.'),
+          message: errorMessage(error, t('save_failed')),
           color: 'red',
         }),
     },
@@ -612,13 +617,13 @@ function Gallery({ page, onApplied }: GalleryProps) {
         queryClient.invalidateQueries({ queryKey: getPageTemplatesKey });
         queryClient.invalidateQueries({ queryKey: getCommunityTemplatesKey });
         notifications.show({
-          message: 'Removed from the Community.',
+          message: t('unpublished'),
           color: 'green',
         });
       },
       onError: error =>
         notifications.show({
-          message: errorMessage(error, 'Could not update the template.'),
+          message: errorMessage(error, t('update_failed')),
           color: 'red',
         }),
     },
@@ -632,14 +637,9 @@ function Gallery({ page, onApplied }: GalleryProps) {
     };
     if (!hasContent) return run();
     modals.openConfirmModal({
-      title: `Use “${template.name}”?`,
-      children: (
-        <p className="text-sm">
-          This replaces the links, sections and theme of this page. Your title,
-          bio and photo stay.
-        </p>
-      ),
-      labels: { confirm: 'Replace content', cancel: 'Cancel' },
+      title: t('use_title', { name: template.name }),
+      children: <p className="text-sm">{t('use_body')}</p>,
+      labels: { confirm: t('use_confirm'), cancel: t('cancel') },
       confirmProps: { color: 'red' },
       onConfirm: run,
     });
@@ -647,14 +647,9 @@ function Gallery({ page, onApplied }: GalleryProps) {
 
   function confirmUnpublish(template: PageTemplate) {
     modals.openConfirmModal({
-      title: `Remove “${template.name}” from the Community?`,
-      children: (
-        <p className="text-sm">
-          It stops being listed right away. Pages other people already made from
-          it are their own copies and stay as they are.
-        </p>
-      ),
-      labels: { confirm: 'Remove', cancel: 'Cancel' },
+      title: t('unpublish_title', { name: template.name }),
+      children: <p className="text-sm">{t('unpublish_body')}</p>,
+      labels: { confirm: t('remove'), cancel: t('cancel') },
       confirmProps: { color: 'red' },
       onConfirm: () => unpublish({ id: template.id, visibility: 'private' }),
     });
@@ -681,16 +676,16 @@ function Gallery({ page, onApplied }: GalleryProps) {
       className="pt-2 pb-2"
     >
       <Tabs.List grow className="mb-5">
-        <Tabs.Tab value="ready">Ready-made</Tabs.Tab>
-        <Tabs.Tab value="community">Community</Tabs.Tab>
+        <Tabs.Tab value="ready">{t('tab_ready')}</Tabs.Tab>
+        <Tabs.Tab value="community">{t('tab_community')}</Tabs.Tab>
         <Tabs.Tab value="yours">
-          Yours{mine.length > 0 ? ` (${mine.length})` : ''}
+          {mine.length > 0 ? t('tab_yours_count', { n: mine.length }) : t('tab_yours')}
         </Tabs.Tab>
       </Tabs.List>
 
       <Tabs.Panel value="ready">
         <p className="mb-4 text-xs text-muted-foreground">
-          Links start hidden: fill them in or delete what you do not need.
+          {t('ready_hint')}
         </p>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {builtIn.map(template => (
@@ -711,8 +706,7 @@ function Gallery({ page, onApplied }: GalleryProps) {
 
       <Tabs.Panel value="yours">
         <p className="mb-4 text-xs text-muted-foreground">
-          Private unless you publish one. The public version never includes your
-          texts or links.
+          {t('yours_hint')}
         </p>
         {mine.length > 0 && (
           <div className="mb-5 grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -734,7 +728,7 @@ function Gallery({ page, onApplied }: GalleryProps) {
                           variant="light"
                           leftSection={<IconWorld size={10} />}
                         >
-                          Public
+                          {t('public_badge')}
                         </Badge>
                         {template.hidden && (
                           <Badge
@@ -743,7 +737,7 @@ function Gallery({ page, onApplied }: GalleryProps) {
                             variant="light"
                             leftSection={<IconEyeOff size={10} />}
                           >
-                            Under review
+                            {t('review_badge')}
                           </Badge>
                         )}
                       </>
@@ -752,7 +746,7 @@ function Gallery({ page, onApplied }: GalleryProps) {
                   meta={
                     isPublic ? (
                       <p className="text-xs text-muted-foreground">
-                        {usesLabel(template.uses_count ?? 0)}
+                        {usesLabel(template.uses_count ?? 0, t)}
                       </p>
                     ) : undefined
                   }
@@ -763,7 +757,7 @@ function Gallery({ page, onApplied }: GalleryProps) {
                           variant="subtle"
                           color="gray"
                           size={26}
-                          aria-label={`More for ${template.name}`}
+                          aria-label={t('more_for', { name: template.name })}
                         >
                           <IconDots size={16} />
                         </ActionIcon>
@@ -774,14 +768,14 @@ function Gallery({ page, onApplied }: GalleryProps) {
                             leftSection={<IconEyeOff size={14} />}
                             onClick={() => confirmUnpublish(template)}
                           >
-                            Remove from Community
+                            {t('remove_community')}
                           </Menu.Item>
                         ) : (
                           <Menu.Item
                             leftSection={<IconWorld size={14} />}
                             onClick={() => openPublishDialog(template, page)}
                           >
-                            Publish to Community
+                            {t('publish_community')}
                           </Menu.Item>
                         )}
                         <Menu.Item
@@ -789,7 +783,7 @@ function Gallery({ page, onApplied }: GalleryProps) {
                           leftSection={<IconTrash size={14} />}
                           onClick={() => remove(template.id)}
                         >
-                          Delete
+                          {t('delete')}
                         </Menu.Item>
                       </Menu.Dropdown>
                     </Menu>
@@ -808,9 +802,9 @@ function Gallery({ page, onApplied }: GalleryProps) {
         >
           <TextInput
             className="flex-1"
-            label="Save this page as a template"
-            description="Keeps its links, sections and theme."
-            placeholder="e.g. My creator layout"
+            label={t('save_label')}
+            description={t('save_desc')}
+            placeholder={t('save_ph')}
             maxLength={60}
             value={name}
             onChange={event => setName(event.currentTarget.value)}
@@ -821,7 +815,7 @@ function Gallery({ page, onApplied }: GalleryProps) {
             disabled={!name.trim() || !hasContent}
             variant="default"
           >
-            Save template
+            {t('save_button')}
           </Button>
         </form>
       </Tabs.Panel>
@@ -834,7 +828,7 @@ export function openTemplateGallery(props: GalleryProps) {
     title: (
       <span className="flex items-center gap-2 font-semibold">
         <IconTemplate size={18} />
-        Templates
+        {i18n.t('templates:gallery_title')}
       </span>
     ),
     size: 'xl',
