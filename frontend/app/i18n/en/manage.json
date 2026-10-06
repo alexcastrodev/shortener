@@ -5,6 +5,7 @@
   "error_title": "Something went wrong",
   "error_body": "We could not load your booking. Please try again.",
   "status_confirmed": "Confirmed",
+  "status_pending": "Awaiting approval",
   "status_cancelled": "Cancelled",
   "service": "Service",
   "status": "Status",

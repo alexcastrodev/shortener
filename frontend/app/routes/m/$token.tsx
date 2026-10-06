@@ -82,7 +82,11 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
         <div>
           <dt className="text-muted-foreground">{t('status')}</dt>
           <dd className="font-medium">
-            {cancelled ? t('status_cancelled') : t('status_confirmed')}
+            {appointment.status === 'pending'
+              ? t('status_pending')
+              : cancelled
+                ? t('status_cancelled')
+                : t('status_confirmed')}
           </dd>
         </div>
         <div>

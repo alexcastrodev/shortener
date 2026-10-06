@@ -4,9 +4,11 @@ module Forms
 
     SERVICE_KEYS = ["id", "name", "duration", "price", "currency", "capacity", "days", "times"].freeze
     PUBLIC_SERVICE_KEYS = ["id", "name", "duration", "price", "currency", "days", "times"].freeze
-    RULE_KEYS = ["time_zone", "approval", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
-    RULE_RANGES = { "min_notice_minutes" => (0..43_200), "window_days" => (1..365), "buffer_minutes" => (0..600), "max_per_day" => (1..1000) }.freeze
-    APPROVALS = ["auto"].freeze
+    RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
+    RULE_RANGES = { "min_notice_minutes" => (0..43_200), "window_days" => (1..365), "buffer_minutes" => (0..600), "max_per_day" => (1..1000), "approval_timeout_minutes" => (5..43_200) }.freeze
+    APPROVALS = ["auto", "manual"].freeze
+    ON_TIMEOUT = ["decline"].freeze
+    DEFAULT_TIMEOUT_MINUTES = 1440
     DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].freeze
     TIME = /\A([01]\d|2[0-3]):[0-5]\d\z/
     SERVICES_MAX = 20
@@ -47,6 +49,10 @@ module Forms
       rules = (attributes["rules"] || {}).stringify_keys
       rules["time_zone"] ||= user.time_zone
       rules["approval"] ||= "auto"
+      if rules["approval"] == "manual"
+        rules["approval_timeout_minutes"] ||= DEFAULT_TIMEOUT_MINUTES
+        rules["approval_on_timeout"] ||= "decline"
+      end
       rules["min_notice_minutes"] = 0 unless rules.key?("min_notice_minutes")
       rules["window_days"] ||= 60
       rules["buffer_minutes"] ||= 0
@@ -114,6 +120,7 @@ module Forms
       result << "rules have unknown keys" unless (rules.keys - RULE_KEYS).empty?
       result << "time zone is invalid" unless TZInfo::Timezone.all_identifiers.include?(rules["time_zone"])
       result << "approval must be one of #{APPROVALS.join(", ")}" unless APPROVALS.include?(rules["approval"])
+      result << "approval on timeout must be one of #{ON_TIMEOUT.join(", ")}" unless rules["approval_on_timeout"].nil? || ON_TIMEOUT.include?(rules["approval_on_timeout"])
       RULE_RANGES.each do |key, range|
         value = rules[key]
         result << "#{key.tr("_", " ")} must be a whole number from #{range.min} to #{range.max}" unless value.nil? || (value.is_a?(Integer) && range.cover?(value))

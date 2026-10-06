@@ -42,6 +42,10 @@ module Appointments
       slot_ids = starts.zip(ids).to_h
       booking = Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" }
       service = booking["services"].find { |item| item["id"] == service_key }
+      rules = booking["rules"] || {}
+      manual = rules["approval"] == "manual"
+      status = manual ? "pending" : "confirmed"
+      expires_at = Time.current + rules.fetch("approval_timeout_minutes", Forms::BookingSchema::DEFAULT_TIMEOUT_MINUTES).minutes if manual
       group = SecureRandom.uuid
       rows = starts.map do |time|
         {
@@ -49,7 +53,8 @@ module Appointments
           response_id: response.id,
           slot_id: slot_ids.fetch(time),
           group_key: group,
-          status: "confirmed",
+          status: status,
+          expires_at: expires_at,
           client_name: contact[:name],
           client_email: contact[:email],
           published_version: version,
@@ -62,8 +67,9 @@ module Appointments
       Appointment.insert_all!(rows)
       first = response.appointments.order(:id).first
       payload = { form_id: form.id, response_id: response.id, group_key: group, sessions: rows.size }
-      Notification.notify_owner(user_id: form.user_id, kind: "appointment_created", event_key: group, source: first, payload: payload)
-      queue_emails(form: form, first: first, group: group, email: contact[:email], payload: payload)
+      payload[:expires_at] = expires_at.iso8601 if manual
+      Notification.notify_owner(user_id: form.user_id, kind: manual ? "appointment_requested" : "appointment_created", event_key: group, source: first, payload: payload)
+      queue_emails(form: form, first: first, group: group, email: contact[:email], payload: payload, manual: manual)
       response.appointments.order(:id)
     rescue Reserve::Full => e
       raise Full, e.starts_at
@@ -95,10 +101,10 @@ module Appointments
 
     private
 
-    def queue_emails(form:, first:, group:, email:, payload:)
-      queued = [Notification.queue_email(kind: "appointment_created", event_key: group, source: first, recipient_kind: "owner", user_id: form.user_id, payload: payload)]
+    def queue_emails(form:, first:, group:, email:, payload:, manual: false)
+      queued = [Notification.queue_email(kind: manual ? "appointment_requested" : "appointment_created", event_key: group, source: first, recipient_kind: "owner", user_id: form.user_id, payload: payload)]
       if email.present?
-        queued << Notification.queue_email(kind: "appointment_confirmed", event_key: group, source: first, recipient_kind: "client", recipient_email: email, payload: payload)
+        queued << Notification.queue_email(kind: manual ? "appointment_request_received" : "appointment_confirmed", event_key: group, source: first, recipient_kind: "client", recipient_email: email, payload: payload)
       end
       ids = queued.map(&:id)
       ActiveRecord.after_all_transactions_commit { ids.each { |id| NotificationDeliveryJob.perform_later(id) } }

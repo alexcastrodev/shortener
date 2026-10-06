@@ -1,0 +1,15 @@
+<%= t(".title") %>
+
+<%= t(".intro", name: @client_name.presence || t("appointment_mailer.new_booking.someone"), service: @service) %>
+<% @sessions.each do |session| %>
+- <%= session %>
+<% end %>
+<% if @client_email.present? %>
+<%= t(".email", email: @client_email) %>
+<% end %>
+
+<%= t(".deadline", deadline: @deadline) %>
+
+<%= t(".see", url: @url) %>
+
+Kurz · https://kurz.fyi

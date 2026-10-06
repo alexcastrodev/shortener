@@ -71,6 +71,21 @@ en:
       reply: "Questions? Reply to this email to reach the organizer."
       manage: "See or cancel your booking: %{url}"
       manage_link: "See or cancel your booking"
+    request_received:
+      subject: "Request received: %{service}"
+      title: "We received your booking request"
+      intro: "%{service} is waiting for the organizer's approval:"
+      reply: "You will get another email as soon as it is decided. Questions? Reply to this email."
+      manage: "See or cancel your request: %{url}"
+      manage_link: "See or cancel your request"
+    new_request:
+      subject: "Booking to approve: %{service}, %{name}"
+      title: "A booking is waiting for your approval"
+      intro: "%{name} asked to book %{service}:"
+      email: "Email: %{email}"
+      deadline: "Without an answer by %{deadline} the request is declined and the time is released."
+      see: "See it in your responses: %{url}"
+      see_link: "See it in your responses"
     reminder:
       subject: "Reminder: %{service}, %{time}"
       title: "Your booking is coming up"
