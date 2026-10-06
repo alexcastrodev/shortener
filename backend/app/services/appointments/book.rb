@@ -43,7 +43,7 @@ module Appointments
       booking = Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" }
       service = booking["services"].find { |item| item["id"] == service_key }
       rules = booking["rules"] || {}
-      manual = rules["approval"] == "manual"
+      manual = needs_approval?(rules, starts)
       status = manual ? "pending" : "confirmed"
       expires_at = Time.current + rules.fetch("approval_timeout_minutes", Forms::BookingSchema::DEFAULT_TIMEOUT_MINUTES).minutes if manual
       group = SecureRandom.uuid
@@ -75,6 +75,13 @@ module Appointments
       response.appointments.order(:id)
     rescue Reserve::Full => e
       raise Full, e.starts_at
+    end
+
+    def needs_approval?(rules, starts, now: Time.current)
+      return false unless rules["approval"] == "manual"
+
+      limit = rules["approval_within_minutes"]
+      limit.nil? || starts.min < now + limit.minutes
     end
 
     def summary(response)

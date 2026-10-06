@@ -35,6 +35,7 @@ module Mcp
           approval: { type: "string", enum: ["auto", "manual"] },
           approval_timeout_minutes: { type: "integer" },
           approval_on_timeout: { type: "string", enum: ["decline", "accept"] },
+          approval_within_minutes: { type: "integer" },
           min_notice_minutes: { type: "integer" },
           window_days: { type: "integer" },
           buffer_minutes: { type: "integer" },

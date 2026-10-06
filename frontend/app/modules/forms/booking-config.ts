@@ -46,6 +46,8 @@ export type Values = {
   approval: 'auto' | 'manual';
   approval_timeout_minutes: number | '';
   approval_on_timeout: 'decline' | 'accept';
+  approval_soon_only: boolean;
+  approval_within_minutes: number | '';
   min_notice_minutes: number | '';
   window_days: number | '';
   max_per_day: number | '';
@@ -169,6 +171,8 @@ export function initialValues(field?: FormField): Values {
     approval: rules?.approval ?? 'auto',
     approval_timeout_minutes: rules?.approval_timeout_minutes ?? 1440,
     approval_on_timeout: rules?.approval_on_timeout ?? 'decline',
+    approval_soon_only: rules?.approval_within_minutes != null,
+    approval_within_minutes: rules?.approval_within_minutes ?? 2880,
     min_notice_minutes: rules?.min_notice_minutes ?? 0,
     window_days: rules?.window_days ?? 60,
     max_per_day: rules?.max_per_day ?? '',
@@ -194,6 +198,12 @@ export function toBookingInput(
         : values.approval_timeout_minutes;
     rules.approval_on_timeout = values.approval_on_timeout;
   }
+  rules.approval_within_minutes =
+    values.approval === 'manual' &&
+    values.approval_soon_only &&
+    values.approval_within_minutes !== ''
+      ? values.approval_within_minutes
+      : null;
   const maxPerDay = orNull(values.max_per_day);
   if (maxPerDay !== null) rules.max_per_day = maxPerDay;
 

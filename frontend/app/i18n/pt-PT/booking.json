@@ -137,5 +137,8 @@
   "category_move_to": "Mover os serviços para",
   "category_remove_cancel": "Manter",
   "category_remove_confirm": "Remover categoria",
-  "category_name_error": "Dê um nome à categoria (até 60 caracteres)"
+  "category_name_error": "Dê um nome à categoria (até 60 caracteres)",
+  "approval_soon_only": "Só pedir aprovação perto da hora",
+  "approval_soon_hint": "As marcações feitas com mais antecedência ficam confirmadas logo.",
+  "approval_within": "Pedir aprovação quando marcado com menos de"
 }

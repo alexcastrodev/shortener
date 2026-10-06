@@ -7,6 +7,7 @@ import {
   SegmentedControl,
   Select,
   Stack,
+  Switch,
   TextInput,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
@@ -58,6 +59,8 @@ export function BookingEditor({
           help: z.string().max(500),
           approval: z.enum(['auto', 'manual']),
           approval_timeout_minutes: z.union([z.number(), z.literal('')]),
+          approval_soon_only: z.boolean(),
+          approval_within_minutes: z.union([z.number(), z.literal('')]),
           categories: z.array(
             z.object({
               name: z.string().trim().min(1, t('category_name_error')).max(60),
@@ -420,6 +423,33 @@ export function BookingEditor({
               }
             />
           </div>
+          {form.values.approval === 'manual' && (
+            <Stack gap="xs">
+              <Switch
+                label={t('approval_soon_only')}
+                description={t('approval_soon_hint')}
+                checked={form.values.approval_soon_only}
+                onChange={event =>
+                  form.setFieldValue(
+                    'approval_soon_only',
+                    event.currentTarget.checked
+                  )
+                }
+              />
+              {form.values.approval_soon_only && (
+                <TimeoutInput
+                  label={t('approval_within')}
+                  minutes={form.values.approval_within_minutes}
+                  error={
+                    form.errors.approval_within_minutes as string | undefined
+                  }
+                  onChange={value =>
+                    form.setFieldValue('approval_within_minutes', value)
+                  }
+                />
+              )}
+            </Stack>
+          )}
           {form.values.approval === 'manual' && (
             <Group grow align="flex-start">
               <TimeoutInput
