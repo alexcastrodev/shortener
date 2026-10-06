@@ -2,7 +2,7 @@
 
 Appointments let a form owner offer bookable services and let visitors book them from the public form. Everything is free: Kurz has no payments and no plans, so prices are informational text only.
 
-This page records the decisions the implementation follows. Behaviour is gated by `APPOINTMENTS_ENABLED` and, while the feature is in beta, `APPOINTMENTS_ALLOWED_EMAILS` (see `Appointments::Config`).
+This page records the decisions the implementation follows. Behaviour is gated by `APPOINTMENTS_ENABLED` (on by default in `.ci/stack.yml`) and can be limited to a list of accounts with `APPOINTMENTS_ALLOWED_EMAILS` (empty means everyone; see `Appointments::Config`). The beta list was removed when the feature was opened to everyone.
 
 ## Scope
 
