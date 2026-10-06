@@ -4,6 +4,9 @@ import type {
   FormFieldInput,
 } from '@internal/core/types/Form';
 
+export const REMINDER_CHOICES = [60, 120, 360, 1440, 2880, 10080] as const;
+export const REMINDERS_MAX = 3;
+
 export const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 export const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -48,6 +51,7 @@ export type Values = {
   approval_on_timeout: 'decline' | 'accept';
   approval_soon_only: boolean;
   approval_within_minutes: number | '';
+  reminder_minutes: number[];
   min_notice_minutes: number | '';
   window_days: number | '';
   max_per_day: number | '';
@@ -173,6 +177,9 @@ export function initialValues(field?: FormField): Values {
     approval_on_timeout: rules?.approval_on_timeout ?? 'decline',
     approval_soon_only: rules?.approval_within_minutes != null,
     approval_within_minutes: rules?.approval_within_minutes ?? 2880,
+    reminder_minutes: [...(rules?.reminder_minutes ?? [1440])].sort(
+      (a, b) => b - a
+    ),
     min_notice_minutes: rules?.min_notice_minutes ?? 0,
     window_days: rules?.window_days ?? 60,
     max_per_day: rules?.max_per_day ?? '',
@@ -204,6 +211,9 @@ export function toBookingInput(
     values.approval_within_minutes !== ''
       ? values.approval_within_minutes
       : null;
+  rules.reminder_minutes = [...new Set(values.reminder_minutes)].sort(
+    (a, b) => b - a
+  );
   const maxPerDay = orNull(values.max_per_day);
   if (maxPerDay !== null) rules.max_per_day = maxPerDay;
 

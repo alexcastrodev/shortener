@@ -140,5 +140,13 @@
   "category_name_error": "Give the category a name (up to 60 characters)",
   "approval_soon_only": "Only ask for approval close to the time",
   "approval_soon_hint": "Bookings made further ahead are confirmed straight away.",
-  "approval_within": "Ask for approval when booked less than"
+  "approval_within": "Ask for approval when booked less than",
+  "reminders": "Remind the client",
+  "reminders_hint": "Up to three. Each one is sent once, before the visit. None selected means no reminders.",
+  "reminder_60": "1 hour before",
+  "reminder_120": "2 hours before",
+  "reminder_360": "6 hours before",
+  "reminder_1440": "1 day before",
+  "reminder_2880": "2 days before",
+  "reminder_10080": "1 week before"
 }

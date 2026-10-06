@@ -140,5 +140,13 @@
   "category_name_error": "Dê um nome à categoria (até 60 caracteres)",
   "approval_soon_only": "Só pedir aprovação perto da hora",
   "approval_soon_hint": "As marcações feitas com mais antecedência ficam confirmadas logo.",
-  "approval_within": "Pedir aprovação quando marcado com menos de"
+  "approval_within": "Pedir aprovação quando marcado com menos de",
+  "reminders": "Lembrar o cliente",
+  "reminders_hint": "Até três. Cada um é enviado uma vez, antes da visita. Sem nenhum escolhido, não há lembretes.",
+  "reminder_60": "1 hora antes",
+  "reminder_120": "2 horas antes",
+  "reminder_360": "6 horas antes",
+  "reminder_1440": "1 dia antes",
+  "reminder_2880": "2 dias antes",
+  "reminder_10080": "1 semana antes"
 }

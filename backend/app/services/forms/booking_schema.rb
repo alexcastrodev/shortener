@@ -4,11 +4,13 @@ module Forms
 
     SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day", "bundle"].freeze
     PUBLIC_SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "days", "times", "bundle"].freeze
-    RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "approval_within_minutes", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
+    RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "approval_within_minutes", "reminder_minutes", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
     RULE_RANGES = { "min_notice_minutes" => (0..43_200), "window_days" => (1..365), "buffer_minutes" => (0..600), "max_per_day" => (1..1000), "approval_timeout_minutes" => (5..43_200), "approval_within_minutes" => (1..43_200) }.freeze
     APPROVALS = ["auto", "manual"].freeze
     ON_TIMEOUT = ["decline", "accept"].freeze
     DEFAULT_TIMEOUT_MINUTES = 1440
+    REMINDER_RANGE = (15..10_080)
+    REMINDERS_MAX = 3
     DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].freeze
     TIME = /\A([01]\d|2[0-3]):[0-5]\d\z/
     SERVICES_MAX = 20
@@ -255,7 +257,12 @@ module Forms
         value = rules[key]
         result << "#{key.tr("_", " ")} must be a whole number from #{range.min} to #{range.max}" unless value.nil? || (value.is_a?(Integer) && range.cover?(value))
       end
+      result << "reminder minutes must be up to #{REMINDERS_MAX} different whole numbers from #{REMINDER_RANGE.min} to #{REMINDER_RANGE.max}" unless valid_reminders?(rules["reminder_minutes"])
       result
+    end
+
+    def valid_reminders?(list)
+      list.nil? || (list.is_a?(Array) && list.size <= REMINDERS_MAX && list.uniq.size == list.size && list.all? { |value| value.is_a?(Integer) && REMINDER_RANGE.cover?(value) })
     end
   end
 end

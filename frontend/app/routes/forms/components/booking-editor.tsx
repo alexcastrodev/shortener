@@ -27,6 +27,8 @@ import { timeoutInRange } from '../../../modules/forms/duration-units.ts';
 import { WeekdayTimes } from './weekday-times';
 import {
   DAYS,
+  REMINDERS_MAX,
+  REMINDER_CHOICES,
   TIME,
   blankService,
   initialValues,
@@ -186,6 +188,15 @@ export function BookingEditor({
     initialValues: initialValues(field),
     validate: zod4Resolver(schema),
   });
+
+  const reminderLabels: Record<(typeof REMINDER_CHOICES)[number], string> = {
+    60: t('reminder_60'),
+    120: t('reminder_120'),
+    360: t('reminder_360'),
+    1440: t('reminder_1440'),
+    2880: t('reminder_2880'),
+    10080: t('reminder_10080'),
+  };
 
   const dayLabels: Record<(typeof DAYS)[number], string> = {
     mon: t('day_mon'),
@@ -479,6 +490,30 @@ export function BookingEditor({
               </div>
             </Group>
           )}
+          <div>
+            <p className="mb-1 text-sm">{t('reminders')}</p>
+            <Chip.Group
+              multiple
+              value={form.values.reminder_minutes.map(String)}
+              onChange={value =>
+                form.setFieldValue(
+                  'reminder_minutes',
+                  value.slice(-REMINDERS_MAX).map(Number)
+                )
+              }
+            >
+              <Group gap={6}>
+                {REMINDER_CHOICES.map(minutes => (
+                  <Chip key={minutes} value={String(minutes)} size="xs">
+                    {reminderLabels[minutes]}
+                  </Chip>
+                ))}
+              </Group>
+            </Chip.Group>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t('reminders_hint')}
+            </p>
+          </div>
           <Group grow align="flex-start">
             <NumberInput
               label={t('min_notice')}
