@@ -76,6 +76,7 @@ test('saving keeps service ids, orders days and times, and sends the rules', () 
     window_days: 90,
     approval_timeout_minutes: 60,
     approval_on_timeout: 'accept',
+    approval_within_minutes: null,
     max_per_day: 8,
   });
 });
@@ -92,6 +93,7 @@ test('creating sends the type; automatic approval sends no deadline', () => {
     approval: 'auto',
     min_notice_minutes: 0,
     window_days: 60,
+    approval_within_minutes: null,
   });
 });
 
@@ -322,4 +324,30 @@ test('loads the stored category of each service', () => {
     toBookingInput(values, false).services![0].category_id,
     'cat00002'
   );
+});
+
+test('the last-minute window is sent only for manual approval with the switch on, and cleared otherwise', () => {
+  const base = initialValues(field);
+  assert.equal(base.approval_soon_only, false);
+  assert.equal(
+    toBookingInput(base, false).rules?.approval_within_minutes,
+    null
+  );
+  const on = {
+    ...base,
+    approval_soon_only: true,
+    approval_within_minutes: 1440,
+  };
+  assert.equal(toBookingInput(on, false).rules?.approval_within_minutes, 1440);
+  assert.equal(
+    toBookingInput({ ...on, approval: 'auto' }, false).rules
+      ?.approval_within_minutes,
+    null
+  );
+  const loaded = initialValues({
+    ...field,
+    rules: { ...field.rules!, approval_within_minutes: 120 },
+  });
+  assert.equal(loaded.approval_soon_only, true);
+  assert.equal(loaded.approval_within_minutes, 120);
 });

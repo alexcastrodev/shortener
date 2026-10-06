@@ -10,10 +10,12 @@ import {
 export function TimeoutInput({
   minutes,
   error,
+  label,
   onChange,
 }: {
   minutes: number | '';
   error?: string;
+  label?: string;
   onChange: (minutes: number | '') => void;
 }) {
   const { t } = useTranslation('booking');
@@ -28,10 +30,10 @@ export function TimeoutInput({
 
   return (
     <div>
-      <p className="mb-1 text-sm">{t('approval_timeout')}</p>
+      <p className="mb-1 text-sm">{label ?? t('approval_timeout')}</p>
       <Group gap="xs" wrap="nowrap" align="flex-start">
         <NumberInput
-          aria-label={t('approval_timeout')}
+          aria-label={label ?? t('approval_timeout')}
           min={1}
           decimalScale={unit === 'minutes' ? 0 : 2}
           value={amount}
@@ -41,7 +43,7 @@ export function TimeoutInput({
           }
         />
         <Select
-          aria-label={t('approval_timeout')}
+          aria-label={label ?? t('approval_timeout')}
           allowDeselect={false}
           data={[
             { value: 'minutes', label: t('unit_minutes', { count: shown }) },
