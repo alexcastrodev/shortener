@@ -21,8 +21,8 @@ module Appointments
     def stored(forms, range, zone)
       AppointmentSlot.where(form_id: forms.keys, starts_at: range).includes(:appointments).to_h do |slot|
         appointments = slot.appointments.sort_by(&:id)
-        name = appointments.first&.snapshot&.dig("name")
-        [key(slot.form_id, slot.service_key, slot.starts_at), session(forms[slot.form_id], zone, { service_id: slot.service_key, name: name, starts_at: slot.starts_at, capacity: slot.capacity, booked: slot.booked, appointments: appointments })]
+        snapshot = appointments.first&.snapshot || {}
+        [key(slot.form_id, slot.service_key, slot.starts_at), session(forms[slot.form_id], zone, { service_id: slot.service_key, name: snapshot["name"], duration: snapshot["duration"], starts_at: slot.starts_at, capacity: slot.capacity, booked: slot.booked, appointments: appointments })]
       end
     end
 
@@ -38,7 +38,7 @@ module Appointments
         rules = booking["rules"].merge(OPEN_RULES)
         booking["services"].each do |service|
           Slots.call(service: service, rules: rules, from: start, to: [to, start + (MAX_RANGE_DAYS - 1)].min, now: now, exceptions: booking["exceptions"].to_a).each do |slot|
-            result[key(form.id, service["id"], slot[:starts_at])] = session(form, zone, { service_id: service["id"], name: service["name"], starts_at: slot[:starts_at], capacity: service["capacity"], booked: 0, appointments: [] })
+            result[key(form.id, service["id"], slot[:starts_at])] = session(form, zone, { service_id: service["id"], name: service["name"], duration: service["duration"], starts_at: slot[:starts_at], capacity: service["capacity"], booked: 0, appointments: [] })
           end
         end
       end
@@ -55,6 +55,7 @@ module Appointments
         form_title: form.title,
         service_id: data[:service_id],
         service_name: data[:name],
+        duration: data[:duration],
         starts_at: data[:starts_at].utc,
         date: data[:starts_at].in_time_zone(zone).to_date,
         capacity: data[:capacity],
