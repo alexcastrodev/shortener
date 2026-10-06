@@ -8,6 +8,7 @@ export interface ManagedAppointment {
   service: string;
   status: 'pending' | 'unverified' | 'confirmed' | 'cancelled';
   cancellable: boolean;
+  series?: boolean;
   time_zone: string;
   sessions: AppointmentSession[];
 }

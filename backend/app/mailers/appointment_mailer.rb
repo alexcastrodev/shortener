@@ -23,6 +23,8 @@ class AppointmentMailer < ApplicationMailer
 
   def cancelled
     load_group
+    only = params[:notification].payload["cancelled_ids"]
+    @appointments = @appointments.select { |row| only.include?(row.id) } if only.present?
     zone = Appointments::Book.valid_zone(@first.client_time_zone) || "UTC"
     @sessions = sessions(zone)
 

@@ -3,6 +3,7 @@ import {
   Button,
   Group,
   Modal,
+  SegmentedControl,
   Stack,
   Textarea,
   TextInput,
@@ -40,6 +41,7 @@ export function SessionPanel({
   const { t } = useTranslation('agenda');
   const [dialog, setDialog] = useState<Dialog>(null);
   const [text, setText] = useState('');
+  const [scope, setScope] = useState<'one' | 'remaining' | 'all'>('one');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const { mutate, isPending } = useAppointmentAction();
@@ -87,7 +89,13 @@ export function SessionPanel({
   const run = (
     appointment: AgendaAppointment,
     action: AppointmentActionName,
-    data?: { message?: string; reason?: string; date?: string; time?: string }
+    data?: {
+      message?: string;
+      reason?: string;
+      date?: string;
+      time?: string;
+      scope?: 'one' | 'remaining' | 'all';
+    }
   ) => {
     mutate(
       { id: appointment.id, action, data },
@@ -232,7 +240,10 @@ export function SessionPanel({
                   variant="subtle"
                   color="red"
                   disabled={isPending}
-                  onClick={() => open({ kind: 'cancel', appointment })}
+                  onClick={() => {
+                    setScope('one');
+                    open({ kind: 'cancel', appointment });
+                  }}
                 >
                   {t('cancel')}
                 </Button>
@@ -254,6 +265,20 @@ export function SessionPanel({
           <p className="text-sm">
             {dialog?.kind === 'cancel' ? t('cancel_body') : t('decline_body')}
           </p>
+          {dialog?.kind === 'cancel' && dialog.appointment.series && (
+            <SegmentedControl
+              fullWidth
+              size="xs"
+              aria-label={t('cancel_scope')}
+              value={scope}
+              onChange={value => setScope(value as 'one' | 'remaining' | 'all')}
+              data={[
+                { value: 'one', label: t('scope_one') },
+                { value: 'remaining', label: t('scope_remaining') },
+                { value: 'all', label: t('scope_all') },
+              ]}
+            />
+          )}
           <Textarea
             label={
               dialog?.kind === 'cancel' ? t('reason_label') : t('message_label')
@@ -277,7 +302,10 @@ export function SessionPanel({
                   dialog.appointment,
                   dialog.kind === 'cancel' ? 'cancel' : 'decline',
                   dialog.kind === 'cancel'
-                    ? { reason: text.trim() || undefined }
+                    ? {
+                        reason: text.trim() || undefined,
+                        ...(dialog.appointment.series ? { scope } : {}),
+                      }
                     : { message: text.trim() || undefined }
                 )
               }

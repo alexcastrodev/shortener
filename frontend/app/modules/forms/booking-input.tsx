@@ -4,16 +4,33 @@ import type { BookingAnswer, FormField } from '@internal/core/types/Form';
 import type { FormSlot } from '@internal/core/actions/get-form-slots/get-form-slots.types';
 import type { BioTheme } from '../bio-page/themes';
 import { formatCurrency, formatDate } from '../../i18n/format';
+import {
+  WEEKDAYS,
+  monthOptions,
+  monthlyComplete,
+  monthlyDates,
+  toggleWeekday,
+} from './monthly-booking';
 
-export type LoadSlots = (service: string, from: string, to: string) => Promise<FormSlot[]>;
+export type LoadSlots = (
+  service: string,
+  from: string,
+  to: string
+) => Promise<FormSlot[]>;
 
 const STEP_DAYS = 14;
 const MAX_DAYS = 56;
 
 const pad = (value: number) => String(value).padStart(2, '0');
-const isoDay = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+const isoDay = (date: Date) =>
+  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 const dayLabel = (iso: string) =>
-  formatDate(`${iso}T00:00:00Z`, { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  formatDate(`${iso}T00:00:00Z`, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
 
 type State = { status: 'loading' | 'ready' | 'error'; slots: FormSlot[] };
 
@@ -39,11 +56,18 @@ export function BookingInput({
   const categories = field.categories ?? [];
   const grouped = categories.length >= 2;
   const [categoryId, setCategoryId] = useState<string | undefined>(
-    allServices.find(item => item.id === value?.service)?.category_id ?? undefined
+    allServices.find(item => item.id === value?.service)?.category_id ??
+      undefined
   );
-  const services = grouped ? allServices.filter(item => item.category_id === categoryId) : allServices;
+  const services = grouped
+    ? allServices.filter(item => item.category_id === categoryId)
+    : allServices;
   const [serviceId, setServiceId] = useState<string | undefined>(
-    value?.service ?? (!grouped && services.length === 1 ? services[0].id : undefined)
+    value?.service ??
+      (!grouped && services.length === 1 ? services[0].id : undefined)
+  );
+  const [mode, setMode] = useState<'days' | 'monthly'>(
+    value?.monthly ? 'monthly' : 'days'
   );
   const [days, setDays] = useState(STEP_DAYS);
   const [attempt, setAttempt] = useState(0);
@@ -55,9 +79,10 @@ export function BookingInput({
   latest.current = { value, onChange };
   const live = !!loadSlots;
   const sessions = value?.sessions ?? [];
+  const monthly = value?.monthly;
 
   useEffect(() => {
-    if (!live || !serviceId) return;
+    if (!live || !serviceId || mode === 'monthly') return;
     let current = true;
     const from = new Date();
     const to = new Date(from.getTime() + (days - 1) * 86_400_000);
@@ -68,21 +93,30 @@ export function BookingInput({
         setState({ status: 'ready', slots });
         const { value: chosen, onChange: update } = latest.current;
         const free = new Set(slots.map(slot => `${slot.date}|${slot.time}`));
-        const kept = (chosen?.sessions ?? []).filter(session => free.has(`${session.date}|${session.time}`));
+        const kept = (chosen?.sessions ?? []).filter(session =>
+          free.has(`${session.date}|${session.time}`)
+        );
         if (chosen && kept.length !== chosen.sessions.length) {
           setDropped(true);
-          update(kept.length ? { service: chosen.service, sessions: kept } : undefined);
+          update(
+            kept.length
+              ? { service: chosen.service, sessions: kept }
+              : undefined
+          );
         }
       })
       .catch(() => current && setState({ status: 'error', slots: [] }));
     return () => {
       current = false;
     };
-  }, [live, serviceId, days, reloadKey, attempt]);
+  }, [live, serviceId, mode, days, reloadKey, attempt]);
 
   if (!live) {
     return (
-      <p id={inputId} className={`rounded-lg px-3 py-3 text-sm ${theme.button}`}>
+      <p
+        id={inputId}
+        className={`rounded-lg px-3 py-3 text-sm ${theme.button}`}
+      >
         {t('booking_preview')}
       </p>
     );
@@ -101,8 +135,15 @@ export function BookingInput({
   const chooseService = (id: string) => {
     if (id === serviceId) return;
     setServiceId(id);
+    setMode('days');
     setDropped(false);
     setDays(STEP_DAYS);
+    onChange(undefined);
+  };
+
+  const chooseMode = (next: 'days' | 'monthly') => {
+    if (next === mode) return;
+    setMode(next);
     onChange(undefined);
   };
 
@@ -110,13 +151,20 @@ export function BookingInput({
     if (!serviceId) return;
     setDropped(false);
     const others = sessions.filter(session => session.date !== date);
-    const same = sessions.some(session => session.date === date && session.time === time);
-    const next = same ? others : [...others, { date, time }].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
+    const same = sessions.some(
+      session => session.date === date && session.time === time
+    );
+    const next = same
+      ? others
+      : [...others, { date, time }].sort((a, b) =>
+          `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)
+        );
     onChange(next.length ? { service: serviceId, sessions: next } : undefined);
   };
 
   const byDay = new Map<string, FormSlot[]>();
-  for (const slot of state.slots) byDay.set(slot.date, [...(byDay.get(slot.date) ?? []), slot]);
+  for (const slot of state.slots)
+    byDay.set(slot.date, [...(byDay.get(slot.date) ?? []), slot]);
   const service = services.find(item => item.id === serviceId);
   const chip = (selected: boolean) =>
     `min-h-10 rounded-lg px-3 py-1.5 text-sm font-medium ${theme.button} ${selected ? 'ring-2 ring-current' : ''}`;
@@ -124,9 +172,15 @@ export function BookingInput({
   return (
     <div id={inputId} className="space-y-4">
       {grouped && (
-        <fieldset role="radiogroup" aria-label={t('booking_category')} className="space-y-2">
+        <fieldset
+          role="radiogroup"
+          aria-label={t('booking_category')}
+          className="space-y-2"
+        >
           {categories.map(item => {
-            const count = allServices.filter(entry => entry.category_id === item.id).length;
+            const count = allServices.filter(
+              entry => entry.category_id === item.id
+            ).length;
             return (
               <button
                 key={item.id}
@@ -137,14 +191,20 @@ export function BookingInput({
                 className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left ${theme.button} ${item.id === categoryId ? 'ring-2 ring-current' : ''}`}
               >
                 <span className="font-medium">{item.name}</span>
-                <span className="text-sm opacity-80">{t('booking_services_count', { count })}</span>
+                <span className="text-sm opacity-80">
+                  {t('booking_services_count', { count })}
+                </span>
               </button>
             );
           })}
         </fieldset>
       )}
       {services.length > 1 ? (
-        <fieldset role="radiogroup" aria-label={t('booking_service')} className="space-y-2">
+        <fieldset
+          role="radiogroup"
+          aria-label={t('booking_service')}
+          className="space-y-2"
+        >
           {services.map(item => (
             <button
               key={item.id}
@@ -157,7 +217,9 @@ export function BookingInput({
               <span className="font-medium">{item.name}</span>
               <span className="text-sm opacity-80">
                 {t('booking_minutes', { count: item.duration })}
-                {item.price ? ` · ${formatCurrency(item.price, item.currency ?? 'EUR')}` : ''}
+                {item.price
+                  ? ` · ${formatCurrency(item.price, item.currency ?? 'EUR')}`
+                  : ''}
               </span>
             </button>
           ))}
@@ -168,13 +230,61 @@ export function BookingInput({
             {service.name}
             <span className="font-normal opacity-80">
               {` · ${t('booking_minutes', { count: service.duration })}`}
-              {service.price ? ` · ${formatCurrency(service.price, service.currency ?? 'EUR')}` : ''}
+              {service.price
+                ? ` · ${formatCurrency(service.price, service.currency ?? 'EUR')}`
+                : ''}
             </span>
           </p>
         )
       )}
 
-      {serviceId && (
+      {serviceId && service?.monthly && (
+        <fieldset
+          role="radiogroup"
+          aria-label={t('booking_mode')}
+          className="flex flex-wrap gap-2"
+        >
+          <button
+            type="button"
+            role="radio"
+            aria-checked={mode === 'days'}
+            className={chip(mode === 'days')}
+            onClick={() => chooseMode('days')}
+          >
+            {t('booking_mode_days')}
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={mode === 'monthly'}
+            className={chip(mode === 'monthly')}
+            onClick={() => chooseMode('monthly')}
+          >
+            {t('booking_mode_monthly')}
+            {service.monthly.price
+              ? ` · ${formatCurrency(service.monthly.price, service.currency ?? 'EUR')}`
+              : ''}
+          </button>
+        </fieldset>
+      )}
+
+      {serviceId && service && mode === 'monthly' && (
+        <MonthlyPicker
+          service={service}
+          value={monthly}
+          theme={theme}
+          chip={chip}
+          onChange={choice =>
+            onChange(
+              choice
+                ? { service: service.id, sessions: [], monthly: choice }
+                : undefined
+            )
+          }
+        />
+      )}
+
+      {serviceId && mode === 'days' && (
         <div className="space-y-3">
           {dropped && (
             <p role="alert" className="text-sm font-medium">
@@ -187,7 +297,11 @@ export function BookingInput({
               <p role="alert" className="text-sm">
                 {t('booking_load_failed')}
               </p>
-              <button type="button" className={chip(false)} onClick={() => setAttempt(count => count + 1)}>
+              <button
+                type="button"
+                className={chip(false)}
+                onClick={() => setAttempt(count => count + 1)}
+              >
                 {t('booking_retry')}
               </button>
             </div>
@@ -201,9 +315,14 @@ export function BookingInput({
               )}
               {[...byDay.entries()].map(([date, slots]) => (
                 <div key={date} className="flex flex-wrap items-center gap-2">
-                  <span className="w-24 shrink-0 text-sm font-medium">{dayLabel(date)}</span>
+                  <span className="w-24 shrink-0 text-sm font-medium">
+                    {dayLabel(date)}
+                  </span>
                   {slots.map(slot => {
-                    const selected = sessions.some(session => session.date === date && session.time === slot.time);
+                    const selected = sessions.some(
+                      session =>
+                        session.date === date && session.time === slot.time
+                    );
                     return (
                       <button
                         key={slot.starts_at}
@@ -219,18 +338,31 @@ export function BookingInput({
                 </div>
               ))}
               {days < MAX_DAYS && state.status === 'ready' && (
-                <button type="button" className={`text-sm underline ${theme.footer}`} onClick={() => setDays(count => Math.min(MAX_DAYS, count + STEP_DAYS))}>
+                <button
+                  type="button"
+                  className={`text-sm underline ${theme.footer}`}
+                  onClick={() =>
+                    setDays(count => Math.min(MAX_DAYS, count + STEP_DAYS))
+                  }
+                >
                   {t('booking_more_dates')}
                 </button>
               )}
             </>
           )}
-          {field.time_zone && <p className="text-xs opacity-70">{t('booking_zone', { zone: field.time_zone })}</p>}
+          {field.time_zone && (
+            <p className="text-xs opacity-70">
+              {t('booking_zone', { zone: field.time_zone })}
+            </p>
+          )}
         </div>
       )}
 
-      {sessions.length > 0 && (
-        <div className="rounded-lg border border-current/20 px-3 py-2 text-sm" aria-live="polite">
+      {mode === 'days' && sessions.length > 0 && (
+        <div
+          className="rounded-lg border border-current/20 px-3 py-2 text-sm"
+          aria-live="polite"
+        >
           <p className="font-medium">{t('booking_summary')}</p>
           <ul className="mt-1 space-y-0.5">
             {sessions.map(session => (
@@ -239,6 +371,108 @@ export function BookingInput({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type MonthlyChoiceValue = { month: string; weekdays: string[]; time: string };
+
+function MonthlyPicker({
+  service,
+  value,
+  theme,
+  chip,
+  onChange,
+}: {
+  service: NonNullable<FormField['services']>[number];
+  value: MonthlyChoiceValue | undefined;
+  theme: BioTheme;
+  chip: (selected: boolean) => string;
+  onChange: (choice: MonthlyChoiceValue | undefined) => void;
+}) {
+  const { t } = useTranslation('respond');
+  const months = monthOptions(new Date());
+  const times = [...service.times].sort();
+  const [draft, setDraft] = useState<MonthlyChoiceValue>(
+    value ?? { month: months[0].value, weekdays: [], time: times[0] ?? '' }
+  );
+  const update = (next: Partial<MonthlyChoiceValue>) => {
+    const merged = { ...draft, ...next };
+    setDraft(merged);
+    onChange(monthlyComplete(merged) ? merged : undefined);
+  };
+  const shown = draft;
+  const dayLabels: Record<(typeof WEEKDAYS)[number], string> = {
+    mon: t('monthly_day_mon'),
+    tue: t('monthly_day_tue'),
+    wed: t('monthly_day_wed'),
+    thu: t('monthly_day_thu'),
+    fri: t('monthly_day_fri'),
+    sat: t('monthly_day_sat'),
+    sun: t('monthly_day_sun'),
+  };
+  const dates = monthlyDates(shown.month, shown.weekdays, new Date());
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium">{t('monthly_month')}</p>
+      <div className="flex flex-wrap gap-2">
+        {months.map(item => (
+          <button
+            key={item.value}
+            type="button"
+            aria-pressed={shown.month === item.value}
+            className={chip(shown.month === item.value)}
+            onClick={() => update({ month: item.value })}
+          >
+            {formatDate(item.date.toISOString(), {
+              month: 'long',
+              year: 'numeric',
+            })}
+          </button>
+        ))}
+      </div>
+      <p className="text-sm font-medium">{t('monthly_weekdays')}</p>
+      <div className="flex flex-wrap gap-2">
+        {WEEKDAYS.filter(day => service.days.includes(day)).map(day => (
+          <button
+            key={day}
+            type="button"
+            aria-pressed={shown.weekdays.includes(day)}
+            className={chip(shown.weekdays.includes(day))}
+            onClick={() =>
+              update({ weekdays: toggleWeekday(shown.weekdays, day) })
+            }
+          >
+            {dayLabels[day]}
+          </button>
+        ))}
+      </div>
+      <p className="text-sm font-medium">{t('monthly_time')}</p>
+      <div className="flex flex-wrap gap-2">
+        {times.map(time => (
+          <button
+            key={time}
+            type="button"
+            aria-pressed={shown.time === time}
+            className={chip(shown.time === time)}
+            onClick={() => update({ time })}
+          >
+            {time}
+          </button>
+        ))}
+      </div>
+      {value && (
+        <div
+          className="rounded-lg border border-current/20 px-3 py-2 text-sm"
+          aria-live="polite"
+        >
+          <p className="font-medium">
+            {t('monthly_summary', { count: dates.length })}
+          </p>
+          <p className={`mt-1 text-xs ${theme.bio}`}>{t('monthly_note')}</p>
         </div>
       )}
     </div>

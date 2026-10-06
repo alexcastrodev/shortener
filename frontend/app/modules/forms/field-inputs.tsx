@@ -6,13 +6,17 @@ import { BookingInput, type LoadSlots } from './booking-input';
 import type { BioTheme } from '../bio-page/themes';
 import type { FormField } from '@internal/core/types/Form';
 
-export type Answer = string | number | boolean | string[] | BookingAnswer | undefined;
+export type Answer =
+  string | number | boolean | string[] | BookingAnswer | undefined;
 
 export const isBlank = (value: Answer) =>
   value === undefined ||
   value === '' ||
   (Array.isArray(value) && value.length === 0) ||
-  (typeof value === 'object' && !Array.isArray(value) && value.sessions.length === 0);
+  (typeof value === 'object' &&
+    !Array.isArray(value) &&
+    value.sessions.length === 0 &&
+    !value.monthly);
 
 export function focusFirstInput(root: HTMLElement | null) {
   requestAnimationFrame(() =>
@@ -40,7 +44,16 @@ type Props = {
 const inputBase =
   'w-full rounded-lg px-3 py-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-current';
 
-export function FieldInput({ field, value, onChange, theme, inputId, upload, loadSlots, invalid }: Props) {
+export function FieldInput({
+  field,
+  value,
+  onChange,
+  theme,
+  inputId,
+  upload,
+  loadSlots,
+  invalid,
+}: Props) {
   const { t } = useTranslation('respond');
   const common = { id: inputId, 'aria-describedby': `${inputId}-help` };
 
@@ -121,7 +134,9 @@ export function FieldInput({ field, value, onChange, theme, inputId, upload, loa
       return (
         <fieldset id={inputId} className="space-y-2">
           {max < (field.choices?.length ?? 0) && (
-            <p className={`text-xs ${theme.bio}`}>{t('choose_up_to', { max })}</p>
+            <p className={`text-xs ${theme.bio}`}>
+              {t('choose_up_to', { max })}
+            </p>
           )}
           {field.choices?.map(choice => {
             const checked = selected.includes(choice.id);
@@ -236,7 +251,14 @@ function uploadMessage(status?: number) {
   return t('upload_invalid');
 }
 
-function ImageInput({ field, value, onChange, theme, inputId, upload }: Props & { value: string | undefined }) {
+function ImageInput({
+  field,
+  value,
+  onChange,
+  theme,
+  inputId,
+  upload,
+}: Props & { value: string | undefined }) {
   const { t } = useTranslation('respond');
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -277,8 +299,17 @@ function ImageInput({ field, value, onChange, theme, inputId, upload }: Props & 
       {busy && <p className={`text-sm ${theme.bio}`}>{t('uploading')}</p>}
       {value && !busy && (
         <p className={`flex items-center gap-3 text-sm ${theme.bio}`}>
-          <span className="truncate">{name ? t('attached_name', { name }) : t('attached')}</span>
-          <button type="button" className="underline" onClick={() => { setName(''); onChange(undefined); }}>
+          <span className="truncate">
+            {name ? t('attached_name', { name }) : t('attached')}
+          </span>
+          <button
+            type="button"
+            className="underline"
+            onClick={() => {
+              setName('');
+              onChange(undefined);
+            }}
+          >
             {t('remove')}
           </button>
         </p>

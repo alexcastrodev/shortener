@@ -150,5 +150,10 @@
   "reminder_2880": "2 days before",
   "reminder_10080": "1 week before",
   "verify_email": "Ask the client to confirm their email",
-  "verify_email_hint": "The place is held for 15 minutes. Without a click it is released and you hear nothing about it."
+  "verify_email_hint": "The place is held for 15 minutes. Without a click it is released and you hear nothing about it.",
+  "monthly_switch": "Offer a fixed monthly booking",
+  "monthly_hint": "The client picks a month, weekdays and a time, and every matching day is booked at once. Days off are skipped; if any other day is taken, nothing is booked.",
+  "monthly_price": "Monthly price (shown only, nothing is charged)",
+  "monthly_price_hint": "Shown next to the option. Kurz does not take payments.",
+  "monthly_price_needs_currency": "Fill in the currency above to show a monthly price."
 }

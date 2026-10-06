@@ -55,5 +55,22 @@
   "receipt_email_none": "No email will be sent, so save this link.",
   "booking_category": "Category",
   "booking_services_count_one": "{{count}} service",
-  "booking_services_count_other": "{{count}} services"
+  "booking_services_count_other": "{{count}} services",
+  "booking_mode": "How to book",
+  "booking_mode_days": "Pick days",
+  "booking_mode_monthly": "Fixed monthly booking",
+  "monthly_month": "Month",
+  "monthly_weekdays": "Days of the week",
+  "monthly_time": "Time",
+  "monthly_summary_one": "{{count}} session this month",
+  "monthly_summary_other": "{{count}} sessions this month",
+  "monthly_note": "Every chosen day is booked at once. Days the place is closed are skipped, and if any other day is taken nothing is booked.",
+  "monthly_day_mon": "Mon",
+  "monthly_day_tue": "Tue",
+  "monthly_day_wed": "Wed",
+  "monthly_day_thu": "Thu",
+  "monthly_day_fri": "Fri",
+  "monthly_day_sat": "Sat",
+  "monthly_day_sun": "Sun",
+  "receipt_skipped": "Skipped, not available: {{dates}}"
 }

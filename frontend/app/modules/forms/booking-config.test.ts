@@ -388,3 +388,28 @@ test('email verification is sent only for automatic approval, and loaded back', 
   );
   assert.equal(initialValues(undefined).verify_email, false);
 });
+
+test('the monthly offer is sent with its informative price only when the service has a price', () => {
+  const values = initialValues(field);
+  const on = {
+    ...values,
+    services: [{ ...values.services[0], monthly: true, monthlyPrice: 120 }],
+  };
+  assert.deepEqual(toBookingInput(on, false).services![0].monthly, {
+    price: 120,
+  });
+  const noPrice = {
+    ...values,
+    services: [
+      { ...values.services[0], monthly: true, monthlyPrice: '' as const },
+    ],
+  };
+  assert.deepEqual(toBookingInput(noPrice, false).services![0].monthly, {});
+  assert.equal('monthly' in toBookingInput(values, false).services![0], false);
+  const loaded = initialValues({
+    ...field,
+    services: [{ ...field.services![0], monthly: { price: 80 } }],
+  });
+  assert.equal(loaded.services[0].monthly, true);
+  assert.equal(loaded.services[0].monthlyPrice, 80);
+});

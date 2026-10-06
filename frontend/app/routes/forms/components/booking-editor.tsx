@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
 import type { FormField, FormFieldInput } from '@internal/core/types/Form';
 import { BundleOffer } from './bundle-offer';
+import { MonthlyOffer } from './monthly-offer';
 import { CategoriesSection } from './categories-section';
 import { ExceptionsSection } from './exceptions-section';
 import { TimeGeneratorPanel } from './time-generator-panel';
@@ -118,6 +119,8 @@ export function BookingEditor({
                     z.object({ value: z.string().regex(TIME, t('error_time')) })
                   )
                   .min(1, t('error_times')),
+                monthly: z.boolean(),
+                monthlyPrice: z.union([z.number().min(0), z.literal('')]),
                 bundle: z.boolean(),
                 bundleTake: z.union([z.number(), z.literal('')]),
                 bundlePay: z.union([z.number(), z.literal('')]),
@@ -129,8 +132,15 @@ export function BookingEditor({
                 ),
               })
               .check(ctx => {
-                const { price, currency, bundle, bundleTake, bundlePay } =
-                  ctx.value;
+                const {
+                  price,
+                  currency,
+                  monthly,
+                  monthlyPrice,
+                  bundle,
+                  bundleTake,
+                  bundlePay,
+                } = ctx.value;
                 if (bundle) {
                   if (price === '') {
                     ctx.issues.push({
@@ -157,6 +167,18 @@ export function BookingEditor({
                       input: bundlePay,
                     });
                   }
+                }
+                if (
+                  monthly &&
+                  monthlyPrice !== '' &&
+                  !/^[A-Za-z]{3}$/.test(currency.trim())
+                ) {
+                  ctx.issues.push({
+                    code: 'custom',
+                    message: t('error_price_currency'),
+                    path: ['currency'],
+                    input: currency,
+                  });
                 }
                 if (price !== '' && !/^[A-Za-z]{3}$/.test(currency.trim())) {
                   ctx.issues.push({
@@ -375,6 +397,7 @@ export function BookingEditor({
           )}
         </div>
         <BundleOffer form={form} index={index} />
+        <MonthlyOffer form={form} index={index} />
         <WeekdayTimes form={form} index={index} dayLabels={dayLabels} />
       </Stack>
     </div>
