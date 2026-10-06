@@ -2,7 +2,7 @@ module Forms
   module BookingSchema
     extend self
 
-    SERVICE_KEYS = ["id", "name", "duration", "price", "currency", "capacity", "days", "times"].freeze
+    SERVICE_KEYS = ["id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day"].freeze
     PUBLIC_SERVICE_KEYS = ["id", "name", "duration", "price", "currency", "days", "times"].freeze
     RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
     RULE_RANGES = { "min_notice_minutes" => (0..43_200), "window_days" => (1..365), "buffer_minutes" => (0..600), "max_per_day" => (1..1000), "approval_timeout_minutes" => (5..43_200) }.freeze
@@ -159,6 +159,21 @@ module Forms
       result << "days must be a list of #{DAYS.join(", ")}" unless service["days"].is_a?(Array) && (service["days"] - DAYS).empty? && service["days"].uniq.size == service["days"].size
       times = service["times"]
       result << "times must be unique HH:MM values (max #{TIMES_MAX})" unless times.is_a?(Array) && times.size <= TIMES_MAX && times.all? { |time| time.is_a?(String) && time.match?(TIME) } && times.uniq.size == times.size
+      result.concat(by_day_errors(service))
+      result
+    end
+
+    def by_day_errors(service)
+      by_day = service["times_by_day"]
+      return [] if by_day.nil?
+      return ["times by day must be an object"] unless by_day.is_a?(Hash)
+
+      days = Array(service["days"])
+      result = []
+      result << "times by day can only use the days the service runs" unless (by_day.keys - days).empty?
+      by_day.each_value do |list|
+        result << "times by day must be unique HH:MM values (max #{TIMES_MAX})" unless list.is_a?(Array) && list.size <= TIMES_MAX && list.all? { |time| time.is_a?(String) && time.match?(TIME) } && list.uniq.size == list.size
+      end
       result
     end
 
