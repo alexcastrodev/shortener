@@ -31,3 +31,17 @@ pt-PT:
       body: "Pediu para eliminar a conta Kurz %{email}. Os seus links, páginas de bio, formulários, respostas e ficheiros carregados estão offline neste momento e serão eliminados definitivamente a %{date}."
       changed_mind: "Mudou de ideias? Inicie sessão no Kurz antes de %{date} e a eliminação é cancelada; os seus links e páginas voltam."
       not_you: "Se não foi você que pediu isto, inicie sessão para cancelar e altere a sua palavra-passe."
+  appointment_mailer:
+    confirmed:
+      subject: "Confirmada: %{service}, %{time}"
+      title: "A sua marcação está confirmada"
+      intro: "%{service} está marcado para:"
+      reply: "Tem dúvidas? Responda a este e-mail para falar com quem organiza."
+    new_booking:
+      subject: "Nova marcação: %{service}, %{name}"
+      someone: "Alguém"
+      title: "Nova marcação"
+      intro: "%{name} marcou %{service}:"
+      email: "E-mail: %{email}"
+      see: "Veja nas suas respostas: %{url}"
+      see_link: "Ver nas suas respostas"

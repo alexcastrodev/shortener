@@ -61,3 +61,7 @@ production:
     class: PurgeOldNotificationsJob
     queue: default
     schedule: at 4:45am every day
+  dispatch_notifications:
+    class: DispatchNotificationsJob
+    queue: notifications
+    schedule: every minute

@@ -1,0 +1,10 @@
+<%= t(".title") %>
+
+<%= t(".intro", service: @service) %>
+<% @sessions.each do |session| %>
+- <%= session %>
+<% end %>
+
+<%= t(".reply") %>
+
+Kurz · https://kurz.fyi

@@ -61,13 +61,9 @@ module Appointments
       end
       Appointment.insert_all!(rows)
       first = response.appointments.order(:id).first
-      Notification.notify_owner(
-        user_id: form.user_id,
-        kind: "appointment_created",
-        event_key: group,
-        source: first,
-        payload: { form_id: form.id, response_id: response.id, group_key: group, sessions: rows.size },
-      )
+      payload = { form_id: form.id, response_id: response.id, group_key: group, sessions: rows.size }
+      Notification.notify_owner(user_id: form.user_id, kind: "appointment_created", event_key: group, source: first, payload: payload)
+      queue_emails(form: form, first: first, group: group, email: contact[:email], payload: payload)
       response.appointments.order(:id)
     rescue Reserve::Full => e
       raise Full, e.starts_at
@@ -88,6 +84,15 @@ module Appointments
     end
 
     private
+
+    def queue_emails(form:, first:, group:, email:, payload:)
+      queued = [Notification.queue_email(kind: "appointment_created", event_key: group, source: first, recipient_kind: "owner", user_id: form.user_id, payload: payload)]
+      if email.present?
+        queued << Notification.queue_email(kind: "appointment_confirmed", event_key: group, source: first, recipient_kind: "client", recipient_email: email, payload: payload)
+      end
+      ids = queued.map(&:id)
+      ActiveRecord.after_all_transactions_commit { ids.each { |id| NotificationDeliveryJob.perform_later(id) } }
+    end
 
     def valid_sessions?(sessions)
       sessions.is_a?(Array) && sessions.size.between?(1, MAX_SESSIONS) &&

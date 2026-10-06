@@ -17,12 +17,15 @@ module MailBudget
   def monthly_limit = ENV.fetch("MAIL_MONTHLY_LIMIT", 3000).to_i
   def new_address_daily_limit = ENV.fetch("MAIL_NEW_ADDRESS_DAILY_LIMIT", 40).to_i
 
-  # Counts one message against the budget, or refuses it. Counters live in
+  # Counts one message against the budget, or refuses it. A lower-priority
+  # sender (appointment emails) passes a share below 1 and stops at that
+  # fraction of the daily and monthly limits, which leaves the rest to sign-in
+  # codes. Counters live in
   # the Redis cache (atomic increments shared by every web container); a
   # refused reservation gives its increments back.
-  def reserve(new_address:)
+  def reserve(new_address:, share: 1.0)
     taken = []
-    counters(new_address).each do |key, limit, reason, ttl|
+    counters(new_address, share).each do |key, limit, reason, ttl|
       taken << key
       next if Rails.cache.increment(key, 1, expires_in: ttl).to_i <= limit
 
@@ -44,11 +47,11 @@ module MailBudget
 
   private
 
-  def counters(new_address)
+  def counters(new_address, share)
     now = Time.current.utc
     list = [
-      [day_key(now), daily_limit, :daily_limit, 2.days],
-      [month_key(now), monthly_limit, :monthly_limit, 32.days],
+      [day_key(now), (daily_limit * share).floor, :daily_limit, 2.days],
+      [month_key(now), (monthly_limit * share).floor, :monthly_limit, 32.days],
     ]
     list << [new_key(now), new_address_daily_limit, :new_address_limit, 2.days] if new_address
     list
