@@ -18,6 +18,7 @@ import { z } from 'zod/v4';
 import type { FormField, FormFieldInput } from '@internal/core/types/Form';
 import { ExceptionsSection } from './exceptions-section';
 import { TimeGeneratorPanel } from './time-generator-panel';
+import { WeekdayTimes } from './weekday-times';
 import {
   DAYS,
   TIME,
@@ -95,6 +96,12 @@ export function BookingEditor({
                   z.object({ value: z.string().regex(TIME, t('error_time')) })
                 )
                 .min(1, t('error_times')),
+              byDay: z.record(
+                z.string(),
+                z.array(
+                  z.object({ value: z.string().regex(TIME, t('error_time')) })
+                )
+              ),
             })
             .check(ctx => {
               const { price, currency } = ctx.value;
@@ -322,6 +329,7 @@ export function BookingEditor({
                     </p>
                   )}
                 </div>
+                <WeekdayTimes form={form} index={index} dayLabels={dayLabels} />
               </Stack>
             </div>
           ))}

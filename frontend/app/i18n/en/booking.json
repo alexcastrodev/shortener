@@ -94,5 +94,12 @@
   "exc_note": "Note (only you see it)",
   "err_exc_from": "Pick the date",
   "err_exc_range": "The end cannot be before the start",
-  "err_exc_times": "Add at least one time"
+  "err_exc_times": "Add at least one time",
+  "wd_title": "Different times on some days",
+  "wd_hint": "A day with its own times ignores the times above. Leave a day without any time to close it.",
+  "wd_own": "Own times",
+  "wd_closed": "No times: closed that day",
+  "wd_add_time": "Add time",
+  "wd_remove_time": "Remove time {{time}}",
+  "wd_times": "Times on {{day}}"
 }

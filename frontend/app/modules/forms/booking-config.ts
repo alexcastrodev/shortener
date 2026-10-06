@@ -17,6 +17,7 @@ export type ServiceValues = {
   capacity: number | '';
   days: string[];
   times: { key: string; value: string }[];
+  byDay: Record<string, { key: string; value: string }[]>;
 };
 
 export type ExceptionValues = {
@@ -64,6 +65,7 @@ export const blankService = (name: string): ServiceValues => ({
   capacity: '',
   days: ['mon', 'tue', 'wed', 'thu', 'fri'],
   times: [{ key: newKey(), value: '09:00' }],
+  byDay: {},
 });
 
 export function initialValues(field?: FormField): Values {
@@ -81,6 +83,12 @@ export function initialValues(field?: FormField): Values {
       capacity: service.capacity ?? '',
       days: service.days,
       times: service.times.map(value => ({ key: newKey(), value })),
+      byDay: Object.fromEntries(
+        Object.entries(service.times_by_day ?? {}).map(([day, list]) => [
+          day,
+          list.map(value => ({ key: newKey(), value })),
+        ])
+      ),
     })),
     exceptions: (field?.exceptions ?? []).map(item => ({
       key: item.id,
@@ -129,6 +137,17 @@ export function toBookingInput(
     services: values.services.map(service => {
       const price = orNull(service.price);
       const capacity = orNull(service.capacity);
+      const ownDays = DAYS.filter(
+        day => service.days.includes(day) && service.byDay[day]
+      );
+      const byDay = ownDays.length
+        ? Object.fromEntries(
+            ownDays.map(day => [
+              day,
+              [...new Set(service.byDay[day].map(time => time.value))].sort(),
+            ])
+          )
+        : undefined;
       return {
         ...(service.id ? { id: service.id } : {}),
         name: service.name.trim(),
@@ -139,6 +158,7 @@ export function toBookingInput(
         ...(capacity !== null ? { capacity } : {}),
         days: DAYS.filter(day => service.days.includes(day)),
         times: [...new Set(service.times.map(time => time.value))].sort(),
+        ...(byDay ? { times_by_day: byDay } : {}),
       };
     }),
     rules,
