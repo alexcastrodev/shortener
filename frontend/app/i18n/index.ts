@@ -13,6 +13,7 @@ import respond from './en/respond.json';
 import settings from './en/settings.json';
 import account from './en/account.json';
 import oauth from './en/oauth.json';
+import responses from './en/responses.json';
 import menuPt from './pt-PT/menu.json';
 import homePt from './pt-PT/home.json';
 import dashboardPt from './pt-PT/dashboard.json';
@@ -25,10 +26,11 @@ import respondPt from './pt-PT/respond.json';
 import settingsPt from './pt-PT/settings.json';
 import accountPt from './pt-PT/account.json';
 import oauthPt from './pt-PT/oauth.json';
+import responsesPt from './pt-PT/responses.json';
 
 export const resources = {
-  en: { menu, home, dashboard, admin, links, auth, pages, forms, respond, settings, account, oauth },
-  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt, settings: settingsPt, account: accountPt, oauth: oauthPt },
+  en: { menu, home, dashboard, admin, links, auth, pages, forms, respond, settings, account, oauth, responses },
+  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt, settings: settingsPt, account: accountPt, oauth: oauthPt, responses: responsesPt },
 } as const;
 
 i18n.use(initReactI18next).init({

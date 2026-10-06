@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@internal/ui';
 import { activeLocale } from '../../i18n';
 import { formatDate } from '../../i18n/format';
@@ -64,13 +65,14 @@ export function BarList({
   title,
   items,
   label = item => item.name,
-  empty = 'Nothing in this period.',
+  empty,
 }: {
   title: string;
   items: Bucket[];
   label?: (item: Bucket) => ReactNode;
   empty?: string;
 }) {
+  const { t } = useTranslation('responses');
   const max = Math.max(1, ...items.map(item => item.value));
   const total = items.reduce((sum, item) => sum + item.value, 0);
 
@@ -78,7 +80,7 @@ export function BarList({
     <Card className="min-w-0 p-5">
       <h2 className="mb-4 text-sm font-semibold text-foreground">{title}</h2>
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{empty}</p>
+        <p className="text-sm text-muted-foreground">{empty ?? t('nothing_in_period')}</p>
       ) : (
         <ul className="space-y-1.5">
           {items.map(item => (
