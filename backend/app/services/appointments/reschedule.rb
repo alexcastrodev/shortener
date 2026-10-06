@@ -3,23 +3,23 @@ module Appointments
     extend self
 
     MESSAGE_MAX = 500
-    Result = Data.define(:status, :appointment)
+    Result = Data.define(:status, :record)
 
-    def call(appointment:, date:, time:, message: nil, now: Time.current)
-      form = appointment.form
+    def call(row:, date:, time:, message: nil, now: Time.current)
+      form = row.form
       booking = Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" }
-      service = booking&.fetch("services", [])&.find { |item| item["id"] == appointment.slot.service_key }
-      return Result.new(:invalid, nil) unless service && Appointment::HOLDING.include?(appointment.status) && appointment.slot.starts_at > now
+      service = booking&.fetch("services", [])&.find { |item| item["id"] == row.slot.service_key }
+      return Result.new(:invalid, nil) unless service && Appointment::HOLDING.include?(row.status) && row.slot.starts_at > now
 
       context = { form: form, booking: booking, service: service, now: now }
-      return Result.new(:same_time, nil) if same_time?(context, appointment, date, time)
+      return Result.new(:same_time, nil) if same_time?(context, row, date, time)
 
       target = free_slot(context, date, time)
       return Result.new(:unavailable, nil) unless target
 
       moved = nil
       Appointment.transaction do
-        old = Appointment.lock.find(appointment.id)
+        old = Appointment.lock.find(row.id)
         next unless Appointment::HOLDING.include?(old.status)
 
         slot_id = Reserve.call(form: form, service_key: service["id"], capacity: service["capacity"], times: [target[:starts_at]]).first
@@ -45,10 +45,10 @@ module Appointments
       nil
     end
 
-    def same_time?(context, appointment, date, time)
+    def same_time?(context, row, date, time)
       day = Date.iso8601(date.to_s)
       hours, minutes = time.to_s.split(":").map(&:to_i)
-      Time.find_zone!(context[:booking]["rules"]["time_zone"]).local(day.year, day.month, day.day, hours, minutes).utc == appointment.slot.starts_at
+      Time.find_zone!(context[:booking]["rules"]["time_zone"]).local(day.year, day.month, day.day, hours, minutes).utc == row.slot.starts_at
     rescue Date::Error
       false
     end
