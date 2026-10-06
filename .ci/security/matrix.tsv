@@ -3,6 +3,7 @@
 admin	GET	/api/admin/abuse_signals
 admin	POST	/api/admin/abuse_signals/:id/dismiss
 admin	GET	/api/admin/audits
+admin	GET	/api/admin/appointments_health
 admin	GET	/api/admin/page_templates
 admin	POST	/api/admin/page_templates/:id/toggle_hidden
 admin	GET	/api/admin/shortlinks

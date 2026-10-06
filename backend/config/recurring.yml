@@ -73,3 +73,7 @@ production:
     class: ResolvePendingAppointmentsJob
     queue: notifications
     schedule: every minute
+  appointments_health:
+    class: AppointmentsHealthJob
+    queue: default
+    schedule: every 5 minutes
