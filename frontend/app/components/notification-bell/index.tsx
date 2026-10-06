@@ -7,8 +7,10 @@ import { formatNumber } from '../../i18n/format';
 
 export function NotificationBell({
   withLabel = false,
+  collapsed = false,
 }: {
   withLabel?: boolean;
+  collapsed?: boolean;
 }) {
   const { t } = useTranslation('notifications');
   const { data } = useGetNotifications();
@@ -23,6 +25,7 @@ export function NotificationBell({
       <NavLink
         to="/app/notifications"
         aria-label={label}
+        title={collapsed ? t('title') : undefined}
         className={({ isActive }) =>
           [
             'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors',
@@ -32,9 +35,14 @@ export function NotificationBell({
           ].join(' ')
         }
       >
-        <IconBell size={17} stroke={1.8} />
-        <span className="flex-1">{t('title')}</span>
-        {unread > 0 && (
+        <span className="relative">
+          <IconBell size={17} stroke={1.8} />
+          {collapsed && unread > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-red-500" />
+          )}
+        </span>
+        {!collapsed && <span className="flex-1">{t('title')}</span>}
+        {unread > 0 && !collapsed && (
           <span className="rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
             {unread > 9 ? '9+' : formatNumber(unread)}
           </span>
