@@ -1,0 +1,23 @@
+{
+  "title": "Your booking",
+  "not_found_title": "Link not valid",
+  "not_found_body": "This link is not valid or has expired.",
+  "error_title": "Something went wrong",
+  "error_body": "We could not load your booking. Please try again.",
+  "status_confirmed": "Confirmed",
+  "status_cancelled": "Cancelled",
+  "service": "Service",
+  "status": "Status",
+  "sessions": "Sessions",
+  "session_cancelled": "Cancelled",
+  "cancel_button": "Cancel booking",
+  "cancel_confirm_title": "Cancel this booking?",
+  "cancel_confirm_body": "All upcoming sessions will be released. This cannot be undone.",
+  "reason_label": "Reason (optional)",
+  "cancel_keep": "Keep booking",
+  "cancel_confirm": "Yes, cancel",
+  "cancelling": "Cancelling…",
+  "cancel_failed": "We could not cancel your booking. Please try again.",
+  "cancelled_notice": "Your booking was cancelled.",
+  "past_notice": "This booking can no longer be cancelled online."
+}

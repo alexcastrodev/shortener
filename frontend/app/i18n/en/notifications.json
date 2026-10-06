@@ -5,6 +5,7 @@
   "mark_all": "Mark all as read",
   "empty": "No notifications yet.",
   "kind_appointment_created": "New booking",
+  "kind_appointment_cancelled": "Booking cancelled",
   "kind_unknown": "Update",
   "sessions_one": "{{count, number}} session",
   "sessions_other": "{{count, number}} sessions"
