@@ -9,6 +9,7 @@ import {
   addDays,
   addMonths,
   categoryColors,
+  cascadeSpan,
   categoryOf,
   datesWithSessions,
   monthDays,
@@ -204,4 +205,20 @@ test('pending requests are summed', () => {
     ]),
     3
   );
+});
+
+test('cascadeSpan: a lone block fills the column', () => {
+  assert.deepEqual(cascadeSpan(0, 1), { left: 0, width: 100 });
+});
+
+test('cascadeSpan: each lane is indented and reaches the right edge', () => {
+  assert.deepEqual(cascadeSpan(0, 2), { left: 0, width: 100 });
+  assert.deepEqual(cascadeSpan(1, 2), { left: 16, width: 84 });
+});
+
+test('cascadeSpan: the top block keeps at least 60% however many overlap', () => {
+  for (const lanes of [3, 5, 12, 40]) {
+    const { width } = cascadeSpan(lanes - 1, lanes);
+    assert.ok(width >= 60 - 1e-9, `${lanes} lanes -> ${width}`);
+  }
 });

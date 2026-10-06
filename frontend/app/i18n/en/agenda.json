@@ -23,6 +23,7 @@
   "panel_occupancy": "Places",
   "panel_unlimited": "No limit",
   "clients_title": "Clients",
+  "drag_hint": "Drag a client onto another session of the same service to move them.",
   "no_clients": "Nobody has booked this time yet.",
   "status_pending": "Awaiting approval",
   "status_confirmed": "Confirmed",
