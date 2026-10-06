@@ -3,6 +3,7 @@ import {
   IconHome2,
   IconUserCircle,
   IconAddressBook,
+  IconCalendarEvent,
   IconForms,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -42,6 +43,16 @@ export function MobileNav() {
       >
         <IconForms size={22} stroke={1.5} />
         <span className={styles.label}>{t('forms')}</span>
+      </NavLink>
+
+      <NavLink
+        to="/app/agenda"
+        className={({ isActive }) =>
+          `${styles.navItem} ${isActive ? styles.active : ''}`
+        }
+      >
+        <IconCalendarEvent size={22} stroke={1.5} />
+        <span className={styles.label}>{t('agenda')}</span>
       </NavLink>
 
       {/* Logout and Admin live on the account page, keeping the bar at four items. */}
