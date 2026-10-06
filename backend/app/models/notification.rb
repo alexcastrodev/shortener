@@ -8,6 +8,8 @@ class Notification < ApplicationRecord
   scope :unread, -> { where(read_at: nil) }
 
   def self.queue_email(kind:, event_key:, source:, recipient_kind:, payload:, user_id: nil, recipient_email: nil)
+    return if recipient_kind == "owner" && !NotificationPreference.enabled?(user_id: user_id, kind: kind, channel: "email")
+
     create!(
       channel: "email",
       kind: kind,
@@ -23,6 +25,8 @@ class Notification < ApplicationRecord
   end
 
   def self.notify_owner(user_id:, kind:, event_key:, source:, payload:)
+    return unless NotificationPreference.enabled?(user_id: user_id, kind: kind, channel: "in_app")
+
     create!(
       channel: "in_app",
       kind: kind,
