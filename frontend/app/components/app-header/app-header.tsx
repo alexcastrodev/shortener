@@ -6,6 +6,7 @@ import {
   IconCalendarEvent,
   IconForms,
   IconSettings,
+  IconUser,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useUserState } from '@internal/core/states/use-user-state';
@@ -68,9 +69,19 @@ export function AppHeader() {
           {user && (
             <NavLink
               to="/app/account"
-              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground lg:inline"
+              title={user.email}
+              aria-label={t('my_account')}
+              className={({ isActive }) =>
+                [
+                  'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'border-transparent bg-accent text-accent-foreground'
+                    : 'border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                ].join(' ')
+              }
             >
-              {user.email}
+              <IconUser size={17} stroke={1.8} />
+              <span className="hidden sm:inline">{t('my_account')}</span>
             </NavLink>
           )}
           <button
