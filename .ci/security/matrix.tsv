@@ -53,6 +53,8 @@ owner	GET	/api/me/community_templates
 owner	POST	/api/me/community_templates/:id/report
 owner	GET	/api/me/form_templates
 owner	GET	/api/me/agenda
+owner	POST	/api/me/appointments/:id/remind
+owner	POST	/api/me/appointments/:id/reschedule
 owner	GET	/api/me/push_subscriptions
 owner	POST	/api/me/push_subscriptions
 owner	DELETE	/api/me/push_subscriptions/:id

@@ -66,6 +66,12 @@ Rails.application.routes.draw do
       resources :oauth_grants, only: [:index, :destroy]
       resources :form_templates, only: [:index]
       resource :agenda, only: [:show], controller: "agenda"
+      resources :appointments, only: [] do
+        member do
+          post :reschedule
+          post :remind
+        end
+      end
       resources :push_subscriptions, only: [:index, :create, :destroy]
       resources :notifications, only: [:index] do
         member { post :read }
