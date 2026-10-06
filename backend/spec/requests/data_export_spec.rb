@@ -29,7 +29,10 @@ RSpec.describe("Personal data export", type: :request) do
 
   let(:deliveries) { ActionMailer::Base.deliveries }
 
-  before { deliveries.clear }
+  before do
+    deliveries.clear
+    Rails.cache.clear
+  end
 
   def export(params = {}, hdrs = headers)
     post("/api/me/data_export", params: params, headers: hdrs, as: :json)
@@ -111,14 +114,31 @@ RSpec.describe("Personal data export", type: :request) do
     expect(JSON.parse(response.body)["error"]).to(eq("reauthentication_required"))
   end
 
-  it "needs a session and limits how often it can be asked" do
+  it "needs a session" do
     export({}, {})
     expect(response).to(have_http_status(:unauthorized))
+  end
 
-    3.times { export }
+  it "allows one request a week, counts only the ones that were accepted, and gives the week back to nobody else" do
+    Rails.cache.clear
+    user.change_password!("a-long-enough-password-1")
+    fresh = { "Authorization" => "Bearer #{SessionToken.issue(user.reload)}" }
+    export({ current_password: "wrong" }, fresh)
+    expect(response).to(have_http_status(:unprocessable_entity))
+
+    export({ current_password: "a-long-enough-password-1" }, fresh)
     expect(response).to(have_http_status(:accepted))
-    export
+    expect { export({ current_password: "a-long-enough-password-1" }, fresh) }.not_to(have_enqueued_job(SendDataExportJob))
     expect(response).to(have_http_status(:too_many_requests))
+    expect(JSON.parse(response.body)["error"]).to(eq("export_weekly_limit"))
+
+    other_headers = { "Authorization" => "Bearer #{SessionToken.issue(other)}" }
+    export({}, other_headers)
+    expect(response).to(have_http_status(:accepted))
+
+    Rails.cache.delete("data-export:#{user.id}")
+    export({ current_password: "a-long-enough-password-1" }, fresh)
+    expect(response).to(have_http_status(:accepted))
   end
 
   it "emails a short notice instead of the data when there is too much, or the file is too big" do
@@ -130,6 +150,7 @@ RSpec.describe("Personal data export", type: :request) do
     expect(mail.attachments).to(be_empty)
 
     deliveries.clear
+    Rails.cache.clear
     stub_const("Users::DataExport::MAX_RESPONSES", 50_000)
     stub_const("SendDataExportJob::MAX_BYTES", 10)
     perform_enqueued_jobs { export }

@@ -5,13 +5,6 @@ class Api::Me::UsersController < ApplicationController
 
   before_action :authenticate_user!
 
-  rate_limit to: 3,
-    within: 1.hour,
-    only: :export,
-    name: "me_data_export",
-    by: -> { current_user&.id },
-    with: -> { render(json: { error: "Too many attempts, please try again later" }, status: :too_many_requests) }
-
   rate_limit to: 5,
     within: 1.hour,
     only: :destroy,
@@ -39,6 +32,8 @@ class Api::Me::UsersController < ApplicationController
     elsif Time.zone.at(@session_payload["iat"].to_i) < RECENT_SIGN_IN.ago
       return render(json: { error: "reauthentication_required" }, status: :forbidden)
     end
+
+    return render(json: { error: "export_weekly_limit" }, status: :too_many_requests) unless Rails.cache.write("data-export:#{@current_user.id}", true, expires_in: 1.week, unless_exist: true)
 
     SendDataExportJob.perform_later(@current_user.id)
     render(json: { queued: true }, status: :accepted)

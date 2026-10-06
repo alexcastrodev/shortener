@@ -25,7 +25,7 @@
   "dl_button": "Enviar-me os meus dados por e-mail",
   "wrong_password": "Essa palavra-passe não está correta.",
   "dl_wrong_password_title": "Pedido não enviado",
-  "dl_rate": "Demasiados pedidos. Tente novamente dentro de uma hora.",
+  "dl_rate": "Só pode pedir os seus dados uma vez por semana. Tente novamente mais tarde.",
   "dl_failed": "Não foi possível registar o pedido. Tente novamente.",
   "dl_failed_title": "Falha no pedido",
   "del_title": "Eliminar conta",
