@@ -108,12 +108,23 @@ html,
 }
 
 :root {
-  /* Fixed height of the bottom nav, so full-screen views can stop above it. */
+  /* The viewport covers the whole screen (viewport-fit=cover), so the header
+     and the bottom nav grow by the safe area: these are their full heights,
+     for views that sit between them. */
+  --app-header-offset: calc(65px + env(safe-area-inset-top, 0px));
   --mobile-nav-height: 4.5rem;
+  --mobile-nav-offset: calc(
+    var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px)
+  );
 }
 
-/* On phones the Agenda is a full-screen view whose hour grid scrolls on its
-   own; the page behind it must not scroll too. */
+/* The Agenda's hour grid scrolls on its own; the page behind it must not
+   scroll too, on phones and whenever it is expanded. */
+html:has(.agenda-expanded) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 @media (max-width: 767px) {
   html:has(.agenda-screen) {
     overflow: hidden;
@@ -134,6 +145,13 @@ body {
   background: var(--app-background);
   color: var(--app-foreground);
   font-family: var(--font-sans);
+}
+
+/* A notched phone held sideways: keep the page clear of the notch. Fixed bars
+   pad themselves. */
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 button {

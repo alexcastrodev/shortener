@@ -75,5 +75,7 @@
   "active_forms": "Formulários ativos",
   "categories": "Categorias",
   "has_sessions": "tem sessões",
-  "week_days": "Dias da semana"
+  "week_days": "Dias da semana",
+  "expand": "Expandir",
+  "collapse": "Sair do ecrã inteiro"
 }
