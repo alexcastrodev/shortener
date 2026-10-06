@@ -110,7 +110,7 @@ module Appointments
       if email.present?
         queued << Notification.queue_email(kind: manual ? "appointment_request_received" : "appointment_confirmed", event_key: group, source: first, recipient_kind: "client", recipient_email: email, payload: payload)
       end
-      ids = queued.map(&:id)
+      ids = queued.compact.map(&:id)
       ActiveRecord.after_all_transactions_commit { ids.each { |id| NotificationDeliveryJob.perform_later(id) } }
     end
 

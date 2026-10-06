@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -249,6 +249,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
     t.integer "records_returned", default: 0, null: false
     t.index ["created_at"], name: "index_mcp_tool_calls_on_created_at"
     t.index ["oauth_grant_id"], name: "index_mcp_tool_calls_on_oauth_grant_id"
+  end
+
+  create_table "notification_preferences", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "kind", null: false
+    t.string "channel", null: false
+    t.boolean "enabled", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "kind", "channel"], name: "index_notification_preferences_uniqueness", unique: true
+    t.index ["user_id"], name: "index_notification_preferences_on_user_id"
+    t.check_constraint "channel::text = ANY (ARRAY['in_app'::character varying, 'email'::character varying, 'push'::character varying]::text[])", name: "notification_preferences_channel_known"
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -633,6 +645,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
   add_foreign_key "forms", "users", on_delete: :cascade
   add_foreign_key "identities", "users", on_delete: :cascade
   add_foreign_key "mcp_tool_calls", "oauth_grants", on_delete: :cascade
+  add_foreign_key "notification_preferences", "users", on_delete: :cascade
   add_foreign_key "notifications", "appointments", on_delete: :cascade
   add_foreign_key "notifications", "users", on_delete: :cascade
   add_foreign_key "oauth_access_tokens", "oauth_grants", on_delete: :cascade
