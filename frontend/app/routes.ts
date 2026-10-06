@@ -10,6 +10,7 @@ export default [
   index('routes/index.tsx'),
   route('about', 'routes/about.tsx'),
   route('privacy', 'routes/privacy.tsx'),
+  route('service', 'routes/service.tsx'),
   route('report', 'routes/report.tsx'),
   route('status/success', 'routes/status/success.tsx'),
   layout('layout/bio-layout.tsx', [

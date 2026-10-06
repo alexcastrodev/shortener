@@ -20,6 +20,10 @@ const RETENTION = [
   ['Calls made by connected AI apps (tool name, result, time, never the content)', '90 days'],
   ['Your account, links, bio pages, forms and responses', 'Until you delete the account, then 30 days offline before permanent deletion'],
   ['Sign-in codes', '15 minutes'],
+  ['Bookings (name, email, phone, note, dates)', 'Until the owner deletes them or the account is deleted'],
+  ['Notifications inside Kurz', '90 days'],
+  ['Booking emails queued but not sent', 'Up to 24 hours, then dropped'],
+  ['Push subscriptions (browser address and keys)', 'Until you remove the device or the browser invalidates it'],
 ];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -70,6 +74,26 @@ export default function Privacy() {
             form decides what to ask and is responsible for how they use the answers, so do not enter passwords or card
             numbers in a form.
           </p>
+          <p>
+            <strong className="text-foreground">If you book an appointment through a form:</strong> your name, email
+            address, the service, the dates and times you choose, and anything you type in the form (for example a phone
+            number or a note). Only the owner of the form can see it. The owner decides how to use it and is responsible
+            for it, so do not enter sensitive information in a note. Your IP address is not stored. Bookings are kept until
+            the owner deletes them or deletes their account; ask the owner, or write to us, if you want yours removed. If you give
+            your email, you can follow, cancel or confirm your booking from links in the emails.
+          </p>
+        </Section>
+
+        <Section title="Booking owners">
+          <p>
+            If you use Kurz to take bookings, you are the one responsible for your customers’ data. Tell them what you
+            collect and why, answer their requests, and do not use Kurz for anything that needs guarantees of delivery
+            or availability. See <a className="underline" href="/service">how this service works</a>.
+          </p>
+          <p>
+            The calendar feed, if you turn it on, is a secret address: anyone who has it can read the names and times of
+            your confirmed bookings. You can replace or revoke it from your account page at any time.
+          </p>
         </Section>
 
         <Section title="Who else receives data">
@@ -79,8 +103,16 @@ export default function Privacy() {
               and on forms, so it sees your IP address and browser details.
             </li>
             <li>
-              <strong className="text-foreground">Resend</strong> sends the sign-in emails, so it receives your email
-              address.
+              <strong className="text-foreground">Resend</strong> sends emails, including sign-in codes and booking messages
+              (confirmations, requests, reminders, waiting list notices), so it receives the recipient’s email address and
+              the message text. Sending is limited per day and per month; when the limit is reached, booking emails are
+              delayed or not sent, and the same information stays available inside Kurz.
+            </li>
+            <li>
+              <strong className="text-foreground">Browser push services</strong> (for example Google, Mozilla or Apple)
+              deliver push notifications if you turn them on. They receive your device’s push address and an encrypted
+              message, and they can see that a message was sent and when. Messages never contain your customers’ names or
+              contact details.
             </li>
             <li>
               <strong className="text-foreground">Google</strong> receives the destination URL of links to check them

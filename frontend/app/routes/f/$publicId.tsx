@@ -158,6 +158,9 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
             Never submit passwords or card numbers through a form.{' '}
             <a href="/privacy" className={`underline ${theme.footer}`}>
               Privacy
+            </a>{' '}
+            <a href="/service" className={`underline ${theme.footer}`}>
+              How this service works
             </a>
           </p>
           <a
