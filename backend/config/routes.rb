@@ -71,6 +71,9 @@ Rails.application.routes.draw do
         member do
           post :reschedule
           post :remind
+          post :approve
+          post :decline
+          post :cancel
         end
       end
       get "push_config", to: "push_subscriptions#vapid"

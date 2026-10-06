@@ -56,6 +56,9 @@ owner	GET	/api/me/agenda
 owner	GET	/api/me/notification_preferences
 owner	PATCH	/api/me/notification_preferences
 owner	PUT	/api/me/notification_preferences
+owner	POST	/api/me/appointments/:id/approve
+owner	POST	/api/me/appointments/:id/cancel
+owner	POST	/api/me/appointments/:id/decline
 owner	POST	/api/me/appointments/:id/remind
 owner	POST	/api/me/appointments/:id/reschedule
 owner	GET	/api/me/push_subscriptions
