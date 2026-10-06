@@ -5,7 +5,7 @@ class AppointmentToken < ApplicationRecord
 
   def self.issue(booking:, expires_at:, purpose: "manage")
     raw = SecureRandom.urlsafe_base64(32)
-    create!(appointment: booking, purpose: purpose, digest: digest(raw), expires_at: expires_at, created_at: Time.current)
+    create!(appointment_id: booking.id, purpose: purpose, digest: digest(raw), expires_at: expires_at, created_at: Time.current)
     raw
   end
 
