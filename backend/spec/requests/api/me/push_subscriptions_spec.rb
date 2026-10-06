@@ -10,7 +10,6 @@ RSpec.describe("/api/me/push_subscriptions", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
   end
 
   def json
@@ -27,9 +26,6 @@ RSpec.describe("/api/me/push_subscriptions", type: :request) do
       send(verb, path)
       expect(response).to(have_http_status(:unauthorized), "#{verb} #{path}")
     end
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-    subscribe
-    expect(response).to(have_http_status(:not_found))
   end
 
   describe "subscribing" do

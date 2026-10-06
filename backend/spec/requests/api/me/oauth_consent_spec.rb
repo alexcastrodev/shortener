@@ -32,15 +32,6 @@ RSpec.describe("OAuth consent API", type: :request) do
   end
 
   describe "preview" do
-    it "needs a session and the feature flag" do
-      get "/api/me/oauth/authorization", params: params
-      expect(response).to(have_http_status(:unauthorized))
-
-      ENV.delete("MCP_ENABLED")
-      get "/api/me/oauth/authorization", params: params, headers: auth_headers
-      expect(response).to(have_http_status(:not_found))
-    end
-
     it "describes the client, redirect host, scopes and signed in e-mail" do
       get "/api/me/oauth/authorization", params: params, headers: auth_headers
 

@@ -1,6 +1,5 @@
 class Api::Me::AgendaController < ApplicationController
   before_action :authenticate_user!
-  include AppointmentsGate
 
   def show
     from = Date.iso8601(params[:from].to_s)

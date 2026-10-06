@@ -1,6 +1,5 @@
 class Api::Me::AppointmentsController < ApplicationController
   before_action :authenticate_user!
-  include AppointmentsGate
   before_action :load_appointment
 
   def approve

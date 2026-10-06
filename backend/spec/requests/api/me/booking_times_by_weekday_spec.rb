@@ -14,7 +14,6 @@ RSpec.describe("different times on different weekdays", type: :request) do
     host! "localhost"
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
   end
 

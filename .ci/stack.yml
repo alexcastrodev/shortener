@@ -21,6 +21,10 @@ services:
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
       # Resend replaces Gmail when MAIL_PROVIDER=resend (backend/config/mail_settings.rb).
       - MAIL_PROVIDER=${MAIL_PROVIDER:-gmail}
+      # Web push for the owner's devices. Empty keys leave the channel off (see Push::Config).
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-}
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - MAIL_FROM=${MAIL_FROM:-Kurz <login@kurz.fyi>}
       - MAIL_DAILY_LIMIT=${MAIL_DAILY_LIMIT:-100}
@@ -108,6 +112,10 @@ services:
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
       # Resend replaces Gmail when MAIL_PROVIDER=resend (backend/config/mail_settings.rb).
       - MAIL_PROVIDER=${MAIL_PROVIDER:-gmail}
+      # Web push for the owner's devices. Empty keys leave the channel off (see Push::Config).
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-}
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - MAIL_FROM=${MAIL_FROM:-Kurz <login@kurz.fyi>}
       - MAIL_DAILY_LIMIT=${MAIL_DAILY_LIMIT:-100}

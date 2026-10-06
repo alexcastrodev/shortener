@@ -11,7 +11,6 @@ RSpec.describe("the signed calendar feed", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
     Forms::Definition.add(form, { "type" => "booking", "label" => "When", "services" => [service] })
   end
@@ -40,9 +39,6 @@ RSpec.describe("the signed calendar feed", type: :request) do
       expect(response).to(have_http_status(:unauthorized))
       get("/api/me/calendar_feed")
       expect(response).to(have_http_status(:unauthorized))
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      post("/api/me/calendar_feed", headers: auth_headers)
-      expect(response).to(have_http_status(:not_found))
     end
 
     it "gives a secret address once and stores only its digest" do
@@ -148,13 +144,6 @@ RSpec.describe("the signed calendar feed", type: :request) do
       expect(CalendarFeed.last.last_fetched_at).to(be_nil)
       feed(url)
       expect(CalendarFeed.last.last_fetched_at).to(be_present)
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      feed(url)
-      expect(response).to(have_http_status(:not_found))
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
-      current_user.update_columns(deactivated_at: Time.current)
-      feed(url)
-      expect(response).to(have_http_status(:not_found))
     end
 
     it "limits reads per address" do

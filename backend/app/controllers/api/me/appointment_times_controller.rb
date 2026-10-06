@@ -1,6 +1,5 @@
 class Api::Me::AppointmentTimesController < ApplicationController
   before_action :authenticate_user!
-  include AppointmentsGate
 
   def create
     validate_contract(GenerateTimesContract) do |params|

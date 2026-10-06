@@ -4,10 +4,6 @@ module Mcp
       PAGE_MAX = 20
       AGENDA_MAX_SESSIONS = 300
 
-      def self.ensure!(user)
-        raise Mcp::ToolError.new("appointments_unavailable", "Appointments are not available for this account") unless Appointments::Config.enabled_for?(user)
-      end
-
       def self.date(value)
         Date.iso8601(value.to_s)
       rescue Date::Error

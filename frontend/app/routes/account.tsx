@@ -461,8 +461,8 @@ export default function AccountPage() {
 
         <LanguageCard />
 
-        {user.appointments_enabled && <NoticeSettings />}
-        {user.appointments_enabled && <CalendarFeedCard />}
+        <NoticeSettings />
+        <CalendarFeedCard />
 
         <ConnectedApps />
 

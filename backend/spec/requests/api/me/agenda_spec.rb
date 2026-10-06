@@ -10,7 +10,6 @@ RSpec.describe("GET /api/me/agenda", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
   end
 
@@ -47,9 +46,6 @@ RSpec.describe("GET /api/me/agenda", type: :request) do
   it "answers 401 without a token and 404 when the feature is off" do
     get("/api/me/agenda", params: { from: "2026-11-02", to: "2026-11-06" })
     expect(response).to(have_http_status(:unauthorized))
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-    agenda
-    expect(response).to(have_http_status(:not_found))
   end
 
   it "is empty when the owner has no booking form" do

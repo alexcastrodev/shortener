@@ -16,7 +16,6 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
     host! "localhost"
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
     Forms::Definition.add(form, { "type" => "booking", "label" => "When", "services" => [service], "rules" => rules })
     Forms::Definition.add(form.reload, { "type" => "short_text", "label" => "Name", "required" => true })
@@ -219,12 +218,6 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
       expect(json["errors"]["answers"]).to(have_key(mail_id))
     end
 
-    it "does not take bookings when the feature is off" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      expect { book }.not_to(change { [FormResponse.count, Appointment.count] })
-      expect(response).to(have_http_status(:unprocessable_entity))
-    end
-
     it "does not take a booking for an unpublished form" do
       Forms::Unpublish.call(form: form.reload)
       book
@@ -252,7 +245,6 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
 
   describe "the snapshot" do
     it "books against the published services, not the draft" do
-      allow(ENV).to(receive(:[]).with("FORM_DRAFTS_ENABLED").and_return("true"))
       Forms::Publish.call(form: form.reload)
       Forms::Definition.update(form.reload, booking_id, { "services" => [service.merge("id" => service_id, "times" => ["14:00"])] })
       book
@@ -262,7 +254,6 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
     end
 
     it "answers 409 form_changed for an old version before touching any place" do
-      allow(ENV).to(receive(:[]).with("FORM_DRAFTS_ENABLED").and_return("true"))
       Forms::Publish.call(form: form.reload)
       expect { book(extra: { form_version: 1 }) }.not_to(change { [FormResponse.count, Appointment.count] })
       expect(response).to(have_http_status(:conflict))

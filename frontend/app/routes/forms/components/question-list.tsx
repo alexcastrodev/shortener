@@ -16,7 +16,6 @@ import {
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card } from '@internal/ui';
-import { useUserState } from '@internal/core/states/use-user-state';
 import { getFormKey } from '@internal/core/actions/get-form/get-form.hook';
 import { getFormsKey } from '@internal/core/actions/get-forms/get-forms.hook';
 import { useCreateFormField } from '@internal/core/actions/create-form-field/create-form-field.hook';
@@ -64,9 +63,8 @@ export function QuestionList({
   onSelect: (id: string | null) => void;
 }) {
   const queryClient = useQueryClient();
-  const bookingAllowed = useUserState(state => state.user?.appointments_enabled === true);
   const hasBooking = form.fields.some(field => field.type === 'booking');
-  const addable = FIELD_TYPES.filter(item => item.type !== 'booking' || (bookingAllowed && !hasBooking));
+  const addable = FIELD_TYPES.filter(item => item.type !== 'booking' || !hasBooking);
 
   const onSuccess = (updated: Form) => {
     queryClient.setQueryData(getFormKey(form.id), updated);

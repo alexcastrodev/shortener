@@ -12,7 +12,6 @@ class Api::Public::FormSlotsController < ApplicationController
     raise ActiveRecord::RecordNotFound unless params[:public_id].to_s.match?(Api::Public::FormsController::PUBLIC_ID)
 
     form = Form.visible.find_by!(public_id: params[:public_id])
-    raise ActiveRecord::RecordNotFound unless Appointments::Config.enabled_for?(form.user)
 
     booking = Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" }
     service = booking&.fetch("services", [])&.find { |item| item["id"] == params[:service].to_s }

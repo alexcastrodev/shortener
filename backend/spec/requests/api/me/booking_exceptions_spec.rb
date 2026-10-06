@@ -16,7 +16,6 @@ RSpec.describe("days off, holidays and special hours", type: :request) do
     host! "localhost"
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
     Forms::Definition.add(form, { "type" => "booking", "label" => "When", "services" => [service, second_service] })
     Forms::Definition.add(form.reload, { "type" => "short_text", "label" => "Name", "required" => true })
@@ -149,7 +148,6 @@ RSpec.describe("days off, holidays and special hours", type: :request) do
 
     it "keeps serving the published exceptions until the change is published" do
       set_exceptions([{ from: "2026-11-09", kind: "closed" }])
-      allow(ENV).to(receive(:[]).with("FORM_DRAFTS_ENABLED").and_return("true"))
       expect(times_on("2026-11-09")).to(eq(["09:00", "10:00"]))
       publish!
       expect(times_on("2026-11-09")).to(eq([]))

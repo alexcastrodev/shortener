@@ -20,7 +20,6 @@ module Mcp
       requires "appointments:read"
 
       def self.perform(user:, from:, to:, step:, duration: 60, lunch: nil, blocks: [])
-        AppointmentToolHelpers.ensure!(user)
         result = Appointments::GenerateTimes.call(from: from, to: to, step: step, duration: duration, lunch: lunch&.symbolize_keys, blocks: blocks.map(&:symbolize_keys))
         { times: result.times, warnings: result.warnings, errors: result.errors }
       end

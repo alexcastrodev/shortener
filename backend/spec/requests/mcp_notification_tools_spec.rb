@@ -19,7 +19,6 @@ RSpec.describe("MCP notification tools", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
   end
 
   def make(owner = user, key: SecureRandom.hex(4))
@@ -45,14 +44,6 @@ RSpec.describe("MCP notification tools", type: :request) do
       expect(listed & ["list_notifications", "mark_notification_read"]).to(eq(["list_notifications"]))
       grant.update!(scopes: ["appointments:write"])
       expect(listed & ["list_notifications", "mark_notification_read"]).to(match_array(["list_notifications", "mark_notification_read"]))
-    end
-
-    it "lists neither without the scope or with the feature off" do
-      grant.update!(scopes: ["forms:read"])
-      expect(listed & ["list_notifications", "mark_notification_read"]).to(eq([]))
-      grant.update!(scopes: ["appointments:write"])
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      expect(listed & ["list_notifications", "mark_notification_read"]).to(eq([]))
     end
 
     it "refuses to mark a notification with a read-only grant" do
@@ -94,8 +85,6 @@ RSpec.describe("MCP notification tools", type: :request) do
 
     it "rejects extra arguments and answers for an unavailable account" do
       expect(failed?(tool("list_notifications", { user_id: other.id }))).to(be(true))
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ALLOWED_EMAILS").and_return("someone@else.com"))
-      expect(listed).not_to(include("list_notifications"))
     end
   end
 

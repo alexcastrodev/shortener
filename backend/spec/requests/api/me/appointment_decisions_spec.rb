@@ -27,7 +27,6 @@ RSpec.describe("the owner approves, declines and cancels from the agenda", type:
     host! "localhost"
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
     Forms::Definition.add(form, { "type" => "booking", "label" => "When", "services" => [service], "rules" => rules })
     Forms::Definition.add(form.reload, { "type" => "short_text", "label" => "Name", "required" => true })
@@ -61,10 +60,6 @@ RSpec.describe("the owner approves, declines and cancels from the agenda", type:
         act(verb, first_row, {}, headers: other_headers)
         expect(response).to(have_http_status(:not_found), verb)
       end
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      act("approve")
-      expect(response).to(have_http_status(:not_found))
-      expect(Appointment.pluck(:status).uniq).to(eq(["pending"]))
     end
   end
 

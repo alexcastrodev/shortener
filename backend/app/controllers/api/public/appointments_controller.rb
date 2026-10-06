@@ -34,7 +34,7 @@ class Api::Public::AppointmentsController < ApplicationController
 
   def load_appointment
     @appointment = AppointmentToken.resolve(params[:token])
-    not_found unless @appointment && Appointments::Config.enabled_for?(@appointment.form.user)
+    not_found unless @appointment
   end
 
   def session_row(value)

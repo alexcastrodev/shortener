@@ -27,7 +27,6 @@ RSpec.describe("email verification in automatic mode", type: :request) do
     deliveries.clear
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     allow(ENV).to(receive(:fetch).and_call_original)
     allow(ENV).to(receive(:fetch).with("FRONTEND_URL", anything).and_return("https://kurz.test"))
     travel_to(now)

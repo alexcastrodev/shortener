@@ -50,10 +50,5 @@ class Form < ApplicationRecord
 
   def field_definitions
     Forms::FieldSchema.definition_errors(fields).each { |message| errors.add(:fields, message) }
-    errors.add(:fields, "booking is not available for this account") if booking_without_access?
-  end
-
-  def booking_without_access?
-    fields_changed? && user && !Appointments::Config.enabled_for?(user) && Forms::BookingSchema.added?(fields, fields_was)
   end
 end

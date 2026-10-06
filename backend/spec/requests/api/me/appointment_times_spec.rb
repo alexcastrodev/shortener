@@ -9,7 +9,6 @@ RSpec.describe("POST /api/me/appointments/generate_times", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
   end
 
   def generate(params)
@@ -20,24 +19,6 @@ RSpec.describe("POST /api/me/appointments/generate_times", type: :request) do
     it "answers 401 without a token" do
       post("/api/me/appointments/generate_times", params: base, as: :json)
       expect(response).to(have_http_status(:unauthorized))
-    end
-
-    it "answers 404 when the feature is off" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      generate(base)
-      expect(response).to(have_http_status(:not_found))
-    end
-
-    it "answers 404 for a user outside the allow-list" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ALLOWED_EMAILS").and_return("someone@else.com"))
-      generate(base)
-      expect(response).to(have_http_status(:not_found))
-    end
-
-    it "answers 200 for a listed user" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ALLOWED_EMAILS").and_return(current_user.email))
-      generate(base)
-      expect(response).to(have_http_status(:ok))
     end
   end
 

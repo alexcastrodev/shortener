@@ -8,7 +8,6 @@ RSpec.describe("/api/me/notifications", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
   end
 
   def json
@@ -26,12 +25,6 @@ RSpec.describe("/api/me/notifications", type: :request) do
         send(verb, path)
         expect(response).to(have_http_status(:unauthorized), "#{verb} #{path}")
       end
-    end
-
-    it "answers 404 when the feature is off" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      get("/api/me/notifications", headers: auth_headers)
-      expect(response).to(have_http_status(:not_found))
     end
 
     it "lists only my notifications, newest first, with the unread count" do

@@ -1,6 +1,5 @@
 class Api::Me::PushSubscriptionsController < ApplicationController
   before_action :authenticate_user!
-  include AppointmentsGate
 
   def index
     render(json: { push_subscriptions: current_user.push_subscriptions.order(:id).map { |row| serialize(row) } }, status: :ok)

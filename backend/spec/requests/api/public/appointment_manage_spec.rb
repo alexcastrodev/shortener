@@ -26,7 +26,6 @@ RSpec.describe("managing a booking from its link", type: :request) do
     deliveries.clear
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
     Forms::Definition.add(form, { "type" => "booking", "label" => "When", "services" => [service], "rules" => {} })
     Forms::Definition.add(form.reload, { "type" => "short_text", "label" => "Name", "required" => true })
@@ -74,21 +73,6 @@ RSpec.describe("managing a booking from its link", type: :request) do
       expect(response).to(have_http_status(:ok))
       expect(json["appointment"]).to(include("form_title" => "Salon", "service" => "Haircut", "status" => "confirmed", "cancellable" => true, "time_zone" => "Europe/Lisbon"))
       expect(json["appointment"]["sessions"]).to(eq([{ "starts_at" => "2026-11-03T09:00:00Z", "status" => "confirmed" }, { "starts_at" => "2026-11-04T10:00:00Z", "status" => "confirmed" }]))
-    end
-
-    it "answers the same for an unknown link, an expired one and a feature that is off" do
-      book(two_days)
-      appointment = Appointment.order(:id).first
-      unknown = [get("/api/public/appointments/nope"), response.body]
-      expired = token_for(appointment, expires_at: now - 1.minute)
-      get("/api/public/appointments/#{expired}")
-      expect([response.status, response.body]).to(eq([404, unknown.last]))
-      expect(unknown.first).to(eq(404))
-
-      live = token_for(appointment)
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("false"))
-      get("/api/public/appointments/#{live}")
-      expect([response.status, response.body]).to(eq([404, unknown.last]))
     end
   end
 

@@ -37,7 +37,6 @@ RSpec.describe("MCP full access", type: :request) do
 
   it "is a single opt-in scope that lists every tool, and no other scope combination lists the destructive ones" do
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     expect(tool_names(full)).to(match_array(Mcp::Tools.all.map(&:tool_name)))
 
     destructive = ["delete_shortlink", "delete_page", "delete_form", "delete_response", "delete_all_responses", "update_shortlink", "duplicate_form", "apply_form_template"]

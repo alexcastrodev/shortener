@@ -29,7 +29,7 @@ class Api::Public::AppointmentVerificationsController < ApplicationController
 
   def load_appointment
     @appointment = AppointmentToken.resolve(params[:token], purpose: "verify")
-    render(json: { error: "not_found" }, status: :not_found) unless @appointment && Appointments::Config.enabled_for?(@appointment.form.user)
+    render(json: { error: "not_found" }, status: :not_found) unless @appointment
   end
 
   def payload

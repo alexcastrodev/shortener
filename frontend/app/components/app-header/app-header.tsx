@@ -47,12 +47,10 @@ export function AppHeader() {
               {t('forms')}
             </NavLink>
 
-            {user?.appointments_enabled && (
-              <NavLink to="/app/agenda" className={navClass}>
-                <IconCalendarEvent size={17} stroke={1.8} />
-                {t('agenda')}
-              </NavLink>
-            )}
+            <NavLink to="/app/agenda" className={navClass}>
+              <IconCalendarEvent size={17} stroke={1.8} />
+              {t('agenda')}
+            </NavLink>
 
             {/* One entry for every admin section; /admin lists them. */}
             <AdminGuard>

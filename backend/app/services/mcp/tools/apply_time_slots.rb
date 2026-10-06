@@ -21,7 +21,6 @@ module Mcp
       requires "appointments:write", writes: true, limits: [[60, 1.hour]]
 
       def self.perform(user:, form_id:, service_id:, from:, to:, step:, lunch: nil, blocks: [])
-        AppointmentToolHelpers.ensure!(user)
         form = Mcp::Guards.draft_form(user, form_id)
         booking = BookingConfigHelpers.draft_booking(form)
         service = booking["services"].find { |item| item["id"] == service_id } || raise(Mcp::ToolError.new("not_found", "Not found"))

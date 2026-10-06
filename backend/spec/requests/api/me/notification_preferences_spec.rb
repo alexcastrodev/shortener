@@ -16,7 +16,6 @@ RSpec.describe("/api/me/notification_preferences", type: :request) do
     host! "localhost"
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
   end
 
@@ -56,9 +55,6 @@ RSpec.describe("/api/me/notification_preferences", type: :request) do
       expect(response).to(have_http_status(:unauthorized))
       put("/api/me/notification_preferences", params: { preferences: [] }, as: :json)
       expect(response).to(have_http_status(:unauthorized))
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      show
-      expect(response).to(have_http_status(:not_found))
     end
   end
 

@@ -16,7 +16,6 @@ RSpec.describe("several reminder times", type: :request) do
     host! "localhost"
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
     Forms::Definition.add(form, { "type" => "booking", "label" => "When", "services" => [service], "rules" => rules })
     Forms::Definition.add(form.reload, { "type" => "short_text", "label" => "Name", "required" => true })

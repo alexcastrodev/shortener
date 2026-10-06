@@ -14,7 +14,6 @@ module Mcp
       requires "appointments:read"
 
       def self.perform(user:, unread_only: false, before: nil, limit: 10)
-        AppointmentToolHelpers.ensure!(user)
         scope = Notification.in_app.where(user_id: user.id, recipient_kind: "owner")
         unread = scope.unread.count
         scope = scope.unread if unread_only

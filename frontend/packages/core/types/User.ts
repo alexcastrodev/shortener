@@ -10,6 +10,5 @@ export type User = {
   google_connected?: boolean;
   locale?: string | null;
   time_zone?: string;
-  appointments_enabled?: boolean;
   created_at: string;
 };

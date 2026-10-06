@@ -22,7 +22,6 @@ RSpec.describe("the push channel", type: :request) do
     host! "localhost"
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     keys.each { |key, value| allow(ENV).to(receive(:[]).with(key).and_return(value)) }
     allow(WebPush).to(receive(:payload_send)) { |**args| sent << args }
     travel_to(now)
@@ -62,9 +61,6 @@ RSpec.describe("the push channel", type: :request) do
     it "answers 401 without a token and 404 when appointments are off" do
       get("/api/me/push_config")
       expect(response).to(have_http_status(:unauthorized))
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      get("/api/me/push_config", headers: auth_headers)
-      expect(response).to(have_http_status(:not_found))
     end
   end
 

@@ -21,7 +21,6 @@ RSpec.describe("the form cover and intro", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("FORM_DRAFTS_ENABLED").and_return("true"))
     stub_request(:post, "http://imgproc.test/convert").to_return(status: 200, body: webp)
   end
 

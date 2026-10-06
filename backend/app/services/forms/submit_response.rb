@@ -51,7 +51,7 @@ module Forms
     end
 
     def stale?
-      Snapshot.enabled? && version.present? && version.to_i != definition.published_version
+      version.present? && version.to_i != definition.published_version
     end
 
     def cast_all
@@ -131,7 +131,7 @@ module Forms
     def attributes
       {
         idempotency_key: idempotency_key,
-        published_version: Snapshot.enabled? ? definition.published_version : nil,
+        published_version: definition.published_version,
         country: country,
         platform: text(:platform),
         browser: text(:browser),

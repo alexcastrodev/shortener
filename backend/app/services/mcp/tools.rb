@@ -57,8 +57,8 @@ module Mcp
       ]
     end
 
-    def for_scopes(scopes, user: nil)
-      all.select { |tool| tool.allowed?(scopes) && (!tool.required_scope.to_s.start_with?("appointments:") || Appointments::Config.enabled_for?(user)) }
+    def for_scopes(scopes)
+      all.select { |tool| tool.allowed?(scopes) }
     end
 
     def shortlink(link)

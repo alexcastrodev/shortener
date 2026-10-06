@@ -27,7 +27,6 @@ RSpec.describe("owner actions on an appointment: reschedule and remind", type: :
     host! "localhost"
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
     Forms::Definition.add(form, { "type" => "booking", "label" => "When", "services" => [service], "rules" => rules })
     Forms::Definition.add(form.reload, { "type" => "short_text", "label" => "Name", "required" => true })
@@ -71,11 +70,6 @@ RSpec.describe("owner actions on an appointment: reschedule and remind", type: :
       expect(response).to(have_http_status(:not_found))
       remind(row, headers: { "Authorization" => "Bearer #{SessionToken.issue(other)}" })
       expect(response).to(have_http_status(:not_found))
-
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      remind(row)
-      expect(response).to(have_http_status(:not_found))
-      expect(row.reload.status).to(eq("confirmed"))
     end
   end
 

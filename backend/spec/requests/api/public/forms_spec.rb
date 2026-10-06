@@ -22,7 +22,7 @@ RSpec.describe("/api/public/forms", type: :request) do
 
     expect(response).to(have_http_status(:ok))
     expect(json.keys).to(eq(["form"]))
-    expect(json["form"].keys).to(match_array(["title", "description", "thank_you_message", "theme", "custom_colors", "layout", "fields", "cover_token", "cover_position", "intro_enabled", "start_label"]))
+    expect(json["form"].keys).to(match_array(["title", "description", "thank_you_message", "theme", "custom_colors", "layout", "fields", "cover_token", "cover_position", "intro_enabled", "start_label", "published_version"]))
     expect(json["form"]).to(include("title" => "Survey", "theme" => "ocean"))
     expect(json["form"]["fields"].flat_map(&:keys).uniq).to(match_array(["id", "type", "label", "help", "required", "choices", "max_choices", "scale", "min", "max"]))
     expect(json["form"]["fields"][1]["choices"].first.keys).to(match_array(["id", "label"]))
@@ -32,7 +32,7 @@ RSpec.describe("/api/public/forms", type: :request) do
     get "/api/public/forms/#{form.public_id}"
 
     body = response.body
-    ["user_id", "responses_count", "published", "created_at", "updated_at", owner.email, "\"id\":#{form.id},", "public_id"].each do |leak|
+    ["user_id", "responses_count", "\"published\"", "created_at", "updated_at", owner.email, "\"id\":#{form.id},", "public_id"].each do |leak|
       expect(body).not_to(include(leak), leak)
     end
   end

@@ -17,7 +17,7 @@ module Appointments
     end
 
     def cast(form:, booking:, raw:, now: Time.current, claim_at: nil)
-      return [nil, :invalid] unless Config.enabled_for?(form.user) && raw.is_a?(Hash)
+      return [nil, :invalid] unless raw.is_a?(Hash)
 
       service = booking["services"].find { |item| item["id"] == raw["service"] }
       return cast_monthly(form: form, booking: booking, service: service, raw: raw["monthly"], now: now) if service && raw["monthly"]

@@ -13,7 +13,6 @@ module Mcp
       end
 
       def self.perform(user:, id:)
-        AppointmentToolHelpers.ensure!(user)
         ResponseToolHelpers.allowance!(user, 1)
         appointment = Appointment.where(form_id: user.forms.select(:id)).includes(:slot).find(id)
         Untrusted.envelope(appointment: AppointmentToolHelpers.page([appointment]).first, returned_records: 1)

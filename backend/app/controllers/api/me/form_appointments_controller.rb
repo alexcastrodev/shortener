@@ -2,7 +2,6 @@ class Api::Me::FormAppointmentsController < ApplicationController
   include FormLookup
 
   before_action :authenticate_user!, prepend: true
-  include AppointmentsGate
   before_action :parse_dates
 
   PAGE = 50
