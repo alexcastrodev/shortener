@@ -25,7 +25,7 @@ export function meta() {
 }
 
 const PUBLISH = ['forms:publish', 'pages:publish'];
-const PERSONAL = ['responses:read', 'appointments:read', 'appointments:write'];
+const PERSONAL = ['responses:read', 'appointments:read', 'appointments:write', 'appointments:manage'];
 const SENSITIVE = [...PERSONAL, FULL_SCOPE, ...PUBLISH];
 
 const KEYS = [
