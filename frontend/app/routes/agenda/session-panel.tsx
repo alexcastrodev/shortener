@@ -1,0 +1,344 @@
+import {
+  ActionIcon,
+  Button,
+  Group,
+  Modal,
+  Stack,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { IconX } from '@tabler/icons-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Card } from '@internal/ui';
+import { useAppointmentAction } from '@internal/core/actions/appointment-action/appointment-action.hook';
+import type { AppointmentActionName } from '@internal/core/actions/appointment-action/appointment-action.types';
+import type {
+  AgendaAppointment,
+  AgendaSession,
+} from '@internal/core/actions/get-agenda/get-agenda.types';
+import { formatDateTime } from '../../i18n/format';
+import { actionError } from '../../modules/agenda/agenda-actions.ts';
+
+type Dialog =
+  | { kind: 'decline' | 'cancel'; appointment: AgendaAppointment }
+  | { kind: 'reschedule'; appointment: AgendaAppointment }
+  | null;
+
+export function SessionPanel({
+  session,
+  zone,
+  onClose,
+  onChanged,
+}: {
+  session: AgendaSession;
+  zone: string;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const { t } = useTranslation('agenda');
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const [text, setText] = useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const { mutate, isPending } = useAppointmentAction();
+
+  const errorText = (error: unknown) => {
+    switch (actionError(error)) {
+      case 'expired':
+        return t('err_expired');
+      case 'already_decided':
+        return t('err_already_decided');
+      case 'nothing_to_cancel':
+        return t('err_nothing_to_cancel');
+      case 'too_soon':
+        return t('err_too_soon');
+      case 'no_email':
+        return t('err_no_email');
+      case 'nothing_to_remind':
+        return t('err_nothing_to_remind');
+      case 'same_time':
+        return t('err_same_time');
+      case 'unavailable':
+        return t('err_unavailable');
+      case 'not_reschedulable':
+        return t('err_not_reschedulable');
+      default:
+        return t('err_unknown');
+    }
+  };
+
+  const doneText = (action: AppointmentActionName) => {
+    switch (action) {
+      case 'approve':
+        return t('done_approve');
+      case 'decline':
+        return t('done_decline');
+      case 'cancel':
+        return t('done_cancel');
+      case 'remind':
+        return t('done_remind');
+      default:
+        return t('done_reschedule');
+    }
+  };
+
+  const run = (
+    appointment: AgendaAppointment,
+    action: AppointmentActionName,
+    data?: { message?: string; reason?: string; date?: string; time?: string }
+  ) => {
+    mutate(
+      { id: appointment.id, action, data },
+      {
+        onSuccess: () => {
+          notifications.show({ message: doneText(action), color: 'teal' });
+          setDialog(null);
+          setText('');
+          onChanged();
+        },
+        onError: error => {
+          notifications.show({ message: errorText(error), color: 'red' });
+          onChanged();
+        },
+      }
+    );
+  };
+
+  const open = (next: Dialog) => {
+    setText('');
+    setDate('');
+    setTime('');
+    setDialog(next);
+  };
+
+  return (
+    <Card className="w-full shrink-0 p-4 lg:w-80">
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <h2 className="text-base font-semibold">
+          {session.service_name ?? t('service_fallback')}
+        </h2>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          aria-label={t('panel_close')}
+          onClick={onClose}
+        >
+          <IconX size={16} />
+        </ActionIcon>
+      </div>
+      <dl className="space-y-2 text-sm">
+        <div>
+          <dt className="text-xs text-muted-foreground">{t('panel_when')}</dt>
+          <dd>
+            {formatDateTime(session.starts_at, {
+              dateStyle: 'full',
+              timeStyle: 'short',
+              timeZone: zone,
+            })}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">{t('panel_form')}</dt>
+          <dd>{session.form_title}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">
+            {t('panel_occupancy')}
+          </dt>
+          <dd>
+            {session.capacity === null
+              ? `${t('booked_unlimited', { count: session.booked })} · ${t('panel_unlimited')}`
+              : t('booked_of', {
+                  booked: session.booked,
+                  capacity: session.capacity,
+                })}
+          </dd>
+        </div>
+      </dl>
+
+      <h3 className="mt-4 mb-2 text-sm font-medium">
+        {t('clients_title')} · {session.appointments.length}
+      </h3>
+      {session.appointments.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('no_clients')}</p>
+      ) : (
+        <ul className="space-y-2">
+          {session.appointments.map(appointment => (
+            <li
+              key={appointment.id}
+              className="rounded-md border border-border p-2 text-sm"
+            >
+              <p className="font-medium">
+                {appointment.client_name ?? t('no_name')}
+              </p>
+              {appointment.client_email && (
+                <p className="truncate text-xs text-muted-foreground">
+                  {appointment.client_email}
+                </p>
+              )}
+              <p
+                className={`mt-1 text-xs ${appointment.status === 'pending' ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}
+              >
+                {appointment.status === 'pending'
+                  ? t('status_pending')
+                  : t('status_confirmed')}
+              </p>
+              <Group gap={6} mt={6}>
+                {appointment.status === 'pending' ? (
+                  <>
+                    <Button
+                      size="compact-xs"
+                      color="brand"
+                      loading={isPending}
+                      onClick={() => run(appointment, 'approve')}
+                    >
+                      {t('approve')}
+                    </Button>
+                    <Button
+                      size="compact-xs"
+                      variant="default"
+                      disabled={isPending}
+                      onClick={() => open({ kind: 'decline', appointment })}
+                    >
+                      {t('decline')}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      size="compact-xs"
+                      variant="default"
+                      disabled={isPending}
+                      onClick={() => run(appointment, 'remind')}
+                    >
+                      {t('remind')}
+                    </Button>
+                    <Button
+                      size="compact-xs"
+                      variant="default"
+                      disabled={isPending}
+                      onClick={() => open({ kind: 'reschedule', appointment })}
+                    >
+                      {t('reschedule')}
+                    </Button>
+                  </>
+                )}
+                <Button
+                  size="compact-xs"
+                  variant="subtle"
+                  color="red"
+                  disabled={isPending}
+                  onClick={() => open({ kind: 'cancel', appointment })}
+                >
+                  {t('cancel')}
+                </Button>
+              </Group>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <Modal
+        opened={dialog?.kind === 'decline' || dialog?.kind === 'cancel'}
+        onClose={() => setDialog(null)}
+        centered
+        title={
+          dialog?.kind === 'cancel' ? t('cancel_title') : t('decline_title')
+        }
+      >
+        <Stack gap="sm">
+          <p className="text-sm">
+            {dialog?.kind === 'cancel' ? t('cancel_body') : t('decline_body')}
+          </p>
+          <Textarea
+            label={
+              dialog?.kind === 'cancel' ? t('reason_label') : t('message_label')
+            }
+            maxLength={500}
+            autosize
+            minRows={2}
+            value={text}
+            onChange={event => setText(event.currentTarget.value)}
+          />
+          <Group justify="flex-end" gap="xs">
+            <Button variant="default" onClick={() => setDialog(null)}>
+              {t('dialog_keep')}
+            </Button>
+            <Button
+              color="red"
+              loading={isPending}
+              onClick={() =>
+                dialog &&
+                run(
+                  dialog.appointment,
+                  dialog.kind === 'cancel' ? 'cancel' : 'decline',
+                  dialog.kind === 'cancel'
+                    ? { reason: text.trim() || undefined }
+                    : { message: text.trim() || undefined }
+                )
+              }
+            >
+              {dialog?.kind === 'cancel'
+                ? t('confirm_cancel')
+                : t('confirm_decline')}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={dialog?.kind === 'reschedule'}
+        onClose={() => setDialog(null)}
+        centered
+        title={t('reschedule')}
+      >
+        <Stack gap="sm">
+          <Group grow>
+            <TextInput
+              type="date"
+              label={t('new_date')}
+              value={date}
+              onChange={event => setDate(event.currentTarget.value)}
+            />
+            <TextInput
+              type="time"
+              label={t('new_time')}
+              value={time}
+              onChange={event => setTime(event.currentTarget.value)}
+            />
+          </Group>
+          <Textarea
+            label={t('message_label')}
+            maxLength={500}
+            autosize
+            minRows={2}
+            value={text}
+            onChange={event => setText(event.currentTarget.value)}
+          />
+          <Group justify="flex-end" gap="xs">
+            <Button variant="default" onClick={() => setDialog(null)}>
+              {t('reschedule_cancel')}
+            </Button>
+            <Button
+              color="brand"
+              loading={isPending}
+              disabled={!date || !time}
+              onClick={() =>
+                dialog &&
+                run(dialog.appointment, 'reschedule', {
+                  date,
+                  time,
+                  message: text.trim() || undefined,
+                })
+              }
+            >
+              {t('reschedule_confirm')}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </Card>
+  );
+}
