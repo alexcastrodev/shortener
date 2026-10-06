@@ -22,6 +22,15 @@ class FormFieldUpdateContract < ApplicationContract
       required(:days).array(:string)
       required(:times).array(:string)
     end
+    optional(:exceptions).array(:hash) do
+      optional(:id).filled(:string)
+      required(:from).filled(:string)
+      optional(:to).maybe(:string)
+      required(:kind).filled(:string)
+      optional(:times).array(:string)
+      optional(:service_ids).array(:string)
+      optional(:note).maybe(:string)
+    end
     optional(:rules).hash do
       optional(:time_zone).filled(:string)
       optional(:approval).filled(:string)
