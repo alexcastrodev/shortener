@@ -106,7 +106,9 @@ export function NotificationBell() {
                     >
                       {item.kind === 'appointment_created'
                         ? t('kind_appointment_created')
-                        : t('kind_unknown')}
+                        : item.kind === 'appointment_cancelled'
+                          ? t('kind_appointment_cancelled')
+                          : t('kind_unknown')}
                       {item.payload.sessions ? (
                         <span className="font-normal text-muted-foreground">
                           {' · '}

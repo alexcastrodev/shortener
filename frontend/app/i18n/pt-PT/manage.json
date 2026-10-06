@@ -1,0 +1,23 @@
+{
+  "title": "A sua marcação",
+  "not_found_title": "Ligação inválida",
+  "not_found_body": "Esta ligação não é válida ou já expirou.",
+  "error_title": "Algo correu mal",
+  "error_body": "Não foi possível carregar a sua marcação. Tente novamente.",
+  "status_confirmed": "Confirmada",
+  "status_cancelled": "Cancelada",
+  "service": "Serviço",
+  "status": "Estado",
+  "sessions": "Sessões",
+  "session_cancelled": "Cancelada",
+  "cancel_button": "Cancelar marcação",
+  "cancel_confirm_title": "Cancelar esta marcação?",
+  "cancel_confirm_body": "Todas as sessões futuras serão libertadas. Não pode ser desfeito.",
+  "reason_label": "Motivo (opcional)",
+  "cancel_keep": "Manter marcação",
+  "cancel_confirm": "Sim, cancelar",
+  "cancelling": "A cancelar…",
+  "cancel_failed": "Não foi possível cancelar a sua marcação. Tente novamente.",
+  "cancelled_notice": "A sua marcação foi cancelada.",
+  "past_notice": "Esta marcação já não pode ser cancelada online."
+}
