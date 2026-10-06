@@ -19,10 +19,22 @@ export type ServiceValues = {
   times: { key: string; value: string }[];
 };
 
+export type ExceptionValues = {
+  key: string;
+  id?: string;
+  kind: 'closed' | 'special';
+  from: string;
+  to: string;
+  times: { key: string; value: string }[];
+  serviceIds: string[];
+  note: string;
+};
+
 export type Values = {
   label: string;
   help: string;
   services: ServiceValues[];
+  exceptions: ExceptionValues[];
   approval: 'auto' | 'manual';
   approval_timeout_minutes: number | '';
   approval_on_timeout: 'decline' | 'accept';
@@ -32,6 +44,16 @@ export type Values = {
 };
 
 export const newKey = () => Math.random().toString(36).slice(2);
+
+export const blankException = (): ExceptionValues => ({
+  key: newKey(),
+  kind: 'closed',
+  from: '',
+  to: '',
+  times: [{ key: newKey(), value: '09:00' }],
+  serviceIds: [],
+  note: '',
+});
 
 export const blankService = (name: string): ServiceValues => ({
   key: newKey(),
@@ -59,6 +81,16 @@ export function initialValues(field?: FormField): Values {
       capacity: service.capacity ?? '',
       days: service.days,
       times: service.times.map(value => ({ key: newKey(), value })),
+    })),
+    exceptions: (field?.exceptions ?? []).map(item => ({
+      key: item.id,
+      id: item.id,
+      kind: item.kind,
+      from: item.from,
+      to: item.to && item.to !== item.from ? item.to : '',
+      times: (item.times ?? []).map(value => ({ key: newKey(), value })),
+      serviceIds: item.service_ids ?? [],
+      note: item.note ?? '',
     })),
     approval: rules?.approval ?? 'auto',
     approval_timeout_minutes: rules?.approval_timeout_minutes ?? 1440,
@@ -110,6 +142,21 @@ export function toBookingInput(
       };
     }),
     rules,
+    exceptions: values.exceptions.map(item => {
+      const to = item.to && item.to !== item.from ? item.to : undefined;
+      const note = item.note.trim();
+      return {
+        ...(item.id ? { id: item.id } : {}),
+        from: item.from,
+        ...(to ? { to } : {}),
+        kind: item.kind,
+        ...(item.kind === 'special'
+          ? { times: [...new Set(item.times.map(time => time.value))].sort() }
+          : {}),
+        ...(item.serviceIds.length > 0 ? { service_ids: item.serviceIds } : {}),
+        ...(note ? { note } : {}),
+      };
+    }),
   };
   if (creating) input.type = 'booking';
   return input;
