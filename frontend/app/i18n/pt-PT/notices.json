@@ -12,5 +12,16 @@
   "event_unknown": "Outro",
   "not_available": "Indisponível",
   "footnote": "Um traço significa que esse aviso não é enviado dessa forma. Os seus clientes recebem sempre os próprios e-mails.",
-  "error": "Não foi possível guardar. Tente de novo."
+  "error": "Não foi possível guardar. Tente de novo.",
+  "channel_push": "Neste aparelho",
+  "device_title": "Avisos neste aparelho",
+  "device_on": "Ligados neste aparelho.",
+  "device_off": "Desligados neste aparelho.",
+  "device_enable": "Ligar",
+  "device_disable": "Desligar",
+  "device_server_off": "Os avisos no aparelho ainda não estão disponíveis.",
+  "device_unsupported": "Este navegador não consegue mostrar avisos com o Kurz fechado.",
+  "device_ios": "No iPhone e no iPad, adicione primeiro o Kurz ao Ecrã principal, abra-o a partir daí e ligue isto.",
+  "device_denied": "Os avisos estão bloqueados para este site. Permita-os nas definições do navegador e tente de novo.",
+  "device_error": "Não foi possível alterar este aparelho. Tente de novo."
 }
