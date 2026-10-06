@@ -3,6 +3,21 @@ class Api::Me::AppointmentsController < ApplicationController
   include AppointmentsGate
   before_action :load_appointment
 
+  def approve
+    decide("approve")
+  end
+
+  def decline
+    decide("decline")
+  end
+
+  def cancel
+    cancelled = Appointments::ClientCancel.call(appointment: @appointment, reason: params[:reason], by: "owner")
+    return render(json: { error: "nothing_to_cancel" }, status: :unprocessable_entity) if cancelled.empty?
+
+    render(json: { appointments: group_rows }, status: :ok)
+  end
+
   def reschedule
     result = Appointments::Reschedule.call(row: @appointment, date: params[:date], time: params[:time], message: params[:message])
     case result.status
@@ -23,6 +38,19 @@ class Api::Me::AppointmentsController < ApplicationController
   end
 
   private
+
+  def decide(decision)
+    case Appointments::Decide.call(appointment: @appointment, decision: decision, message: params[:message])
+    when :approve, :decline then render(json: { appointments: group_rows }, status: :ok)
+    when :already_decided then render(json: { error: "already_decided" }, status: :conflict)
+    when :expired then render(json: { error: "expired" }, status: :conflict)
+    else render(json: { error: "invalid_decision" }, status: :unprocessable_entity)
+    end
+  end
+
+  def group_rows
+    Appointment.where(group_key: @appointment.group_key).where.not(status: "rescheduled").includes(:slot).order(:id).map { |row| Appointments::Search.row(row) }
+  end
 
   def load_appointment
     @appointment = Appointment.where(form_id: current_user.forms.select(:id)).find(params[:id])
