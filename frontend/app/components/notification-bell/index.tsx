@@ -15,6 +15,22 @@ import { formatNumber, formatRelative } from '../../i18n/format';
 
 export function NotificationBell() {
   const { t } = useTranslation('notifications');
+  const kindLabel = (kind: string) => {
+    switch (kind) {
+      case 'appointment_created':
+        return t('kind_appointment_created');
+      case 'appointment_requested':
+        return t('kind_appointment_requested');
+      case 'appointment_cancelled':
+        return t('kind_appointment_cancelled');
+      case 'appointment_expired':
+        return t('kind_appointment_expired');
+      case 'appointment_auto_confirmed':
+        return t('kind_appointment_auto_confirmed');
+      default:
+        return t('kind_unknown');
+    }
+  };
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [opened, setOpened] = useState(false);
@@ -104,13 +120,7 @@ export function NotificationBell() {
                     <span
                       className={`block text-sm ${item.read_at ? 'text-muted-foreground' : 'font-semibold text-foreground'}`}
                     >
-                      {item.kind === 'appointment_created'
-                        ? t('kind_appointment_created')
-                        : item.kind === 'appointment_requested'
-                          ? t('kind_appointment_requested')
-                          : item.kind === 'appointment_cancelled'
-                            ? t('kind_appointment_cancelled')
-                            : t('kind_unknown')}
+                      {kindLabel(item.kind)}
                       {item.payload.sessions ? (
                         <span className="font-normal text-muted-foreground">
                           {' · '}

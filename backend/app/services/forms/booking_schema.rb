@@ -7,7 +7,7 @@ module Forms
     RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
     RULE_RANGES = { "min_notice_minutes" => (0..43_200), "window_days" => (1..365), "buffer_minutes" => (0..600), "max_per_day" => (1..1000), "approval_timeout_minutes" => (5..43_200) }.freeze
     APPROVALS = ["auto", "manual"].freeze
-    ON_TIMEOUT = ["decline"].freeze
+    ON_TIMEOUT = ["decline", "accept"].freeze
     DEFAULT_TIMEOUT_MINUTES = 1440
     DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].freeze
     TIME = /\A([01]\d|2[0-3]):[0-5]\d\z/

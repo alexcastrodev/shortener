@@ -7,6 +7,8 @@
   "kind_appointment_created": "Nova marcação",
   "kind_appointment_requested": "Marcação por aprovar",
   "kind_appointment_cancelled": "Marcação cancelada",
+  "kind_appointment_expired": "Pedido expirou",
+  "kind_appointment_auto_confirmed": "Marcação confirmada automaticamente",
   "kind_unknown": "Atualização",
   "sessions_one": "{{count, number}} sessão",
   "sessions_other": "{{count, number}} sessões"

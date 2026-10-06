@@ -141,7 +141,7 @@ RSpec.describe("the booking question", type: :request) do
       "an unknown approval mode" => { approval: "sometimes" },
       "a deadline under five minutes" => { approval: "manual", approval_timeout_minutes: 4 },
       "a deadline over thirty days" => { approval: "manual", approval_timeout_minutes: 43_201 },
-      "accepting on timeout, not available yet" => { approval: "manual", approval_on_timeout: "accept" },
+      "an unknown action on timeout" => { approval: "manual", approval_on_timeout: "ignore" },
       "an unknown time zone" => { time_zone: "Mars/Olympus" },
     }.each do |label, rules|
       it "rejects #{label}" do

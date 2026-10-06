@@ -58,7 +58,7 @@ module Appointments
           client_name: contact[:name],
           client_email: contact[:email],
           published_version: version,
-          snapshot: service.slice("name", "duration", "price", "currency"),
+          snapshot: service.slice("name", "duration", "price", "currency").merge("on_timeout" => (rules["approval_on_timeout"] if manual)).compact,
           client_time_zone: meta[:time_zone],
           client_locale: meta[:locale],
           created_at: Time.current,
