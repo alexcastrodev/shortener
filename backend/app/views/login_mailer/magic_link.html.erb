@@ -1,6 +1,6 @@
 <%# Hidden preview line shown by inbox lists next to the subject. %>
 <div style="display:none;max-height:0;overflow:hidden;">
-  <%= @body %> It expires in <%= @valid_minutes %> minutes.
+  <%= @body %> <%= t(".preview", minutes: @valid_minutes) %>
 </div>
 
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="bg" style="background:#f7f8fa;">
@@ -24,14 +24,13 @@
               <%= @code %>
             </div>
             <p class="muted" style="margin:0;font:400 13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#4b5563;">
-              The code expires in <%= @valid_minutes %> minutes and works once.
+              <%= t(".expires", minutes: @valid_minutes) %>
             </p>
           </td>
         </tr>
         <tr>
           <td class="muted" style="padding:16px 4px 0;font:400 12px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#6b7280;">
-            You're getting this because <%= @reason %>.
-            If it wasn't you, you can ignore this email.
+            <%= t(".footer", reason: @reason) %>
           </td>
         </tr>
       </table>

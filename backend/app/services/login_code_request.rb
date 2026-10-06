@@ -17,10 +17,11 @@ class LoginCodeRequest
   # never tells whether an account exists or is deactivated.
   Result = Data.define(:status, :reason)
 
-  def initialize(email:, purpose: :sign_in, password: nil)
+  def initialize(email:, purpose: :sign_in, password: nil, locale: nil)
     @email = email.to_s.strip.downcase
     @purpose = PURPOSES.include?(purpose) ? purpose : :sign_in
     @password = password
+    @locale = locale
   end
 
   def call
@@ -48,13 +49,13 @@ class LoginCodeRequest
       user = User.create_or_find_by!(email: email)
       user.stage_pending_password!(password) if STAGES_PASSWORD.include?(mail_purpose)
     end
-    user.send_magic_link(purpose: mail_purpose)
+    user.send_magic_link(purpose: mail_purpose, locale: locale)
     result(:sent)
   end
 
   private
 
-  attr_reader :email, :purpose, :password
+  attr_reader :email, :purpose, :password, :locale
 
   def result(status, reason = nil)
     Result.new(status: status, reason: reason)

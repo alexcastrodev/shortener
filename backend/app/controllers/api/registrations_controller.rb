@@ -20,6 +20,6 @@ class Api::RegistrationsController < ApplicationController
     error = PasswordPolicy.error_for(params[:password], email: params[:email])
     return render(json: { error: error }, status: :unprocessable_entity) if error
 
-    render_code_request(LoginCodeRequest.call(email: params[:email], purpose: :sign_up, password: params[:password]))
+    render_code_request(LoginCodeRequest.call(email: params[:email], purpose: :sign_up, password: params[:password], locale: params[:locale]))
   end
 end

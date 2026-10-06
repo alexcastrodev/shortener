@@ -27,7 +27,7 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Signup() {
-  const { t } = useTranslation('auth');
+  const { t, i18n } = useTranslation('auth');
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const submitOnce = useSubmitLock();
@@ -85,6 +85,7 @@ export default function Signup() {
                 email: email.trim(),
                 password,
                 turnstile_token: turnstileToken ?? undefined,
+                locale: i18n.language,
               },
               { onSettled: release }
             )

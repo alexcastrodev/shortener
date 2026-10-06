@@ -24,7 +24,7 @@ export const meta: MetaFunction = () => {
 };
 
 export default function ForgotPassword() {
-  const { t } = useTranslation('auth');
+  const { t, i18n } = useTranslation('auth');
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState<string>(location.state?.email ?? '');
@@ -62,6 +62,7 @@ export default function ForgotPassword() {
               {
                 email: email.trim(),
                 turnstile_token: turnstileToken ?? undefined,
+                locale: i18n.language,
               },
               { onSettled: release }
             )

@@ -175,11 +175,11 @@ class User < ApplicationRecord
     login_token_sent_at.present? && login_token_sent_at > MAGIC_LINK_COOLDOWN.ago
   end
 
-  def send_magic_link(purpose: :sign_in)
+  def send_magic_link(purpose: :sign_in, locale: nil)
     return if magic_link_recently_sent?
 
     generate_login_token!
-    LoginMailer.with(user: self, purpose: purpose.to_s).magic_link.deliver_later
+    LoginMailer.with(user: self, purpose: purpose.to_s, locale: locale).magic_link.deliver_later
   end
 
   def verified?

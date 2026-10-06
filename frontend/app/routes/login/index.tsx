@@ -48,7 +48,7 @@ export const meta: MetaFunction = () => {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Login() {
-  const { t } = useTranslation('auth');
+  const { t, i18n } = useTranslation('auth');
   const navigate = useNavigate();
   const { setUser } = useUserState();
   const [searchParams] = useSearchParams();
@@ -249,6 +249,7 @@ export default function Login() {
           codeRequest.mutate({
             email: email.trim(),
             turnstile_token: turnstileToken ?? undefined,
+            locale: i18n.language,
           });
         }}
       >
