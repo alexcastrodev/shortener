@@ -4,6 +4,12 @@
 <% @sessions.each do |session| %>
 - <%= session %>
 <% end %>
+<% if @total %>
+<%= t(".total", amount: number_with_precision(@total, precision: 2), currency: @currency) %>
+<% if @free.positive? %>
+<%= t(".free", count: @free) %>
+<% end %>
+<% end %>
 
 <%= t(".reply") %>
 

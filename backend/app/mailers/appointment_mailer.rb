@@ -8,6 +8,9 @@ class AppointmentMailer < ApplicationMailer
     @sessions = sessions(zone)
     last = @appointments.map { |appointment| appointment.slot.starts_at }.max
     @manage_url = "#{frontend_url}/m/#{AppointmentToken.issue(booking: @first, expires_at: last + 7.days)}"
+    @total = @first.snapshot["total"]
+    @currency = @first.snapshot["currency"]
+    @free = @first.snapshot["free_sessions"].to_i
 
     with_recipient_locale(nil, @first.client_locale) do
       mail(

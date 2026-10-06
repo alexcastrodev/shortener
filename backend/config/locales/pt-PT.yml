@@ -39,6 +39,8 @@ pt-PT:
       reply: "Tem dúvidas? Responda a este e-mail para falar com quem organiza."
       manage: "Ver ou cancelar a sua marcação: %{url}"
       manage_link: "Ver ou cancelar a sua marcação"
+      total: "Total: %{amount} %{currency}"
+      free: "%{count} das sessões são grátis."
     request_received:
       subject: "Pedido recebido: %{service}"
       title: "Recebemos o seu pedido de marcação"

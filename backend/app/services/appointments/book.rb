@@ -47,6 +47,8 @@ module Appointments
       status = manual ? "pending" : "confirmed"
       expires_at = Time.current + rules.fetch("approval_timeout_minutes", Forms::BookingSchema::DEFAULT_TIMEOUT_MINUTES).minutes if manual
       group = SecureRandom.uuid
+      priced = Pricing.call(service: service, count: starts.size)
+      pricing = priced ? { "total" => priced[:total], "free_sessions" => priced[:free_sessions], "sessions" => starts.size } : {}
       rows = starts.map do |time|
         {
           form_id: form.id,
@@ -58,7 +60,7 @@ module Appointments
           client_name: contact[:name],
           client_email: contact[:email],
           published_version: version,
-          snapshot: service.slice("name", "duration", "price", "currency").merge("on_timeout" => (rules["approval_on_timeout"] if manual)).compact,
+          snapshot: service.slice("name", "duration", "price", "currency").merge("on_timeout" => (rules["approval_on_timeout"] if manual)).merge(pricing).compact,
           client_time_zone: meta[:time_zone],
           client_locale: meta[:locale],
           created_at: Time.current,
@@ -88,7 +90,9 @@ module Appointments
       first = rows.min_by(&:id)
       last = rows.map { |row| row.slot.starts_at }.max
       raw = AppointmentToken.issue(booking: first, expires_at: [last, now].max + 7.days)
-      { manage_url: "#{ENV.fetch("FRONTEND_URL", "https://kurz.fyi")}/m/#{raw}", email_delivery: first.client_email.present? ? "queued" : "none" }
+      receipt = { manage_url: "#{ENV.fetch("FRONTEND_URL", "https://kurz.fyi")}/m/#{raw}", email_delivery: first.client_email.present? ? "queued" : "none" }
+      receipt[:price] = { total: first.snapshot["total"], currency: first.snapshot["currency"], free_sessions: first.snapshot["free_sessions"] } if first.snapshot["total"]
+      receipt
     end
 
     def valid_zone(value)
