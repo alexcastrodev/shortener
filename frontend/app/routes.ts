@@ -27,6 +27,7 @@ export default [
       route('pages', 'routes/pages/index.tsx'),
       route('pages/:id', 'routes/pages/$id.tsx'),
       route('pages/:id/stats', 'routes/pages/stats.tsx'),
+      route('agenda', 'routes/agenda/index.tsx'),
       route('forms', 'routes/forms/index.tsx'),
       route('forms/:id', 'routes/forms/$id.tsx'),
       route('forms/:id/responses', 'routes/forms/responses.tsx'),

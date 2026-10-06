@@ -10,5 +10,6 @@
     "audit_logs": "Audit Logs",
     "moderation": "Moderation",
     "admin": "Admin",
-    "account": "Account"
+    "account": "Account",
+    "agenda": "Agenda"
 }
