@@ -63,3 +63,17 @@ en:
       body: "You asked to delete the Kurz account %{email}. Your links, bio pages, forms, responses and uploaded files are offline now and will be permanently deleted on %{date}."
       changed_mind: "Changed your mind? Sign in to Kurz before %{date} and the deletion is cancelled; your links and pages come back."
       not_you: "If you did not ask for this, sign in to cancel it and change your password."
+  appointment_mailer:
+    confirmed:
+      subject: "Confirmed: %{service}, %{time}"
+      title: "Your booking is confirmed"
+      intro: "%{service} is booked for:"
+      reply: "Questions? Reply to this email to reach the organizer."
+    new_booking:
+      subject: "New booking: %{service}, %{name}"
+      someone: "Someone"
+      title: "New booking"
+      intro: "%{name} booked %{service}:"
+      email: "Email: %{email}"
+      see: "See it in your responses: %{url}"
+      see_link: "See it in your responses"

@@ -7,6 +7,21 @@ class Notification < ApplicationRecord
   scope :in_app, -> { where(channel: "in_app") }
   scope :unread, -> { where(read_at: nil) }
 
+  def self.queue_email(kind:, event_key:, source:, recipient_kind:, payload:, user_id: nil, recipient_email: nil)
+    create!(
+      channel: "email",
+      kind: kind,
+      recipient_kind: recipient_kind,
+      user_id: user_id,
+      recipient_email: recipient_email,
+      event_key: event_key,
+      appointment: source,
+      payload: payload,
+      status: "pending",
+      next_attempt_at: Time.current,
+    )
+  end
+
   def self.notify_owner(user_id:, kind:, event_key:, source:, payload:)
     create!(
       channel: "in_app",

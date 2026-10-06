@@ -17,6 +17,14 @@ RSpec.describe(MailBudget) do
     allow(Sentry).to(receive(:capture_message))
   end
 
+  it "stops a lower-priority sender at its share and leaves the rest to sign-in codes" do
+    3.times { expect(described_class.reserve(new_address: false, share: 0.6)).to(be_ok) }
+    expect(described_class.reserve(new_address: false, share: 0.6).reason).to(eq(:daily_limit))
+
+    2.times { expect(described_class.reserve(new_address: false)).to(be_ok) }
+    expect(described_class.reserve(new_address: false)).not_to(be_ok)
+  end
+
   it "keeps the rest of the day for existing accounts once new addresses use their share" do
     2.times { expect(described_class.reserve(new_address: true)).to(be_ok) }
 

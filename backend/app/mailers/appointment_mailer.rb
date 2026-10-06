@@ -1,0 +1,53 @@
+class AppointmentMailer < ApplicationMailer
+  # E02 (to the client) and E07 (to the owner). Built at send time from the
+  # appointments of the notification's group, so the Notification itself only
+  # carries ids.
+  def confirmed
+    load_group
+    zone = Appointments::Book.valid_zone(@first.client_time_zone) || "UTC"
+    @sessions = sessions(zone)
+
+    with_recipient_locale(nil, @first.client_locale) do
+      mail(
+        to: @first.client_email,
+        reply_to: @form.user.email,
+        subject: I18n.t("appointment_mailer.confirmed.subject", service: @service, time: @sessions.first),
+      )
+    end
+  end
+
+  def new_booking
+    load_group
+    owner = @form.user
+    @sessions = sessions(owner.time_zone)
+    @client_name = single_line(@first.client_name)
+    @client_email = single_line(@first.client_email)
+    @url = "#{ENV.fetch("FRONTEND_URL", "https://kurz.fyi")}/app/forms/#{@form.id}/responses"
+
+    with_recipient_locale(owner) do
+      mail(
+        to: owner.email,
+        subject: I18n.t("appointment_mailer.new_booking.subject", service: @service, name: @client_name.presence || I18n.t("appointment_mailer.new_booking.someone")),
+      )
+    end
+  end
+
+  private
+
+  def load_group
+    notification = params[:notification]
+    @appointments = Appointment.where(group_key: notification.event_key).includes(:slot).references(:slot).order("appointment_slots.starts_at").to_a
+    @first = @appointments.first
+    @form = @first.form
+    @service = single_line(@first.snapshot["name"])
+  end
+
+  def sessions(zone)
+    @appointments.map { |appointment| "#{appointment.slot.starts_at.in_time_zone(zone).strftime("%Y-%m-%d %H:%M")} (#{zone})" }
+  end
+
+  # A customer's name ends up in a subject line.
+  def single_line(value)
+    value.to_s.gsub(/[[:cntrl:]]+/, " ").strip
+  end
+end
