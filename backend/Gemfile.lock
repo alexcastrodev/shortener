@@ -372,6 +372,7 @@ GEM
     oj (3.17.6)
       bigdecimal (>= 3.0)
       ostruct (>= 0.2)
+    openssl (4.0.2)
     os (1.1.4)
     ostruct (0.6.3)
     parallel (1.27.0)
@@ -600,6 +601,9 @@ GEM
       activemodel (>= 6.0)
       mail (~> 2.5)
     vcr (6.4.0)
+    web-push (3.1.0)
+      jwt (~> 3.0)
+      openssl (>= 3.0)
     webmock (3.25.1)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
@@ -677,6 +681,7 @@ DEPENDENCIES
   turbo-rails
   valid_email2 (~> 7.1)
   vcr
+  web-push (~> 3.1)
   webmock
 
 BUNDLED WITH

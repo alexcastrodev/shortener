@@ -118,3 +118,5 @@ gem "argon2", "~> 2.3"
 gem "googleauth", "~> 1.17"
 
 gem "mcp", "~> 1.6"
+
+gem "web-push", "~> 3.1"

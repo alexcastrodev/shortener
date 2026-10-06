@@ -73,6 +73,7 @@ Rails.application.routes.draw do
           post :remind
         end
       end
+      get "push_config", to: "push_subscriptions#vapid"
       resources :push_subscriptions, only: [:index, :create, :destroy]
       resources :notifications, only: [:index] do
         member { post :read }

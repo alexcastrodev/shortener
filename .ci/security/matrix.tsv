@@ -59,6 +59,7 @@ owner	PUT	/api/me/notification_preferences
 owner	POST	/api/me/appointments/:id/remind
 owner	POST	/api/me/appointments/:id/reschedule
 owner	GET	/api/me/push_subscriptions
+owner	GET	/api/me/push_config
 owner	POST	/api/me/push_subscriptions
 owner	DELETE	/api/me/push_subscriptions/:id
 owner	GET	/api/me/notifications

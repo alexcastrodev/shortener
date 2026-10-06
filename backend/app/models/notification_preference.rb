@@ -1,11 +1,11 @@
 class NotificationPreference < ApplicationRecord
   CHANNELS = ["in_app", "email", "push"].freeze
   SUPPORTED = {
-    "appointment_created" => ["in_app", "email"],
-    "appointment_requested" => ["in_app", "email"],
-    "appointment_cancelled" => ["in_app"],
-    "appointment_expired" => ["in_app"],
-    "appointment_auto_confirmed" => ["in_app"],
+    "appointment_created" => ["in_app", "email", "push"],
+    "appointment_requested" => ["in_app", "email", "push"],
+    "appointment_cancelled" => ["in_app", "push"],
+    "appointment_expired" => ["in_app", "push"],
+    "appointment_auto_confirmed" => ["in_app", "push"],
   }.freeze
   KINDS = SUPPORTED.keys.freeze
 
