@@ -28,8 +28,8 @@ module Appointments
       return Joined.new(:unavailable, nil) unless booking && service && enabled?(booking) && service["capacity"]
 
       clean_name = name.to_s.gsub(/[[:cntrl:]]+/, " ").strip.first(NAME_MAX)
-      clean_email, problem = Forms::FieldSchema.cast_answer({ "type" => "email" }, email.to_s)
-      return Joined.new(:invalid, nil) if clean_name.blank? || problem || clean_email.blank?
+      clean_email = email.to_s.strip
+      return Joined.new(:invalid, nil) if clean_name.blank? || !plausible_email?(clean_email)
 
       starts_at = offered_start(booking, service, date, time, now)
       return Joined.new(:unavailable, nil) unless starts_at
@@ -93,6 +93,13 @@ module Appointments
     end
 
     private
+
+    def plausible_email?(value)
+      return false unless value.length.between?(3, Forms::FieldSchema::EMAIL_MAX) && value.count("@") == 1 && !value.match?(/[[:space:][:cntrl:]]/)
+
+      local, domain = value.split("@", 2)
+      local.present? && domain.to_s.include?(".") && !domain.start_with?(".") && !domain.end_with?(".")
+    end
 
     def offered_start(booking, service, date, time, now)
       return unless date.to_s.match?(Book::DATE) && time.to_s.match?(Book::TIME)
