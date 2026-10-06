@@ -4,7 +4,13 @@ export type AppointmentActionName =
 export interface AppointmentActionParams {
   id: number;
   action: AppointmentActionName;
-  data?: { message?: string; reason?: string; date?: string; time?: string };
+  data?: {
+    message?: string;
+    reason?: string;
+    date?: string;
+    time?: string;
+    scope?: 'all' | 'one' | 'remaining';
+  };
 }
 
 export type AppointmentActionError =

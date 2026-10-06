@@ -55,5 +55,22 @@
   "receipt_email_none": "Não será enviado nenhum e-mail, por isso guarde esta ligação.",
   "booking_category": "Categoria",
   "booking_services_count_one": "{{count}} serviço",
-  "booking_services_count_other": "{{count}} serviços"
+  "booking_services_count_other": "{{count}} serviços",
+  "booking_mode": "Como marcar",
+  "booking_mode_days": "Escolher dias",
+  "booking_mode_monthly": "Reserva fixa mensal",
+  "monthly_month": "Mês",
+  "monthly_weekdays": "Dias da semana",
+  "monthly_time": "Hora",
+  "monthly_summary_one": "{{count}} sessão neste mês",
+  "monthly_summary_other": "{{count}} sessões neste mês",
+  "monthly_note": "Todos os dias escolhidos ficam marcados de uma vez. Os dias em que está fechado são saltados e, se algum outro dia estiver ocupado, nada fica marcado.",
+  "monthly_day_mon": "Seg",
+  "monthly_day_tue": "Ter",
+  "monthly_day_wed": "Qua",
+  "monthly_day_thu": "Qui",
+  "monthly_day_fri": "Sex",
+  "monthly_day_sat": "Sáb",
+  "monthly_day_sun": "Dom",
+  "receipt_skipped": "Saltados, indisponíveis: {{dates}}"
 }

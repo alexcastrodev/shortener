@@ -69,5 +69,9 @@
   "err_unavailable": "Esse horário não está disponível.",
   "err_not_reschedulable": "Esta sessão já não pode ser movida.",
   "err_unknown": "Algo correu mal. Tente de novo.",
-  "status_unverified": "A aguardar confirmação do e-mail"
+  "status_unverified": "A aguardar confirmação do e-mail",
+  "cancel_scope": "O que cancelar",
+  "scope_one": "Esta sessão",
+  "scope_remaining": "Esta e as seguintes",
+  "scope_all": "Toda a série"
 }

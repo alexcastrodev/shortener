@@ -22,7 +22,11 @@ class Api::Public::AppointmentsController < ApplicationController
   end
 
   def cancel
-    Appointments::ClientCancel.call(appointment: @appointment, reason: params[:reason])
+    scope = Appointments::ClientCancel::SCOPES.include?(params[:scope].to_s) ? params[:scope].to_s : "all"
+    target = scope == "all" ? @appointment : session_row(params[:session])
+    return render(json: { error: "unknown_session" }, status: :unprocessable_entity) unless target
+
+    Appointments::ClientCancel.call(appointment: target, reason: params[:reason], scope: scope)
     render(json: payload, status: :ok)
   end
 
@@ -31,6 +35,13 @@ class Api::Public::AppointmentsController < ApplicationController
   def load_appointment
     @appointment = AppointmentToken.resolve(params[:token])
     not_found unless @appointment && Appointments::Config.enabled_for?(@appointment.form.user)
+  end
+
+  def session_row(value)
+    time = Time.iso8601(value.to_s)
+    Appointment.where(group_key: @appointment.group_key).includes(:slot).references(:slot).find_by(appointment_slots: { starts_at: time })
+  rescue ArgumentError
+    nil
   end
 
   def not_found
@@ -47,6 +58,7 @@ class Api::Public::AppointmentsController < ApplicationController
         status: (Appointment::HOLDING & rows.map(&:status)).min_by { |status| status == "confirmed" ? 0 : 1 } || "cancelled",
         cancellable: rows.any? { |row| Appointment::HOLDING.include?(row.status) && row.slot.starts_at > Time.current },
         time_zone: Appointments::Book.valid_zone(first.client_time_zone) || "UTC",
+        series: first.snapshot["monthly"].present?,
         sessions: rows.map { |row| { starts_at: row.slot.starts_at.iso8601, status: row.status } },
       },
     }

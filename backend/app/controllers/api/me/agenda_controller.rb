@@ -20,7 +20,7 @@ class Api::Me::AgendaController < ApplicationController
       starts_at: session[:starts_at].iso8601,
       date: session[:date].iso8601,
       appointments: session[:appointments].map do |appointment|
-        { id: appointment.id, status: appointment.status, client_name: appointment.client_name, client_email: appointment.client_email, group_key: appointment.group_key }
+        { id: appointment.id, series: appointment.snapshot["monthly"].present?, status: appointment.status, client_name: appointment.client_name, client_email: appointment.client_email, group_key: appointment.group_key }
       end,
     )
   end

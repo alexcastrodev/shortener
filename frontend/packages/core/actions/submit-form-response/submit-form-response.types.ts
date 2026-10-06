@@ -12,6 +12,7 @@ export interface SubmitFormResponseParams {
 export interface SubmitFormReceipt {
   manage_url?: string;
   email_delivery?: 'queued' | 'none';
+  skipped?: string[];
   appointments?: { starts_at: string; service: string; status: string }[];
 }
 

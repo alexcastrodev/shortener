@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { data, isRouteErrorResponse } from 'react-router';
 import { getAppointment } from '@internal/core/actions/get-appointment/get-appointment.service';
-import { cancelAppointment } from '@internal/core/actions/cancel-appointment/cancel-appointment.service';
+import {
+  cancelAppointment,
+  type CancelTarget,
+} from '@internal/core/actions/cancel-appointment/cancel-appointment.service';
 import type { ManagedAppointment } from '@internal/core/actions/get-appointment/get-appointment.types';
 import { formatDateTime } from '../../i18n/format';
 import type { Route } from './+types/$token';
@@ -40,12 +43,15 @@ export function HydrateFallback() {
 export default function ManageBooking({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation('manage');
   const { token } = loaderData;
-  const [appointment, setAppointment] = useState<ManagedAppointment>(loaderData.appointment);
+  const [appointment, setAppointment] = useState<ManagedAppointment>(
+    loaderData.appointment
+  );
   const [confirming, setConfirming] = useState(false);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const [justCancelled, setJustCancelled] = useState(false);
+  const [target, setTarget] = useState<CancelTarget | undefined>();
 
   const cancelled = appointment.status === 'cancelled';
 
@@ -53,7 +59,7 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
     setBusy(true);
     setFailed(false);
     try {
-      setAppointment(await cancelAppointment(token, reason));
+      setAppointment(await cancelAppointment(token, reason, target));
       setJustCancelled(true);
       setConfirming(false);
     } catch {
@@ -66,10 +72,15 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
   return (
     <main className="mx-auto min-h-dvh max-w-lg bg-background px-4 py-12 text-foreground">
       <h1 className="text-2xl font-semibold">{t('title')}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">{appointment.form_title}</p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {appointment.form_title}
+      </p>
 
       {justCancelled && (
-        <p role="status" className="mt-6 rounded-md border border-border bg-muted px-3 py-2 text-sm">
+        <p
+          role="status"
+          className="mt-6 rounded-md border border-border bg-muted px-3 py-2 text-sm"
+        >
           {t('cancelled_notice')}
         </p>
       )}
@@ -87,8 +98,8 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
               : appointment.status === 'unverified'
                 ? t('status_unverified')
                 : cancelled
-                ? t('status_cancelled')
-                : t('status_confirmed')}
+                  ? t('status_cancelled')
+                  : t('status_confirmed')}
           </dd>
         </div>
         <div>
@@ -96,7 +107,10 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
           <dd>
             <ul className="mt-1 space-y-1">
               {appointment.sessions.map(session => (
-                <li key={session.starts_at} className="flex justify-between gap-3">
+                <li
+                  key={session.starts_at}
+                  className="flex justify-between gap-3"
+                >
                   <span>
                     {formatDateTime(session.starts_at, {
                       dateStyle: 'full',
@@ -104,8 +118,43 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
                       timeZone: appointment.time_zone,
                     })}
                   </span>
-                  {session.status === 'cancelled' && (
-                    <span className="text-muted-foreground">{t('session_cancelled')}</span>
+                  {session.status === 'cancelled' ? (
+                    <span className="text-muted-foreground">
+                      {t('session_cancelled')}
+                    </span>
+                  ) : (
+                    appointment.series &&
+                    appointment.cancellable &&
+                    new Date(session.starts_at) > new Date() && (
+                      <span className="flex shrink-0 gap-2 text-xs">
+                        <button
+                          type="button"
+                          className="underline"
+                          onClick={() => {
+                            setTarget({
+                              scope: 'one',
+                              session: session.starts_at,
+                            });
+                            setConfirming(true);
+                          }}
+                        >
+                          {t('cancel_one')}
+                        </button>
+                        <button
+                          type="button"
+                          className="underline"
+                          onClick={() => {
+                            setTarget({
+                              scope: 'remaining',
+                              session: session.starts_at,
+                            });
+                            setConfirming(true);
+                          }}
+                        >
+                          {t('cancel_rest')}
+                        </button>
+                      </span>
+                    )
                   )}
                 </li>
               ))}
@@ -121,7 +170,10 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
       {!cancelled && appointment.cancellable && !confirming && (
         <button
           type="button"
-          onClick={() => setConfirming(true)}
+          onClick={() => {
+            setTarget(undefined);
+            setConfirming(true);
+          }}
           className="mt-8 rounded-md border border-destructive px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
         >
           {t('cancel_button')}
@@ -129,9 +181,16 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
       )}
 
       {confirming && (
-        <section aria-labelledby="cancel-title" className="mt-8 rounded-md border border-border p-4">
-          <h2 id="cancel-title" className="font-medium">{t('cancel_confirm_title')}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{t('cancel_confirm_body')}</p>
+        <section
+          aria-labelledby="cancel-title"
+          className="mt-8 rounded-md border border-border p-4"
+        >
+          <h2 id="cancel-title" className="font-medium">
+            {t('cancel_confirm_title')}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t('cancel_confirm_body')}
+          </p>
           <label className="mt-4 block text-sm">
             {t('reason_label')}
             <textarea
@@ -143,7 +202,9 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
             />
           </label>
           {failed && (
-            <p role="alert" className="mt-3 text-sm text-destructive">{t('cancel_failed')}</p>
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              {t('cancel_failed')}
+            </p>
           )}
           <div className="mt-4 flex gap-3">
             <button

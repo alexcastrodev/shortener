@@ -14,9 +14,12 @@ export type FormFieldType =
   | 'booking'
   | 'section';
 
+export type MonthlyChoice = { month: string; weekdays: string[]; time: string };
+
 export type BookingAnswer = {
   service: string;
   sessions: { date: string; time: string }[];
+  monthly?: MonthlyChoice;
 };
 
 export const FORM_LAYOUTS = ['page', 'one_at_a_time', 'steps'] as const;
@@ -38,6 +41,7 @@ export type BookingService = {
   times: string[];
   times_by_day?: Record<string, string[]>;
   bundle?: { take: number; pay: number } | null;
+  monthly?: { price?: number | null } | null;
 };
 
 export type BookingRules = {

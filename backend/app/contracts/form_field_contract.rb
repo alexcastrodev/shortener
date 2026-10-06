@@ -26,6 +26,9 @@ class FormFieldContract < ApplicationContract
       optional(:capacity).maybe(:integer)
       required(:days).array(:string)
       required(:times).array(:string)
+      optional(:monthly).maybe(:hash) do
+        optional(:price).maybe(:float)
+      end
       optional(:bundle).hash do
         required(:take).filled(:integer)
         required(:pay).filled(:integer)

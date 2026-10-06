@@ -12,7 +12,7 @@ class Api::Me::AppointmentsController < ApplicationController
   end
 
   def cancel
-    cancelled = Appointments::ClientCancel.call(appointment: @appointment, reason: params[:reason], by: "owner")
+    cancelled = Appointments::ClientCancel.call(appointment: @appointment, reason: params[:reason], by: "owner", scope: cancel_scope)
     return render(json: { error: "nothing_to_cancel" }, status: :unprocessable_entity) if cancelled.empty?
 
     render(json: { appointments: group_rows }, status: :ok)
@@ -38,6 +38,10 @@ class Api::Me::AppointmentsController < ApplicationController
   end
 
   private
+
+  def cancel_scope
+    Appointments::ClientCancel::SCOPES.include?(params[:scope].to_s) ? params[:scope].to_s : "all"
+  end
 
   def decide(decision)
     case Appointments::Decide.call(appointment: @appointment, decision: decision, message: params[:message])

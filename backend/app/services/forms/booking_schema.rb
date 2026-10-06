@@ -2,8 +2,8 @@ module Forms
   module BookingSchema
     extend self
 
-    SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day", "bundle"].freeze
-    PUBLIC_SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "days", "times", "bundle"].freeze
+    SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day", "bundle", "monthly"].freeze
+    PUBLIC_SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "days", "times", "bundle", "monthly"].freeze
     RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "approval_within_minutes", "verify_email", "reminder_minutes", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
     RULE_RANGES = { "min_notice_minutes" => (0..43_200), "window_days" => (1..365), "buffer_minutes" => (0..600), "max_per_day" => (1..1000), "approval_timeout_minutes" => (5..43_200), "approval_within_minutes" => (1..43_200) }.freeze
     APPROVALS = ["auto", "manual"].freeze
@@ -204,6 +204,21 @@ module Forms
       result << "times must be unique HH:MM values (max #{TIMES_MAX})" unless times.is_a?(Array) && times.size <= TIMES_MAX && times.all? { |time| time.is_a?(String) && time.match?(TIME) } && times.uniq.size == times.size
       result.concat(by_day_errors(service))
       result.concat(bundle_errors(service))
+      result.concat(monthly_errors(service))
+      result
+    end
+
+    def monthly_errors(service)
+      monthly = service["monthly"]
+      return [] if monthly.nil?
+      return ["monthly must be an object"] unless monthly.is_a?(Hash) && (monthly.keys - ["price"]).empty?
+
+      price = monthly["price"]
+      return [] if price.nil?
+
+      result = []
+      result << "monthly price must be between 0 and #{PRICE_MAX}" unless price.is_a?(Numeric) && price.to_f.finite? && price >= 0 && price <= PRICE_MAX
+      result << "monthly price needs a currency" unless service["currency"].is_a?(String) && service["currency"].match?(CURRENCY)
       result
     end
 

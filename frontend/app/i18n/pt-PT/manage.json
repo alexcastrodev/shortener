@@ -21,5 +21,7 @@
   "cancel_failed": "Não foi possível cancelar a sua marcação. Tente novamente.",
   "cancelled_notice": "A sua marcação foi cancelada.",
   "past_notice": "Esta marcação já não pode ser cancelada online.",
-  "status_unverified": "A aguardar confirmação do e-mail"
+  "status_unverified": "A aguardar confirmação do e-mail",
+  "cancel_one": "Cancelar só esta",
+  "cancel_rest": "Cancelar esta e as seguintes"
 }
