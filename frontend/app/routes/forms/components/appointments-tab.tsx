@@ -46,6 +46,8 @@ export function AppointmentsTab({
     switch (status) {
       case 'pending':
         return t('status_pending');
+      case 'unverified':
+        return t('status_unverified');
       case 'confirmed':
         return t('status_confirmed');
       case 'cancelled':

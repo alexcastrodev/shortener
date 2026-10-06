@@ -183,7 +183,9 @@ export function SessionPanel({
               >
                 {appointment.status === 'pending'
                   ? t('status_pending')
-                  : t('status_confirmed')}
+                  : appointment.status === 'unverified'
+                    ? t('status_unverified')
+                    : t('status_confirmed')}
               </p>
               <Group gap={6} mt={6}>
                 {appointment.status === 'pending' ? (

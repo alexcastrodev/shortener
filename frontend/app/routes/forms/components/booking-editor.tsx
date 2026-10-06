@@ -434,6 +434,16 @@ export function BookingEditor({
               }
             />
           </div>
+          {form.values.approval === 'auto' && (
+            <Switch
+              label={t('verify_email')}
+              description={t('verify_email_hint')}
+              checked={form.values.verify_email}
+              onChange={event =>
+                form.setFieldValue('verify_email', event.currentTarget.checked)
+              }
+            />
+          )}
           {form.values.approval === 'manual' && (
             <Stack gap="xs">
               <Switch

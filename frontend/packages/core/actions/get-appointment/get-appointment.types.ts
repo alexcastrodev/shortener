@@ -6,7 +6,7 @@ export interface AppointmentSession {
 export interface ManagedAppointment {
   form_title: string;
   service: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'pending' | 'unverified' | 'confirmed' | 'cancelled';
   cancellable: boolean;
   time_zone: string;
   sessions: AppointmentSession[];

@@ -22,7 +22,7 @@ module Appointments
     private
 
     def overdue(now)
-      scope = Appointment.where(status: "pending").where(expires_at: ..now)
+      scope = Appointment.where(status: ResolveExpired::WAITING).where(expires_at: ..now)
       oldest = scope.minimum(:expires_at)
       { count: scope.distinct.count(:group_key), oldest_seconds: oldest ? (now - oldest).to_i : 0 }
     end

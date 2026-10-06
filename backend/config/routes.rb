@@ -135,6 +135,8 @@ Rails.application.routes.draw do
       get "appointments/:token", to: "appointments#show", as: :appointment, format: false
       post "appointments/:token/cancel", to: "appointments#cancel", as: :appointment_cancel, format: false
       get "appointment_decisions/:token", to: "appointment_decisions#show", as: :appointment_decision, format: false
+      get "appointment_verifications/:token", to: "appointment_verifications#show", as: :appointment_verification, format: false
+      post "appointment_verifications/:token", to: "appointment_verifications#create", as: :appointment_verification_create, format: false
       post "appointment_decisions/:token", to: "appointment_decisions#create", as: :appointment_decision_create, format: false
       post "forms/:public_id/responses", to: "form_responses#create", as: :form_responses, format: false
       post "forms/:public_id/events", to: "form_events#create", as: :form_events, format: false

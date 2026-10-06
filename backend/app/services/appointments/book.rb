@@ -44,8 +44,12 @@ module Appointments
       service = booking["services"].find { |item| item["id"] == service_key }
       rules = booking["rules"] || {}
       manual = needs_approval?(rules, starts)
-      status = manual ? "pending" : "confirmed"
+      verify = !manual && rules["approval"] != "manual" && rules["verify_email"] == true && contact[:email].present?
+      status = "confirmed"
+      status = "pending" if manual
+      status = "unverified" if verify
       expires_at = Time.current + rules.fetch("approval_timeout_minutes", Forms::BookingSchema::DEFAULT_TIMEOUT_MINUTES).minutes if manual
+      expires_at = Time.current + Forms::BookingSchema::VERIFY_MINUTES.minutes if verify
       group = SecureRandom.uuid
       priced = Pricing.call(service: service, count: starts.size)
       pricing = priced ? { "total" => priced[:total], "free_sessions" => priced[:free_sessions], "sessions" => starts.size } : {}
@@ -69,12 +73,20 @@ module Appointments
       Appointment.insert_all!(rows)
       first = response.appointments.order(:id).first
       payload = { form_id: form.id, response_id: response.id, group_key: group, sessions: rows.size }
-      payload[:expires_at] = expires_at.iso8601 if manual
-      Notification.notify_owner(user_id: form.user_id, kind: manual ? "appointment_requested" : "appointment_created", event_key: group, source: first, payload: payload)
-      queue_emails(form: form, first: first, group: group, email: contact[:email], payload: payload, manual: manual)
+      if verify
+        queue_verification(first: first, group: group, email: contact[:email], payload: payload)
+      else
+        payload[:expires_at] = expires_at.iso8601 if manual
+        announce(form: form, first: first, group: group, email: contact[:email], payload: payload, manual: manual)
+      end
       response.appointments.order(:id)
     rescue Reserve::Full => e
       raise Full, e.starts_at
+    end
+
+    def announce(form:, first:, group:, email:, payload:, manual: false)
+      Notification.notify_owner(user_id: form.user_id, kind: manual ? "appointment_requested" : "appointment_created", event_key: group, source: first, payload: payload)
+      queue_emails(form: form, first: first, group: group, email: email, payload: payload, manual: manual)
     end
 
     def needs_approval?(rules, starts, now: Time.current)
@@ -111,6 +123,11 @@ module Appointments
     end
 
     private
+
+    def queue_verification(first:, group:, email:, payload:)
+      queued = Notification.queue_email(kind: "appointment_verify", event_key: group, source: first, recipient_kind: "client", recipient_email: email, payload: payload)
+      ActiveRecord.after_all_transactions_commit { NotificationDeliveryJob.perform_later(queued.id) }
+    end
 
     def queue_emails(form:, first:, group:, email:, payload:, manual: false)
       queued = [Notification.queue_email(kind: manual ? "appointment_requested" : "appointment_created", event_key: group, source: first, recipient_kind: "owner", user_id: form.user_id, payload: payload)]

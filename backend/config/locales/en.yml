@@ -73,6 +73,13 @@ en:
       manage_link: "See or cancel your booking"
       total: "Total: %{amount} %{currency}"
       free: "%{count} of the sessions are free."
+    verify:
+      subject: "Confirm your booking: %{service}"
+      title: "Confirm your email to keep your booking"
+      intro: "%{service} is held for you, for the next %{minutes} minutes:"
+      confirm: "Confirm my booking: %{url}"
+      confirm_link: "Confirm my booking"
+      ignore: "If you did not ask for this, ignore this email and the place is released."
     request_received:
       subject: "Request received: %{service}"
       title: "We received your booking request"

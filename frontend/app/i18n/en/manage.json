@@ -20,5 +20,6 @@
   "cancelling": "Cancelling…",
   "cancel_failed": "We could not cancel your booking. Please try again.",
   "cancelled_notice": "Your booking was cancelled.",
-  "past_notice": "This booking can no longer be cancelled online."
+  "past_notice": "This booking can no longer be cancelled online.",
+  "status_unverified": "Awaiting email confirmation"
 }

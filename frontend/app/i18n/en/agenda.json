@@ -68,5 +68,6 @@
   "err_same_time": "Pick a different time.",
   "err_unavailable": "That time is not available.",
   "err_not_reschedulable": "This session can no longer be moved.",
-  "err_unknown": "Something went wrong. Try again."
+  "err_unknown": "Something went wrong. Try again.",
+  "status_unverified": "Awaiting email confirmation"
 }

@@ -84,7 +84,9 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
           <dd className="font-medium">
             {appointment.status === 'pending'
               ? t('status_pending')
-              : cancelled
+              : appointment.status === 'unverified'
+                ? t('status_unverified')
+                : cancelled
                 ? t('status_cancelled')
                 : t('status_confirmed')}
           </dd>

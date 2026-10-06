@@ -78,6 +78,7 @@ test('saving keeps service ids, orders days and times, and sends the rules', () 
     approval_on_timeout: 'accept',
     approval_within_minutes: null,
     reminder_minutes: [1440],
+    verify_email: false,
     max_per_day: 8,
   });
 });
@@ -96,6 +97,7 @@ test('creating sends the type; automatic approval sends no deadline', () => {
     window_days: 60,
     approval_within_minutes: null,
     reminder_minutes: [1440],
+    verify_email: false,
   });
 });
 
@@ -371,4 +373,18 @@ test('reminder times are loaded newest first, deduplicated and sent as a list', 
     []
   );
   assert.deepEqual(initialValues(undefined).reminder_minutes, [1440]);
+});
+
+test('email verification is sent only for automatic approval, and loaded back', () => {
+  const base = initialValues({
+    ...field,
+    rules: { ...field.rules!, approval: 'auto', verify_email: true },
+  });
+  assert.equal(base.verify_email, true);
+  assert.equal(toBookingInput(base, false).rules?.verify_email, true);
+  assert.equal(
+    toBookingInput({ ...base, approval: 'manual' }, false).rules?.verify_email,
+    false
+  );
+  assert.equal(initialValues(undefined).verify_email, false);
 });

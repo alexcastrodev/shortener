@@ -47,6 +47,7 @@ export type BookingRules = {
   approval_on_timeout?: 'decline' | 'accept';
   approval_within_minutes?: number | null;
   reminder_minutes?: number[];
+  verify_email?: boolean;
   min_notice_minutes?: number;
   window_days?: number;
   buffer_minutes?: number;

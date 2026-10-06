@@ -148,5 +148,7 @@
   "reminder_360": "6 horas antes",
   "reminder_1440": "1 dia antes",
   "reminder_2880": "2 dias antes",
-  "reminder_10080": "1 semana antes"
+  "reminder_10080": "1 semana antes",
+  "verify_email": "Pedir ao cliente que confirme o e-mail",
+  "verify_email_hint": "O lugar fica guardado 15 minutos. Sem clique, é libertado e não recebe aviso nenhum."
 }

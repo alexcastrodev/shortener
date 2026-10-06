@@ -1,5 +1,6 @@
 export type AppointmentStatus =
   | 'pending'
+  | 'unverified'
   | 'confirmed'
   | 'cancelled'
   | 'declined'

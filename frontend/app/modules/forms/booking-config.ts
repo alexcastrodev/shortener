@@ -52,6 +52,7 @@ export type Values = {
   approval_soon_only: boolean;
   approval_within_minutes: number | '';
   reminder_minutes: number[];
+  verify_email: boolean;
   min_notice_minutes: number | '';
   window_days: number | '';
   max_per_day: number | '';
@@ -177,6 +178,7 @@ export function initialValues(field?: FormField): Values {
     approval_on_timeout: rules?.approval_on_timeout ?? 'decline',
     approval_soon_only: rules?.approval_within_minutes != null,
     approval_within_minutes: rules?.approval_within_minutes ?? 2880,
+    verify_email: rules?.verify_email === true,
     reminder_minutes: [...(rules?.reminder_minutes ?? [1440])].sort(
       (a, b) => b - a
     ),
@@ -211,6 +213,7 @@ export function toBookingInput(
     values.approval_within_minutes !== ''
       ? values.approval_within_minutes
       : null;
+  rules.verify_email = values.approval === 'auto' && values.verify_email;
   rules.reminder_minutes = [...new Set(values.reminder_minutes)].sort(
     (a, b) => b - a
   );

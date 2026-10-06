@@ -68,5 +68,6 @@
   "err_same_time": "Escolha outra hora.",
   "err_unavailable": "Esse horário não está disponível.",
   "err_not_reschedulable": "Esta sessão já não pode ser movida.",
-  "err_unknown": "Algo correu mal. Tente de novo."
+  "err_unknown": "Algo correu mal. Tente de novo.",
+  "status_unverified": "A aguardar confirmação do e-mail"
 }
