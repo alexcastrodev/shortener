@@ -16,6 +16,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
 import type { FormField, FormFieldInput } from '@internal/core/types/Form';
+import { BundleOffer } from './bundle-offer';
 import { ExceptionsSection } from './exceptions-section';
 import { TimeGeneratorPanel } from './time-generator-panel';
 import { WeekdayTimes } from './weekday-times';
@@ -96,6 +97,9 @@ export function BookingEditor({
                   z.object({ value: z.string().regex(TIME, t('error_time')) })
                 )
                 .min(1, t('error_times')),
+              bundle: z.boolean(),
+              bundleTake: z.union([z.number(), z.literal('')]),
+              bundlePay: z.union([z.number(), z.literal('')]),
               byDay: z.record(
                 z.string(),
                 z.array(
@@ -104,7 +108,35 @@ export function BookingEditor({
               ),
             })
             .check(ctx => {
-              const { price, currency } = ctx.value;
+              const { price, currency, bundle, bundleTake, bundlePay } =
+                ctx.value;
+              if (bundle) {
+                if (price === '') {
+                  ctx.issues.push({
+                    code: 'custom',
+                    message: t('error_bundle_price'),
+                    path: ['price'],
+                    input: price,
+                  });
+                }
+                const valid =
+                  bundleTake !== '' &&
+                  bundlePay !== '' &&
+                  Number.isInteger(bundleTake) &&
+                  Number.isInteger(bundlePay) &&
+                  bundleTake >= 2 &&
+                  bundleTake <= 31 &&
+                  bundlePay >= 1 &&
+                  bundlePay < bundleTake;
+                if (!valid) {
+                  ctx.issues.push({
+                    code: 'custom',
+                    message: t('error_bundle'),
+                    path: ['bundlePay'],
+                    input: bundlePay,
+                  });
+                }
+              }
               if (price !== '' && !/^[A-Za-z]{3}$/.test(currency.trim())) {
                 ctx.issues.push({
                   code: 'custom',
@@ -329,6 +361,7 @@ export function BookingEditor({
                     </p>
                   )}
                 </div>
+                <BundleOffer form={form} index={index} />
                 <WeekdayTimes form={form} index={index} dayLabels={dayLabels} />
               </Stack>
             </div>

@@ -34,6 +34,7 @@ export type BookingService = {
   days: string[];
   times: string[];
   times_by_day?: Record<string, string[]>;
+  bundle?: { take: number; pay: number } | null;
 };
 
 export type BookingRules = {
