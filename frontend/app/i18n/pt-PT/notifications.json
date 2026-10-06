@@ -1,0 +1,11 @@
+{
+  "bell_label": "Notificações",
+  "bell_unread": "Notificações, {{n}} por ler",
+  "title": "Notificações",
+  "mark_all": "Marcar todas como lidas",
+  "empty": "Ainda sem notificações.",
+  "kind_appointment_created": "Nova marcação",
+  "kind_unknown": "Atualização",
+  "sessions_one": "{{count, number}} sessão",
+  "sessions_other": "{{count, number}} sessões"
+}
