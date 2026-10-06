@@ -44,4 +44,30 @@ RSpec.describe(BuiltInFormTemplates) do
     described_class.build("event_rsvp")
     expect(described_class.find("event_rsvp").to_json).to(eq(before))
   end
+
+  describe "in European Portuguese" do
+    described_class.all.each do |template|
+      it "translates #{template["id"]} question by question, keeping the structure and passing the form rules" do
+        english = described_class.build(template["id"])
+        portuguese = described_class.build(template["id"], locale: "pt-PT")
+        expect(portuguese["title"]).not_to(eq(english["title"]))
+        expect(portuguese["thank_you_message"]).not_to(eq(english["thank_you_message"]))
+        expect(portuguese["fields"].map { |f| [f["type"], f["required"], f["scale"], f["min"], f["max"]] }).to(eq(english["fields"].map { |f| [f["type"], f["required"], f["scale"], f["min"], f["max"]] }))
+        expect(portuguese["fields"].map { |f| f["label"] }).not_to(eq(english["fields"].map { |f| f["label"] }))
+        expect(portuguese["fields"].map { |f| Array(f["choices"]).size }).to(eq(english["fields"].map { |f| Array(f["choices"]).size }))
+        expect(portuguese["fields"].map { |f| f.key?("help") }).to(eq(english["fields"].map { |f| f.key?("help") }))
+        expect(Forms::FieldSchema.definition_errors(portuguese["fields"])).to(eq([]))
+      end
+    end
+
+    it "keeps English for any other language and for no language" do
+      expect(described_class.build("contact", locale: "en")["title"]).to(eq("Get in touch"))
+      expect(described_class.build("contact", locale: nil)["title"]).to(eq("Get in touch"))
+      expect(described_class.build("contact", locale: "fr")["title"]).to(eq("Get in touch"))
+    end
+
+    it "has a text for every template, so none is left in English by mistake" do
+      expect(BuiltInFormTemplatesPt::TEXTS.keys).to(match_array(described_class::TEMPLATES.map { |t| t["id"] }))
+    end
+  end
 end

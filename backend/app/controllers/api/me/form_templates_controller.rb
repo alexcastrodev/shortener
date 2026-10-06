@@ -2,7 +2,7 @@ class Api::Me::FormTemplatesController < ApplicationController
   before_action :authenticate_user!
 
   def index
-    templates = BuiltInFormTemplates.all.map do |template|
+    templates = BuiltInFormTemplates.all(locale: current_user.locale).map do |template|
       template.slice("id", "name", "description", "theme").merge("questions" => template["fields"].size)
     end
 

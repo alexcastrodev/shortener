@@ -69,7 +69,7 @@ class Api::Me::FormsController < ApplicationController
 
   def apply_template
     validate_contract(FormTemplateApplicationContract) do |validated_params|
-      render(json: FormSerializer.new(Forms::Definition.apply_template(@form, validated_params[:template])).serialize, status: :ok)
+      render(json: FormSerializer.new(Forms::Definition.apply_template(@form, validated_params[:template], locale: current_user.locale)).serialize, status: :ok)
     rescue ActiveRecord::RecordInvalid => e
       render(json: { errors: e.record.errors.to_hash }, status: :unprocessable_content)
     end
@@ -114,7 +114,7 @@ class Api::Me::FormsController < ApplicationController
     template_id = validated_params.delete(:template)
     return validated_params if template_id.blank?
 
-    built = BuiltInFormTemplates.build(template_id)
+    built = BuiltInFormTemplates.build(template_id, locale: current_user.locale)
     built&.symbolize_keys&.merge(validated_params.compact)
   end
 end
