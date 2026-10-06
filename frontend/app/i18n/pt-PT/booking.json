@@ -109,9 +109,12 @@
   "bundle_example": "Exemplo: {{take}} sessões custam o preço de {{pay}}.",
   "error_bundle": "As levadas têm de ser de 2 a 31 e as pagas, pelo menos 1 e menos do que as levadas",
   "error_bundle_price": "Um pacote precisa de um preço",
-  "unit_minutes": "minutos",
-  "unit_hours": "horas",
-  "unit_days": "dias",
+  "unit_minutes_one": "minuto",
+  "unit_minutes_other": "minutos",
+  "unit_hours_one": "hora",
+  "unit_hours_other": "horas",
+  "unit_days_one": "dia",
+  "unit_days_other": "dias",
   "timeout_range": "De 5 minutos a 30 dias.",
   "error_timeout": "O prazo tem de ser de 5 minutos a 30 dias"
 }
