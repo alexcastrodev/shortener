@@ -23,7 +23,6 @@ RSpec.describe("MCP appointment tools", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
   end
 
@@ -84,16 +83,6 @@ RSpec.describe("MCP appointment tools", type: :request) do
 
     it "lists none without the scope" do
       grant.update!(scopes: ["forms:read"])
-      expect(listed & names).to(eq([]))
-    end
-
-    it "lists none when the feature is off, and refuses a call" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      expect(listed & names).to(eq([]))
-    end
-
-    it "lists none for an account outside the allow-list" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ALLOWED_EMAILS").and_return("someone@else.com"))
       expect(listed & names).to(eq([]))
     end
 
@@ -195,12 +184,6 @@ RSpec.describe("MCP appointment tools", type: :request) do
       expect(error_code(tool("list_appointments", { form_id: form.id }))).to(eq("response_budget_exhausted"))
       expect(error_code(tool("get_appointment", { id: Appointment.first.id }))).to(eq("response_budget_exhausted"))
       expect(error_code(tool("get_agenda", { from: "2026-11-02", to: "2026-11-05" }))).to(eq("response_budget_exhausted"))
-    end
-
-    it "refuses every tool when the feature is turned off after the grant" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      reply = tool("list_appointments", { form_id: form.id })
-      expect(failed?(reply)).to(be(true))
     end
   end
 

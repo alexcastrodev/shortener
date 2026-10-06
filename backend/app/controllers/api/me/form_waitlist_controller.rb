@@ -2,7 +2,6 @@ class Api::Me::FormWaitlistController < ApplicationController
   include FormLookup
 
   before_action :authenticate_user!, prepend: true
-  include AppointmentsGate
 
   def index
     rows = @form.waitlist_entries.active.order(:starts_at, :id).limit(200)

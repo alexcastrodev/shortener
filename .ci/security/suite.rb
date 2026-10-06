@@ -160,8 +160,8 @@ end
 
 check("A04", "the public form JSON has exactly the whitelisted keys and leaks nothing; missing, draft and SQL-looking ids share one 404") do
   response = anonymous(:get, "/api/public/forms/#{PUBLIC['public_id']}")
-  expect_eq(["cover_position", "cover_token", "custom_colors", "description", "fields", "intro_enabled", "layout", "start_label", "thank_you_message", "theme", "title"], response.json["form"].keys.sort)
-  ["user_id", "responses_count", "published", "created_at", "updated_at", "public_id", "owner-a@sec.test"].each { |leak| expect(!response.body.include?(leak), "leaked #{leak}") }
+  expect_eq(["cover_position", "cover_token", "custom_colors", "description", "fields", "intro_enabled", "layout", "published_version", "start_label", "thank_you_message", "theme", "title"], response.json["form"].keys.sort)
+  ["user_id", "responses_count", "\"published\"", "created_at", "updated_at", "public_id", "owner-a@sec.test"].each { |leak| expect(!response.body.include?(leak), "leaked #{leak}") }
   expect(!response.headers.key?("set-cookie"), "Set-Cookie")
   missing = anonymous(:get, "/api/public/forms/ZZZZZZZZZZZZ")
   expect_eq(404, missing.status)

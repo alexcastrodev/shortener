@@ -51,7 +51,6 @@ module Oauth
       return fail_with("unsupported_response_type") unless @params[:response_type] == "code"
       return fail_with("invalid_request") unless @params[:code_challenge_method] == "S256" && code_challenge.match?(CHALLENGE)
       return fail_with("invalid_scope") unless scopes.any? && (scopes - OauthGrant::SCOPES).empty?
-      return fail_with("invalid_scope") if scopes.intersect?(OauthGrant::APPOINTMENT_SCOPES) && !Appointments::Config.enabled?
 
       fail_with("invalid_target") unless resource == Config.resource
     end

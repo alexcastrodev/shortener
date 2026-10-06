@@ -5,7 +5,7 @@ module Forms
     end
 
     def self.for(form)
-      source = Snapshot.enabled? && form.published_snapshot.present? ? Snapshot.stored(form) : Snapshot.of(form)
+      source = form.published_snapshot.present? ? Snapshot.stored(form) : Snapshot.of(form)
       new(**source.symbolize_keys.slice(*Snapshot::KEYS.map(&:to_sym)), published_version: form.published_version)
     end
   end

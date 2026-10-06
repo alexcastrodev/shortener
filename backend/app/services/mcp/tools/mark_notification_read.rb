@@ -9,7 +9,6 @@ module Mcp
       requires "appointments:write", writes: true, limits: [[120, 1.hour]]
 
       def self.perform(user:, id:)
-        AppointmentToolHelpers.ensure!(user)
         row = Notification.in_app.where(user_id: user.id, recipient_kind: "owner").find(id)
         row.update!(read_at: Time.current) if row.read_at.nil?
         { id: row.id, read_at: row.read_at.iso8601, unread_count: Notification.in_app.where(user_id: user.id, recipient_kind: "owner").unread.count }

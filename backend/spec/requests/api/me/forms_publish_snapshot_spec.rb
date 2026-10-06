@@ -50,11 +50,11 @@ RSpec.describe("publishing a form keeps a snapshot", type: :request) do
     expect(form.reload.published_snapshot["title"]).to(eq("Survey v2"))
   end
 
-  it "keeps serving the live form publicly for now" do
+  it "keeps serving the published form publicly while the draft changes" do
     publish
     edit(title: "Edited")
     get("/api/public/forms/#{form.public_id}")
-    expect(json.dig("form", "title")).to(eq("Edited"))
+    expect(json.dig("form", "title")).to(eq("Survey"))
   end
 
   it "discards the draft back to the published snapshot" do

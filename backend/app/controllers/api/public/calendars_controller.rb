@@ -10,7 +10,7 @@ class Api::Public::CalendarsController < ApplicationController
   def show
     feed = CalendarFeed.resolve(params[:token])
     user = feed&.user
-    raise ActiveRecord::RecordNotFound unless user&.deactivated_at.nil? && Appointments::Config.enabled_for?(user)
+    raise ActiveRecord::RecordNotFound unless user && user.deactivated_at.nil?
 
     feed.update_column(:last_fetched_at, Time.current)
     response.headers["Cache-Control"] = "private, no-store"

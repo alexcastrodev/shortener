@@ -13,7 +13,6 @@ RSpec.describe("GET /api/public/forms/:public_id/slots", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
     Forms::Definition.add(form, { "type" => "booking", "label" => "When", "services" => [service], "rules" => rules })
     Forms::Definition.add(form.reload, name)
@@ -125,7 +124,6 @@ RSpec.describe("GET /api/public/forms/:public_id/slots", type: :request) do
 
   describe "what is served" do
     it "reads the published snapshot, not the draft" do
-      allow(ENV).to(receive(:[]).with("FORM_DRAFTS_ENABLED").and_return("true"))
       Forms::Definition.update(form.reload, form.fields.first["id"], { "services" => [service.merge("id" => service_id, "times" => ["14:00"])] })
       slots(from: "2026-11-02", to: "2026-11-02")
       expect(times).to(eq(["2026-11-02T09:00:00Z", "2026-11-02T10:00:00Z", "2026-11-02T11:00:00Z"]))
@@ -140,18 +138,6 @@ RSpec.describe("GET /api/public/forms/:public_id/slots", type: :request) do
   end
 
   describe "access" do
-    it "answers 404 when the feature is off" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      slots
-      expect(response).to(have_http_status(:not_found))
-    end
-
-    it "answers 404 when the owner is outside the allow-list" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ALLOWED_EMAILS").and_return("someone@else.com"))
-      slots
-      expect(response).to(have_http_status(:not_found))
-    end
-
     it "answers 404 for an unpublished form, an unknown service and a malformed id" do
       Forms::Unpublish.call(form: form.reload)
       slots

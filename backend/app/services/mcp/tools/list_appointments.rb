@@ -22,7 +22,6 @@ module Mcp
       end
 
       def self.perform(user:, form_id:, status: nil, before: nil, limit: 10)
-        AppointmentToolHelpers.ensure!(user)
         form = Mcp::Guards.form(user, form_id)
         take = ResponseToolHelpers.allowance!(user, limit)
         scope = Appointments::Search.call(form: form, status: status, zone: Time.find_zone!(user.time_zone)).order(id: :desc)

@@ -22,7 +22,6 @@ RSpec.describe("MCP booking setup tools", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     travel_to(now)
   end
 
@@ -51,14 +50,6 @@ RSpec.describe("MCP booking setup tools", type: :request) do
       expect(listed & names).to(match_array(names))
       grant.update!(scopes: ["appointments:read"])
       expect(listed & names).to(eq(["get_booking_impact"]))
-    end
-
-    it "lists none without the scope, with the feature off, or outside the allow-list" do
-      grant.update!(scopes: ["forms:write"])
-      expect(listed & names).to(eq([]))
-      grant.update!(scopes: ["appointments:write"])
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      expect(listed & names).to(eq([]))
     end
 
     it "does not list any tool that publishes, approves or cancels" do
@@ -114,12 +105,6 @@ RSpec.describe("MCP booking setup tools", type: :request) do
       theirs = Form.create!(user: other, title: "Theirs")
       expect(data(tool("update_booking_config", { form_id: theirs.id, services: [service] }))["error"]).to(eq("not_found"))
       expect(booking_of(theirs)).to(be_nil)
-    end
-
-    it "does nothing when appointments are unavailable" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ALLOWED_EMAILS").and_return("someone@else.com"))
-      expect(failed?(tool("update_booking_config", { form_id: draft.id, services: [service] }))).to(be(true))
-      expect(booking_of(draft)).to(be_nil)
     end
   end
 

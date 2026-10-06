@@ -14,7 +14,7 @@ class Api::Me::OauthAuthorizationsController < ApplicationController
 
     render(json: {
       client: { name: request_data.client.client_name, redirect_host: URI.parse(request_data.redirect_uri).host },
-      scopes: offered(request_data),
+      scopes: request_data.scopes,
       email: current_user.email,
       resource: request_data.resource,
     })
@@ -25,7 +25,7 @@ class Api::Me::OauthAuthorizationsController < ApplicationController
     return render_failure(request_data) unless request_data.valid?
     return render(json: { redirect_to: request_data.redirect_url(error: "access_denied") }) unless params[:decision] == "allow"
 
-    granted = Array(params[:granted_scopes]).map(&:to_s).uniq & offered(request_data)
+    granted = Array(params[:granted_scopes]).map(&:to_s).uniq & request_data.scopes
     granted = [OauthGrant::FULL_SCOPE] if granted.include?(OauthGrant::FULL_SCOPE)
     return render(json: { redirect_to: request_data.redirect_url(error: "access_denied") }) if granted.empty?
 
@@ -39,12 +39,6 @@ class Api::Me::OauthAuthorizationsController < ApplicationController
   end
 
   private
-
-  def offered(request_data)
-    return request_data.scopes if Appointments::Config.enabled_for?(current_user)
-
-    request_data.scopes - OauthGrant::APPOINTMENT_SCOPES
-  end
 
   def require_enabled
     head(:not_found) unless Oauth::Config.enabled?

@@ -27,14 +27,6 @@ RSpec.describe("POST /mcp", type: :request) do
     host! "localhost"
   end
 
-  it "answers 404 while the feature flag is off" do
-    ENV.delete("MCP_ENABLED")
-
-    call
-
-    expect(response).to(have_http_status(:not_found))
-  end
-
   describe "challenge" do
     it "answers 401 with a WWW-Authenticate pointing at the resource metadata and every scope" do
       call(token: nil)

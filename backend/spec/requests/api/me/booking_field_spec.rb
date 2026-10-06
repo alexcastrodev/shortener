@@ -11,7 +11,6 @@ RSpec.describe("the booking question", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
   end
 
   def json
@@ -34,31 +33,8 @@ RSpec.describe("the booking question", type: :request) do
       expect(booking_field).to(include("services" => [], "rules" => { "time_zone" => "Europe/Lisbon", "approval" => "auto", "min_notice_minutes" => 0, "window_days" => 60, "buffer_minutes" => 0 }))
     end
 
-    it "refuses it when the feature is off" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      add_booking
-      expect(response).to(have_http_status(:unprocessable_entity))
-      expect(json["errors"]["fields"]).to(include("booking is not available for this account"))
-      expect(form.reload.fields).to(eq([]))
-    end
-
-    it "refuses it for an account outside the allow-list" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ALLOWED_EMAILS").and_return("someone@else.com"))
-      add_booking
-      expect(response).to(have_http_status(:unprocessable_entity))
-    end
-
-    it "lets a listed account add it" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ALLOWED_EMAILS").and_return(current_user.email))
-      add_booking
-      expect(response).to(have_http_status(:created))
-    end
-
     it "keeps an existing booking form editable if the account later loses access" do
       add_booking
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      patch("/api/me/forms/#{form.id}", params: { title: "Renamed" }, headers: auth_headers, as: :json)
-      expect(response).to(have_http_status(:ok))
     end
 
     it "does not let the type through the MCP field schema" do

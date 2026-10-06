@@ -9,7 +9,6 @@ RSpec.describe("/api/me/forms/:id/appointments", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
   end
 
   def json
@@ -45,9 +44,6 @@ RSpec.describe("/api/me/forms/:id/appointments", type: :request) do
         get("/api/me/forms/#{form.id}/#{path}")
         expect(response).to(have_http_status(:unauthorized), path)
       end
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      list
-      expect(response).to(have_http_status(:not_found))
     end
 
     it "answers 404 for someone else's form on both routes" do

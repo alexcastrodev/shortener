@@ -13,7 +13,6 @@ module Mcp
       end
 
       def self.perform(user:, from:, to:)
-        AppointmentToolHelpers.ensure!(user)
         first, last = AppointmentToolHelpers.range(from, to)
         left = ResponseToolHelpers.allowance!(user, Mcp::ResponseBudget::DAILY)
         sessions = Appointments::Agenda.call(user: user, from: first, to: last).first(AppointmentToolHelpers::AGENDA_MAX_SESSIONS)

@@ -9,7 +9,6 @@ module Mcp
       requires "appointments:read"
 
       def self.perform(user:, form_id:)
-        AppointmentToolHelpers.ensure!(user)
         form = Mcp::Guards.form(user, form_id)
         booking = AppointmentToolHelpers.booking(form)
         {

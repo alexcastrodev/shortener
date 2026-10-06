@@ -35,7 +35,7 @@ class Api::Public::WaitlistEntriesController < ApplicationController
 
   def load_entry
     @entry = WaitlistEntry.from_token(params[:token])
-    render(json: { error: "not_found" }, status: :not_found) unless @entry && Appointments::Config.enabled_for?(@entry.form.user)
+    render(json: { error: "not_found" }, status: :not_found) unless @entry
     @entry&.reload
   end
 

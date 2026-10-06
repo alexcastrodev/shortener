@@ -12,7 +12,6 @@ RSpec.describe("booking categories", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     Forms::Definition.add(form, { "type" => "booking", "label" => "When", "services" => [massage] })
   end
 

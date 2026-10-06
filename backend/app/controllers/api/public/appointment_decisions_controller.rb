@@ -32,7 +32,7 @@ class Api::Public::AppointmentDecisionsController < ApplicationController
 
   def load_appointment
     @appointment = AppointmentToken.resolve(params[:token], purpose: "decide")
-    render(json: { error: "not_found" }, status: :not_found) unless @appointment && Appointments::Config.enabled_for?(@appointment.form.user)
+    render(json: { error: "not_found" }, status: :not_found) unless @appointment
   end
 
   def payload

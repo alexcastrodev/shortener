@@ -19,7 +19,6 @@ module Mcp
       requires "appointments:write", writes: true, limits: [[60, 1.hour]]
 
       def self.perform(user:, form_id:, services: nil, rules: nil, exceptions: nil, categories: nil)
-        AppointmentToolHelpers.ensure!(user)
         form = Mcp::Guards.draft_form(user, form_id)
         changes = Mcp::Guards.contract!(FormFieldUpdateContract, { services: services, rules: rules, exceptions: exceptions, categories: categories })
         existing = form.fields.find { |field| field["type"] == "booking" }

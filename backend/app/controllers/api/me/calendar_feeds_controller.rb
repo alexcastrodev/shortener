@@ -1,6 +1,5 @@
 class Api::Me::CalendarFeedsController < ApplicationController
   before_action :authenticate_user!
-  include AppointmentsGate
 
   def show
     feed = current_user.calendar_feed

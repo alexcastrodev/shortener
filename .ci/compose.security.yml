@@ -16,7 +16,6 @@ x-api-env: &api-env
   SKIP_DB_PREPARE: "1"
   LOG_REQUESTS: "false"
   MCP_ENABLED: "true"
-  APPOINTMENTS_ENABLED: "true"
   # Dummy DSN (no route out of the network): makes production boot run config/initializers/sentry.rb.
   SENTRY_DSN: http://key@localhost/1
   SENTRY_LOGGER: "1"

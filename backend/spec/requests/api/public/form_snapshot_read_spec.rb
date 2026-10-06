@@ -13,7 +13,6 @@ RSpec.describe("public form read from the published snapshot", type: :request) d
     host! "localhost"
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("FORM_DRAFTS_ENABLED").and_return("true"))
     Forms::Publish.call(form: form)
   end
 
@@ -62,11 +61,6 @@ RSpec.describe("public form read from the published snapshot", type: :request) d
     expect(shown["fields"].map { |field| field["id"] }).to(eq(["name0001"]))
   end
 
-  it "keeps the closed key list and hides the version when the flag is off" do
-    allow(ENV).to(receive(:[]).with("FORM_DRAFTS_ENABLED").and_return(nil))
-    expect(public_form.keys).to(match_array(["title", "description", "thank_you_message", "theme", "custom_colors", "layout", "fields", "cover_token", "cover_position", "intro_enabled", "start_label"]))
-  end
-
   it "stores the version the visitor saw and accepts a submission without one" do
     submit({ "name0001" => "Ana" })
     expect(response).to(have_http_status(:created))
@@ -94,13 +88,6 @@ RSpec.describe("public form read from the published snapshot", type: :request) d
     expect(json["error"]).to(eq("form_changed"))
     expect(json["form"]).to(include("title" => "Second", "published_version" => 2))
     expect(json["form"].keys).not_to(include("user_id", "public_id"))
-  end
-
-  it "ignores the version when the flag is off" do
-    allow(ENV).to(receive(:[]).with("FORM_DRAFTS_ENABLED").and_return(nil))
-    submit({ "name0001" => "Ana" }, version: 99)
-    expect(response).to(have_http_status(:created))
-    expect(FormResponse.last.published_version).to(be_nil)
   end
 
   it "returns the earlier response for a retried idempotency key even if the form changed" do

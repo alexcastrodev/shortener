@@ -28,7 +28,6 @@ RSpec.describe("the waiting list", type: :request) do
     deliveries.clear
     allow(Turnstile).to(receive(:check).and_return(:ok))
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
     allow(ENV).to(receive(:fetch).and_call_original)
     allow(ENV).to(receive(:fetch).with("FRONTEND_URL", anything).and_return("https://kurz.test"))
     travel_to(now)
@@ -129,9 +128,6 @@ RSpec.describe("the waiting list", type: :request) do
       Forms::Publish.call(form: form.reload)
       join
       expect(response).to(have_http_status(:unprocessable_content))
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      join
-      expect(response).to(have_http_status(:not_found))
     end
 
     it "refuses a failed human check, swallows the trap field, and limits tries per address" do

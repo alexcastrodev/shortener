@@ -22,7 +22,6 @@ RSpec.describe("OAuth consent for the appointments scopes", type: :request) do
   before do
     host! "localhost"
     allow(ENV).to(receive(:[]).and_call_original)
-    allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return("true"))
   end
 
   def json
@@ -41,19 +40,6 @@ RSpec.describe("OAuth consent for the appointments scopes", type: :request) do
     it "offers the appointments scopes to an enabled account" do
       preview
       expect(json["scopes"]).to(eq(["forms:read", "appointments:read", "appointments:write", "forms:publish"]))
-    end
-
-    it "does not offer them to an account outside the allow-list" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ALLOWED_EMAILS").and_return("someone@else.com"))
-      preview
-      expect(json["scopes"]).to(eq(["forms:read", "forms:publish"]))
-    end
-
-    it "refuses the request outright when the feature is off" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ENABLED").and_return(nil))
-      preview
-      expect(response).to(have_http_status(:bad_request))
-      expect(json["error"]).to(eq("invalid_scope"))
     end
   end
 
@@ -74,16 +60,6 @@ RSpec.describe("OAuth consent for the appointments scopes", type: :request) do
         expect(json["error"]).to(eq("conflicting_scopes"))
       end
       expect(OauthGrant.count).to(eq(0))
-    end
-
-    it "drops the appointments scopes for an account that is not allowed, and denies when nothing is left" do
-      allow(ENV).to(receive(:[]).with("APPOINTMENTS_ALLOWED_EMAILS").and_return("someone@else.com"))
-      allow_scopes("forms:read", "appointments:read")
-      expect(OauthGrant.last.scopes).to(eq(["forms:read"]))
-
-      allow_scopes("appointments:write")
-      expect(json["redirect_to"]).to(include("error=access_denied"))
-      expect(OauthGrant.count).to(eq(1))
     end
 
     it "keeps the existing responses rule: responses with publishing is still refused" do

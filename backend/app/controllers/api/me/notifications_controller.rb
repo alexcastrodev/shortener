@@ -1,6 +1,5 @@
 class Api::Me::NotificationsController < ApplicationController
   before_action :authenticate_user!
-  include AppointmentsGate
 
   PAGE = 30
 

@@ -1,6 +1,5 @@
 class Api::Me::NotificationPreferencesController < ApplicationController
   before_action :authenticate_user!
-  include AppointmentsGate
 
   def show
     render(json: { preferences: NotificationPreference.matrix(current_user) }, status: :ok)
