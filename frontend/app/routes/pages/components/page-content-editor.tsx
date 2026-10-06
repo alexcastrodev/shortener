@@ -22,6 +22,10 @@ import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-p
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { z } from 'zod/v4';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import i18n from '../../../i18n';
+import type pagesEn from '../../../i18n/en/pages.json';
 import { useCreatePageLink } from '@internal/core/actions/create-page-link/create-page-link.hook';
 import { useUpdatePageLink } from '@internal/core/actions/update-page-link/update-page-link.hook';
 import { useDeletePageLink } from '@internal/core/actions/delete-page-link/delete-page-link.hook';
@@ -45,14 +49,29 @@ import {
 
 type Header = Pick<Page, 'slug' | 'display_title' | 'bio' | 'theme' | 'custom_colors' | 'avatar_url'>;
 
-const linkSchema = z.object({
-  label: z.string().trim().min(1, 'Required').max(80),
-  url: z.url({ protocol: /^https?$/, error: 'Must be an http(s) URL' }),
-});
+type PagesKey = keyof typeof pagesEn;
 
-const sectionSchema = z.object({
-  label: z.string().trim().min(1, 'Required').max(80),
-});
+const makeLinkSchema = (t: TFunction<'pages'>) =>
+  z.object({
+    label: z.string().trim().min(1, t('pc_required')).max(80),
+    url: z.url({ protocol: /^https?$/, error: t('pc_url_invalid') }),
+  });
+
+const makeSectionSchema = (t: TFunction<'pages'>) =>
+  z.object({
+    label: z.string().trim().min(1, t('pc_required')).max(80),
+  });
+
+const HANDLE_KEYS: Record<string, PagesKey> = {
+  instagram: 'pc_what_username',
+  tiktok: 'pc_what_username',
+  snapchat: 'pc_what_username',
+  x: 'pc_what_username',
+  onlyfans: 'pc_what_username',
+  facebook: 'pc_what_page',
+  linkedin: 'pc_what_profile',
+  youtube: 'pc_what_channel',
+};
 
 function errorMessage(error: unknown) {
   const errors = (error as { errors?: unknown } | undefined)?.errors;
@@ -62,11 +81,11 @@ function errorMessage(error: unknown) {
       .map(([key, value]) => `${key} ${value}`)
       .join(', ');
   }
-  return 'Something went wrong, please try again later.';
+  return i18n.t('pages:generic_error');
 }
 
 function showError(error: unknown) {
-  notifications.show({ title: 'Error', message: errorMessage(error), color: 'red' });
+  notifications.show({ title: i18n.t('pages:edit_error_title'), message: errorMessage(error), color: 'red' });
 }
 
 interface PageContentEditorProps {
@@ -85,6 +104,7 @@ export function PageContentEditor({
   onChange,
   onPickTemplate,
 }: PageContentEditorProps) {
+  const { t } = useTranslation('pages');
   const theme = getBioTheme(header.theme, header.custom_colors);
   const title = header.display_title || `@${header.slug}`;
   const [openKey, setOpenKey] = useState<string | null>(null);
@@ -227,12 +247,12 @@ export function PageContentEditor({
                               opened={openKey === key}
                               onClose={close}
                               target={
-                                <Tooltip label="Click to edit · drag to reorder">
+                                <Tooltip label={t('pc_tooltip_edit_reorder')}>
                                   <EditableTarget
                                     item={item}
                                     onClick={() => setOpenKey(key)}
                                     className={`flex size-11 items-center justify-center rounded-full ${theme.title}`}
-                                    label={`Edit ${network.name}`}
+                                    label={t('pc_edit_item', { name: network.name })}
                                   >
                                     <network.icon size={26} stroke={1.8} />
                                   </EditableTarget>
@@ -240,13 +260,12 @@ export function PageContentEditor({
                               }
                             >
                               <PopoverTitle>
-                                {network.name} icon · {item.clicks_count}{' '}
-                                {item.clicks_count === 1 ? 'click' : 'clicks'}
+                                {t('pc_icon_clicks', { name: network.name, count: item.clicks_count })}
                               </PopoverTitle>
                               <LinkFields
                                 initial={{ label: item.label, url: item.url ?? '' }}
                                 hideLabel
-                                submitLabel="Save"
+                                submitLabel={t('pc_save')}
                                 isPending={isUpdating}
                                 onSubmit={values => saveItem(item, { url: values.url })}
                               />
@@ -257,7 +276,7 @@ export function PageContentEditor({
                                 mt="xs"
                                 onClick={() => saveItem(item, { kind: 'link' })}
                               >
-                                Show as a button instead
+                                {t('pc_show_as_button')}
                               </Button>
                               {itemControls(item)}
                             </EditPopover>
@@ -276,11 +295,11 @@ export function PageContentEditor({
               onClose={close}
               width={320}
               target={
-                <Tooltip label="Add a social icon">
+                <Tooltip label={t('pc_add_social')}>
                   <button
                     type="button"
                     onClick={() => setOpenKey('add-social')}
-                    aria-label="Add a social icon"
+                    aria-label={t('pc_add_social')}
                     className={`flex size-11 items-center justify-center rounded-full border-2 border-dashed border-current opacity-50 transition-opacity hover:opacity-100 ${theme.title}`}
                   >
                     <IconPlus size={18} />
@@ -288,7 +307,7 @@ export function PageContentEditor({
                 </Tooltip>
               }
             >
-              <PopoverTitle>Add a social icon</PopoverTitle>
+              <PopoverTitle>{t('pc_add_social')}</PopoverTitle>
               <SocialForm isPending={isCreating} onSubmit={addSocial} />
             </EditPopover>
           </div>
@@ -311,7 +330,7 @@ export function PageContentEditor({
                         >
                           <span
                             {...drag.dragHandleProps}
-                            aria-label={`Drag to reorder ${item.label}`}
+                            aria-label={t('pc_drag_reorder', { label: item.label })}
                             className={`flex h-10 w-5 shrink-0 cursor-grab items-center justify-center rounded opacity-40 transition-opacity hover:opacity-100 active:cursor-grabbing ${snapshot.isDragging ? 'opacity-100' : ''} ${theme.title}`}
                           >
                             <IconGripVertical size={16} />
@@ -327,7 +346,7 @@ export function PageContentEditor({
                                       item={item}
                                       onClick={() => setOpenKey(key)}
                                       className={`w-full rounded-md py-2 ${theme.title}`}
-                                      label={`Edit section ${item.label}`}
+                                      label={t('pc_edit_section', { label: item.label })}
                                     >
                                       <span className="text-xs font-bold tracking-widest uppercase">
                                         {item.label}
@@ -335,10 +354,10 @@ export function PageContentEditor({
                                     </EditableTarget>
                                   }
                                 >
-                                  <PopoverTitle>Section title</PopoverTitle>
+                                  <PopoverTitle>{t('pc_section_title')}</PopoverTitle>
                                   <SectionForm
                                     initial={item.label}
-                                    submitLabel="Save"
+                                    submitLabel={t('pc_save')}
                                     isPending={isUpdating}
                                     onSubmit={label => saveItem(item, { label })}
                                   />
@@ -349,11 +368,11 @@ export function PageContentEditor({
                                   onClose={close}
                                   width={320}
                                   target={
-                                    <Tooltip label={`Add a link to “${item.label}”`}>
+                                    <Tooltip label={t('pc_add_link_to', { label: item.label })}>
                                       <button
                                         type="button"
                                         onClick={() => setOpenKey(`add-to-${item.id}`)}
-                                        aria-label={`Add a link to ${item.label}`}
+                                        aria-label={t('pc_add_link_to_aria', { label: item.label })}
                                         className={`flex size-8 shrink-0 items-center justify-center rounded-full border border-dashed border-current opacity-50 transition-opacity hover:opacity-100 ${theme.title}`}
                                       >
                                         <IconPlus size={14} />
@@ -361,11 +380,11 @@ export function PageContentEditor({
                                     </Tooltip>
                                   }
                                 >
-                                  <PopoverTitle>Add a link to “{item.label}”</PopoverTitle>
+                                  <PopoverTitle>{t('pc_add_link_to', { label: item.label })}</PopoverTitle>
                                   <LinkFields
                                     initial={{ label: '', url: '' }}
                                     withShortcuts
-                                    submitLabel="Add link"
+                                    submitLabel={t('pc_add_link')}
                                     isPending={isCreating}
                                     onSubmit={(values, reset) => addLink(values, reset, item)}
                                   />
@@ -380,7 +399,7 @@ export function PageContentEditor({
                                     item={item}
                                     onClick={() => setOpenKey(key)}
                                     className={`relative flex w-full items-center justify-center rounded-lg py-3 ${network ? 'px-12' : 'px-4'} ${theme.button}`}
-                                    label={`Edit ${item.label}`}
+                                    label={t('pc_edit_item', { name: item.label })}
                                   >
                                     {network && (
                                       <network.icon size={20} stroke={1.8} className="absolute left-4" />
@@ -390,11 +409,11 @@ export function PageContentEditor({
                                 }
                               >
                                 <PopoverTitle>
-                                  Button · {item.clicks_count} {item.clicks_count === 1 ? 'click' : 'clicks'}
+                                  {t('pc_button_clicks', { count: item.clicks_count })}
                                 </PopoverTitle>
                                 <LinkFields
                                   initial={{ label: item.label, url: item.url ?? '' }}
-                                  submitLabel="Save"
+                                  submitLabel={t('pc_save')}
                                   isPending={isUpdating}
                                   onSubmit={values =>
                                     saveItem(item, { ...values, icon: detectSocialNetwork(values.url)?.id ?? null })
@@ -408,7 +427,7 @@ export function PageContentEditor({
                                     mt="xs"
                                     onClick={() => saveItem(item, { kind: 'social' })}
                                   >
-                                    Show as an icon under the name instead
+                                    {t('pc_show_as_icon')}
                                   </Button>
                                 )}
                                 {itemControls(item)}
@@ -433,8 +452,8 @@ export function PageContentEditor({
                 className={`flex w-full flex-col items-center gap-1 rounded-xl border-2 border-current px-4 py-5 transition-opacity hover:opacity-100 opacity-80 ${theme.title}`}
               >
                 <IconTemplate size={22} />
-                <span className="text-sm font-semibold">Start from a template</span>
-                <span className="text-xs opacity-80">Pick a layout, then fill in or remove</span>
+                <span className="text-sm font-semibold">{t('pc_start_template')}</span>
+                <span className="text-xs opacity-80">{t('pc_start_template_hint')}</span>
               </button>
             )}
             <EditPopover
@@ -443,15 +462,15 @@ export function PageContentEditor({
               width={320}
               target={
                 <AddButton onClick={() => setOpenKey('add-link')} className={theme.title}>
-                  {flow.length === 0 ? 'Add your first link' : 'Add link'}
+                  {flow.length === 0 ? t('pc_add_first_link') : t('pc_add_link')}
                 </AddButton>
               }
             >
-              <PopoverTitle>Add a link</PopoverTitle>
+              <PopoverTitle>{t('pc_add_a_link')}</PopoverTitle>
               <LinkFields
                 initial={{ label: '', url: '' }}
                 withShortcuts
-                submitLabel="Add link"
+                submitLabel={t('pc_add_link')}
                 isPending={isCreating}
                 onSubmit={(values, reset) => addLink(values, reset)}
               />
@@ -462,18 +481,17 @@ export function PageContentEditor({
               onClose={close}
               target={
                 <AddButton onClick={() => setOpenKey('add-section')} className={theme.title} subtle>
-                  Add section title
+                  {t('pc_add_section')}
                 </AddButton>
               }
             >
-              <PopoverTitle>Add a section title</PopoverTitle>
+              <PopoverTitle>{t('pc_add_a_section')}</PopoverTitle>
               <p className="mb-2 text-xs text-muted-foreground">
-                Groups the links below it, e.g. “Sponsors”. Drag links under it to
-                move them in.
+                {t('pc_section_help')}
               </p>
               <SectionForm
                 initial=""
-                submitLabel="Add section"
+                submitLabel={t('pc_add_section_button')}
                 isPending={isCreating}
                 onSubmit={(label, reset) => addSection(label, reset)}
               />
@@ -481,7 +499,7 @@ export function PageContentEditor({
           </div>
         </div>
 
-        <footer className={`py-6 text-center text-xs ${theme.footer}`}>Made with Kurz</footer>
+        <footer className={`py-6 text-center text-xs ${theme.footer}`}>{t('pc_made_with')}</footer>
       </div>
     </DragDropContext>
   );
@@ -566,6 +584,7 @@ function EditableTarget({
   label: string;
   children: ReactNode;
 }) {
+  const { t } = useTranslation('pages');
   return (
     <button
       type="button"
@@ -575,10 +594,10 @@ function EditableTarget({
     >
       {children}
       {!item.active && (
-        <IconEyeOff size={14} className="absolute top-1 right-1" aria-label="Hidden" />
+        <IconEyeOff size={14} className="absolute top-1 right-1" aria-label={t('pc_hidden')} />
       )}
       {!item.safe && (
-        <IconAlertTriangle size={14} className="absolute top-1 left-1 text-red-500" aria-label="Flagged" />
+        <IconAlertTriangle size={14} className="absolute top-1 left-1 text-red-500" aria-label={t('pc_flagged')} />
       )}
     </button>
   );
@@ -616,11 +635,12 @@ function ItemControls({
   onToggle: (active: boolean) => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation('pages');
   return (
     <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
       <Switch
         size="sm"
-        label="Visible on the page"
+        label={t('pc_visible')}
         checked={item.active}
         onChange={event => onToggle(event.currentTarget.checked)}
       />
@@ -631,7 +651,7 @@ function ItemControls({
         leftSection={<IconTrash size={14} />}
         onClick={onDelete}
       >
-        Delete
+        {t('pc_delete')}
       </Button>
     </div>
   );
@@ -654,11 +674,12 @@ function LinkFields({
   isPending: boolean;
   onSubmit: (values: { label: string; url: string }, reset: () => void) => void;
 }) {
+  const { t } = useTranslation('pages');
   const urlRef = useRef<HTMLInputElement>(null);
   const form = useForm({
     mode: 'controlled',
     initialValues: initial,
-    validate: zod4Resolver(hideLabel ? linkSchema.pick({ url: true }) : linkSchema),
+    validate: zod4Resolver(hideLabel ? makeLinkSchema(t).pick({ url: true }) : makeLinkSchema(t)),
   });
 
   function pick(network: SocialNetwork) {
@@ -689,8 +710,8 @@ function LinkFields({
       <div className="space-y-2">
         {!hideLabel && (
           <TextInput
-            label="Text on the button"
-            placeholder="e.g. My shop"
+            label={t('pc_button_text')}
+            placeholder={t('pc_button_text_ph')}
             data-autofocus
             key={form.key('label')}
             {...form.getInputProps('label')}
@@ -698,7 +719,7 @@ function LinkFields({
         )}
         <TextInput
           ref={urlRef}
-          label="Link"
+          label={t('pc_link')}
           placeholder="https://"
           data-autofocus={hideLabel || undefined}
           key={form.key('url')}
@@ -723,10 +744,11 @@ function SectionForm({
   isPending: boolean;
   onSubmit: (label: string, reset: () => void) => void;
 }) {
+  const { t } = useTranslation('pages');
   const form = useForm({
     mode: 'uncontrolled',
     initialValues: { label: initial },
-    validate: zod4Resolver(sectionSchema),
+    validate: zod4Resolver(makeSectionSchema(t)),
   });
 
   return (
@@ -735,7 +757,7 @@ function SectionForm({
       className="space-y-2"
     >
       <TextInput
-        placeholder="e.g. Sponsors"
+        placeholder={t('pc_section_ph')}
         data-autofocus
         key={form.key('label')}
         {...form.getInputProps('label')}
@@ -755,7 +777,9 @@ function SocialForm({
   isPending: boolean;
   onSubmit: (data: { label: string; url: string; icon: string }, reset: () => void) => void;
 }) {
+  const { t } = useTranslation('pages');
   const [network, setNetwork] = useState<SocialNetwork>(SOCIAL_NETWORKS[0]);
+  const what = network.id === 'whatsapp' ? t('pc_phone') : t(HANDLE_KEYS[network.id] ?? 'pc_what_username');
   const [value, setValue] = useState('');
   const [error, setError] = useState<string>();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -765,8 +789,8 @@ function SocialForm({
     if (!isValidSocialValue(network, value)) {
       setError(
         network.id === 'whatsapp'
-          ? 'Enter the phone number with country code'
-          : `Enter your ${network.name} ${network.placeholder}`
+          ? t('pc_phone_error')
+          : t('pc_social_error', { name: network.name, what })
       );
       return;
     }
@@ -778,7 +802,7 @@ function SocialForm({
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Network">
+      <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label={t('pc_network')}>
         {SOCIAL_NETWORKS.map(item => {
           const selected = item.id === network.id;
           return (
@@ -807,8 +831,8 @@ function SocialForm({
       <TextInput
         ref={inputRef}
         data-autofocus
-        label={network.id === 'whatsapp' ? 'Phone number' : `${network.name} ${network.placeholder}`}
-        placeholder={network.id === 'whatsapp' ? '+351 912 345 678' : `@${network.placeholder}`}
+        label={network.id === 'whatsapp' ? t('pc_phone') : t('pc_social_label', { name: network.name, what })}
+        placeholder={network.id === 'whatsapp' ? '+351 912 345 678' : `@${what}`}
         value={value}
         error={error}
         onChange={event => {
@@ -818,7 +842,7 @@ function SocialForm({
         description={`${network.prefix}…`}
       />
       <Button type="submit" fullWidth loading={isPending} color="brand">
-        Add {network.name}
+        {t('pc_social_add', { name: network.name })}
       </Button>
     </form>
   );
