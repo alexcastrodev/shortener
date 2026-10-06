@@ -69,3 +69,7 @@ production:
     class: SendAppointmentRemindersJob
     queue: notifications
     schedule: every 5 minutes
+  resolve_pending_appointments:
+    class: ResolvePendingAppointmentsJob
+    queue: notifications
+    schedule: every minute
