@@ -47,6 +47,12 @@ export function Layout({ children }: PropsWithChildren) {
               {t('footer_privacy')}
             </a>
             <a
+              href="/service"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {t('footer_service')}
+            </a>
+            <a
               href="/report"
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
