@@ -21,6 +21,9 @@ import {
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
+import { formatDateTime, formatNumber } from '../../i18n/format';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Card, PageContainer } from '@internal/ui';
 import { useGetForm } from '@internal/core/actions/get-form/get-form.hook';
@@ -59,18 +62,19 @@ export function meta({}: Route.MetaArgs) {
   return [{ title: 'Responses - Kurz' }];
 }
 
-const PERIODS: { label: string; value: FormSummaryPeriod }[] = [
-  { label: '7 days', value: 7 },
-  { label: '30 days', value: 30 },
-  { label: '90 days', value: 90 },
-  { label: 'All time', value: 'all' },
-];
+const PERIODS = [
+  { label: 'period_7', value: 7 },
+  { label: 'period_30', value: 30 },
+  { label: 'period_90', value: 90 },
+  { label: 'period_all', value: 'all' },
+] as const satisfies readonly { label: string; value: FormSummaryPeriod }[];
 
 const TABLE_QUESTIONS = 4;
 
 type Tab = 'summary' | 'responses';
 
 function ResponseImage({ formId, token }: { formId: string; token: string }) {
+  const { t } = useTranslation('responses');
   const [state, setState] = useState<{ url?: string; failed?: boolean }>({});
 
   useEffect(() => {
@@ -89,24 +93,22 @@ function ResponseImage({ formId, token }: { formId: string; token: string }) {
     };
   }, [formId, token]);
 
-  if (state.failed) return <p className="mt-0.5 text-sm text-muted-foreground">Image unavailable</p>;
-  if (!state.url) return <p className="mt-0.5 text-sm text-muted-foreground">Loading image…</p>;
-  return <img src={state.url} alt="Uploaded by the respondent" className="mt-1 max-h-80 max-w-full rounded-md border border-border" />;
+  if (state.failed) return <p className="mt-0.5 text-sm text-muted-foreground">{t('image_unavailable')}</p>;
+  if (!state.url) return <p className="mt-0.5 text-sm text-muted-foreground">{t('image_loading')}</p>;
+  return <img src={state.url} alt={t('image_alt')} className="mt-1 max-h-80 max-w-full rounded-md border border-border" />;
 }
 
 function formatAnswer(value: FormResponse['answers'][number]['value'], type?: string) {
   if (value === null || value === undefined) return '—';
-  if (type === 'image') return 'Image';
+  const t = i18n.getFixedT(null, 'responses');
+  if (type === 'image') return t('answer_image');
   if (Array.isArray(value)) return value.join(', ');
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'boolean') return value ? t('answer_yes') : t('answer_no');
   return String(value);
 }
 
 function formatWhen(iso: string) {
-  return new Date(iso).toLocaleString('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  return formatDateTime(iso, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 const csvCell = (value: string) => {
@@ -115,6 +117,7 @@ const csvCell = (value: string) => {
 };
 
 export default function FormResponsesPage() {
+  const { t } = useTranslation('responses');
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -134,7 +137,7 @@ export default function FormResponsesPage() {
     queryClient.invalidateQueries({ queryKey: getFormsKey });
   };
   const onError = (failure: unknown) =>
-    notifications.show({ title: 'Error', message: formErrorMessage(failure), color: 'red' });
+    notifications.show({ title: t('error_title'), message: formErrorMessage(failure), color: 'red' });
 
   const { mutate: removeOne } = useDeleteFormResponse({
     onSuccess: () => {
@@ -148,7 +151,7 @@ export default function FormResponsesPage() {
   if (error) {
     return (
       <PageContainer>
-        <Alert title="Failed to load form">We could not load this form.</Alert>
+        <Alert title={t('load_failed_title')}>{t('load_failed_body')}</Alert>
       </PageContainer>
     );
   }
@@ -177,9 +180,9 @@ export default function FormResponsesPage() {
     } catch (failure) {
       const status = (failure as { response?: { status?: number } })?.response?.status;
       if (status === 413) {
-        notifications.show({ color: 'red', message: 'Too many responses to export at once. Choose a shorter period.' });
+        notifications.show({ color: 'red', message: t('export_too_large') });
       } else if (status === 429) {
-        notifications.show({ color: 'red', message: 'Too many exports. Please wait a while and try again.' });
+        notifications.show({ color: 'red', message: t('export_rate') });
       } else {
         onError(failure);
       }
@@ -198,7 +201,7 @@ export default function FormResponsesPage() {
         all.push(...page.response);
         before = page.next_before;
       } while (before);
-      const header = ['Submitted', ...questions.map(q => q.label), 'Source', 'Platform', 'Browser', 'Country'];
+      const header = [t('csv_submitted'), ...questions.map(q => q.label), t('csv_source'), t('csv_platform'), t('csv_browser'), t('csv_country')];
       const lines = all.map(row => {
         const byId = new Map(row.answers.map(answer => [answer.id, answer.value]));
         return [
@@ -229,23 +232,22 @@ export default function FormResponsesPage() {
 
   const confirmDeleteOne = (response: FormResponse) =>
     modals.openConfirmModal({
-      title: 'Delete this response?',
+      title: t('delete_one_title'),
       centered: true,
-      children: <p className="text-sm">It will be deleted for good. This cannot be undone.</p>,
-      labels: { confirm: 'Delete response', cancel: 'Keep it' },
+      children: <p className="text-sm">{t('delete_one_body')}</p>,
+      labels: { confirm: t('delete_one_confirm'), cancel: t('keep_it') },
       confirmProps: { color: 'red' },
       onConfirm: () => removeOne({ formId: id, responseId: response.id }),
     });
 
   const confirmDeleteAll = () =>
     modals.openConfirmModal({
-      title: 'Delete all responses?',
+      title: t('delete_all_title'),
       centered: true,
       children: (
         <div className="space-y-3">
           <p className="text-sm">
-            This permanently removes all {total.toLocaleString()} responses to {form?.title}.
-            Views and the form itself are kept. This can’t be undone.
+            {t('delete_all_body', { count: total, title: form?.title })}
           </p>
           <Button
             variant="subtle"
@@ -253,11 +255,11 @@ export default function FormResponsesPage() {
             leftSection={<IconDownload size={14} />}
             onClick={exportCsv}
           >
-            Export first
+            {t('export_first')}
           </Button>
         </div>
       ),
-      labels: { confirm: 'Delete all', cancel: 'Cancel' },
+      labels: { confirm: t('delete_all_confirm'), cancel: t('cancel') },
       confirmProps: { color: 'red' },
       onConfirm: () => removeAll(id),
     });
@@ -276,7 +278,7 @@ export default function FormResponsesPage() {
     >
       {label}
       {count !== undefined && (
-        <span className="ml-1.5 text-xs text-muted-foreground">{count.toLocaleString()}</span>
+        <span className="ml-1.5 text-xs text-muted-foreground">{formatNumber(count)}</span>
       )}
     </button>
   );
@@ -288,13 +290,13 @@ export default function FormResponsesPage() {
           <ActionIcon
             variant="default"
             size="lg"
-            aria-label="Back to forms"
+            aria-label={t('back_to_forms')}
             onClick={() => navigate('/app/forms')}
           >
             <IconArrowLeft size={16} />
           </ActionIcon>
           <div className="leading-tight">
-            <p className="text-xs text-muted-foreground">Forms</p>
+            <p className="text-xs text-muted-foreground">{t('forms')}</p>
             <p className="text-sm font-semibold">{form?.title ?? '…'}</p>
           </div>
           {form && (
@@ -304,7 +306,7 @@ export default function FormResponsesPage() {
               }`}
             >
               <span className="size-1.5 rounded-full bg-current" />
-              {form.published ? 'Live' : 'Draft'}
+              {form.published ? t('live') : t('draft')}
             </span>
           )}
         </div>
@@ -314,22 +316,22 @@ export default function FormResponsesPage() {
             leftSection={<IconPencil size={16} />}
             onClick={() => navigate(`/app/forms/${id}`)}
           >
-            Edit form
+            {t('edit_form')}
           </Button>
           <Menu position="bottom-end" withinPortal>
             <Menu.Target>
               <Button color="brand" loading={exporting} disabled={total === 0} leftSection={<IconDownload size={16} />}>
-                Export
+                {t('export')}
               </Button>
             </Menu.Target>
             <Menu.Dropdown>
-              <Menu.Item onClick={exportExcel}>Excel (.xlsx)</Menu.Item>
-              <Menu.Item onClick={exportCsv}>CSV</Menu.Item>
+              <Menu.Item onClick={exportExcel}>{t('export_excel')}</Menu.Item>
+              <Menu.Item onClick={exportCsv}>{t('export_csv')}</Menu.Item>
             </Menu.Dropdown>
           </Menu>
           <Menu position="bottom-end" withinPortal>
             <Menu.Target>
-              <ActionIcon variant="default" size="lg" aria-label="More actions">
+              <ActionIcon variant="default" size="lg" aria-label={t('more_actions')}>
                 <IconDots size={16} />
               </ActionIcon>
             </Menu.Target>
@@ -341,7 +343,7 @@ export default function FormResponsesPage() {
                 leftSection={<IconTrash size={14} />}
                 onClick={confirmDeleteAll}
               >
-                Delete all responses
+                {t('delete_all')}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
@@ -350,18 +352,18 @@ export default function FormResponsesPage() {
 
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-border">
         <div role="tablist" className="flex gap-1">
-          {tabButton('summary', 'Summary')}
-          {tabButton('responses', 'Responses', total)}
+          {tabButton('summary', t('tab_summary'))}
+          {tabButton('responses', t('tab_responses'), total)}
         </div>
         <SegmentedControl
           size="xs"
           className="mb-2"
-          aria-label="Period"
+          aria-label={t('period')}
           value={String(days)}
           onChange={value =>
             setDays(value === 'all' ? 'all' : (Number(value) as FormSummaryPeriod))
           }
-          data={PERIODS.map(period => ({ label: period.label, value: String(period.value) }))}
+          data={PERIODS.map(period => ({ label: t(period.label), value: String(period.value) }))}
         />
       </div>
 
@@ -372,10 +374,10 @@ export default function FormResponsesPage() {
           <div className="space-y-4">
             <Card className="grid grid-cols-2 divide-border p-0 lg:grid-cols-4 lg:divide-x">
               {[
-                { label: 'Views', value: stats.funnel.views.toLocaleString(), hint: `${stats.funnel.unique_views.toLocaleString()} unique` },
-                { label: 'Started', value: stats.funnel.starts.toLocaleString(), hint: `${share(stats.funnel.starts, stats.funnel.views)}% of views` },
-                { label: 'Completed', value: stats.funnel.completions.toLocaleString(), hint: `${share(stats.funnel.completions, stats.funnel.starts)}% of started` },
-                { label: 'Completion rate', value: stats.funnel.completion_rate === null ? '—' : `${Math.round(stats.funnel.completion_rate * 100)}%`, hint: 'of people who started' },
+                { label: t('views'), value: formatNumber(stats.funnel.views), hint: t('unique', { count: stats.funnel.unique_views }) },
+                { label: t('started'), value: formatNumber(stats.funnel.starts), hint: t('of_views', { n: share(stats.funnel.starts, stats.funnel.views) }) },
+                { label: t('completed'), value: formatNumber(stats.funnel.completions), hint: t('of_started', { n: share(stats.funnel.completions, stats.funnel.starts) }) },
+                { label: t('completion_rate'), value: stats.funnel.completion_rate === null ? '—' : `${Math.round(stats.funnel.completion_rate * 100)}%`, hint: t('of_people_started') },
               ].map(item => (
                 <div key={item.label} className="min-w-0 p-5">
                   <p className="text-xs text-muted-foreground">{item.label}</p>
@@ -386,14 +388,14 @@ export default function FormResponsesPage() {
             </Card>
 
             <Card className="p-5">
-              <h2 className="mb-4 text-sm font-semibold">Views and responses</h2>
+              <h2 className="mb-4 text-sm font-semibold">{t('views_and_responses')}</h2>
               <BarChart
                 h={220}
                 data={stats.timeline.map(day => ({ ...day, day: formatDay(day.date) }))}
                 dataKey="day"
                 series={[
-                  { name: 'views', label: 'Views', color: 'gray.7' },
-                  { name: 'responses', label: 'Completed', color: 'brand.5' },
+                  { name: 'views', label: t('views'), color: 'gray.7' },
+                  { name: 'responses', label: t('completed'), color: 'brand.5' },
                 ]}
                 withLegend
                 legendProps={{ verticalAlign: 'top', align: 'right', height: 28 }}
@@ -404,18 +406,18 @@ export default function FormResponsesPage() {
             </Card>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <BarList title="Where respondents came from" items={stats.audience.sources.map(b => ({ name: b.name, value: b.count }))} />
-              <BarList title="Countries" items={stats.audience.countries.map(b => ({ name: b.name, value: b.count }))} label={item => countryLabel(item.name)} />
-              <BarList title="Devices" items={stats.audience.devices.map(b => ({ name: b.name, value: b.count }))} />
-              <BarList title="Browsers" items={stats.audience.browsers.map(b => ({ name: b.name, value: b.count }))} />
+              <BarList title={t('sources_title')} items={stats.audience.sources.map(b => ({ name: b.name, value: b.count }))} />
+              <BarList title={t('countries')} items={stats.audience.countries.map(b => ({ name: b.name, value: b.count }))} label={item => countryLabel(item.name)} />
+              <BarList title={t('devices')} items={stats.audience.devices.map(b => ({ name: b.name, value: b.count }))} />
+              <BarList title={t('browsers')} items={stats.audience.browsers.map(b => ({ name: b.name, value: b.count }))} />
             </div>
 
             {form?.shortlink_id && <ShortLinkClicks shortlinkId={form.shortlink_id} />}
 
             <div className="flex items-baseline justify-between pt-2">
-              <h2 className="text-lg font-semibold">Questions</h2>
+              <h2 className="text-lg font-semibold">{t('questions')}</h2>
               <span className="text-xs text-muted-foreground">
-                {stats.funnel.completions.toLocaleString()} responses in this period
+                {t('in_period', { count: stats.funnel.completions })}
               </span>
             </div>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -437,21 +439,21 @@ export default function FormResponsesPage() {
           <div className="mb-3 flex flex-wrap items-center gap-3">
             <TextInput
               className="w-full sm:w-80"
-              placeholder="Search answers"
-              aria-label="Search answers"
+              placeholder={t('search_answers')}
+              aria-label={t('search_answers')}
               leftSection={<IconSearch size={16} />}
               value={query}
               onChange={event => setQuery(event.currentTarget.value)}
             />
             <span className="text-sm text-muted-foreground">
-              {inPeriod.toLocaleString()} {inPeriod === 1 ? 'response' : 'responses'}
+              {t('response_count', { count: inPeriod })}
             </span>
           </div>
 
           {responses.isLoading && <div className="h-24 animate-pulse rounded-lg bg-muted" />}
           {!responses.isLoading && rows.length === 0 && (
             <Card className="p-6 text-center text-sm text-muted-foreground">
-              No responses yet. Share the form link to start collecting them.
+              {t('no_responses')}
             </Card>
           )}
           {rows.length > 0 && (
@@ -459,13 +461,13 @@ export default function FormResponsesPage() {
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                    <th className="px-4 py-3 font-normal">Submitted</th>
+                    <th className="px-4 py-3 font-normal">{t('col_submitted')}</th>
                     {questions.slice(0, TABLE_QUESTIONS).map(question => (
                       <th key={question.id} className="px-4 py-3 font-normal">
                         {question.label}
                       </th>
                     ))}
-                    <th className="px-4 py-3 font-normal">Country</th>
+                    <th className="px-4 py-3 font-normal">{t('col_country')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -498,7 +500,7 @@ export default function FormResponsesPage() {
           {rows.length > 0 && (
             <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
               <span>
-                Showing {visible.length.toLocaleString()} of {inPeriod.toLocaleString()}
+                {t('showing', { shown: formatNumber(visible.length), total: formatNumber(inPeriod) })}
               </span>
               {responses.hasNextPage && (
                 <Button
@@ -507,7 +509,7 @@ export default function FormResponsesPage() {
                   loading={responses.isFetchingNextPage}
                   onClick={() => responses.fetchNextPage()}
                 >
-                  Load more
+                  {t('load_more')}
                 </Button>
               )}
             </div>
@@ -515,7 +517,7 @@ export default function FormResponsesPage() {
         </div>
       )}
 
-      <Drawer opened={!!open} onClose={() => setOpen(null)} position="right" title="Response" size="md">
+      <Drawer opened={!!open} onClose={() => setOpen(null)} position="right" title={t('drawer_title')} size="md">
         {open && (
           <div className="space-y-4">
             <p className="text-xs text-muted-foreground">{formatWhen(open.submitted_at)}</p>
@@ -530,7 +532,7 @@ export default function FormResponsesPage() {
               </div>
             ))}
             <Button variant="subtle" color="red" c="red.5" leftSection={<IconTrash size={16} />} onClick={() => confirmDeleteOne(open)}>
-              Delete response
+              {t('delete_one_confirm')}
             </Button>
           </div>
         )}
@@ -540,6 +542,7 @@ export default function FormResponsesPage() {
 }
 
 function ShortLinkClicks({ shortlinkId }: { shortlinkId: number }) {
+  const { t } = useTranslation('responses');
   const link = useGetShortlinkDetails(shortlinkId).data;
   const stats = useEventStatistics(shortlinkId).data;
   if (!link) return null;
@@ -547,7 +550,7 @@ function ShortLinkClicks({ shortlinkId }: { shortlinkId: number }) {
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(link.short_url);
-      notifications.show({ message: 'Link copied', color: 'teal' });
+      notifications.show({ message: t('link_copied'), color: 'teal' });
     } catch {
       notifications.show({ message: link.short_url, color: 'gray' });
     }
@@ -558,36 +561,36 @@ function ShortLinkClicks({ shortlinkId }: { shortlinkId: number }) {
       <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-sm font-semibold">
-            <IconLink size={16} /> Short link
+            <IconLink size={16} /> {t('short_link')}
           </h2>
           <p className="mt-1 truncate font-mono text-sm text-muted-foreground">{link.short_url}</p>
         </div>
         <div className="flex items-center gap-6">
           <div>
-            <p className="text-xs text-muted-foreground">Clicks, all time</p>
-            <p className="text-2xl font-semibold tabular-nums">{link.events_count.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">{t('clicks_all_time')}</p>
+            <p className="text-2xl font-semibold tabular-nums">{formatNumber(link.events_count)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Last click</p>
+            <p className="text-xs text-muted-foreground">{t('last_click')}</p>
             <p className="text-sm">{link.last_accessed_at ? formatWhen(link.last_accessed_at) : '—'}</p>
           </div>
           <Button variant="default" leftSection={<IconCopy size={16} />} onClick={copy}>
-            Copy
+            {t('copy')}
           </Button>
         </div>
       </Card>
       {link.events_count > 0 && stats && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <BarList
-            title="Link clicks by device"
+            title={t('clicks_by_device')}
             items={(stats.device_statistics ?? []).map(item => ({ name: item.name, value: item.value }))}
           />
           <BarList
-            title="Link clicks by browser"
+            title={t('clicks_by_browser')}
             items={(stats.browser_statistics ?? []).map(item => ({ name: item.name, value: item.value }))}
           />
           <BarList
-            title="Link clicks by country"
+            title={t('clicks_by_country')}
             items={(stats.country_statistics ?? []).map(item => ({ name: item.country, value: item.count }))}
             label={item => countryLabel(item.name)}
           />
@@ -608,6 +611,7 @@ function FieldSummaryCard({
   respondents: number;
   onSeeAll: () => void;
 }) {
+  const { t } = useTranslation('responses');
   const Icon = FIELD_ICONS[field.type];
   return (
     <Card className="p-5">
@@ -623,7 +627,7 @@ function FieldSummaryCard({
             {field.label}
           </p>
           <p className="text-xs text-muted-foreground">
-            {field.answered.toLocaleString()} answered · {share(field.answered, respondents)}% of respondents
+            {t('answered_line', { answered: formatNumber(field.answered), n: share(field.answered, respondents) })}
           </p>
         </div>
       </div>
@@ -632,23 +636,23 @@ function FieldSummaryCard({
       )}
       {field.distribution && (
         <>
-          <p className="mb-2 text-sm">Average: {field.average ?? '—'}</p>
+          <p className="mb-2 text-sm">{t('average_line', { value: field.average ?? '—' })}</p>
           <BarList title="" items={field.distribution.map(point => ({ name: String(point.rating), value: point.count }))} />
         </>
       )}
       {field.type === 'yes_no' && (
         <p className="text-sm">
-          Yes {field.yes ?? 0} · No {field.no ?? 0}
+          {t('yes_no_line', { yes: field.yes ?? 0, no: field.no ?? 0 })}
         </p>
       )}
       {field.type === 'number' && field.average != null && (
         <p className="text-sm">
-          Min {field.min} · Average {field.average} · Max {field.max}
+          {t('number_line', { min: field.min, avg: field.average, max: field.max })}
         </p>
       )}
       {field.type === 'date' && field.first && (
         <p className="text-sm">
-          From {field.first} to {field.last}
+          {t('date_line', { first: field.first, last: field.last })}
         </p>
       )}
       {field.samples && field.samples.length > 0 && (
@@ -665,7 +669,7 @@ function FieldSummaryCard({
             onClick={onSeeAll}
             className="mt-3 text-sm text-primary hover:underline"
           >
-            See all in Responses →
+            {t('see_all')}
           </button>
         </>
       )}
