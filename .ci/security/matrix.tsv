@@ -86,6 +86,7 @@ owner	GET	/api/me/forms/:form_id/responses/:id
 owner	GET	/api/me/forms/:form_id/responses_export
 owner	GET	/api/me/forms/:form_id/appointments
 owner	GET	/api/me/forms/:form_id/appointments_export
+owner	GET	/api/me/forms/:form_id/waitlist
 owner	GET	/api/me/forms/:form_id/summary
 owner	GET	/api/me/forms/:form_id/uploads/:id
 owner	DELETE	/api/me/forms/:form_id/cover
@@ -142,6 +143,10 @@ public	GET	/.well-known/oauth-protected-resource/mcp
 public	GET	/api/public/forms/:public_id
 public	GET	/api/public/appointments/:token
 public	GET	/api/public/calendar/:token
+public	POST	/api/public/forms/:public_id/waitlist
+public	GET	/api/public/waitlist/:token
+public	POST	/api/public/waitlist/:token/claim
+public	POST	/api/public/waitlist/:token/leave
 public	GET	/api/public/appointment_verifications/:token
 public	POST	/api/public/appointment_verifications/:token
 public	POST	/api/public/appointments/:token/cancel

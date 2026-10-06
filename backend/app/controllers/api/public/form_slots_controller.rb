@@ -21,7 +21,9 @@ class Api::Public::FormSlotsController < ApplicationController
     from, to = range
     return render(json: { error: "invalid_range" }, status: :unprocessable_entity) unless from && to && to >= from && (to - from) < Appointments::Slots::MAX_RANGE_DAYS
 
-    render(json: { time_zone: booking["rules"]["time_zone"], slots: slots_for(form, booking, service, from, to) }, status: :ok)
+    body = { time_zone: booking["rules"]["time_zone"], slots: slots_for(form, booking, service, from, to) }
+    body[:full] = full_for(booking, service, from..to, body[:slots]) if Appointments::Waitlist.enabled?(booking) && service["capacity"]
+    render(json: body, status: :ok)
   end
 
   private
@@ -30,6 +32,12 @@ class Api::Public::FormSlotsController < ApplicationController
     [Date.iso8601(params[:from].to_s), Date.iso8601(params[:to].to_s)]
   rescue Date::Error
     nil
+  end
+
+  def full_for(booking, service, days, free)
+    open = free.to_h { |slot| [slot[:starts_at], true] }
+    offered = Appointments::Slots.call(service: service, rules: booking["rules"], from: days.first, to: days.last, exceptions: booking["exceptions"].to_a)
+    offered.reject { |slot| open[slot[:starts_at].iso8601] }.map { |slot| { starts_at: slot[:starts_at].iso8601, date: slot[:date].iso8601, time: slot[:time] } }
   end
 
   def slots_for(form, booking, service, from, to)

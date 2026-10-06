@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -65,10 +65,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
     t.integer "booked", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "held", default: 0, null: false
     t.index ["form_id", "service_key", "starts_at"], name: "index_appointment_slots_on_form_service_start", unique: true
     t.index ["form_id"], name: "index_appointment_slots_on_form_id"
     t.check_constraint "booked >= 0", name: "appointment_slots_booked_non_negative"
-    t.check_constraint "capacity IS NULL OR booked <= capacity", name: "appointment_slots_booked_within_capacity"
+    t.check_constraint "capacity IS NULL OR (booked + held) <= capacity", name: "appointment_slots_taken_within_capacity"
+    t.check_constraint "held >= 0", name: "appointment_slots_held_non_negative"
   end
 
   create_table "appointment_tokens", force: :cascade do |t|
@@ -641,6 +643,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
     t.index ["verified_at", "created_at"], name: "index_users_on_verified_at_and_created_at"
   end
 
+  create_table "waitlist_entries", force: :cascade do |t|
+    t.bigint "form_id", null: false
+    t.string "service_key", null: false
+    t.datetime "starts_at", null: false
+    t.string "name", limit: 100, null: false
+    t.string "email", limit: 254, null: false
+    t.string "locale"
+    t.string "time_zone"
+    t.string "status", default: "waiting", null: false
+    t.datetime "offered_until"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "form_id, service_key, starts_at, lower((email)::text)", name: "index_waitlist_entries_one_per_email", unique: true, where: "((status)::text = ANY ((ARRAY['waiting'::character varying, 'offered'::character varying])::text[]))"
+    t.index ["form_id", "service_key", "starts_at", "status"], name: "index_waitlist_entries_queue"
+    t.index ["form_id"], name: "index_waitlist_entries_on_form_id"
+    t.index ["status", "offered_until"], name: "index_waitlist_entries_offers", where: "((status)::text = 'offered'::text)"
+    t.check_constraint "status::text = ANY (ARRAY['waiting'::character varying, 'offered'::character varying, 'claimed'::character varying, 'expired'::character varying, 'left'::character varying]::text[])", name: "waitlist_entries_status_known"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "appointment_slots", "forms", on_delete: :cascade
@@ -682,4 +703,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
   add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "waitlist_entries", "forms"
 end

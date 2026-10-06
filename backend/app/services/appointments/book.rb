@@ -16,7 +16,7 @@ module Appointments
       end
     end
 
-    def cast(form:, booking:, raw:, now: Time.current)
+    def cast(form:, booking:, raw:, now: Time.current, claim_at: nil)
       return [nil, :invalid] unless Config.enabled_for?(form.user) && raw.is_a?(Hash)
 
       service = booking["services"].find { |item| item["id"] == raw["service"] }
@@ -28,7 +28,7 @@ module Appointments
       dates = sessions.map { |session| Date.iso8601(session["date"]) }
       return [nil, :invalid] if dates.max - dates.min >= Slots::MAX_RANGE_DAYS
 
-      free = FreeSlots.call(form: form, booking: booking, service: service, from: dates.min, to: dates.max, now: now)
+      free = FreeSlots.call(form: form, booking: booking, service: service, from: dates.min, to: dates.max, now: now, releasing: claim_at)
       times = sessions.map { |session| free.find { |slot| slot[:date].iso8601 == session["date"] && slot[:time] == session["time"] } }
       return [nil, :unavailable] if times.any?(&:nil?)
 
@@ -70,10 +70,10 @@ module Appointments
       [nil, :invalid]
     end
 
-    def call(form:, response:, value:, contact:, meta:, version:)
+    def call(form:, response:, value:, contact:, meta:, version:, held: false)
       service_key = value["service"]
       starts = value["starts_at"].uniq.sort
-      ids = Reserve.call(form: form, service_key: service_key, capacity: value["capacity"], times: starts)
+      ids = Reserve.call(form: form, service_key: service_key, capacity: value["capacity"], times: starts, held: held)
       slot_ids = starts.zip(ids).to_h
       booking = Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" }
       service = booking["services"].find { |item| item["id"] == service_key }

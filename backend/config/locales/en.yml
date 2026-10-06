@@ -63,6 +63,21 @@ en:
       body: "You asked to delete the Kurz account %{email}. Your links, bio pages, forms, responses and uploaded files are offline now and will be permanently deleted on %{date}."
       changed_mind: "Changed your mind? Sign in to Kurz before %{date} and the deletion is cancelled; your links and pages come back."
       not_you: "If you did not ask for this, sign in to cancel it and change your password."
+  waitlist_mailer:
+    joined:
+      subject: "You are on the waiting list: %{service}"
+      title: "You are on the waiting list"
+      intro: "%{service} on %{time} is full. If a place opens, we will email you."
+      how: "You will then have a limited time to confirm it. Nothing is booked until you do."
+      leave: "Leave the waiting list: %{url}"
+      leave_link: "Leave the waiting list"
+    offered:
+      subject: "A place opened: %{service}"
+      title: "A place opened for you"
+      intro: "%{service} on %{time} has a free place, held for you."
+      until: "Confirm before %{time}, or it goes to the next person."
+      confirm: "Confirm my booking: %{url}"
+      confirm_link: "Confirm my booking"
   appointment_mailer:
     confirmed:
       subject: "Confirmed: %{service}, %{time}"
