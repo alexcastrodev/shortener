@@ -72,5 +72,15 @@
   "monthly_day_fri": "Sex",
   "monthly_day_sat": "Sáb",
   "monthly_day_sun": "Dom",
-  "receipt_skipped": "Saltados, indisponíveis: {{dates}}"
+  "receipt_skipped": "Saltados, indisponíveis: {{dates}}",
+  "waitlist_title": "O seu horário está cheio?",
+  "waitlist_hint": "Entre na lista de espera. Se abrir um lugar avisamos por e-mail e terá um tempo limitado para confirmar.",
+  "waitlist_name": "O seu nome",
+  "waitlist_email": "O seu e-mail",
+  "waitlist_join": "Entrar na lista de espera",
+  "waitlist_joined": "Está na lista de espera de {{when}}. Enviámos-lhe um e-mail.",
+  "waitlist_not_full": "Este horário já tem lugar: escolha-o acima.",
+  "waitlist_list_full": "A lista de espera deste horário está cheia.",
+  "waitlist_invalid": "Verifique o nome e o e-mail.",
+  "waitlist_failed": "Não foi possível adicioná-lo. Tente novamente."
 }

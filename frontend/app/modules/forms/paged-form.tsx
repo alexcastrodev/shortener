@@ -28,6 +28,7 @@ export function PagedForm({
   onSubmit,
   onUploadImage,
   loadSlots,
+  joinWaitlist,
   onStart,
   lastStepSlot,
   footer,
@@ -265,6 +266,7 @@ export function PagedForm({
                 inputId={inputId}
                 upload={mode === 'live' ? onUploadImage : undefined}
                 loadSlots={mode === 'live' ? loadSlots : undefined}
+                joinWaitlist={mode === 'live' ? joinWaitlist : undefined}
                 invalid={errors[field.id]}
               />
               {errors[field.id] && (

@@ -35,7 +35,7 @@ module Appointments
       return Joined.new(:unavailable, nil) unless starts_at
 
       slot = AppointmentSlot.find_by(form_id: form.id, service_key: service_id, starts_at: starts_at)
-      return Joined.new(:not_full, nil) unless slot&.capacity && slot.booked + slot.held >= slot.capacity
+      return Joined.new(:not_full, nil) unless slot && slot.booked + slot.held >= service["capacity"]
 
       create_entry(form, [service_id, starts_at], { name: clean_name, email: clean_email, locale: locale, zone: zone })
     end

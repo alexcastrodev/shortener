@@ -1,0 +1,19 @@
+{
+  "title": "Waiting list",
+  "service": "Service",
+  "when": "When",
+  "waiting": "You are in line. If a place opens we will email you, and you will have a limited time to confirm.",
+  "offered": "A place is held for you until {{until}}. Confirm it before then.",
+  "confirm": "Confirm my booking",
+  "working": "Working…",
+  "leave": "Leave the waiting list",
+  "claimed": "Your booking is confirmed. We emailed you the details.",
+  "unavailable": "This time is no longer available, so the place went to the next person.",
+  "expired": "The time to confirm ran out and the place went to the next person.",
+  "left": "You left the waiting list.",
+  "failed": "Something went wrong, please try again.",
+  "not_found_title": "Link not found",
+  "not_found_body": "This link does not exist or has expired.",
+  "error_title": "Something went wrong",
+  "error_body": "Please try again in a moment."
+}

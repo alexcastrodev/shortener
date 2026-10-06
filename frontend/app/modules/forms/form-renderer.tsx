@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Form } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
 import { FieldInput, focusFirstInput, isBlank, type Answer, type UploadImage } from './field-inputs';
-import type { LoadSlots } from './booking-input';
+import type { JoinWaitlist, LoadSlots } from './booking-input';
 import { isSection, sectionOf } from './field-types';
 import { PagedForm } from './paged-form';
 import { BookingReceipt } from './booking-receipt';
@@ -29,6 +29,7 @@ export type Props = {
   onSubmit?: (answers: Record<string, Answer>) => Promise<SubmitFormReceipt | void> | SubmitFormReceipt | void;
   onUploadImage?: UploadImage;
   loadSlots?: LoadSlots;
+  joinWaitlist?: JoinWaitlist;
   onStart?: () => void;
   lastStepSlot?: ReactNode;
   footer?: ReactNode;
@@ -51,6 +52,7 @@ function SequentialForm({
   onSubmit,
   onUploadImage,
   loadSlots,
+  joinWaitlist,
   onStart,
   lastStepSlot,
   footer,
@@ -252,6 +254,7 @@ function SequentialForm({
         inputId={inputId}
         upload={mode === 'live' ? onUploadImage : undefined}
         loadSlots={mode === 'live' ? loadSlots : undefined}
+        joinWaitlist={mode === 'live' ? joinWaitlist : undefined}
         invalid={error ?? undefined}
       />
       {step === total - 1 && lastStepSlot}

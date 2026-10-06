@@ -146,6 +146,19 @@ RSpec.describe("the waiting list", type: :request) do
       expect(response).to(have_http_status(:too_many_requests))
     end
 
+    it "judges full by the capacity the service has now, even if it was lowered after bookings were made" do
+      Forms::Definition.update(form, booking_id, { "services" => [service.merge("id" => service_id, "capacity" => 2)] })
+      Forms::Publish.call(form: form.reload)
+      book(name: "Ana2")
+      join
+      expect(response).to(have_http_status(:created))
+      Forms::Definition.update(form, booking_id, { "services" => [service.merge("id" => service_id, "capacity" => 1)] })
+      Forms::Publish.call(form: form.reload)
+      join(name: "Cy")
+      expect(response).to(have_http_status(:created))
+      expect(AppointmentSlot.find_by(starts_at: Time.utc(2026, 11, 3, 9)).capacity).to(eq(2))
+    end
+
     it "only allows a time that has people booked in full capacity, and not an empty open one" do
       join(date: "2026-11-04")
       expect(response).to(have_http_status(:conflict))

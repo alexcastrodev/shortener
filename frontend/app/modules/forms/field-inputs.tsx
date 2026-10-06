@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import type { BookingAnswer } from '@internal/core/types/Form';
-import { BookingInput, type LoadSlots } from './booking-input';
+import { BookingInput, type JoinWaitlist, type LoadSlots } from './booking-input';
 import type { BioTheme } from '../bio-page/themes';
 import type { FormField } from '@internal/core/types/Form';
 
@@ -38,6 +38,7 @@ type Props = {
   inputId: string;
   upload?: UploadImage;
   loadSlots?: LoadSlots;
+  joinWaitlist?: JoinWaitlist;
   invalid?: string;
 };
 
@@ -52,6 +53,7 @@ export function FieldInput({
   inputId,
   upload,
   loadSlots,
+  joinWaitlist,
   invalid,
 }: Props) {
   const { t } = useTranslation('respond');
@@ -222,6 +224,7 @@ export function FieldInput({
           theme={theme}
           inputId={inputId}
           loadSlots={loadSlots}
+          joinWaitlist={joinWaitlist}
           reloadKey={invalid}
         />
       );

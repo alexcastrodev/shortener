@@ -29,5 +29,8 @@
   "export_too_large": "Too many bookings to export at once. Narrow the dates.",
   "export_failed": "Could not export. Try again.",
   "reason": "Reason: {{reason}}",
-  "status_unverified": "Awaiting email confirmation"
+  "status_unverified": "Awaiting email confirmation",
+  "waitlist_title": "Waiting list",
+  "waitlist_waiting": "Waiting",
+  "waitlist_offered": "Place offered"
 }

@@ -62,7 +62,9 @@ export function BookingEditor({
           help: z.string().max(500),
           approval: z.enum(['auto', 'manual']),
           approval_timeout_minutes: z.union([z.number(), z.literal('')]),
-          approval_soon_only: z.boolean(),
+          waitlist: z.boolean(),
+        waitlist_confirm_minutes: z.union([z.number(), z.literal('')]),
+        approval_soon_only: z.boolean(),
           approval_within_minutes: z.union([z.number(), z.literal('')]),
           categories: z.array(
             z.object({
@@ -192,7 +194,30 @@ export function BookingEditor({
           ),
         })
         .check(ctx => {
-          const { approval, approval_timeout_minutes: minutes } = ctx.value;
+          const {
+            approval,
+            approval_soon_only: soonOnly,
+            approval_within_minutes: within,
+            approval_timeout_minutes: minutes,
+            waitlist,
+            waitlist_confirm_minutes: confirm,
+          } = ctx.value;
+          if (approval === 'manual' && soonOnly && !timeoutInRange(within)) {
+            ctx.issues.push({
+              code: 'custom',
+              message: t('error_timeout'),
+              path: ['approval_within_minutes'],
+              input: within,
+            });
+          }
+          if (waitlist && !timeoutInRange(confirm)) {
+            ctx.issues.push({
+              code: 'custom',
+              message: t('error_timeout'),
+              path: ['waitlist_confirm_minutes'],
+              input: confirm,
+            });
+          }
           if (approval === 'manual' && !timeoutInRange(minutes)) {
             ctx.issues.push({
               code: 'custom',
@@ -523,6 +548,28 @@ export function BookingEditor({
               </div>
             </Group>
           )}
+          <Stack gap="xs">
+            <Switch
+              label={t('waitlist')}
+              description={t('waitlist_hint')}
+              checked={form.values.waitlist}
+              onChange={event =>
+                form.setFieldValue('waitlist', event.currentTarget.checked)
+              }
+            />
+            {form.values.waitlist && (
+              <TimeoutInput
+                label={t('waitlist_confirm')}
+                minutes={form.values.waitlist_confirm_minutes}
+                error={
+                  form.errors.waitlist_confirm_minutes as string | undefined
+                }
+                onChange={value =>
+                  form.setFieldValue('waitlist_confirm_minutes', value)
+                }
+              />
+            )}
+          </Stack>
           <div>
             <p className="mb-1 text-sm">{t('reminders')}</p>
             <Chip.Group

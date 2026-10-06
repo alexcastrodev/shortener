@@ -4,6 +4,7 @@ import type {
   FormFieldInput,
 } from '@internal/core/types/Form';
 
+export const WAITLIST_MINUTES_DEFAULT = 120;
 export const REMINDER_CHOICES = [60, 120, 360, 1440, 2880, 10080] as const;
 export const REMINDERS_MAX = 3;
 
@@ -55,6 +56,8 @@ export type Values = {
   approval_within_minutes: number | '';
   reminder_minutes: number[];
   verify_email: boolean;
+  waitlist: boolean;
+  waitlist_confirm_minutes: number | '';
   min_notice_minutes: number | '';
   window_days: number | '';
   max_per_day: number | '';
@@ -185,6 +188,8 @@ export function initialValues(field?: FormField): Values {
     approval_soon_only: rules?.approval_within_minutes != null,
     approval_within_minutes: rules?.approval_within_minutes ?? 2880,
     verify_email: rules?.verify_email === true,
+    waitlist: rules?.waitlist === true,
+    waitlist_confirm_minutes: rules?.waitlist_confirm_minutes ?? 120,
     reminder_minutes: [...(rules?.reminder_minutes ?? [1440])].sort(
       (a, b) => b - a
     ),
@@ -220,6 +225,11 @@ export function toBookingInput(
       ? values.approval_within_minutes
       : null;
   rules.verify_email = values.approval === 'auto' && values.verify_email;
+  rules.waitlist = values.waitlist;
+  rules.waitlist_confirm_minutes =
+    values.waitlist && values.waitlist_confirm_minutes !== ''
+      ? values.waitlist_confirm_minutes
+      : null;
   rules.reminder_minutes = [...new Set(values.reminder_minutes)].sort(
     (a, b) => b - a
   );

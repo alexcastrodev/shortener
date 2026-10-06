@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { BookingAnswer, FormField } from '@internal/core/types/Form';
-import type { FormSlot } from '@internal/core/actions/get-form-slots/get-form-slots.types';
+import type {
+  FormSlot,
+  FullSlot,
+  LoadedSlots,
+} from '@internal/core/actions/get-form-slots/get-form-slots.types';
 import type { BioTheme } from '../bio-page/themes';
 import { formatCurrency, formatDate } from '../../i18n/format';
+import { WaitlistJoin, type JoinWaitlist } from './waitlist-join';
 import {
   WEEKDAYS,
   monthOptions,
@@ -16,7 +21,9 @@ export type LoadSlots = (
   service: string,
   from: string,
   to: string
-) => Promise<FormSlot[]>;
+) => Promise<LoadedSlots>;
+
+export type { JoinWaitlist };
 
 const STEP_DAYS = 14;
 const MAX_DAYS = 56;
@@ -32,7 +39,11 @@ const dayLabel = (iso: string) =>
     timeZone: 'UTC',
   });
 
-type State = { status: 'loading' | 'ready' | 'error'; slots: FormSlot[] };
+type State = {
+  status: 'loading' | 'ready' | 'error';
+  slots: FormSlot[];
+  full: FullSlot[];
+};
 
 export function BookingInput({
   field,
@@ -41,6 +52,7 @@ export function BookingInput({
   theme,
   inputId,
   loadSlots,
+  joinWaitlist,
   reloadKey,
 }: {
   field: FormField;
@@ -49,6 +61,7 @@ export function BookingInput({
   theme: BioTheme;
   inputId: string;
   loadSlots?: LoadSlots;
+  joinWaitlist?: JoinWaitlist;
   reloadKey?: string;
 }) {
   const { t } = useTranslation('respond');
@@ -72,7 +85,11 @@ export function BookingInput({
   const [days, setDays] = useState(STEP_DAYS);
   const [attempt, setAttempt] = useState(0);
   const [dropped, setDropped] = useState(false);
-  const [state, setState] = useState<State>({ status: 'loading', slots: [] });
+  const [state, setState] = useState<State>({
+    status: 'loading',
+    slots: [],
+    full: [],
+  });
   const loader = useRef(loadSlots);
   loader.current = loadSlots;
   const latest = useRef({ value, onChange });
@@ -86,11 +103,15 @@ export function BookingInput({
     let current = true;
     const from = new Date();
     const to = new Date(from.getTime() + (days - 1) * 86_400_000);
-    setState(previous => ({ status: 'loading', slots: previous.slots }));
+    setState(previous => ({
+      status: 'loading',
+      slots: previous.slots,
+      full: previous.full,
+    }));
     loader.current!(serviceId, isoDay(from), isoDay(to))
-      .then(slots => {
+      .then(({ slots, full }) => {
         if (!current) return;
-        setState({ status: 'ready', slots });
+        setState({ status: 'ready', slots, full });
         const { value: chosen, onChange: update } = latest.current;
         const free = new Set(slots.map(slot => `${slot.date}|${slot.time}`));
         const kept = (chosen?.sessions ?? []).filter(session =>
@@ -105,7 +126,7 @@ export function BookingInput({
           );
         }
       })
-      .catch(() => current && setState({ status: 'error', slots: [] }));
+      .catch(() => current && setState({ status: 'error', slots: [], full: [] }));
     return () => {
       current = false;
     };
@@ -337,6 +358,16 @@ export function BookingInput({
                   })}
                 </div>
               ))}
+              {state.status === 'ready' && field.waitlist && joinWaitlist && serviceId && (
+                <WaitlistJoin
+                  serviceId={serviceId}
+                  full={state.full}
+                  theme={theme}
+                  chip={chip}
+                  dayLabel={dayLabel}
+                  join={joinWaitlist}
+                />
+              )}
               {days < MAX_DAYS && state.status === 'ready' && (
                 <button
                   type="button"

@@ -155,5 +155,8 @@
   "monthly_hint": "The client picks a month, weekdays and a time, and every matching day is booked at once. Days off are skipped; if any other day is taken, nothing is booked.",
   "monthly_price": "Monthly price (shown only, nothing is charged)",
   "monthly_price_hint": "Shown next to the option. Kurz does not take payments.",
-  "monthly_price_needs_currency": "Fill in the currency above to show a monthly price."
+  "monthly_price_needs_currency": "Fill in the currency above to show a monthly price.",
+  "waitlist": "Waiting list for full times",
+  "waitlist_hint": "Clients can queue for a full time. When a place opens it is held for the first in line. Needs a form whose only required questions are name, email and the booking.",
+  "waitlist_confirm": "Time to confirm a place"
 }

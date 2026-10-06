@@ -19,6 +19,7 @@ export default [
     route('m/:token', 'routes/m/$token.tsx'),
     route('a/:token', 'routes/a/$token.tsx'),
     route('v/:token', 'routes/v/$token.tsx'),
+    route('w/:token', 'routes/w/$token.tsx'),
     route('oauth/authorize', 'routes/oauth/authorize.tsx'),
   ]),
   layout('layout/index.tsx', [

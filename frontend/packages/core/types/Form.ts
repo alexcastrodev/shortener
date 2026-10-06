@@ -52,6 +52,8 @@ export type BookingRules = {
   approval_within_minutes?: number | null;
   reminder_minutes?: number[];
   verify_email?: boolean;
+  waitlist?: boolean;
+  waitlist_confirm_minutes?: number | null;
   min_notice_minutes?: number;
   window_days?: number;
   buffer_minutes?: number;
@@ -88,6 +90,7 @@ export type FormField = {
   rules?: BookingRules;
   exceptions?: BookingException[];
   time_zone?: string;
+  waitlist?: boolean;
 };
 
 export type Form = {
