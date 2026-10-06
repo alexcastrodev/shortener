@@ -9,13 +9,13 @@ import { useTranslation } from 'react-i18next';
 import type landingEn from '../i18n/en/landing.json';
 import { Layout } from '../layout/web-layout';
 import { BioShowcase } from '../modules/bio-page';
-import { ClickGlobe, FeatureBento, HeroConsole } from '../modules/landing';
+import { BookingSteps, ClickGlobe, FeatureBento, HeroConsole } from '../modules/landing';
 import { OG_IMAGE, SITE_URL, ogImageMeta } from '../modules/seo';
 
 export const meta: MetaFunction = () => {
   const title = 'Kurz · Short links and bio pages';
   const description =
-    'Shorten links, track every click and put all your links on one bio page. Free and open source.';
+    'Shorten links, track every click, put your links on one bio page and take bookings with forms. Free and open source.';
   const url = SITE_URL;
 
   return [
@@ -57,6 +57,8 @@ export default function LinkShortenerLanding() {
       'Link shortening',
       'Click analytics',
       'Bio link pages',
+      'Forms with bookings',
+      'Booking calendar',
       'QR codes',
       'Password-protected links',
       'Scheduled link expiration',
@@ -180,6 +182,8 @@ export default function LinkShortenerLanding() {
           </div>
         </div>
       </section>
+
+      <BookingSteps />
 
       {/* Features */}
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
