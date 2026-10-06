@@ -137,14 +137,14 @@ RSpec.describe("the owner approves, declines and cancels from the agenda", type:
       expect(Appointment.order(:id).pluck(:status)).to(eq(["confirmed", "cancelled"]))
 
       travel_to(Time.utc(2026, 11, 5)) { act("cancel", first_row, {}, headers: { "Authorization" => "Bearer #{SessionToken.issue(current_user)}" }) }
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["error"]).to(eq("nothing_to_cancel"))
     end
 
     it "does it once and shows in the agenda" do
       act("cancel")
       act("cancel")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       get("/api/me/agenda", params: { from: "2026-11-03", to: "2026-11-04" }, headers: auth_headers)
       expect(JSON.parse(response.body)["sessions"].map { |session| session["booked"] }.uniq).to(eq([0]))
     end

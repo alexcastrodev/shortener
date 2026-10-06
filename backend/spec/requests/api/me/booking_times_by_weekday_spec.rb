@@ -73,7 +73,7 @@ RSpec.describe("different times on different weekdays", type: :request) do
     }.each do |label, invalid|
       it "rejects #{label}" do
         add_booking([service.merge("times_by_day" => invalid)])
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
         expect(form.reload.fields).to(eq([]))
       end
     end
@@ -116,7 +116,7 @@ RSpec.describe("different times on different weekdays", type: :request) do
         post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t" }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
       end
       book.call("2026-11-09", "10:00")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       book.call("2026-11-09", "09:00")
       expect(response).to(have_http_status(:created))
       book.call("2026-11-11", "15:00")

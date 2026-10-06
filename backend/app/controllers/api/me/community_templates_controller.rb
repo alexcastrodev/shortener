@@ -41,6 +41,6 @@ class Api::Me::CommunityTemplatesController < ApplicationController
       head(:no_content)
     end
   rescue ActiveRecord::RecordInvalid => e
-    render(json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity)
+    render(json: { errors: e.record.errors.full_messages }, status: :unprocessable_content)
   end
 end

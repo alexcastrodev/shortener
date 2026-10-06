@@ -34,6 +34,6 @@ class Api::Me::FormFieldsController < ApplicationController
   private
 
   def render_invalid(error)
-    render(json: { errors: error.record.errors.to_hash }, status: :unprocessable_entity)
+    render(json: { errors: error.record.errors.to_hash }, status: :unprocessable_content)
   end
 end

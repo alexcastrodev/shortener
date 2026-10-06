@@ -62,7 +62,7 @@ RSpec.describe("/api/me/pages", type: :request) do
 
       post "/api/me/pages", params: { slug: "taken" }, headers: auth_headers, as: :json
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     ["admin", "a", "has space", "-dash", "Ünïcode", "x" * 31].each do |slug|
@@ -71,7 +71,7 @@ RSpec.describe("/api/me/pages", type: :request) do
           post("/api/me/pages", params: { slug: slug }, headers: auth_headers, as: :json)
         end.not_to(change(Page, :count))
 
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
       end
     end
 
@@ -85,7 +85,7 @@ RSpec.describe("/api/me/pages", type: :request) do
     it "rejects an unknown theme" do
       post "/api/me/pages", params: { slug: "themed", theme: "neon" }, headers: auth_headers, as: :json
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
   end
 

@@ -65,30 +65,30 @@ RSpec.describe("/api/me/push_subscriptions", type: :request) do
     ].each do |endpoint|
       it "V17: refuses #{endpoint}" do
         expect { subscribe(endpoint) }.not_to(change(PushSubscription, :count))
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
       end
     end
 
     it "refuses bad keys and missing fields" do
       subscribe(p256dh: "short")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       subscribe(auth: "not base64url!!!!!!!!!!!!!!")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       post("/api/me/push_subscriptions", params: { endpoint: "https://fcm.googleapis.com/a" }, headers: auth_headers, as: :json)
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(PushSubscription.count).to(eq(0))
     end
 
     it "refuses an endpoint over 2048 characters" do
       subscribe("https://fcm.googleapis.com/#{"a" * 2048}")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "allows five per user and refuses the sixth, but lets an existing one be renewed" do
       5.times { |index| subscribe("https://fcm.googleapis.com/fcm/send/n#{index}") }
       expect(PushSubscription.where(user_id: current_user.id).count).to(eq(5))
       subscribe("https://fcm.googleapis.com/fcm/send/n5")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]["base"]).to(eq(["limit_reached"]))
 
       subscribe("https://fcm.googleapis.com/fcm/send/n0", auth: "c" * 22)

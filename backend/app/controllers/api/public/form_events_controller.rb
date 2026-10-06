@@ -22,7 +22,7 @@ class Api::Public::FormEventsController < ApplicationController
       user_agent: request.user_agent,
     )
 
-    tracked ? head(:no_content) : render(json: { error: "invalid_event" }, status: :unprocessable_entity)
+    tracked ? head(:no_content) : render(json: { error: "invalid_event" }, status: :unprocessable_content)
   end
 
   private

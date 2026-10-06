@@ -12,7 +12,7 @@ class Api::Me::AppointmentsController < ApplicationController
 
   def cancel
     cancelled = Appointments::ClientCancel.call(appointment: @appointment, reason: params[:reason], by: "owner", scope: cancel_scope)
-    return render(json: { error: "nothing_to_cancel" }, status: :unprocessable_entity) if cancelled.empty?
+    return render(json: { error: "nothing_to_cancel" }, status: :unprocessable_content) if cancelled.empty?
 
     render(json: { appointments: group_rows }, status: :ok)
   end
@@ -21,9 +21,9 @@ class Api::Me::AppointmentsController < ApplicationController
     result = Appointments::Reschedule.call(row: @appointment, date: params[:date], time: params[:time], message: params[:message])
     case result.status
     when :ok then render(json: { appointment: Appointments::Search.row(result.record) }, status: :ok)
-    when :same_time then render(json: { error: "same_time" }, status: :unprocessable_entity)
+    when :same_time then render(json: { error: "same_time" }, status: :unprocessable_content)
     when :unavailable then render(json: { error: "unavailable" }, status: :conflict)
-    else render(json: { error: "not_reschedulable" }, status: :unprocessable_entity)
+    else render(json: { error: "not_reschedulable" }, status: :unprocessable_content)
     end
   end
 
@@ -31,8 +31,8 @@ class Api::Me::AppointmentsController < ApplicationController
     case Appointments::RemindNow.call(row: @appointment)
     when :ok then render(json: { ok: true }, status: :accepted)
     when :too_soon then render(json: { error: "too_soon" }, status: :too_many_requests)
-    when :no_email then render(json: { error: "no_email" }, status: :unprocessable_entity)
-    else render(json: { error: "nothing_to_remind" }, status: :unprocessable_entity)
+    when :no_email then render(json: { error: "no_email" }, status: :unprocessable_content)
+    else render(json: { error: "nothing_to_remind" }, status: :unprocessable_content)
     end
   end
 
@@ -47,7 +47,7 @@ class Api::Me::AppointmentsController < ApplicationController
     when :approve, :decline then render(json: { appointments: group_rows }, status: :ok)
     when :already_decided then render(json: { error: "already_decided" }, status: :conflict)
     when :expired then render(json: { error: "expired" }, status: :conflict)
-    else render(json: { error: "invalid_decision" }, status: :unprocessable_entity)
+    else render(json: { error: "invalid_decision" }, status: :unprocessable_content)
     end
   end
 

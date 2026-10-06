@@ -25,14 +25,14 @@ RSpec.describe("PATCH /api/me time zone", type: :request) do
 
   it "rejects a zone that does not exist and keeps the previous one" do
     patch_me(time_zone: "Mars/Olympus")
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(json["error"]).to(eq("invalid_time_zone"))
     expect(current_user.reload.time_zone).to(eq("UTC"))
   end
 
   it "rejects a blank zone" do
     patch_me(time_zone: "")
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(current_user.reload.time_zone).to(eq("UTC"))
   end
 

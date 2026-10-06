@@ -115,7 +115,7 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
     it "refuses a second request for the same time while the first is waiting" do
       book(extra: { idempotency_key: "a" })
       book(extra: { idempotency_key: "b" }, ip: "198.51.100.8")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "reports the pending status on the manage page" do
@@ -135,7 +135,7 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
     it "refuses a time that is already taken and stores nothing from that request" do
       book(extra: { idempotency_key: "a" })
       expect { book(extra: { idempotency_key: "b" }, ip: "198.51.100.8") }.not_to(change { [FormResponse.count, Appointment.count] })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]["answers"][booking_id]).to(eq(["unavailable"]))
       expect(slot_at(Time.utc(2026, 11, 3, 9)).booked).to(eq(1))
     end
@@ -190,28 +190,28 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
     }.each do |label, pairs|
       it "rejects #{label} and stores nothing" do
         expect { book(sessions(*pairs)) }.not_to(change { [FormResponse.count, Appointment.count, AppointmentSlot.count] })
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
       end
     end
 
     it "rejects no sessions, more than 31 sessions and sessions that are not a list" do
       [[], Array.new(32) { |index| { "date" => "2026-11-03", "time" => format("%02d:00", index % 24) } }, "09:00"].each do |list|
         book(list)
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
       end
     end
 
     it "rejects an unknown service and a booking that is not an object" do
       book(answers: { booking_id => { "service" => "nope0000", "sessions" => sessions(["2026-11-03", "09:00"]) } })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       book(answers: { booking_id => "tomorrow" })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(Appointment.count).to(eq(0))
     end
 
     it "requires the booking, the name and the email" do
       post("/api/public/forms/#{form.public_id}/responses", params: { answers: { name_id => "Ana", mail_id => "ana@example.com" }, turnstile_token: "t" }, headers: { "CF-Connecting-IP" => "198.51.100.7" }, as: :json)
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]["answers"]).to(have_key(booking_id))
 
       book(answers: { mail_id => "" })
@@ -230,7 +230,7 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
 
     it "enforces the minimum notice" do
       travel_to(Time.utc(2026, 11, 3, 7, 30)) { book(sessions(["2026-11-03", "09:00"])) }
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "closes the day once the per-day limit is reached" do
@@ -239,7 +239,7 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
       book(sessions(["2026-11-03", "10:00"]))
       expect(response).to(have_http_status(:created))
       book(sessions(["2026-11-03", "11:00"]), ip: "198.51.100.8")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
   end
 
@@ -250,7 +250,7 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
       book
       expect(response).to(have_http_status(:created))
       book(sessions(["2026-11-03", "14:00"]), ip: "198.51.100.8")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "answers 409 form_changed for an old version before touching any place" do

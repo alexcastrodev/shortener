@@ -11,7 +11,7 @@ class Api::Me::AppointmentTimesController < ApplicationController
         lunch: params[:lunch],
         blocks: params.fetch(:blocks, []),
       )
-      status = result.errors.any? ? :unprocessable_entity : :ok
+      status = result.errors.any? ? :unprocessable_content : :ok
       render(json: { times: result.times, warnings: result.warnings, errors: result.errors, generator: result.generator }, status: status)
     end
   end

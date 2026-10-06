@@ -23,7 +23,7 @@ class Api::Public::FormUploadsController < ApplicationController
   def create
     file = params[:file]
     problem = ImageUpload.basic_error(file, max_size: MAX_SIZE)
-    return render(json: { error: "invalid_image", message: problem }, status: :unprocessable_entity) if problem
+    return render(json: { error: "invalid_image", message: problem }, status: :unprocessable_content) if problem
 
     return unavailable if FormUpload.over_budget?
 
@@ -32,7 +32,7 @@ class Api::Public::FormUploadsController < ApplicationController
     attach(upload, webp)
     render(json: { token: upload.token }, status: :created)
   rescue Imgproc::Rejected
-    render(json: { error: "invalid_image", message: "could not be read as an image" }, status: :unprocessable_entity)
+    render(json: { error: "invalid_image", message: "could not be read as an image" }, status: :unprocessable_content)
   rescue Imgproc::Unavailable
     unavailable
   end

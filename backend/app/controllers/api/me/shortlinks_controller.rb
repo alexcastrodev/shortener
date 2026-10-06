@@ -40,7 +40,7 @@ class Api::Me::ShortlinksController < ApplicationController
       if link.save
         render(json: ShortlinkSerializer.new(link).serialize, status: :created)
       else
-        render(json: { errors: link.errors.full_messages }, status: :unprocessable_entity)
+        render(json: { errors: link.errors.full_messages }, status: :unprocessable_content)
       end
     end
   end
@@ -55,7 +55,7 @@ class Api::Me::ShortlinksController < ApplicationController
         refresh_cache if cache_affected?
         render(json: ShortlinkSerializer.new(@link).serialize, status: :ok)
       else
-        render(json: { errors: @link.errors.full_messages }, status: :unprocessable_entity)
+        render(json: { errors: @link.errors.full_messages }, status: :unprocessable_content)
       end
     end
   end

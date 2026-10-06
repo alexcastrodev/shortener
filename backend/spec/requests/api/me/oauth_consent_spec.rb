@@ -79,7 +79,7 @@ RSpec.describe("OAuth consent API", type: :request) do
       wide = params.merge(scope: "forms:read responses:read forms:publish")
 
       post("/api/me/oauth/authorization", params: wide.merge(decision: "allow", granted_scopes: ["responses:read", "forms:publish"]), headers: auth_headers.merge(xhr), as: :json)
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["error"]).to(eq("conflicting_scopes"))
       expect(OauthGrant.count).to(eq(0))
 

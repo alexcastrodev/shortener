@@ -100,14 +100,14 @@ RSpec.describe("/api/me/notification_preferences", type: :request) do
         { kind: "appointment_created", channel: "email", enabled: "no" },
       ].each do |bad|
         change([{ kind: "appointment_created", channel: "in_app", enabled: false }, bad])
-        expect(response).to(have_http_status(:unprocessable_entity), bad.inspect)
+        expect(response).to(have_http_status(:unprocessable_content), bad.inspect)
       end
       expect(NotificationPreference.count).to(eq(0))
     end
 
     it "refuses something that is not a list" do
       put("/api/me/notification_preferences", params: { preferences: "all" }, headers: auth_headers, as: :json)
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
   end
 

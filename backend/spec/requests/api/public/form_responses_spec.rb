@@ -50,7 +50,7 @@ RSpec.describe("POST /api/public/forms/:public_id/responses", type: :request) do
   it "answers 422 by field id and stores nothing" do
     submit({ answers: { "name0001" => "", "mail0001" => "nope" }, turnstile_token: "t" })
 
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(json).to(eq("errors" => { "answers" => { "name0001" => ["blank"], "mail0001" => ["invalid"] } }))
     expect(FormResponse.count).to(eq(0))
   end
@@ -58,7 +58,7 @@ RSpec.describe("POST /api/public/forms/:public_id/responses", type: :request) do
   it "answers 422 when answers is not an object" do
     submit({ answers: "text", turnstile_token: "t" })
 
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(json["errors"]).to(eq("answers" => ["invalid"]))
   end
 

@@ -40,7 +40,7 @@ class Api::Me::FormAppointmentsController < ApplicationController
     @from = params[:from].present? ? Date.iso8601(params[:from].to_s) : nil
     @to = params[:to].present? ? Date.iso8601(params[:to].to_s) : nil
   rescue Date::Error
-    render(json: { error: "invalid_range" }, status: :unprocessable_entity)
+    render(json: { error: "invalid_range" }, status: :unprocessable_content)
   end
 
   def xlsx(rows)

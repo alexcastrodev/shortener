@@ -61,7 +61,7 @@ RSpec.describe("Form image uploads", type: :request) do
       ["<svg><script>alert(1)</script></svg>", "<html></html>", "%PDF-1.7", "GIF89a<script>", "PK\x03\x04zip".b, "<?php ?>"].each do |body|
         upload(body, name: "evil.png")
 
-        expect(response).to(have_http_status(:unprocessable_entity), body[0, 10])
+        expect(response).to(have_http_status(:unprocessable_content), body[0, 10])
       end
       expect(a_request(:post, "http://imgproc.test/convert")).not_to(have_been_made)
       expect(FormUpload.count).to(eq(0))
@@ -70,7 +70,7 @@ RSpec.describe("Form image uploads", type: :request) do
     it "maps imgproc rejection to 422 and an unavailable sandbox to 503 without leaving rows" do
       stub_request(:post, "http://imgproc.test/convert").to_return(status: 422)
       upload
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
 
       [500, 502].each do |status|
         stub_request(:post, "http://imgproc.test/convert").to_return(status: status)
@@ -160,22 +160,22 @@ RSpec.describe("Form image uploads", type: :request) do
       expect(response).to(have_http_status(:created))
 
       submit({ "photo001" => photo })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
 
       upload
       fresh = token
       submit({ "photo002" => fresh })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
 
       foreign = Form.create!(user: other, title: "X", published: true, fields: [{ "id" => "photo001", "type" => "image", "label" => "P" }])
       stolen = foreign.uploads.create!(field_id: "photo001")
       submit({ "photo001" => stolen.token })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
 
       Rails.cache.clear
       ["a" * 24, "short", 12, ["x"], { "a" => 1 }].each do |bad|
         submit({ "photo001" => bad })
-        expect(response).to(have_http_status(:unprocessable_entity), "#{bad.inspect} -> #{response.status} #{response.body}")
+        expect(response).to(have_http_status(:unprocessable_content), "#{bad.inspect} -> #{response.status} #{response.body}")
       end
       expect(FormResponse.count).to(eq(1))
     end
@@ -183,13 +183,13 @@ RSpec.describe("Form image uploads", type: :request) do
     it "keeps the image optional unless the field is required and rolls back when the claim fails" do
       form.update!(fields: fields.map { |field| field["id"] == "photo001" ? field.merge("required" => true) : field })
       submit({ "name0001" => "Ana" })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
 
       upload
       photo = token
       allow(FormUpload).to(receive(:where).and_wrap_original { |original, *args| args.first.is_a?(Hash) && args.first.key?(:id) ? FormUpload.none : original.call(*args) })
       submit({ "photo001" => photo })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(FormResponse.count).to(eq(0))
     end
 

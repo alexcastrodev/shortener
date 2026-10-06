@@ -130,7 +130,7 @@ RSpec.describe("deciding a booking request from the owner's link", type: :reques
 
   it "rejects an unknown decision" do
     decide(decide_token, "maybe")
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(Appointment.pluck(:status).uniq).to(eq(["pending"]))
   end
 

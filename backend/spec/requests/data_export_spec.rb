@@ -102,7 +102,7 @@ RSpec.describe("Personal data export", type: :request) do
     fresh = { "Authorization" => "Bearer #{SessionToken.issue(user.reload)}" }
 
     expect { export({ current_password: "wrong" }, fresh) }.not_to(have_enqueued_job(SendDataExportJob))
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
 
     expect { export({ current_password: "a-long-enough-password-1" }, fresh) }.to(have_enqueued_job(SendDataExportJob))
     expect(response).to(have_http_status(:accepted))
@@ -124,7 +124,7 @@ RSpec.describe("Personal data export", type: :request) do
     user.change_password!("a-long-enough-password-1")
     fresh = { "Authorization" => "Bearer #{SessionToken.issue(user.reload)}" }
     export({ current_password: "wrong" }, fresh)
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
 
     export({ current_password: "a-long-enough-password-1" }, fresh)
     expect(response).to(have_http_status(:accepted))

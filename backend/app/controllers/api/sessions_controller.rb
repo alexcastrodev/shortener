@@ -53,7 +53,7 @@ class Api::SessionsController < ApplicationController
 
   # POST /api/login_request  { email, turnstile_token }
   def create
-    return render(json: { error: "Email is required" }, status: :unprocessable_entity) if params[:email].blank?
+    return render(json: { error: "Email is required" }, status: :unprocessable_content) if params[:email].blank?
     return unless turnstile_passed?("login")
 
     render_code_request(LoginCodeRequest.call(email: params[:email], purpose: :sign_in, locale: params[:locale]))

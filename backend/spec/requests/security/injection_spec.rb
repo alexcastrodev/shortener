@@ -28,12 +28,12 @@ RSpec.describe("Injection hardening", type: :request) do
     executable_urls.each do |url|
       it "rejects #{url.inspect} for page links" do
         post "/api/me/pages/#{page.id}/links", params: { label: "x", url: url }, headers: auth_headers, as: :json
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
       end
 
       it "rejects #{url.inspect} for shortlinks" do
         post "/api/me/shortlinks", params: { original_url: url }, headers: auth_headers, as: :json
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
       end
     end
 
@@ -42,7 +42,7 @@ RSpec.describe("Injection hardening", type: :request) do
 
       patch "/api/me/pages/#{page.id}/links/#{link.id}", params: { url: "javascript:alert(1)" }, headers: auth_headers, as: :json
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(link.reload.url).to(eq("https://example.com"))
     end
   end

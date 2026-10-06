@@ -32,7 +32,7 @@ class Api::Me::PageTemplatesController < ApplicationController
       if template.save
         render(json: { page_template: serialize_custom(template) }, status: :created)
       else
-        render(json: { errors: template.errors.full_messages }, status: :unprocessable_entity)
+        render(json: { errors: template.errors.full_messages }, status: :unprocessable_content)
       end
     end
   end
@@ -54,7 +54,7 @@ class Api::Me::PageTemplatesController < ApplicationController
       render(json: { page_template: serialize_custom(template) }, status: :ok)
     end
   rescue ActiveRecord::RecordInvalid => e
-    render(json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity)
+    render(json: { errors: e.record.errors.full_messages }, status: :unprocessable_content)
   end
 
   # DELETE /api/me/page_templates/:id  (only the user's own)

@@ -41,7 +41,7 @@ RSpec.describe("Account deletion", type: :request) do
     it "needs the email typed exactly" do
       delete_account({ confirm_email: "other@example.com" })
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(user.reload).not_to(be_pending_deletion)
     end
 
@@ -50,7 +50,7 @@ RSpec.describe("Account deletion", type: :request) do
       fresh = { "Authorization" => "Bearer #{SessionToken.issue(user.reload)}" }
 
       delete_account({ confirm_email: user.email, current_password: "wrong" }, fresh)
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(user.reload).not_to(be_pending_deletion)
 
       delete_account({ confirm_email: user.email, current_password: "a-long-enough-password-1" }, fresh)

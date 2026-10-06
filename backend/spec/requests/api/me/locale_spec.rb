@@ -33,14 +33,14 @@ RSpec.describe("PATCH /api/me locale", type: :request) do
   it "rejects a language that is not supported and keeps the previous one" do
     current_user.update!(locale: "en")
     patch_me(locale: "xx")
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(json["error"]).to(eq("invalid_locale"))
     expect(current_user.reload.locale).to(eq("en"))
   end
 
   it "keeps the time zone error code for a bad time zone" do
     patch_me(time_zone: "Mars/Olympus")
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(json["error"]).to(eq("invalid_time_zone"))
   end
 

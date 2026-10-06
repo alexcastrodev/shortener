@@ -20,8 +20,8 @@ class Api::Public::WaitlistsController < ApplicationController
     when :not_full then render(json: { error: "not_full" }, status: :conflict)
     when :list_full then render(json: { error: "waitlist_full" }, status: :conflict)
     when :too_many then render(json: { error: "too_many_waitlists" }, status: :too_many_requests)
-    when :invalid then render(json: { error: "invalid" }, status: :unprocessable_entity)
-    else render(json: { error: "unavailable" }, status: :unprocessable_entity)
+    when :invalid then render(json: { error: "invalid" }, status: :unprocessable_content)
+    else render(json: { error: "unavailable" }, status: :unprocessable_content)
     end
   end
 

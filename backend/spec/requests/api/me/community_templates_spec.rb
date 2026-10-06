@@ -125,7 +125,7 @@ RSpec.describe("Community templates", type: :request) do
       expect(response).to(have_http_status(:no_content))
 
       post "/api/me/community_templates/community-#{template.id}/report", params: { reason: "spam" }, headers: auth_headers, as: :json
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(template.reload.reports_count).to(eq(1))
 
       2.times do
@@ -142,7 +142,7 @@ RSpec.describe("Community templates", type: :request) do
 
       post "/api/me/community_templates/#{template.id}/report", params: { reason: "spam" }, headers: headers_for(author), as: :json
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(template.reload.reports_count).to(eq(0))
     end
 
@@ -161,7 +161,7 @@ RSpec.describe("Community templates", type: :request) do
 
       post "/api/me/community_templates/#{template.id}/report", params: { reason: "boring" }, headers: auth_headers, as: :json
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
   end
 

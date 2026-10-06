@@ -46,7 +46,7 @@ RSpec.describe("the booking question", type: :request) do
     it "refuses a second booking question" do
       add_booking
       add_booking
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]["fields"]).to(include("only one booking question is allowed"))
       expect(form.reload.fields.count { |field| field["type"] == "booking" }).to(eq(1))
     end
@@ -97,14 +97,14 @@ RSpec.describe("the booking question", type: :request) do
     }.each do |label, change|
       it "rejects #{label}" do
         add_booking({ services: [service.merge(change)] })
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
         expect(form.reload.fields).to(eq([]))
       end
     end
 
     it "rejects more than 20 services" do
       add_booking({ services: Array.new(21) { |index| service.merge(name: "S#{index}") } })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "takes a manual approval with a one-day deadline that declines by default" do
@@ -122,7 +122,7 @@ RSpec.describe("the booking question", type: :request) do
     }.each do |label, rules|
       it "rejects #{label}" do
         add_booking({ rules: rules })
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
       end
     end
 
@@ -171,7 +171,7 @@ RSpec.describe("the booking question", type: :request) do
     it "is blocked without a service" do
       complete_form(booking: {})
       publish
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]["fields"]).to(include("add at least one service"))
       expect(form.reload.published).to(be(false))
     end

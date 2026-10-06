@@ -25,7 +25,7 @@ RSpec.describe("Sign-in code protections", type: :request) do
 
   it "refuses disposable addresses and domains without a mail server" do
     request_code("someone@mailinator.com")
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(json["error"]).to(eq("undeliverable_email"))
 
     allow_any_instance_of(ValidEmail2::Address).to(receive(:valid_mx?).and_return(false))
@@ -47,7 +47,7 @@ RSpec.describe("Sign-in code protections", type: :request) do
   it "rejects malformed addresses" do
     request_code("not-an-email")
 
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(json["error"]).to(eq("invalid_email"))
   end
 

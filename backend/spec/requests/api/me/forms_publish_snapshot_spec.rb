@@ -70,7 +70,7 @@ RSpec.describe("publishing a form keeps a snapshot", type: :request) do
 
   it "refuses to discard a form that was never published" do
     post("/api/me/forms/#{form.id}/discard", headers: auth_headers)
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(form.reload.title).to(eq("Survey"))
   end
 
@@ -91,7 +91,7 @@ RSpec.describe("publishing a form keeps a snapshot", type: :request) do
   it "refuses to publish a form without questions and leaves the version alone" do
     empty = Form.create!(user: current_user, title: "Empty")
     publish(empty)
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(empty.reload).to(have_attributes(published: false, published_version: 0, published_snapshot: nil))
   end
 

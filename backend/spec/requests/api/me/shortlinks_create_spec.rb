@@ -21,16 +21,16 @@ RSpec.describe("POST /api/me/shortlinks", type: :request) do
         post("/api/me/shortlinks", params: { original_url: url }, headers: auth_headers, as: :json)
       end.not_to(change(Shortlink, :count))
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
   end
 
   it "rejects a title over 255 characters and a URL over 2048, and accepts the limits" do
     post("/api/me/shortlinks", params: { original_url: "https://example.com", title: "t" * 256 }, headers: auth_headers, as: :json)
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
 
     post("/api/me/shortlinks", params: { original_url: "https://example.com/#{"a" * 2040}" }, headers: auth_headers, as: :json)
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
 
     post("/api/me/shortlinks", params: { original_url: "https://example.com/#{"a" * 2000}", title: "t" * 255 }, headers: auth_headers, as: :json)
     expect(response).to(have_http_status(:created))

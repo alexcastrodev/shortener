@@ -20,14 +20,14 @@ class Api::Me::PasswordsController < ApplicationController
   def update
     if @current_user.password?
       unless @current_user.authenticate_password(params[:current_password])
-        return render(json: { error: "invalid_current_password" }, status: :unprocessable_entity)
+        return render(json: { error: "invalid_current_password" }, status: :unprocessable_content)
       end
     elsif Time.zone.at(@session_payload["iat"].to_i) < RECENT_SIGN_IN.ago
       return render(json: { error: "reauthentication_required" }, status: :forbidden)
     end
 
     error = PasswordPolicy.error_for(params[:password], email: @current_user.email)
-    return render(json: { error: error }, status: :unprocessable_entity) if error
+    return render(json: { error: error }, status: :unprocessable_content) if error
 
     @current_user.change_password!(params[:password])
     # Every other session ends; this one continues with a fresh token.

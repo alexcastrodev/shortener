@@ -40,11 +40,11 @@ RSpec.describe("Color palettes and custom colors", type: :request) do
 
   it "rejects colors that are not #RRGGBB and caps palettes per user" do
     post "/api/me/color_palettes", params: { name: "Bad", custom_colors: colors.merge(text: "red; background: url(x)") }, headers: auth_headers, as: :json
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
 
     ColorPalette::MAX_PER_USER.times { |i| ColorPalette.create!(user: current_user, name: "P#{i}", custom_colors: colors.stringify_keys) }
     post "/api/me/color_palettes", params: { name: "One too many", custom_colors: colors }, headers: auth_headers, as: :json
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
   end
 
   it "stores custom colors on a page and serves them publicly, validating the hex" do
@@ -57,7 +57,7 @@ RSpec.describe("Color palettes and custom colors", type: :request) do
     expect(json["page"]["custom_colors"]).to(eq(colors.stringify_keys))
 
     patch "/api/me/pages/#{page.id}", params: { custom_colors: colors.merge(accent: "#fff") }, headers: auth_headers, as: :json
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(page.reload.custom_colors["accent"]).to(eq("#ff00aa"))
 
     patch "/api/me/pages/#{page.id}", params: { custom_colors: nil }, headers: auth_headers, as: :json

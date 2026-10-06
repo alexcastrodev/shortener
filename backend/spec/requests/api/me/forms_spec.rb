@@ -178,17 +178,17 @@ RSpec.describe("/api/me/forms", type: :request) do
     it "rejects an unknown template, including community ones" do
       post_form(title: "x", template: "community-1")
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(Form.count).to(eq(0))
     end
 
     it "answers 422 with errors by attribute" do
       post_form(title: "x", theme: "neon")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]).to(have_key("theme"))
 
       post_form(title: "")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "stops at the daily quota with 429 forms_daily_limit, per user" do
@@ -226,7 +226,7 @@ RSpec.describe("/api/me/forms", type: :request) do
       expect(form.reload.layout).to(eq("steps"))
 
       patch "/api/me/forms/#{form.id}", params: { layout: "grid" }, headers: auth_headers, as: :json
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(form.reload.layout).to(eq("steps"))
     end
 
@@ -234,7 +234,7 @@ RSpec.describe("/api/me/forms", type: :request) do
       form.update!(fields: [{ "id" => "sect0001", "type" => "section", "label" => "Intro" }])
 
       post "/api/me/forms/#{form.id}/publish", headers: auth_headers
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "does not let update change published, fields, owner or counters" do
@@ -248,7 +248,7 @@ RSpec.describe("/api/me/forms", type: :request) do
     it "answers 422 for an invalid update" do
       patch "/api/me/forms/#{form.id}", params: { title: "a" * 121 }, headers: auth_headers, as: :json
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]).to(have_key("title"))
     end
 
@@ -280,7 +280,7 @@ RSpec.describe("/api/me/forms", type: :request) do
 
       post "/api/me/forms/#{form.id}/publish", headers: auth_headers
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(form.reload.published).to(be(false))
     end
 
@@ -325,13 +325,13 @@ RSpec.describe("/api/me/forms", type: :request) do
 
     it "answers 422 for an invalid question and for a type change" do
       post "/api/me/forms/#{form.id}/fields", params: { type: "rating", label: "x", scale: 7 }, headers: auth_headers, as: :json
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]).to(have_key("fields"))
 
       post "/api/me/forms/#{form.id}/fields", params: { type: "short_text", label: "x" }, headers: auth_headers, as: :json
       id = field_ids.first
       patch "/api/me/forms/#{form.id}/fields/#{id}", params: { type: "email" }, headers: auth_headers, as: :json
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "answers 422 for a reorder that is not a permutation" do
@@ -339,7 +339,7 @@ RSpec.describe("/api/me/forms", type: :request) do
 
       patch "/api/me/forms/#{form.id}/fields/reorder", params: { ids: [field_ids.first, "zzzzzzzz"] }, headers: auth_headers, as: :json
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]).to(have_key("ids"))
     end
 
@@ -387,11 +387,11 @@ RSpec.describe("/api/me/forms", type: :request) do
     it "refuses an unknown template and a form with responses" do
       form = make_form
       post "/api/me/forms/#{form.id}/apply_template", params: { template: "community-1" }, headers: auth_headers, as: :json
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
 
       form.update_column(:responses_count, 2)
       post "/api/me/forms/#{form.id}/apply_template", params: { template: "contact" }, headers: auth_headers, as: :json
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "duplicates a form unpublished, with fresh ids and no responses" do

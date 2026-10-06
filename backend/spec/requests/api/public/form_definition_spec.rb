@@ -45,7 +45,7 @@ RSpec.describe("public form definition", type: :request) do
 
   it "validates submissions against the same definition" do
     submit({ "draft001" => "ignored" })
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(json.dig("errors", "answers")).to(have_key("serve001"))
     expect(FormResponse.count).to(eq(0))
 

@@ -117,7 +117,7 @@ RSpec.describe("/api/me/forms/:id/appointments", type: :request) do
 
     it "answers 422 for a malformed date" do
       list({ from: "tomorrow" })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "pages with a cursor" do
@@ -175,7 +175,7 @@ RSpec.describe("/api/me/forms/:id/appointments", type: :request) do
 
     it "refuses a malformed date" do
       export({ to: "x" })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
   end
 end

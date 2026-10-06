@@ -13,7 +13,7 @@ class Api::Me::ColorPalettesController < ApplicationController
       if palette.save
         render(json: { color_palette: serialize(palette) }, status: :created)
       else
-        render(json: { errors: palette.errors.full_messages }, status: :unprocessable_entity)
+        render(json: { errors: palette.errors.full_messages }, status: :unprocessable_content)
       end
     end
   end
