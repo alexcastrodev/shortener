@@ -49,6 +49,8 @@ module Mcp
         ListAppointments,
         GetAppointment,
         GetAgenda,
+        ListNotifications,
+        MarkNotificationRead,
       ]
     end
 
