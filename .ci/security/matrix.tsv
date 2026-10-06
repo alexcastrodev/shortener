@@ -45,7 +45,6 @@ owner	GET	/api/me
 owner	PATCH	/api/me
 owner	PUT	/api/me
 owner	DELETE	/api/me
-owner	POST	/api/me/data_export
 owner	POST	/api/me/appointments/generate_times
 owner	GET	/api/me/color_palettes
 owner	POST	/api/me/color_palettes

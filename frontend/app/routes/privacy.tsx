@@ -150,8 +150,9 @@ export default function Privacy() {
         <Section title="Your choices">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong className="text-foreground">Get a copy:</strong> Account, Download your data (JSON), and Export on
-              a form’s responses page (Excel or CSV).
+              <strong className="text-foreground">Get a copy:</strong> use Export on a form’s responses page and on its
+              bookings tab (Excel or CSV). For anything else, write to{' '}
+              <a className="underline" href={`mailto:${CONTACT}`}>{CONTACT}</a> and we will send you a copy.
             </li>
             <li>
               <strong className="text-foreground">Delete everything:</strong> Account, Delete account. Your content goes

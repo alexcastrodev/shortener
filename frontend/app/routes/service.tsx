@@ -66,8 +66,8 @@ export default function Service() {
             <li>
               <strong className="text-foreground">Keep your own copy.</strong>{' '}
               Anything that matters (your bookings, form responses, links)
-              should also exist on your side. Use Account, Download your data,
-              and the Excel or CSV exports on responses and bookings, or
+              should also exist on your side. Use the Excel or CSV exports on
+              responses and bookings, or
               subscribe to your bookings from your own calendar app with the
               calendar feed.
             </li>

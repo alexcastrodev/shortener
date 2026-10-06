@@ -1,7 +1,6 @@
 import { Badge, Button, Center, Loader, PasswordInput, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
-  IconDownload,
   IconKey,
   IconLogout,
   IconSettings,
@@ -24,7 +23,6 @@ import { scopeLabel } from '../modules/oauth/scopes';
 import { modals } from '@mantine/modals';
 import { useUpdatePassword } from '@internal/core/actions/update-password/update-password.hook';
 import { useDeleteAccount } from '@internal/core/actions/delete-account/delete-account.hook';
-import { exportAccountData } from '@internal/core/actions/export-account-data/export-account-data.service';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { notifyError } from '@internal/core/utils/notify';
 import { explainAuthError, type AuthError } from '../modules/auth/auth-errors';
@@ -146,81 +144,6 @@ function PasswordSection({ hasPassword }: { hasPassword: boolean }) {
             disabled={hasPassword && !current}
           >
             {hasPassword ? t('change_password') : t('set_password')}
-          </Button>
-        </form>
-      )}
-    </Card>
-  );
-}
-
-function DownloadData({ hasPassword }: { hasPassword: boolean }) {
-  const { t } = useTranslation(['account', 'auth']);
-  const logout = useLogout();
-  const [current, setCurrent] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [needsSignIn, setNeedsSignIn] = useState(false);
-
-  const download = async () => {
-    setBusy(true);
-    try {
-      const blob = await exportAccountData(hasPassword ? current : undefined);
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `kurz-data-${new Date().toISOString().slice(0, 10)}.json`;
-      link.click();
-      URL.revokeObjectURL(link.href);
-      setCurrent('');
-    } catch (failure) {
-      const status = (failure as { response?: { status?: number } })?.response?.status;
-      if (status === 403) setNeedsSignIn(true);
-      else if (status === 422) notifyError(t('wrong_password'), t('dl_wrong_password_title'));
-      else if (status === 413) notifyError(t('dl_too_much'), t('dl_too_much_title'));
-      else if (status === 429) notifyError(t('dl_rate'), t('auth:err_rate_limited_title'));
-      else notifyError(t('dl_failed'), t('dl_failed_title'));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Card className="p-5 sm:p-6">
-      <div className="flex items-start gap-3">
-        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-          <IconDownload size={18} stroke={1.8} />
-        </span>
-        <div className="min-w-0">
-          <h2 className="font-semibold text-foreground">{t('dl_title')}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t('dl_body')}
-          </p>
-        </div>
-      </div>
-
-      {needsSignIn ? (
-        <div className="mt-5 rounded-lg border border-border bg-muted/40 p-4 text-sm">
-          <p className="text-foreground">{t('reauth_download')}</p>
-          <Button className="mt-3" variant="default" size="sm" leftSection={<IconLogout size={15} />} onClick={logout}>
-            {t('sign_in_again')}
-          </Button>
-        </div>
-      ) : (
-        <form
-          className="mt-5 max-w-md space-y-4"
-          onSubmit={event => {
-            event.preventDefault();
-            void download();
-          }}
-        >
-          {hasPassword && (
-            <PasswordInput
-              label={t('auth:password_label')}
-              autoComplete="current-password"
-              value={current}
-              onChange={event => setCurrent(event.currentTarget.value)}
-            />
-          )}
-          <Button type="submit" variant="default" loading={busy} disabled={hasPassword && !current} leftSection={<IconDownload size={16} />}>
-            {t('dl_button')}
           </Button>
         </form>
       )}
@@ -468,7 +391,6 @@ export default function AccountPage() {
 
         <PasswordSection hasPassword={!!user.has_password} />
 
-        <DownloadData hasPassword={!!user.has_password} />
 
         <DeleteAccount email={user.email} hasPassword={!!user.has_password} />
       </div>
