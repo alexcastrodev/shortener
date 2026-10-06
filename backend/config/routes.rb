@@ -44,6 +44,7 @@ Rails.application.routes.draw do
         end
       end
       resources :audits, only: [:index]
+      resource :appointments_health, only: [:show], controller: "appointments_health"
       resources :page_templates, only: [:index] do
         member { post "toggle_hidden", to: "page_templates#toggle_hidden" }
       end
