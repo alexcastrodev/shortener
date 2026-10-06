@@ -9,6 +9,11 @@ export interface SubmitFormResponseParams {
   clientLocale?: string;
 }
 
+export interface SubmitFormReceipt {
+  manage_url?: string;
+  email_delivery?: 'queued' | 'none';
+}
+
 export interface SubmitFormResponseError {
   status?: number;
   error?: string;

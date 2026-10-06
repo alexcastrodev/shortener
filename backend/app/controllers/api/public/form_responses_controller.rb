@@ -36,7 +36,10 @@ class Api::Public::FormResponsesController < ApplicationController
     else
       body = { ok: true }
       appointments = Appointments::Book.summary(result.response)
-      body[:appointments] = appointments if appointments.any?
+      if appointments.any?
+        body[:appointments] = appointments
+        body.merge!(Appointments::Book.receipt(result.response))
+      end
       render(json: body, status: result.created ? :created : :ok)
     end
   end
