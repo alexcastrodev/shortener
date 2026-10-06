@@ -1,9 +1,8 @@
 <%= @title %>: <%= @code %>
 
 <%= @body %>
-The code expires in <%= @valid_minutes %> minutes and works once.
+<%= t(".expires", minutes: @valid_minutes) %>
 
-You're getting this because <%= @reason %>.
-If it wasn't you, you can ignore this email.
+<%= t(".footer", reason: @reason) %>
 
 Kurz · https://kurz.fyi

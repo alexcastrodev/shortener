@@ -1,9 +1,9 @@
-Your Kurz account is scheduled for deletion
+<%= t(".subject") %>
 
-You asked to delete the Kurz account <%= @user.email %>. Your links, bio pages, forms, responses and uploaded files are offline now and will be permanently deleted on <%= @due_on %>.
+<%= t(".body", email: @user.email, date: @due_on) %>
 
-Changed your mind? Sign in to Kurz before <%= @due_on %> and the deletion is cancelled; your links and pages come back.
+<%= t(".changed_mind", date: @due_on) %>
 
-If you did not ask for this, sign in to cancel it and change your password.
+<%= t(".not_you") %>
 
 Kurz · https://kurz.fyi

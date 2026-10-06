@@ -31,3 +31,35 @@ en:
   errors:
     form_error: 'Fields are not valid'
     account_deactivated: "Your account has been deactivated"
+  login_mailer:
+    copy:
+      sign_in:
+        subject: "%{code} is your Kurz sign-in code"
+        title: "Your sign-in code"
+        body: "Enter this code on the Kurz sign-in page to continue."
+        reason: "someone asked to sign in to Kurz with %{email}"
+      sign_up:
+        subject: "%{code} is your Kurz confirmation code"
+        title: "Confirm your new account"
+        body: "Enter this code to finish creating your Kurz account."
+        reason: "someone started creating a Kurz account with %{email}"
+      sign_up_existing:
+        subject: "%{code} is your Kurz confirmation code"
+        title: "Confirm it's you"
+        body: "This email already has a Kurz account. Enter this code to finish signing up: the password you just chose becomes your password, and other sessions are signed out."
+        reason: "someone tried to create a Kurz account with %{email}"
+      password_reset:
+        subject: "%{code} is your Kurz password reset code"
+        title: "Reset your password"
+        body: "Enter this code to choose a new password for your Kurz account."
+        reason: "someone asked to reset the password of the Kurz account %{email}"
+    magic_link:
+      preview: "It expires in %{minutes} minutes."
+      expires: "The code expires in %{minutes} minutes and works once."
+      footer: "You're getting this because %{reason}. If it wasn't you, you can ignore this email."
+  account_mailer:
+    deletion_scheduled:
+      subject: "Your Kurz account is scheduled for deletion"
+      body: "You asked to delete the Kurz account %{email}. Your links, bio pages, forms, responses and uploaded files are offline now and will be permanently deleted on %{date}."
+      changed_mind: "Changed your mind? Sign in to Kurz before %{date} and the deletion is cancelled; your links and pages come back."
+      not_you: "If you did not ask for this, sign in to cancel it and change your password."

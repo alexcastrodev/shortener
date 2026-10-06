@@ -22,7 +22,7 @@ class Api::PasswordResetsController < ApplicationController
   def create
     return unless turnstile_passed?("password_reset")
 
-    render_code_request(LoginCodeRequest.call(email: params[:email], purpose: :password_reset))
+    render_code_request(LoginCodeRequest.call(email: params[:email], purpose: :password_reset, locale: params[:locale]))
   end
 
   # POST /api/password/reset  { email, code, password }

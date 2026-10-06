@@ -1,0 +1,33 @@
+pt-PT:
+  login_mailer:
+    copy:
+      sign_in:
+        subject: "%{code} é o seu código de acesso ao Kurz"
+        title: "O seu código de acesso"
+        body: "Introduza este código na página de acesso do Kurz para continuar."
+        reason: "alguém pediu para entrar no Kurz com %{email}"
+      sign_up:
+        subject: "%{code} é o seu código de confirmação do Kurz"
+        title: "Confirme a sua nova conta"
+        body: "Introduza este código para concluir a criação da sua conta Kurz."
+        reason: "alguém começou a criar uma conta Kurz com %{email}"
+      sign_up_existing:
+        subject: "%{code} é o seu código de confirmação do Kurz"
+        title: "Confirme que é você"
+        body: "Este e-mail já tem uma conta Kurz. Introduza este código para concluir a inscrição: a palavra-passe que acabou de escolher passa a ser a sua palavra-passe e as outras sessões são terminadas."
+        reason: "alguém tentou criar uma conta Kurz com %{email}"
+      password_reset:
+        subject: "%{code} é o seu código para repor a palavra-passe do Kurz"
+        title: "Repor a palavra-passe"
+        body: "Introduza este código para escolher uma nova palavra-passe para a sua conta Kurz."
+        reason: "alguém pediu para repor a palavra-passe da conta Kurz %{email}"
+    magic_link:
+      preview: "Expira em %{minutes} minutos."
+      expires: "O código expira em %{minutes} minutos e só pode ser usado uma vez."
+      footer: "Está a receber este e-mail porque %{reason}. Se não foi você, pode ignorá-lo."
+  account_mailer:
+    deletion_scheduled:
+      subject: "A sua conta Kurz está marcada para eliminação"
+      body: "Pediu para eliminar a conta Kurz %{email}. Os seus links, páginas de bio, formulários, respostas e ficheiros carregados estão offline neste momento e serão eliminados definitivamente a %{date}."
+      changed_mind: "Mudou de ideias? Inicie sessão no Kurz antes de %{date} e a eliminação é cancelada; os seus links e páginas voltam."
+      not_you: "Se não foi você que pediu isto, inicie sessão para cancelar e altere a sua palavra-passe."
