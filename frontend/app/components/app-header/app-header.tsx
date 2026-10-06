@@ -17,7 +17,7 @@ import { NotificationBell } from '../notification-bell';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   [
-    'inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+    'inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium whitespace-nowrap transition-colors lg:px-3',
     isActive
       ? 'bg-accent text-accent-foreground'
       : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
@@ -34,7 +34,7 @@ export function AppHeader() {
         <div className="flex items-center gap-6">
           <BrandMark href="/app" />
 
-          <nav className="hidden items-center gap-1 sm:flex">
+          <nav className="hidden items-center gap-1 md:flex">
             <NavLink to="/app" end className={navClass}>
               <IconHome2 size={17} stroke={1.8} />
               {t('dashboard')}
@@ -81,16 +81,17 @@ export function AppHeader() {
               }
             >
               <IconUser size={17} stroke={1.8} />
-              <span className="hidden sm:inline">{t('my_account')}</span>
+              <span className="hidden lg:inline">{t('my_account')}</span>
             </NavLink>
           )}
           <button
             type="button"
             onClick={handleLogout}
+            aria-label={t('logout')}
             className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10"
           >
             <IconLogout size={17} stroke={1.8} />
-            <span className="hidden sm:inline">{t('logout')}</span>
+            <span className="hidden lg:inline">{t('logout')}</span>
           </button>
         </div>
       </div>

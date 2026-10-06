@@ -64,6 +64,17 @@ RSpec.describe("GET /api/me/agenda", type: :request) do
     expect(past["appointments"].map { |item| item.slice("status", "client_name", "client_email") }).to(eq([{ "status" => "confirmed", "client_name" => "Bo", "client_email" => "bo@example.com" }]))
   end
 
+  it "carries the service category, or null without one" do
+    booking_form(title: "Plain", services: [service.merge("name" => "Cut")])
+    form = booking_form(title: "Spa", published: false, services: [service.merge("name" => "Massage")])
+    booking = form.fields.find { |field| field["type"] == "booking" }
+    Forms::Definition.update(form, booking["id"], { "categories" => [{ "id" => "cat00001", "name" => "Body" }, { "id" => "cat00002", "name" => "Face" }], "services" => [booking["services"].first.merge("category_id" => "cat00001"), service.merge("id" => "svc00002", "name" => "Facial", "category_id" => "cat00002")] })
+    Forms::Publish.call(form: form.reload)
+    agenda
+    categories = json["sessions"].to_h { |session| [session["service_name"], session["category"]] }
+    expect(categories).to(eq("Massage" => { "id" => "cat00001", "name" => "Body" }, "Facial" => { "id" => "cat00002", "name" => "Face" }, "Cut" => nil))
+  end
+
   it "keeps the past unchanged when the service is edited or removed" do
     form = booking_form
     book(form, Time.utc(2026, 11, 2, 9))

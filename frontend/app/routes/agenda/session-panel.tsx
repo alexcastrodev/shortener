@@ -10,7 +10,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconX } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@internal/ui';
 import { useAppointmentAction } from '@internal/core/actions/appointment-action/appointment-action.hook';
@@ -30,16 +30,30 @@ type Dialog =
 export function SessionPanel({
   session,
   zone,
+  inline,
+  phone,
   onClose,
   onChanged,
+  onDialog,
 }: {
   session: AgendaSession;
   zone: string;
+  inline: boolean;
+  phone: boolean;
   onClose: () => void;
   onChanged: () => void;
+  onDialog: (open: boolean) => void;
 }) {
   const { t } = useTranslation('agenda');
+  const touch = inline
+    ? ({ size: 'compact-xs' } as const)
+    : ({ size: 'sm', className: 'min-h-11' } as const);
+  const dialogButton = phone ? 'min-h-11' : undefined;
   const [dialog, setDialog] = useState<Dialog>(null);
+  useEffect(() => {
+    onDialog(dialog !== null);
+    return () => onDialog(false);
+  }, [dialog === null]);
   const [text, setText] = useState('');
   const [scope, setScope] = useState<'one' | 'remaining' | 'all'>('one');
   const [date, setDate] = useState('');
@@ -121,21 +135,27 @@ export function SessionPanel({
     setDialog(next);
   };
 
+  const Wrapper = inline ? Card : 'div';
+
   return (
-    <Card className="w-full shrink-0 p-4 lg:w-80">
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <h2 className="text-base font-semibold">
-          {session.service_name ?? t('service_fallback')}
-        </h2>
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          aria-label={t('panel_close')}
-          onClick={onClose}
-        >
-          <IconX size={16} />
-        </ActionIcon>
-      </div>
+    <Wrapper
+      className={inline ? 'w-[360px] shrink-0 self-start p-4' : undefined}
+    >
+      {inline && (
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <h2 className="min-w-0 text-base font-semibold break-words">
+            {session.service_name ?? t('service_fallback')}
+          </h2>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            aria-label={t('panel_close')}
+            onClick={onClose}
+          >
+            <IconX size={16} />
+          </ActionIcon>
+        </div>
+      )}
       <dl className="space-y-2 text-sm">
         <div>
           <dt className="text-xs text-muted-foreground">{t('panel_when')}</dt>
@@ -178,16 +198,16 @@ export function SessionPanel({
               key={appointment.id}
               className="rounded-md border border-border p-2 text-sm"
             >
-              <p className="font-medium">
+              <p className="font-medium break-words">
                 {appointment.client_name ?? t('no_name')}
               </p>
               {appointment.client_email && (
-                <p className="truncate text-xs text-muted-foreground">
+                <p className="text-xs break-all text-muted-foreground">
                   {appointment.client_email}
                 </p>
               )}
               <p
-                className={`mt-1 text-xs ${appointment.status === 'pending' ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}
+                className={`mt-1 text-xs ${appointment.status === 'pending' ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}
               >
                 {appointment.status === 'pending'
                   ? t('status_pending')
@@ -199,7 +219,7 @@ export function SessionPanel({
                 {appointment.status === 'pending' ? (
                   <>
                     <Button
-                      size="compact-xs"
+                      {...touch}
                       color="brand"
                       loading={isPending}
                       onClick={() => run(appointment, 'approve')}
@@ -207,7 +227,7 @@ export function SessionPanel({
                       {t('approve')}
                     </Button>
                     <Button
-                      size="compact-xs"
+                      {...touch}
                       variant="default"
                       disabled={isPending}
                       onClick={() => open({ kind: 'decline', appointment })}
@@ -218,7 +238,7 @@ export function SessionPanel({
                 ) : (
                   <>
                     <Button
-                      size="compact-xs"
+                      {...touch}
                       variant="default"
                       disabled={isPending}
                       onClick={() => run(appointment, 'remind')}
@@ -226,7 +246,7 @@ export function SessionPanel({
                       {t('remind')}
                     </Button>
                     <Button
-                      size="compact-xs"
+                      {...touch}
                       variant="default"
                       disabled={isPending}
                       onClick={() => open({ kind: 'reschedule', appointment })}
@@ -236,7 +256,7 @@ export function SessionPanel({
                   </>
                 )}
                 <Button
-                  size="compact-xs"
+                  {...touch}
                   variant="subtle"
                   color="red"
                   disabled={isPending}
@@ -257,9 +277,12 @@ export function SessionPanel({
         opened={dialog?.kind === 'decline' || dialog?.kind === 'cancel'}
         onClose={() => setDialog(null)}
         centered
+        fullScreen={phone}
         title={
           dialog?.kind === 'cancel' ? t('cancel_title') : t('decline_title')
         }
+        classNames={{ close: 'min-h-11 min-w-11' }}
+        styles={{ header: { background: 'transparent' } }}
       >
         <Stack gap="sm">
           <p className="text-sm">
@@ -268,7 +291,8 @@ export function SessionPanel({
           {dialog?.kind === 'cancel' && dialog.appointment.series && (
             <SegmentedControl
               fullWidth
-              size="xs"
+              orientation={phone ? 'vertical' : 'horizontal'}
+              size={phone ? 'md' : 'xs'}
               aria-label={t('cancel_scope')}
               value={scope}
               onChange={value => setScope(value as 'one' | 'remaining' | 'all')}
@@ -290,10 +314,15 @@ export function SessionPanel({
             onChange={event => setText(event.currentTarget.value)}
           />
           <Group justify="flex-end" gap="xs">
-            <Button variant="default" onClick={() => setDialog(null)}>
+            <Button
+              variant="default"
+              className={dialogButton}
+              onClick={() => setDialog(null)}
+            >
               {t('dialog_keep')}
             </Button>
             <Button
+              className={dialogButton}
               color="red"
               loading={isPending}
               onClick={() =>
@@ -322,7 +351,10 @@ export function SessionPanel({
         opened={dialog?.kind === 'reschedule'}
         onClose={() => setDialog(null)}
         centered
+        fullScreen={phone}
         title={t('reschedule')}
+        classNames={{ close: 'min-h-11 min-w-11' }}
+        styles={{ header: { background: 'transparent' } }}
       >
         <Stack gap="sm">
           <Group grow>
@@ -348,10 +380,15 @@ export function SessionPanel({
             onChange={event => setText(event.currentTarget.value)}
           />
           <Group justify="flex-end" gap="xs">
-            <Button variant="default" onClick={() => setDialog(null)}>
+            <Button
+              variant="default"
+              className={dialogButton}
+              onClick={() => setDialog(null)}
+            >
               {t('reschedule_cancel')}
             </Button>
             <Button
+              className={dialogButton}
               color="brand"
               loading={isPending}
               disabled={!date || !time}
@@ -369,6 +406,6 @@ export function SessionPanel({
           </Group>
         </Stack>
       </Modal>
-    </Card>
+    </Wrapper>
   );
 }

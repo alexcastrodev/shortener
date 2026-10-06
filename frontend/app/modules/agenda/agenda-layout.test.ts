@@ -4,7 +4,16 @@ import type { AgendaSession } from '@internal/core/actions/get-agenda/get-agenda
 import {
   HOUR_PX,
   MIN_BLOCK_PX,
+  NO_CATEGORY,
+  PALETTE,
   addDays,
+  addMonths,
+  categoryColors,
+  categoryOf,
+  datesWithSessions,
+  monthDays,
+  monthRange,
+  neighbour,
   clock,
   dayBlocks,
   minutesOfDay,
@@ -137,6 +146,54 @@ test('sessions are grouped by their local day and can be filtered by form', () =
   assert.equal(sessionsByDay(list, null).get('2026-11-02')?.length, 2);
   assert.equal(sessionsByDay(list, 2).get('2026-11-02')?.length, 1);
   assert.equal(sessionsByDay(list, 2).has('2026-11-03'), false);
+});
+
+test('the month grid starts on a Monday, spans six weeks and flags the month', () => {
+  const days = monthDays('2026-10-06');
+  assert.equal(days.length, 42);
+  assert.equal(days[0].date, '2026-09-28');
+  assert.equal(days[0].inMonth, false);
+  assert.equal(days[3].date, '2026-10-01');
+  assert.equal(days[3].inMonth, true);
+  assert.deepEqual(monthRange('2026-10-06'), {
+    from: '2026-09-28',
+    to: '2026-11-08',
+  });
+});
+
+test('adding months clamps the day and crosses years', () => {
+  assert.equal(addMonths('2026-01-31', 1), '2026-02-28');
+  assert.equal(addMonths('2026-12-15', 1), '2027-01-15');
+  assert.equal(addMonths('2026-01-15', -1), '2025-12-15');
+});
+
+test('categories get stable colours by id and sessions without one are grouped', () => {
+  const sessions = [
+    session('2026-10-06T09:00:00Z', { category: { id: 'b', name: 'B' } }),
+    session('2026-10-06T10:00:00Z', { category: { id: 'a', name: 'A' } }),
+    session('2026-10-06T11:00:00Z'),
+  ];
+  const colors = categoryColors(sessions);
+  assert.equal(colors.get('a'), PALETTE[0]);
+  assert.equal(colors.get('b'), PALETTE[1]);
+  assert.equal(categoryOf(sessions[2]), NO_CATEGORY);
+  assert.deepEqual([...datesWithSessions(sessions)], ['2026-10-06']);
+});
+
+test('arrow navigation walks blocks by day and time', () => {
+  const blocks = [
+    { id: 'a', day: '2026-10-05', start: 540, lane: 0 },
+    { id: 'b', day: '2026-10-05', start: 600, lane: 0 },
+    { id: 'c', day: '2026-10-06', start: 570, lane: 0 },
+    { id: 'd', day: '2026-10-06', start: 900, lane: 0 },
+    { id: 'e', day: '2026-10-08', start: 600, lane: 0 },
+  ];
+  assert.equal(neighbour(blocks, 'a', 'down'), 'b');
+  assert.equal(neighbour(blocks, 'a', 'up'), null);
+  assert.equal(neighbour(blocks, 'b', 'right'), 'c');
+  assert.equal(neighbour(blocks, 'd', 'right'), 'e');
+  assert.equal(neighbour(blocks, 'e', 'left'), 'c');
+  assert.equal(neighbour(blocks, 'e', 'right'), null);
 });
 
 test('pending requests are summed', () => {

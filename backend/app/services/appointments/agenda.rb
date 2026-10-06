@@ -48,6 +48,13 @@ module Appointments
       [form_id, service_id, starts_at.to_i]
     end
 
+    def category(form, service_id)
+      booking = form.fields.find { |field| field["type"] == "booking" }
+      category_id = booking&.dig("services")&.find { |service| service["id"] == service_id }&.dig("category_id")
+      found = booking["categories"]&.find { |item| item["id"] == category_id } if category_id
+      found && { id: found["id"], name: found["name"] }
+    end
+
     def session(form, zone, data)
       appointments = data[:appointments]
       {
@@ -55,6 +62,7 @@ module Appointments
         form_title: form.title,
         service_id: data[:service_id],
         service_name: data[:name],
+        category: category(form, data[:service_id]),
         duration: data[:duration],
         starts_at: data[:starts_at].utc,
         date: data[:starts_at].in_time_zone(zone).to_date,

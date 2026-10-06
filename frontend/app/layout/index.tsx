@@ -38,7 +38,7 @@ export default function LayoutComponent() {
     >
       <AppHeader />
       <Layout.Main>
-        <div className="pb-20 sm:pb-0">
+        <div className="pb-20 md:pb-0">
           <Outlet />
         </div>
       </Layout.Main>

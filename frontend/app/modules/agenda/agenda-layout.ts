@@ -139,3 +139,89 @@ export function occupancy(session: AgendaSession) {
 export function pendingTotal(sessions: AgendaSession[]) {
   return sessions.reduce((sum, session) => sum + session.pending, 0);
 }
+
+export function addMonths(date: string, months: number) {
+  const [year, month, day] = date.split('-').map(Number);
+  const target = new Date(Date.UTC(year, month - 1 + months, 1));
+  const last = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)
+  ).getUTCDate();
+  target.setUTCDate(Math.min(day, last));
+  return fromUtc(target);
+}
+
+export function monthRange(anchor: string) {
+  const from = weekStart(`${anchor.slice(0, 8)}01`);
+  return { from, to: addDays(from, 41) };
+}
+
+export function monthDays(anchor: string) {
+  const { from } = monthRange(anchor);
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = addDays(from, index);
+    return { date, inMonth: date.slice(0, 7) === anchor.slice(0, 7) };
+  });
+}
+
+export function datesWithSessions(sessions: AgendaSession[]) {
+  return new Set(sessions.map(session => session.date));
+}
+
+export const NO_CATEGORY = 'none';
+
+export const categoryOf = (session: AgendaSession) =>
+  session.category?.id ?? NO_CATEGORY;
+
+export const PALETTE = [
+  '#a78bfa',
+  '#fb923c',
+  '#2dd4bf',
+  '#60a5fa',
+  '#f472b6',
+  '#facc15',
+  '#4ade80',
+  '#f87171',
+];
+
+export function categoryColors(sessions: AgendaSession[]) {
+  const ids = [
+    ...new Set(
+      sessions.flatMap(session =>
+        session.category ? [session.category.id] : []
+      )
+    ),
+  ].sort();
+  return new Map(ids.map((id, index) => [id, PALETTE[index % PALETTE.length]]));
+}
+
+export type Direction = 'left' | 'right' | 'up' | 'down';
+export type NavBlock = { id: string; day: string; start: number; lane: number };
+
+export function neighbour(
+  blocks: NavBlock[],
+  from: string,
+  direction: Direction
+) {
+  const current = blocks.find(block => block.id === from);
+  if (!current) return null;
+  if (direction === 'up' || direction === 'down') {
+    const column = blocks
+      .filter(block => block.day === current.day)
+      .sort((a, b) => a.start - b.start || a.lane - b.lane);
+    const at = column.findIndex(block => block.id === from);
+    return column[at + (direction === 'down' ? 1 : -1)]?.id ?? null;
+  }
+  const days = [...new Set(blocks.map(block => block.day))].sort();
+  const day =
+    days[days.indexOf(current.day) + (direction === 'right' ? 1 : -1)];
+  if (!day) return null;
+  return (
+    blocks
+      .filter(block => block.day === day)
+      .sort(
+        (a, b) =>
+          Math.abs(a.start - current.start) -
+            Math.abs(b.start - current.start) || a.lane - b.lane
+      )[0]?.id ?? null
+  );
+}

@@ -12,6 +12,7 @@ export interface AgendaSession {
   form_title: string;
   service_id: string;
   service_name: string | null;
+  category?: { id: string; name: string } | null;
   duration: number | null;
   starts_at: string;
   date: string;
