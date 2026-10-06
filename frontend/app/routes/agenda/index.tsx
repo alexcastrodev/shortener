@@ -377,8 +377,11 @@ export default function AgendaPage() {
   );
 
   return (
-    <PageContainer className="py-3 sm:py-8">
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+    // Below md the bottom nav is on screen, so the Agenda becomes a full-screen
+    // view between the header and the nav: the hour grid is its only scroller
+    // (app.css stops the page itself from scrolling).
+    <PageContainer className="agenda-screen py-3 sm:py-3 md:py-8 max-md:fixed max-md:inset-x-0 max-md:top-[65px] max-md:bottom-[var(--mobile-nav-height)] max-md:flex max-md:flex-col">
+      <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
         <h1 className="sr-only mr-2 text-2xl font-semibold tracking-tight md:not-sr-only">
           {t('title')}
         </h1>
@@ -446,16 +449,20 @@ export default function AgendaPage() {
         )}
       </div>
 
-      {error && <Alert title={t('title')}>{t('error')}</Alert>}
+      {error && (
+        <div className="shrink-0">
+          <Alert title={t('title')}>{t('error')}</Alert>
+        </div>
+      )}
 
-      <div className="flex gap-4">
+      <div className="flex gap-4 max-md:min-h-0 max-md:flex-1">
         {isWide && (
           <aside className="sticky top-20 hidden max-h-[calc(100dvh-6rem)] w-56 shrink-0 self-start overflow-y-auto lg:block xl:w-64">
             <FiltersPanel {...filtersProps} large={false} />
           </aside>
         )}
 
-        <Card className="min-w-0 flex-1 overflow-hidden p-0">
+        <Card className="min-w-0 flex-1 overflow-hidden p-0 max-md:flex max-md:flex-col">
           {isPhone && (
             <div
               role="group"
@@ -537,7 +544,7 @@ export default function AgendaPage() {
           <div
             ref={scroller}
             onKeyDown={onGridKey}
-            className="relative max-h-[calc(100dvh-20rem)] min-h-80 overflow-y-auto lg:max-h-[calc(100dvh-14rem)]"
+            className="relative max-h-[calc(100dvh-20rem)] min-h-80 overflow-y-auto lg:max-h-[calc(100dvh-14rem)] max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:overscroll-contain"
           >
             {isLoading && (
               <div className="absolute inset-0 z-30 animate-pulse bg-muted/60" />

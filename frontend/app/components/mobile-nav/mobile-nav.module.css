@@ -8,7 +8,7 @@
   align-items: center;
   background: color-mix(in srgb, var(--app-card) 94%, transparent);
   border-top: 1px solid var(--app-border);
-  padding: 0.5rem 0;
+  height: var(--mobile-nav-height);
   z-index: 100;
   box-shadow: 0 -10px 30px rgb(15 23 42 / 0.08);
   backdrop-filter: blur(10px);

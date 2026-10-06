@@ -107,6 +107,20 @@ html,
   --app-shadow: 0 18px 45px rgb(0 0 0 / 0.3);
 }
 
+:root {
+  /* Fixed height of the bottom nav, so full-screen views can stop above it. */
+  --mobile-nav-height: 4.5rem;
+}
+
+/* On phones the Agenda is a full-screen view whose hour grid scrolls on its
+   own; the page behind it must not scroll too. */
+@media (max-width: 767px) {
+  html:has(.agenda-screen) {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
+
 @layer base {
   * {
     border-color: var(--app-border);
