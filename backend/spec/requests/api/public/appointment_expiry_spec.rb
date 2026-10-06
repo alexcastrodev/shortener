@@ -114,6 +114,45 @@ RSpec.describe("pending requests that nobody answers", type: :request) do
     expect(AppointmentSlot.sum(:booked)).to(eq(1))
   end
 
+  describe "when the owner chose to accept on timeout" do
+    let(:rules) { { "approval" => "manual", "approval_timeout_minutes" => 60, "approval_on_timeout" => "accept" } }
+
+    it "confirms the booking at the deadline, keeps the places and tells the client and the owner" do
+      deliveries.clear
+      resolve(now + 61.minutes)
+
+      appointment = Appointment.first
+      expect(appointment).to(have_attributes(status: "confirmed", decided_by: "timeout", decided_at: now + 61.minutes))
+      expect(free_times).to(eq(["10:00", "11:00"]))
+      expect(manage_status(appointment)).to(eq("confirmed"))
+      expect(deliveries.map(&:to)).to(eq([["ana@example.com"]]))
+      expect(deliveries.last.subject).to(start_with("Confirmed: Haircut"))
+      get("/api/me/notifications", headers: auth_headers)
+      expect(json["notifications"].map { |row| row["kind"] }).to(include("appointment_auto_confirmed"))
+    end
+
+    it "declines instead when a session has already started by the deadline" do
+      Appointment.first.slot.update!(starts_at: now + 30.minutes)
+      resolve(now + 61.minutes)
+      expect(Appointment.pluck(:status)).to(eq(["declined"]))
+      expect(AppointmentSlot.sum(:booked)).to(eq(0))
+    end
+
+    it "does it once even if the sweep runs again" do
+      deliveries.clear
+      resolve(now + 61.minutes)
+      resolve(now + 62.minutes)
+      expect(deliveries.size).to(eq(1))
+      expect(Appointment.pluck(:status)).to(eq(["confirmed"]))
+    end
+
+    it "keeps the choice made at booking time if the owner changes it later" do
+      Forms::Definition.update(form.reload, booking_id, { "rules" => { "approval_on_timeout" => "decline" } })
+      resolve(now + 2.hours)
+      expect(Appointment.pluck(:status)).to(eq(["confirmed"]))
+    end
+  end
+
   it "reports how late the oldest overdue request is" do
     expect(Appointments::ResolveExpired.lag(now: now + 30.minutes)).to(eq(0))
     expect(Appointments::ResolveExpired.lag(now: now + 70.minutes)).to(eq(600))
