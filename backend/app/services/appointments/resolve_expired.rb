@@ -2,17 +2,31 @@ module Appointments
   module ResolveExpired
     extend self
 
+    WAITING = ["pending", "unverified"].freeze
+
     def call(now: Time.current)
+      unverified = Appointment.where(status: "unverified").where(expires_at: ..now).distinct.pluck(:group_key).count { |group| drop(group, now) }
       groups = Appointment.where(status: "pending").where(expires_at: ..now).distinct.pluck(:group_key)
-      groups.count { |group| decline(group, now) }
+      unverified + groups.count { |group| decline(group, now) }
     end
 
     def lag(now: Time.current)
-      oldest = Appointment.where(status: "pending").where(expires_at: ..now).minimum(:expires_at)
+      oldest = Appointment.where(status: WAITING).where(expires_at: ..now).minimum(:expires_at)
       oldest ? (now - oldest).to_i : 0
     end
 
     private
+
+    def drop(group, now)
+      Appointment.transaction do
+        rows = Appointment.where(group_key: group, status: "unverified").where(expires_at: ..now).order(:id).lock.to_a
+        next false if rows.empty?
+
+        Appointment.where(id: rows.map(&:id)).update_all(status: "expired", decided_by: "timeout", decided_at: now)
+        Release.call(rows.map(&:slot_id))
+        true
+      end
+    end
 
     def decline(group, now)
       Appointment.transaction do

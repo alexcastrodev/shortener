@@ -1,5 +1,5 @@
 class AppointmentToken < ApplicationRecord
-  PURPOSES = ["manage", "decide"].freeze
+  PURPOSES = ["manage", "decide", "verify"].freeze
 
   belongs_to :appointment
 

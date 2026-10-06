@@ -5,6 +5,7 @@ import type {
 
 export const STATUS_OPTIONS: AppointmentStatus[] = [
   'pending',
+  'unverified',
   'confirmed',
   'cancelled',
   'declined',

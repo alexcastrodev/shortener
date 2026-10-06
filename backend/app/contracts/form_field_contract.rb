@@ -50,6 +50,7 @@ class FormFieldContract < ApplicationContract
       optional(:approval_on_timeout).filled(:string)
       optional(:approval_within_minutes).maybe(:integer)
       optional(:reminder_minutes).array(:integer)
+      optional(:verify_email).maybe(:bool)
       optional(:min_notice_minutes).maybe(:integer)
       optional(:window_days).maybe(:integer)
       optional(:buffer_minutes).maybe(:integer)

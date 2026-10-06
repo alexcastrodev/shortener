@@ -121,6 +121,21 @@ class AppointmentMailer < ApplicationMailer
     end
   end
 
+  def verify
+    load_group
+    zone = Appointments::Book.valid_zone(@first.client_time_zone) || "UTC"
+    @sessions = sessions(zone)
+    @minutes = Forms::BookingSchema::VERIFY_MINUTES
+    @verify_url = "#{frontend_url}/v/#{AppointmentToken.issue(booking: @first, expires_at: @first.expires_at + 1.hour, purpose: "verify")}"
+
+    with_recipient_locale(nil, @first.client_locale) do
+      mail(
+        to: @first.client_email,
+        subject: I18n.t("appointment_mailer.verify.subject", service: @service),
+      )
+    end
+  end
+
   def new_booking
     load_group
     owner = @form.user

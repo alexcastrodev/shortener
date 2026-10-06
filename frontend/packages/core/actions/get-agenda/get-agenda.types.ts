@@ -1,6 +1,6 @@
 export interface AgendaAppointment {
   id: number;
-  status: 'pending' | 'confirmed';
+  status: 'pending' | 'unverified' | 'confirmed';
   client_name: string | null;
   client_email: string | null;
   group_key: string;

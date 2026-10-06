@@ -1,0 +1,16 @@
+{
+  "title": "Confirm your booking",
+  "service": "Service",
+  "sessions": "When",
+  "until": "Held for you until {{when}}.",
+  "confirm": "Confirm my booking",
+  "working": "Confirming…",
+  "failed": "Something went wrong, please try again.",
+  "done": "Your booking is confirmed. We emailed you the details.",
+  "expired": "Time ran out and the place was released. Please book again.",
+  "cancelled": "This booking was cancelled.",
+  "not_found_title": "Link not found",
+  "not_found_body": "This link does not exist or has expired.",
+  "error_title": "Something went wrong",
+  "error_body": "Please try again in a moment."
+}

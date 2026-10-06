@@ -1,0 +1,16 @@
+{
+  "title": "Confirme a sua marcação",
+  "service": "Serviço",
+  "sessions": "Quando",
+  "until": "Guardado para si até às {{when}}.",
+  "confirm": "Confirmar a minha marcação",
+  "working": "A confirmar…",
+  "failed": "Algo correu mal, tente novamente.",
+  "done": "A sua marcação está confirmada. Enviámos-lhe os detalhes por e-mail.",
+  "expired": "O tempo acabou e o lugar foi libertado. Por favor, marque de novo.",
+  "cancelled": "Esta marcação foi cancelada.",
+  "not_found_title": "Ligação não encontrada",
+  "not_found_body": "Esta ligação não existe ou já expirou.",
+  "error_title": "Algo correu mal",
+  "error_body": "Tente novamente dentro de instantes."
+}

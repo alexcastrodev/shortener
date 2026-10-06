@@ -28,5 +28,6 @@
   "export_excel": "Download Excel",
   "export_too_large": "Too many bookings to export at once. Narrow the dates.",
   "export_failed": "Could not export. Try again.",
-  "reason": "Reason: {{reason}}"
+  "reason": "Reason: {{reason}}",
+  "status_unverified": "Awaiting email confirmation"
 }

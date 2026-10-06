@@ -142,6 +142,8 @@ public	GET	/.well-known/oauth-protected-resource/mcp
 public	GET	/api/public/forms/:public_id
 public	GET	/api/public/appointments/:token
 public	GET	/api/public/calendar/:token
+public	GET	/api/public/appointment_verifications/:token
+public	POST	/api/public/appointment_verifications/:token
 public	POST	/api/public/appointments/:token/cancel
 public	GET	/api/public/appointment_decisions/:token
 public	POST	/api/public/appointment_decisions/:token

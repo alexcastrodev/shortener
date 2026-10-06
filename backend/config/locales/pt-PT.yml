@@ -41,6 +41,13 @@ pt-PT:
       manage_link: "Ver ou cancelar a sua marcação"
       total: "Total: %{amount} %{currency}"
       free: "%{count} das sessões são grátis."
+    verify:
+      subject: "Confirme a sua marcação: %{service}"
+      title: "Confirme o seu e-mail para manter a marcação"
+      intro: "%{service} está guardado para si durante %{minutes} minutos:"
+      confirm: "Confirmar a minha marcação: %{url}"
+      confirm_link: "Confirmar a minha marcação"
+      ignore: "Se não pediu isto, ignore este e-mail e o lugar é libertado."
     request_received:
       subject: "Pedido recebido: %{service}"
       title: "Recebemos o seu pedido de marcação"

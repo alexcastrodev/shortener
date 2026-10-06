@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -80,7 +80,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_110000) do
     t.datetime "created_at", null: false
     t.index ["appointment_id"], name: "index_appointment_tokens_on_appointment_id"
     t.index ["digest"], name: "index_appointment_tokens_on_digest", unique: true
-    t.check_constraint "purpose::text = ANY (ARRAY['manage'::character varying, 'approve'::character varying, 'decline'::character varying, 'decide'::character varying]::text[])", name: "appointment_tokens_purpose_known"
+    t.check_constraint "purpose::text = ANY (ARRAY['manage'::character varying, 'approve'::character varying, 'decline'::character varying, 'decide'::character varying, 'verify'::character varying]::text[])", name: "appointment_tokens_purpose_known"
   end
 
   create_table "appointments", force: :cascade do |t|
@@ -107,7 +107,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_110000) do
     t.datetime "owner_nudged_at"
     t.datetime "created_at", null: false
     t.integer "reminders_sent", default: [], null: false, array: true
-    t.index ["expires_at"], name: "index_appointments_pending_expires_at", where: "((status)::text = 'pending'::text)"
+    t.index ["expires_at"], name: "index_appointments_pending_expires_at", where: "((status)::text = ANY ((ARRAY['pending'::character varying, 'unverified'::character varying])::text[]))"
     t.index ["form_id", "status"], name: "index_appointments_on_form_id_and_status"
     t.index ["form_id"], name: "index_appointments_on_form_id"
     t.index ["group_key"], name: "index_appointments_on_group_key"

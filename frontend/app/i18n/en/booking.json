@@ -148,5 +148,7 @@
   "reminder_360": "6 hours before",
   "reminder_1440": "1 day before",
   "reminder_2880": "2 days before",
-  "reminder_10080": "1 week before"
+  "reminder_10080": "1 week before",
+  "verify_email": "Ask the client to confirm their email",
+  "verify_email_hint": "The place is held for 15 minutes. Without a click it is released and you hear nothing about it."
 }

@@ -1,5 +1,5 @@
 class Appointment < ApplicationRecord
-  HOLDING = ["pending", "confirmed"].freeze
+  HOLDING = ["pending", "unverified", "confirmed"].freeze
 
   belongs_to :form
   belongs_to :response, class_name: "FormResponse"
