@@ -24,8 +24,11 @@ export type FormLayout = (typeof FORM_LAYOUTS)[number];
 
 export type FormChoice = { id: string; label: string };
 
+export type BookingCategory = { id: string; name: string };
+
 export type BookingService = {
   id: string;
+  category_id?: string | null;
   name: string;
   duration: number;
   price?: number | null;
@@ -73,6 +76,7 @@ export type FormField = {
   scale?: 5 | 10;
   min?: number;
   max?: number;
+  categories?: BookingCategory[];
   services?: BookingService[];
   rules?: BookingRules;
   exceptions?: BookingException[];
@@ -116,6 +120,7 @@ export type FormFieldInput = {
   scale?: 5 | 10;
   min?: number | null;
   max?: number | null;
+  categories?: BookingCategory[];
   services?: BookingServiceInput[];
   rules?: Partial<BookingRules>;
   exceptions?: BookingExceptionInput[];

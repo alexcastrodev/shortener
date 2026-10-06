@@ -7,9 +7,12 @@ import type {
 export const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 export const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+export type CategoryValues = { id: string; name: string };
+
 export type ServiceValues = {
   key: string;
   id?: string;
+  categoryId: string;
   name: string;
   duration: number | '';
   price: number | '';
@@ -37,6 +40,7 @@ export type ExceptionValues = {
 export type Values = {
   label: string;
   help: string;
+  categories: CategoryValues[];
   services: ServiceValues[];
   exceptions: ExceptionValues[];
   approval: 'auto' | 'manual';
@@ -49,6 +53,53 @@ export type Values = {
 
 export const newKey = () => Math.random().toString(36).slice(2);
 
+const ALPHANUMERIC =
+  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+export const newCategoryId = () =>
+  Array.from(
+    { length: 8 },
+    () => ALPHANUMERIC[Math.floor(Math.random() * ALPHANUMERIC.length)]
+  ).join('');
+
+export const MAX_CATEGORIES = 10;
+
+export const isGrouped = (values: Values) => values.categories.length >= 2;
+
+export function splitIntoCategories(
+  values: Values,
+  names: [string, string]
+): Values {
+  if (isGrouped(values)) return values;
+  const first = values.categories[0] ?? { id: newCategoryId(), name: names[0] };
+  const second = { id: newCategoryId(), name: names[1] };
+  return {
+    ...values,
+    categories: [first, second],
+    services: values.services.map(service => ({
+      ...service,
+      categoryId: first.id,
+    })),
+  };
+}
+
+export function removeCategory(
+  values: Values,
+  id: string,
+  moveTo: string
+): Values {
+  if (id === moveTo || !values.categories.some(item => item.id === moveTo)) {
+    return values;
+  }
+  return {
+    ...values,
+    categories: values.categories.filter(item => item.id !== id),
+    services: values.services.map(service =>
+      service.categoryId === id ? { ...service, categoryId: moveTo } : service
+    ),
+  };
+}
+
 export const blankException = (): ExceptionValues => ({
   key: newKey(),
   kind: 'closed',
@@ -59,8 +110,9 @@ export const blankException = (): ExceptionValues => ({
   note: '',
 });
 
-export const blankService = (name: string): ServiceValues => ({
+export const blankService = (name: string, categoryId = ''): ServiceValues => ({
   key: newKey(),
+  categoryId,
   name,
   duration: 60,
   price: '',
@@ -79,9 +131,14 @@ export function initialValues(field?: FormField): Values {
   return {
     label: field?.label ?? '',
     help: field?.help ?? '',
+    categories: (field?.categories ?? []).map(item => ({
+      id: item.id,
+      name: item.name,
+    })),
     services: (field?.services ?? []).map(service => ({
       key: service.id,
       id: service.id,
+      categoryId: service.category_id ?? field?.categories?.[0]?.id ?? '',
       name: service.name,
       duration: service.duration,
       price: service.price ?? '',
@@ -140,9 +197,16 @@ export function toBookingInput(
   const maxPerDay = orNull(values.max_per_day);
   if (maxPerDay !== null) rules.max_per_day = maxPerDay;
 
+  const grouped = isGrouped(values);
   const input: FormFieldInput = {
     label: values.label.trim(),
     help: values.help.trim() || (creating ? undefined : null),
+    categories: grouped
+      ? values.categories.map(item => ({
+          id: item.id,
+          name: item.name.trim(),
+        }))
+      : [],
     services: values.services.map(service => {
       const price = orNull(service.price);
       const capacity = orNull(service.capacity);
@@ -159,6 +223,7 @@ export function toBookingInput(
         : undefined;
       return {
         ...(service.id ? { id: service.id } : {}),
+        ...(grouped ? { category_id: service.categoryId } : {}),
         name: service.name.trim(),
         duration: Number(service.duration),
         ...(price !== null

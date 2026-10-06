@@ -14,6 +14,7 @@ class PublicFormSerializer < BaseSerializer
         visible["choices"] = visible["choices"].map { |choice| choice.slice(*CHOICE_KEYS) } if visible["choices"]
         if field["type"] == "booking"
           visible["services"] = field["services"].map { |service| service.slice(*Forms::BookingSchema::PUBLIC_SERVICE_KEYS) }
+          visible["categories"] = field["categories"].to_a
           visible["time_zone"] = field.dig("rules", "time_zone")
         end
       end
