@@ -1,5 +1,6 @@
 import { IconCopy, IconShieldCheck } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePointerTilt } from './use-pointer-tilt';
 import { formatNumber, useLocale } from '../../i18n/format';
 
@@ -72,6 +73,7 @@ function useClickCounter(start: number) {
 
 export function HeroConsole() {
   useLocale();
+  const { t } = useTranslation('landing');
   const { sample, typed, phase } = useShortenLoop();
   const clicks = useClickCounter(1284);
   const { ref, onPointerMove, onPointerLeave } = usePointerTilt<HTMLDivElement>(5);
@@ -106,7 +108,7 @@ export function HeroConsole() {
               )}
             </span>
             <span className="rounded-md bg-primary px-2.5 py-1 font-sans text-xs font-semibold text-primary-foreground">
-              Shorten
+              {t('hc_shorten')}
             </span>
           </div>
 
@@ -117,7 +119,7 @@ export function HeroConsole() {
             >
               <div className="min-w-0">
                 <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-                  Your short link
+                  {t('hc_short_link')}
                 </p>
                 <p className="truncate font-mono text-base font-semibold text-foreground sm:text-lg">
                   kurz.fyi/{sample.code}
@@ -128,15 +130,15 @@ export function HeroConsole() {
 
             <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-3 text-xs text-muted-foreground">
               <IconShieldCheck size={18} className="text-primary" />
-              Safe Browsing
-              <span className="font-semibold text-foreground">clean</span>
+              {t('hc_safe')}
+              <span className="font-semibold text-foreground">{t('hc_clean')}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-end gap-5 rounded-lg border border-border px-4 py-3">
             <div>
               <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-                Clicks
+                {t('hc_clicks')}
               </p>
               <p className="font-display text-3xl font-semibold tabular-nums">
                 {formatNumber(clicks)}

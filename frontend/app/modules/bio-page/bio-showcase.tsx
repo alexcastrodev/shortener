@@ -1,5 +1,7 @@
 import { IconChartBar, IconLink, IconQrcode } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { PublicPage } from '@internal/core/types/Page';
 import { BioPageView } from './bio-page-view';
 import { illustratedAvatar } from './illustrated-avatar';
@@ -28,54 +30,62 @@ const social = (id: number, icon: string) => ({
   icon,
 });
 
-const FRONT: SamplePage = {
-  slug: 'marina',
-  display_title: 'Marina Costa',
-  bio: 'Ceramics and slow mornings. New pieces every month.',
-  theme: 'sunset',
-  avatar_url: illustratedAvatar({
+const FRONT_AVATAR = illustratedAvatar({
     background: ['#fed7aa', '#fb923c'],
     skin: '#f1c9a5',
     hair: '#7c2d12',
     shirt: '#9a3412',
-  }),
-  links: [
-    social(10, 'instagram'),
-    social(11, 'tiktok'),
-    social(12, 'whatsapp'),
-    ...links('Shop the latest collection', 'Workshop dates'),
-    { id: 20, kind: 'header' as const, label: 'Press', url: null, icon: null },
-    { id: 21, kind: 'link' as const, label: 'Featured on YouTube', url: '#', icon: 'youtube' },
-  ],
-};
+  });
 
-const LEFT: SamplePage = {
-  slug: 'studionord',
-  display_title: 'Studio Nord',
-  bio: 'Brand and type design from Porto.',
-  theme: 'midnight',
-  avatar_url: illustratedAvatar({
+const LEFT_AVATAR = illustratedAvatar({
     background: ['#818cf8', '#4338ca'],
     skin: '#e0ac86',
     hair: '#1e1b4b',
     shirt: '#312e81',
-  }),
-  links: links('Portfolio', 'Case studies', 'Book a call'),
-};
+  });
 
-const RIGHT: SamplePage = {
-  slug: 'rafa',
-  display_title: 'Rafa Lima',
-  bio: 'Running coach. Plans for your first 10k.',
-  theme: 'forest',
-  avatar_url: illustratedAvatar({
+const RIGHT_AVATAR = illustratedAvatar({
     background: ['#bbf7d0', '#22c55e'],
     skin: '#8d5a3b',
     hair: '#14532d',
     shirt: '#166534',
-  }),
-  links: links('Training plans', 'Strava club', 'Race calendar'),
-};
+  });
+
+function samples(t: TFunction<'landing'>): { front: SamplePage; left: SamplePage; right: SamplePage } {
+  return {
+    front: {
+      slug: 'marina',
+      display_title: 'Marina Costa',
+      bio: t('bs_marina_bio'),
+      theme: 'sunset',
+      avatar_url: FRONT_AVATAR,
+      links: [
+        social(10, 'instagram'),
+        social(11, 'tiktok'),
+        social(12, 'whatsapp'),
+        ...links(t('bs_marina_shop'), t('bs_marina_workshops')),
+        { id: 20, kind: 'header' as const, label: t('bs_press'), url: null, icon: null },
+        { id: 21, kind: 'link' as const, label: t('bs_youtube'), url: '#', icon: 'youtube' },
+      ],
+    },
+    left: {
+      slug: 'studionord',
+      display_title: 'Studio Nord',
+      bio: t('bs_nord_bio'),
+      theme: 'midnight',
+      avatar_url: LEFT_AVATAR,
+      links: links(t('bs_portfolio'), t('bs_cases'), t('bs_call')),
+    },
+    right: {
+      slug: 'rafa',
+      display_title: 'Rafa Lima',
+      bio: t('bs_rafa_bio'),
+      theme: 'forest',
+      avatar_url: RIGHT_AVATAR,
+      links: links(t('bs_plans'), t('bs_strava'), t('bs_races')),
+    },
+  };
+}
 
 // Deterministic QR-like pattern: decorative only, it does not encode data.
 function QrPattern() {
@@ -135,6 +145,8 @@ function useTapCounter(start: number) {
 // scrolls into view, plus what comes with every page (short address,
 // clicks per link, QR code). Decorative; described by one aria-label.
 export function BioShowcase() {
+  const { t } = useTranslation('landing');
+  const { front: FRONT, left: LEFT, right: RIGHT } = samples(t);
   const clicks = useTapCounter(342);
   const { ref, onPointerMove, onPointerLeave } = usePointerTilt<HTMLDivElement>(10);
 
@@ -144,7 +156,7 @@ export function BioShowcase() {
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
       role="img"
-      aria-label="Three example bio pages in different themes, with a short page address, click counts per link and a QR code"
+      aria-label={t('bs_aria')}
       className="bio-stage relative mx-auto h-[520px] w-full max-w-[600px] sm:h-[600px]"
     >
       <div
@@ -191,11 +203,11 @@ export function BioShowcase() {
             <div className={`${chip} landing-float-delayed w-52 p-3`}>
               <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <IconChartBar size={14} />
-                Shop the latest collection
+                {t('bs_marina_shop')}
               </div>
               <div className="mt-1 flex items-end justify-between gap-3">
                 <span className="font-display text-xl font-semibold tabular-nums">
-                  {clicks} clicks
+                  {t('bs_clicks', { count: clicks })}
                 </span>
                 <span className="flex h-8 items-end gap-1">
                   {[35, 55, 40, 70, 60, 85, 100].map((height, index) => (
@@ -207,7 +219,7 @@ export function BioShowcase() {
                   ))}
                 </span>
               </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">this week</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">{t('bs_this_week')}</div>
             </div>
           </div>
 
@@ -219,9 +231,9 @@ export function BioShowcase() {
               <span>
                 <span className="flex items-center gap-1 text-sm font-semibold">
                   <IconQrcode size={15} />
-                  QR code
+                  {t('bs_qr')}
                 </span>
-                <span className="text-xs text-muted-foreground">Print it, scan it.</span>
+                <span className="text-xs text-muted-foreground">{t('bs_print')}</span>
               </span>
             </div>
           </div>
