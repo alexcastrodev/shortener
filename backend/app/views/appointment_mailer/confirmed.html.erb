@@ -11,6 +11,9 @@
                 <li><%= session %></li>
               <% end %>
             </ul>
+            <% if @total %>
+              <p style="margin:0 0 12px;font-weight:600;"><%= t(".total", amount: number_with_precision(@total, precision: 2), currency: @currency) %><% if @free.positive? %> · <%= t(".free", count: @free) %><% end %></p>
+            <% end %>
             <p class="muted" style="margin:0 0 12px;color:#4b5563;"><%= t(".reply") %></p>
             <p style="margin:0;"><a href="<%= @manage_url %>" style="color:#116d6e;"><%= t(".manage_link") %></a></p>
           </td>

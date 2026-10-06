@@ -2,8 +2,8 @@ module Forms
   module BookingSchema
     extend self
 
-    SERVICE_KEYS = ["id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day"].freeze
-    PUBLIC_SERVICE_KEYS = ["id", "name", "duration", "price", "currency", "days", "times"].freeze
+    SERVICE_KEYS = ["id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day", "bundle"].freeze
+    PUBLIC_SERVICE_KEYS = ["id", "name", "duration", "price", "currency", "days", "times", "bundle"].freeze
     RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
     RULE_RANGES = { "min_notice_minutes" => (0..43_200), "window_days" => (1..365), "buffer_minutes" => (0..600), "max_per_day" => (1..1000), "approval_timeout_minutes" => (5..43_200) }.freeze
     APPROVALS = ["auto", "manual"].freeze
@@ -12,6 +12,7 @@ module Forms
     DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].freeze
     TIME = /\A([01]\d|2[0-3]):[0-5]\d\z/
     SERVICES_MAX = 20
+    BUNDLE_TAKE_MAX = 31
     TIMES_MAX = 96
     NAME_MAX = 100
     DURATION = (5..600)
@@ -160,6 +161,23 @@ module Forms
       times = service["times"]
       result << "times must be unique HH:MM values (max #{TIMES_MAX})" unless times.is_a?(Array) && times.size <= TIMES_MAX && times.all? { |time| time.is_a?(String) && time.match?(TIME) } && times.uniq.size == times.size
       result.concat(by_day_errors(service))
+      result.concat(bundle_errors(service))
+      result
+    end
+
+    def bundle_errors(service)
+      bundle = service["bundle"]
+      return [] if bundle.nil?
+      return ["bundle must be an object"] unless bundle.is_a?(Hash) && (bundle.keys - ["take", "pay"]).empty?
+
+      result = []
+      result << "bundle needs a price" if service["price"].nil?
+      take = bundle["take"]
+      pay = bundle["pay"]
+      return result + ["bundle take and pay must be whole numbers"] unless take.is_a?(Integer) && pay.is_a?(Integer)
+
+      result << "bundle take must be between 2 and #{BUNDLE_TAKE_MAX}" unless take.between?(2, BUNDLE_TAKE_MAX)
+      result << "bundle pay must be at least 1 and less than take" if pay < 1 || pay >= take
       result
     end
 

@@ -44,7 +44,13 @@ module Mcp
           starts_at: appointment.slot.starts_at.utc.iso8601,
           service: Content.clean(appointment.snapshot["name"], max: 100),
           created_at: appointment.created_at.utc.iso8601,
-        )
+          price: price(appointment),
+        ).compact
+      end
+
+      def self.price(appointment)
+        snapshot = appointment.snapshot
+        { total: snapshot["total"], currency: snapshot["currency"], free_sessions: snapshot["free_sessions"] } if snapshot["total"]
       end
 
       def self.page(rows)
