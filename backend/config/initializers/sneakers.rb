@@ -11,3 +11,6 @@ Sneakers.configure(
   log: $stdout,
   ack: true,
 )
+
+# Sneakers logs every AMQP heartbeat at DEBUG by default.
+Sneakers.logger.level = Logger.const_get(ENV.fetch("SNEAKERS_LOG_LEVEL", "error").upcase)
