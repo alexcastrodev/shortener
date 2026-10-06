@@ -1,0 +1,384 @@
+import {
+  ActionIcon,
+  Button,
+  Chip,
+  Group,
+  NumberInput,
+  SegmentedControl,
+  Stack,
+  TextInput,
+} from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { modals } from '@mantine/modals';
+import { IconPlus, IconTrash, IconX } from '@tabler/icons-react';
+import { zod4Resolver } from 'mantine-form-zod-resolver';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { z } from 'zod/v4';
+import type { FormField, FormFieldInput } from '@internal/core/types/Form';
+import {
+  DAYS,
+  TIME,
+  blankService,
+  initialValues,
+  newKey,
+  toBookingInput,
+  type Values,
+} from '../../../modules/forms/booking-config.ts';
+
+export function BookingEditor({
+  field,
+  loading,
+  onSubmit,
+  onCancel,
+}: {
+  field?: FormField;
+  loading: boolean;
+  onSubmit: (input: FormFieldInput) => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation('booking');
+  const creating = !field;
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        label: z.string().trim().min(1).max(300),
+        help: z.string().max(500),
+        services: z.array(
+          z
+            .object({
+              name: z.string().trim().min(1, t('error_name')).max(100),
+              duration: z
+                .number(t('error_duration'))
+                .int()
+                .min(5, t('error_duration'))
+                .max(600, t('error_duration')),
+              price: z.union([z.number().min(0), z.literal('')]),
+              currency: z.string(),
+              days: z.array(z.string()).min(1, t('error_days')),
+              times: z
+                .array(
+                  z.object({ value: z.string().regex(TIME, t('error_time')) })
+                )
+                .min(1, t('error_times')),
+            })
+            .check(ctx => {
+              const { price, currency } = ctx.value;
+              if (price !== '' && !/^[A-Za-z]{3}$/.test(currency.trim())) {
+                ctx.issues.push({
+                  code: 'custom',
+                  message: t('error_price_currency'),
+                  path: ['currency'],
+                  input: currency,
+                });
+              }
+            })
+        ),
+      }),
+    [t]
+  );
+
+  const form = useForm<Values>({
+    mode: 'controlled',
+    initialValues: initialValues(field),
+    validate: zod4Resolver(schema),
+  });
+
+  const dayLabels: Record<(typeof DAYS)[number], string> = {
+    mon: t('day_mon'),
+    tue: t('day_tue'),
+    wed: t('day_wed'),
+    thu: t('day_thu'),
+    fri: t('day_fri'),
+    sat: t('day_sat'),
+    sun: t('day_sun'),
+  };
+
+  const confirmRemove = (index: number) => {
+    const name = form.values.services[index].name || t('service_new');
+    modals.openConfirmModal({
+      title: t('service_remove_title'),
+      centered: true,
+      children: <p className="text-sm">{t('service_remove_body')}</p>,
+      labels: {
+        confirm: t('service_remove_confirm'),
+        cancel: t('service_remove_cancel'),
+      },
+      confirmProps: {
+        color: 'red',
+        'aria-label': t('service_remove', { name }),
+      },
+      onConfirm: () => form.removeListItem('services', index),
+    });
+  };
+
+  return (
+    <form
+      onSubmit={form.onSubmit(values =>
+        onSubmit(toBookingInput(values, creating))
+      )}
+    >
+      <Stack gap="md">
+        <p className="text-xs font-medium text-muted-foreground">
+          {t('type_label')}
+        </p>
+        <TextInput
+          label={t('question_label')}
+          required
+          data-autofocus
+          {...form.getInputProps('label')}
+        />
+        <TextInput label={t('help_label')} {...form.getInputProps('help')} />
+
+        <Stack gap="sm">
+          <div>
+            <p className="text-sm font-medium">{t('services_title')}</p>
+            <p className="text-xs text-muted-foreground">
+              {t('services_hint')}
+            </p>
+          </div>
+          {form.values.services.length === 0 && (
+            <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+              {t('no_services')}
+            </p>
+          )}
+          {form.values.services.map((service, index) => (
+            <div
+              key={service.key}
+              className="rounded-lg border border-border p-3"
+            >
+              <Stack gap="sm">
+                <Group gap="xs" wrap="nowrap" align="flex-end">
+                  <TextInput
+                    className="flex-1"
+                    label={t('service_name')}
+                    {...form.getInputProps(`services.${index}.name`)}
+                  />
+                  <ActionIcon
+                    variant="subtle"
+                    color="red"
+                    size="lg"
+                    aria-label={t('service_remove', {
+                      name: service.name || t('service_new'),
+                    })}
+                    onClick={() => confirmRemove(index)}
+                  >
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                </Group>
+                <Group grow align="flex-start">
+                  <NumberInput
+                    label={t('service_duration')}
+                    min={5}
+                    max={600}
+                    allowDecimal={false}
+                    {...form.getInputProps(`services.${index}.duration`)}
+                  />
+                  <NumberInput
+                    label={t('service_capacity')}
+                    description={t('service_capacity_hint')}
+                    min={1}
+                    max={1000}
+                    allowDecimal={false}
+                    {...form.getInputProps(`services.${index}.capacity`)}
+                  />
+                </Group>
+                <Group grow align="flex-start">
+                  <NumberInput
+                    label={t('service_price')}
+                    min={0}
+                    decimalScale={2}
+                    {...form.getInputProps(`services.${index}.price`)}
+                  />
+                  <TextInput
+                    label={t('service_currency')}
+                    maxLength={3}
+                    placeholder="EUR"
+                    {...form.getInputProps(`services.${index}.currency`)}
+                  />
+                </Group>
+                <div>
+                  <p className="mb-1 text-sm font-medium">
+                    {t('service_days')}
+                  </p>
+                  <Chip.Group
+                    multiple
+                    value={service.days}
+                    onChange={value =>
+                      form.setFieldValue(`services.${index}.days`, value)
+                    }
+                  >
+                    <Group gap={6}>
+                      {DAYS.map(day => (
+                        <Chip key={day} value={day} size="xs">
+                          {dayLabels[day]}
+                        </Chip>
+                      ))}
+                    </Group>
+                  </Chip.Group>
+                  {typeof form.errors[`services.${index}.days`] ===
+                    'string' && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {form.errors[`services.${index}.days`]}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <p className="mb-1 text-sm font-medium">
+                    {t('service_times')}
+                  </p>
+                  <Group gap="xs">
+                    {service.times.map((time, timeIndex) => (
+                      <Group key={time.key} gap={2} wrap="nowrap">
+                        <TextInput
+                          type="time"
+                          size="xs"
+                          aria-label={t('service_times')}
+                          {...form.getInputProps(
+                            `services.${index}.times.${timeIndex}.value`
+                          )}
+                        />
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          aria-label={t('service_remove_time', {
+                            time: time.value,
+                          })}
+                          onClick={() =>
+                            form.removeListItem(
+                              `services.${index}.times`,
+                              timeIndex
+                            )
+                          }
+                        >
+                          <IconX size={14} />
+                        </ActionIcon>
+                      </Group>
+                    ))}
+                    <Button
+                      variant="subtle"
+                      size="compact-xs"
+                      leftSection={<IconPlus size={12} />}
+                      onClick={() =>
+                        form.insertListItem(`services.${index}.times`, {
+                          key: newKey(),
+                          value: '',
+                        })
+                      }
+                    >
+                      {t('service_add_time')}
+                    </Button>
+                  </Group>
+                  {typeof form.errors[`services.${index}.times`] ===
+                    'string' && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {form.errors[`services.${index}.times`]}
+                    </p>
+                  )}
+                </div>
+              </Stack>
+            </div>
+          ))}
+          <div>
+            <Button
+              variant="subtle"
+              size="xs"
+              leftSection={<IconPlus size={14} />}
+              onClick={() =>
+                form.insertListItem('services', blankService(t('service_new')))
+              }
+            >
+              {t('service_add')}
+            </Button>
+          </div>
+        </Stack>
+
+        <Stack gap="sm">
+          <p className="text-sm font-medium">{t('rules_title')}</p>
+          {field?.rules?.time_zone && (
+            <div>
+              <p className="text-xs text-muted-foreground">{t('time_zone')}</p>
+              <p className="text-sm">{field.rules.time_zone}</p>
+              <p className="text-xs text-muted-foreground">
+                {t('time_zone_hint')}
+              </p>
+            </div>
+          )}
+          <div>
+            <p className="mb-1 text-sm">{t('approval')}</p>
+            <SegmentedControl
+              data={[
+                { value: 'auto', label: t('approval_auto') },
+                { value: 'manual', label: t('approval_manual') },
+              ]}
+              value={form.values.approval}
+              onChange={value =>
+                form.setFieldValue('approval', value as 'auto' | 'manual')
+              }
+            />
+          </div>
+          {form.values.approval === 'manual' && (
+            <Group grow align="flex-start">
+              <NumberInput
+                label={t('approval_timeout')}
+                min={5}
+                max={43200}
+                allowDecimal={false}
+                {...form.getInputProps('approval_timeout_minutes')}
+              />
+              <div>
+                <p className="mb-1 text-sm">{t('approval_on_timeout')}</p>
+                <SegmentedControl
+                  data={[
+                    { value: 'decline', label: t('on_timeout_decline') },
+                    { value: 'accept', label: t('on_timeout_accept') },
+                  ]}
+                  value={form.values.approval_on_timeout}
+                  onChange={value =>
+                    form.setFieldValue(
+                      'approval_on_timeout',
+                      value as 'decline' | 'accept'
+                    )
+                  }
+                />
+              </div>
+            </Group>
+          )}
+          <Group grow align="flex-start">
+            <NumberInput
+              label={t('min_notice')}
+              min={0}
+              max={43200}
+              allowDecimal={false}
+              {...form.getInputProps('min_notice_minutes')}
+            />
+            <NumberInput
+              label={t('window_days')}
+              min={1}
+              max={365}
+              allowDecimal={false}
+              {...form.getInputProps('window_days')}
+            />
+            <NumberInput
+              label={t('max_per_day')}
+              min={1}
+              max={1000}
+              allowDecimal={false}
+              {...form.getInputProps('max_per_day')}
+            />
+          </Group>
+        </Stack>
+
+        <Group justify="flex-end" gap="xs">
+          <Button variant="default" onClick={onCancel}>
+            {t('cancel')}
+          </Button>
+          <Button type="submit" color="brand" loading={loading}>
+            {creating ? t('add') : t('save')}
+          </Button>
+        </Group>
+      </Stack>
+    </form>
+  );
+}

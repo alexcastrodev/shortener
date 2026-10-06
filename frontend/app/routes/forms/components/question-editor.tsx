@@ -18,6 +18,7 @@ import type {
   FormFieldType,
 } from '@internal/core/types/Form';
 import { fieldTypeLabel, isChoiceType } from '../../../modules/forms/field-types';
+import { BookingEditor } from './booking-editor';
 
 type ChoiceValue = { key: string; id?: string; label: string };
 
@@ -114,6 +115,10 @@ export function QuestionEditor({
     initialValues: initialValues(type, field),
     validate: zod4Resolver(schemaFor(type)),
   });
+
+  if (type === 'booking') {
+    return <BookingEditor field={field} loading={loading} onSubmit={onSubmit} onCancel={onCancel} />;
+  }
 
   return (
     <form onSubmit={form.onSubmit(values => onSubmit(toInput(type, values, creating)))}>
