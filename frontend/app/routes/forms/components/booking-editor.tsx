@@ -16,6 +16,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
 import type { FormField, FormFieldInput } from '@internal/core/types/Form';
+import { TimeGeneratorPanel } from './time-generator-panel';
 import {
   DAYS,
   TIME,
@@ -270,6 +271,18 @@ export function BookingEditor({
                       {t('service_add_time')}
                     </Button>
                   </Group>
+                  <div className="mt-2">
+                    <TimeGeneratorPanel
+                      duration={Number(service.duration) || 60}
+                      hasTimes={service.times.length > 0}
+                      onApply={times =>
+                        form.setFieldValue(
+                          `services.${index}.times`,
+                          times.map(value => ({ key: newKey(), value }))
+                        )
+                      }
+                    />
+                  </div>
                   {typeof form.errors[`services.${index}.times`] ===
                     'string' && (
                     <p className="mt-1 text-xs text-red-500">
