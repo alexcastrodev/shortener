@@ -11,6 +11,7 @@ import pages from './en/pages.json';
 import forms from './en/forms.json';
 import respond from './en/respond.json';
 import settings from './en/settings.json';
+import account from './en/account.json';
 import menuPt from './pt-PT/menu.json';
 import homePt from './pt-PT/home.json';
 import dashboardPt from './pt-PT/dashboard.json';
@@ -21,10 +22,11 @@ import pagesPt from './pt-PT/pages.json';
 import formsPt from './pt-PT/forms.json';
 import respondPt from './pt-PT/respond.json';
 import settingsPt from './pt-PT/settings.json';
+import accountPt from './pt-PT/account.json';
 
 export const resources = {
-  en: { menu, home, dashboard, admin, links, auth, pages, forms, respond, settings },
-  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt, settings: settingsPt },
+  en: { menu, home, dashboard, admin, links, auth, pages, forms, respond, settings, account },
+  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt, settings: settingsPt, account: accountPt },
 } as const;
 
 i18n.use(initReactI18next).init({

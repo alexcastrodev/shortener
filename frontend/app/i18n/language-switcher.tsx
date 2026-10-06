@@ -22,7 +22,7 @@ export function LanguageSwitcher({ size = 'xs' }: { size?: 'xs' | 'sm' }) {
     <NativeSelect
       aria-label={t('language')}
       size={size}
-      w={170}
+      w={size === 'sm' ? 220 : 170}
       value={current}
       data={LOCALES.map(locale => ({ value: locale, label: NAMES[locale] }))}
       onChange={event => {
