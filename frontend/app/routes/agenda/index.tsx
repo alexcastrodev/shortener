@@ -297,16 +297,28 @@ export default function AgendaPage() {
                           width: `calc(${100 / block.lanes}% - 4px)`,
                         }}
                       >
-                        <span className="block truncate font-semibold">
+                        <span
+                          className={`block truncate font-semibold ${block.height < 44 ? 'leading-none' : ''}`}
+                        >
                           {session.service_name ?? t('service_fallback')}
+                          {block.height < 44 && (
+                            <span className="ml-1 text-[11px] font-normal text-muted-foreground">
+                              {occupancyText(session)}
+                              {session.pending > 0
+                                ? ` · ${session.pending}`
+                                : ''}
+                            </span>
+                          )}
                         </span>
-                        <span className="block truncate text-[11px] text-muted-foreground">
-                          {clock(minutesOfDay(session.starts_at, zone))} ·{' '}
-                          {occupancyText(session)}
-                          {session.pending > 0
-                            ? ` · ${t('pending', { count: session.pending })}`
-                            : ''}
-                        </span>
+                        {block.height >= 44 && (
+                          <span className="block truncate text-[11px] text-muted-foreground">
+                            {clock(minutesOfDay(session.starts_at, zone))} ·{' '}
+                            {occupancyText(session)}
+                            {session.pending > 0
+                              ? ` · ${t('pending', { count: session.pending })}`
+                              : ''}
+                          </span>
+                        )}
                       </button>
                     );
                   })}

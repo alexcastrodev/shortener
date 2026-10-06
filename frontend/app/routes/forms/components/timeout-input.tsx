@@ -24,6 +24,8 @@ export function TimeoutInput({
       ? ''
       : minutes / (unit === 'days' ? 1440 : unit === 'hours' ? 60 : 1);
 
+  const shown = amount === '' ? 2 : amount;
+
   return (
     <div>
       <p className="mb-1 text-sm">{t('approval_timeout')}</p>
@@ -42,9 +44,9 @@ export function TimeoutInput({
           aria-label={t('approval_timeout')}
           allowDeselect={false}
           data={[
-            { value: 'minutes', label: t('unit_minutes') },
-            { value: 'hours', label: t('unit_hours') },
-            { value: 'days', label: t('unit_days') },
+            { value: 'minutes', label: t('unit_minutes', { count: shown }) },
+            { value: 'hours', label: t('unit_hours', { count: shown }) },
+            { value: 'days', label: t('unit_days', { count: shown }) },
           ]}
           value={unit}
           onChange={value => {

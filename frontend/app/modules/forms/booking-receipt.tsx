@@ -9,6 +9,9 @@ export function BookingReceipt({ receipt, linkClass, textClass }: Props) {
 
   return (
     <div className={`mt-6 text-sm ${textClass}`}>
+      {receipt.appointments?.some(item => item.status === 'pending') && (
+        <p className="mb-2 font-medium">{t('receipt_pending')}</p>
+      )}
       <p className="font-medium">{t('receipt_keep_link')}</p>
       <a href={receipt.manage_url} className={`mt-1 block break-all underline ${linkClass}`}>
         {receipt.manage_url}

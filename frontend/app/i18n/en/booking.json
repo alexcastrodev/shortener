@@ -109,9 +109,12 @@
   "bundle_example": "Example: {{take}} sessions cost the price of {{pay}}.",
   "error_bundle": "Taken must be 2 to 31 and paid at least 1 and fewer than taken",
   "error_bundle_price": "A package needs a price",
-  "unit_minutes": "minutes",
-  "unit_hours": "hours",
-  "unit_days": "days",
+  "unit_minutes_one": "minute",
+  "unit_minutes_other": "minutes",
+  "unit_hours_one": "hour",
+  "unit_hours_other": "hours",
+  "unit_days_one": "day",
+  "unit_days_other": "days",
   "timeout_range": "From 5 minutes to 30 days.",
   "error_timeout": "The deadline must be from 5 minutes to 30 days"
 }
