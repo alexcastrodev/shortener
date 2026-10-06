@@ -23,5 +23,6 @@
   "past_notice": "Esta marcação já não pode ser cancelada online.",
   "status_unverified": "A aguardar confirmação do e-mail",
   "cancel_one": "Cancelar só esta",
-  "cancel_rest": "Cancelar esta e as seguintes"
+  "cancel_rest": "Cancelar esta e as seguintes",
+  "cancelled_part_notice": "As sessões que escolheu foram canceladas."
 }

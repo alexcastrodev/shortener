@@ -23,5 +23,6 @@
   "past_notice": "This booking can no longer be cancelled online.",
   "status_unverified": "Awaiting email confirmation",
   "cancel_one": "Cancel this one",
-  "cancel_rest": "Cancel this and the rest"
+  "cancel_rest": "Cancel this and the rest",
+  "cancelled_part_notice": "The sessions you chose were cancelled."
 }

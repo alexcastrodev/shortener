@@ -54,6 +54,8 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
   const [target, setTarget] = useState<CancelTarget | undefined>();
 
   const cancelled = appointment.status === 'cancelled';
+  const cancelledPart =
+    cancelled === false && justCancelled && Boolean(appointment.series);
 
   const onCancel = async () => {
     setBusy(true);
@@ -81,7 +83,7 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
           role="status"
           className="mt-6 rounded-md border border-border bg-muted px-3 py-2 text-sm"
         >
-          {t('cancelled_notice')}
+          {cancelledPart ? t('cancelled_part_notice') : t('cancelled_notice')}
         </p>
       )}
 
