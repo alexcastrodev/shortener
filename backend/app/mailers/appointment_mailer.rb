@@ -37,6 +37,25 @@ class AppointmentMailer < ApplicationMailer
     end
   end
 
+  def owner_cancelled
+    load_group
+    only = params[:notification].payload["cancelled_ids"]
+    @appointments = @appointments.select { |row| only.include?(row.id) } if only.present?
+    owner = @form.user
+    @sessions = sessions(owner.time_zone)
+    @client_name = single_line(@first.client_name)
+    @client_email = single_line(@first.client_email)
+    @reason = single_line(@first.cancel_reason).presence
+    @url = "#{frontend_url}/app/forms/#{@form.id}/responses"
+
+    with_recipient_locale(owner) do
+      mail(
+        to: owner.email,
+        subject: I18n.t("appointment_mailer.owner_cancelled.subject", service: @service, name: @client_name.presence || I18n.t("appointment_mailer.new_booking.someone")),
+      )
+    end
+  end
+
   def reminder
     load_group
     zone = Appointments::Book.valid_zone(@first.client_time_zone) || "UTC"

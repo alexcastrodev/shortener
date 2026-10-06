@@ -82,7 +82,7 @@ RSpec.describe("managing a booking from its link", type: :request) do
       token = token_for(Appointment.order(:id).first)
       deliveries.clear
 
-      expect { cancel(token, reason: "  Sick today  ") }.to(have_enqueued_job(NotificationDeliveryJob).exactly(1).times)
+      expect { cancel(token, reason: "  Sick today  ") }.to(have_enqueued_job(NotificationDeliveryJob).exactly(2).times)
 
       expect(response).to(have_http_status(:ok))
       expect(json["appointment"]).to(include("status" => "cancelled", "cancellable" => false))
@@ -90,7 +90,7 @@ RSpec.describe("managing a booking from its link", type: :request) do
       expect(AppointmentSlot.pluck(:booked).uniq).to(eq([0]))
       expect(Notification.in_app.order(:id).last).to(have_attributes(kind: "appointment_cancelled", user_id: current_user.id, payload: hash_including("sessions" => 2)))
       cancelled_mail = Notification.where(channel: "email", kind: "appointment_cancelled")
-      expect(cancelled_mail.pluck(:recipient_kind, :recipient_email, :status)).to(eq([["client", "ana@example.com", "pending"]]))
+      expect(cancelled_mail.pluck(:recipient_kind, :recipient_email, :status)).to(match_array([["client", "ana@example.com", "pending"], ["owner", nil, "pending"]]))
     end
 
     it "frees the place for someone else" do
@@ -108,7 +108,7 @@ RSpec.describe("managing a booking from its link", type: :request) do
       cancel(token)
 
       expect(response).to(have_http_status(:ok))
-      expect(Notification.where(kind: "appointment_cancelled").count).to(eq(2))
+      expect(Notification.where(kind: "appointment_cancelled").count).to(eq(3))
       expect(AppointmentSlot.pluck(:booked)).to(eq([0]))
     end
 

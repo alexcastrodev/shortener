@@ -164,7 +164,7 @@ RSpec.describe("fixed monthly booking", type: :request) do
       cancel({ scope: "one", session: rows[1].slot.starts_at.iso8601 })
       cancel({ scope: "remaining", session: rows[2].slot.starts_at.iso8601 })
       expect(statuses.uniq).to(eq(["cancelled"]))
-      expect(Notification.where(kind: "appointment_cancelled", recipient_kind: "owner").count).to(eq(3))
+      expect(Notification.where(kind: "appointment_cancelled", recipient_kind: "owner", channel: "in_app").count).to(eq(3))
     end
 
     it "refuses a session that is not in the booking, another booking's session and a bad time" do
