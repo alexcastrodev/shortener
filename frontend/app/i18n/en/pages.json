@@ -138,5 +138,7 @@
   "pc_what_username": "username",
   "pc_what_page": "page or profile",
   "pc_what_profile": "profile",
-  "pc_what_channel": "channel"
+  "pc_what_channel": "channel",
+  "view_no_links": "No links yet.",
+  "view_report": "Report"
 }

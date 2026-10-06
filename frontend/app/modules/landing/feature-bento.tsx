@@ -9,6 +9,7 @@ import {
   IconAlertTriangle,
 } from '@tabler/icons-react';
 import { useEffect, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SpotlightCard } from './spotlight-card';
 
 function CardTitle({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
@@ -57,6 +58,7 @@ function AnalyticsChart() {
 }
 
 function Countdown() {
+  const { t } = useTranslation('landing');
   // Fixed on the server; ticks down after hydration.
   const [seconds, setSeconds] = useState(2 * 3600 + 14 * 60 + 9);
 
@@ -72,7 +74,7 @@ function Countdown() {
   return (
     <div className="rounded-lg border border-border bg-background/60 px-4 py-3">
       <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-        kurz.fyi/launch expires in
+        {t('fb_countdown')}
       </p>
       <p className="font-mono text-2xl font-semibold tabular-nums">{time}</p>
     </div>
@@ -80,17 +82,18 @@ function Countdown() {
 }
 
 export function FeatureBento() {
+  const { t } = useTranslation('landing');
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <SpotlightCard className="md:col-span-2">
         <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] sm:items-end">
-          <CardTitle icon={<IconChartBar size={20} />} title="Analytics included">
-            See clicks by location, device, and browser.
+          <CardTitle icon={<IconChartBar size={20} />} title={t('fb_analytics_title')}>
+            {t('fb_analytics_body')}
           </CardTitle>
           <div>
             <AnalyticsChart />
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              {['iOS 48%', 'Android 31%', 'Desktop 21%'].map(label => (
+              {['iOS 48%', 'Android 31%', `${t('fb_desktop')} 21%`].map(label => (
                 <span key={label} className="rounded-full border border-border px-2.5 py-1 text-muted-foreground">
                   {label}
                 </span>
@@ -101,8 +104,8 @@ export function FeatureBento() {
       </SpotlightCard>
 
       <SpotlightCard>
-        <CardTitle icon={<IconShieldCheck size={20} />} title="Safety checks">
-          Links are checked with Google Safe Browsing.
+        <CardTitle icon={<IconShieldCheck size={20} />} title={t('fb_safety_title')}>
+          {t('fb_safety_body')}
         </CardTitle>
         <ul className="mt-5 space-y-2 font-mono text-xs">
           <li className="flex items-center justify-between rounded-md border border-border px-3 py-2">
@@ -121,21 +124,21 @@ export function FeatureBento() {
       </SpotlightCard>
 
       <SpotlightCard>
-        <CardTitle icon={<IconLock size={20} />} title="Password links">
-          Visitors enter a password before they are redirected.
+        <CardTitle icon={<IconLock size={20} />} title={t('fb_password_title')}>
+          {t('fb_password_body')}
         </CardTitle>
         <div className="mt-5 flex items-center gap-2 rounded-lg border border-border bg-background/60 px-3 py-2.5">
           <IconLock size={15} className="text-muted-foreground" />
           <span className="font-mono tracking-[0.3em] text-foreground">••••••</span>
           <span className="ml-auto rounded-md bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-            Unlock
+            {t('fb_unlock')}
           </span>
         </div>
       </SpotlightCard>
 
       <SpotlightCard>
-        <CardTitle icon={<IconCalendarTime size={20} />} title="Links that expire">
-          Pick a date and time. The link stops working on its own.
+        <CardTitle icon={<IconCalendarTime size={20} />} title={t('fb_expire_title')}>
+          {t('fb_expire_body')}
         </CardTitle>
         <div className="mt-5">
           <Countdown />
@@ -143,8 +146,8 @@ export function FeatureBento() {
       </SpotlightCard>
 
       <SpotlightCard>
-        <CardTitle icon={<IconGift size={20} />} title="Free forever">
-          No plans, no paywalls, no credit card.
+        <CardTitle icon={<IconGift size={20} />} title={t('fb_free_title')}>
+          {t('fb_free_body')}
         </CardTitle>
         <p className="landing-gradient-text mt-4 font-display text-6xl font-semibold tracking-tight">
           $0
@@ -153,14 +156,14 @@ export function FeatureBento() {
 
       <SpotlightCard className="md:col-span-3">
         <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] md:items-center">
-          <CardTitle icon={<IconBrandGithub size={20} />} title="Open source">
-            Code is public on GitHub. Self-host it if you want.
+          <CardTitle icon={<IconBrandGithub size={20} />} title={t('fb_oss_title')}>
+            {t('fb_oss_body')}
           </CardTitle>
           <pre className="overflow-x-auto rounded-lg border border-border bg-background/80 p-4 font-mono text-xs leading-6 sm:text-sm">
             <code>
               <span className="text-muted-foreground">$ </span>git clone https://github.com/alexcastrodev/shortner{'\n'}
               <span className="text-muted-foreground">$ </span>cd shortner{'\n'}
-              <span className="text-muted-foreground"># backend, edge function and frontend, MIT licensed</span>
+              <span className="text-muted-foreground">{t('fb_license_comment')}</span>
             </code>
           </pre>
         </div>

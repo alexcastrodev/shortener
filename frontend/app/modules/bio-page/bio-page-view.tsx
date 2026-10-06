@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { PublicPage, PublicPageLink } from '@internal/core/types/Page';
 import { socialNetworkById } from './social-networks';
 import { getBioTheme } from './themes';
@@ -51,6 +52,7 @@ export function BioPageView({
   preview,
   pulseLinkId,
 }: BioPageViewProps) {
+  const { t } = useTranslation('pages');
   const theme = getBioTheme(page.theme, page.custom_colors);
   const { socials, groups } = groupLinks(page.links);
   const title = page.display_title || `@${page.slug}`;
@@ -165,24 +167,24 @@ export function BioPageView({
         </div>
 
         {page.links.length === 0 && (
-          <p className={`mt-8 text-sm ${theme.bio}`}>No links yet.</p>
+          <p className={`mt-8 text-sm ${theme.bio}`}>{t('view_no_links')}</p>
         )}
       </div>
 
       <footer className="flex justify-center gap-4 py-6 text-center text-xs">
         {preview ? (
-          <span className={theme.footer}>Made with Kurz</span>
+          <span className={theme.footer}>{t('pc_made_with')}</span>
         ) : (
           <>
             <a href="/" className={`transition-colors ${theme.footer}`}>
-              Made with Kurz
+              {t('pc_made_with')}
             </a>
             <a
               href={`/report?page=${encodeURIComponent(page.slug)}`}
               rel="nofollow"
               className={`transition-colors ${theme.footer}`}
             >
-              Report
+              {t('view_report')}
             </a>
           </>
         )}
