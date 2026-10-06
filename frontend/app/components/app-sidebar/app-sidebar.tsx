@@ -9,7 +9,9 @@ import {
   IconUser,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { BrandMark, ThemeToggle } from '@internal/ui';
+import { useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
+import { IconMoon, IconSun } from '@tabler/icons-react';
+import { BrandMark } from '@internal/ui';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { useLogout } from '../../modules/auth/use-logout';
 import { AdminGuard } from '../admin-guard';
@@ -25,6 +27,9 @@ const itemClass = ({ isActive }: { isActive: boolean }) =>
 
 export function AppSidebar() {
   const { t } = useTranslation('menu');
+  const { setColorScheme } = useMantineColorScheme();
+  const isDark = useComputedColorScheme('light') === 'dark';
+  const ThemeIcon = isDark ? IconSun : IconMoon;
   const { user } = useUserState();
   const handleLogout = useLogout();
 
@@ -60,10 +65,15 @@ export function AppSidebar() {
       </nav>
 
       <div className="flex flex-col gap-0.5 border-t border-border pt-3">
-        <div className="flex items-center gap-1 px-1">
-          <NotificationBell />
-          <ThemeToggle />
-        </div>
+        <NotificationBell withLabel />
+        <button
+          type="button"
+          onClick={() => setColorScheme(isDark ? 'light' : 'dark')}
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        >
+          <ThemeIcon size={17} stroke={1.8} />
+          {isDark ? t('theme_light') : t('theme_dark')}
+        </button>
         {user && (
           <NavLink to="/app/account" title={user.email} className={itemClass}>
             <IconUser size={17} stroke={1.8} />

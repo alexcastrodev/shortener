@@ -12,5 +12,7 @@
     "admin": "Admin",
     "account": "Account",
     "my_account": "My account",
-    "agenda": "Agenda"
+    "agenda": "Agenda",
+    "theme_light": "Light theme",
+    "theme_dark": "Dark theme"
 }
