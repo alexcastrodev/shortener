@@ -43,5 +43,7 @@
   "password_min": "Pelo menos 4 caracteres",
   "password_max": "No máximo 72 caracteres",
   "expires_future": "Tem de ser no futuro",
-  "link_created": "Link criado com sucesso"
+  "link_created": "Link criado com sucesso",
+  "page_label": "Painel",
+  "page_heading": "Ligações"
 }

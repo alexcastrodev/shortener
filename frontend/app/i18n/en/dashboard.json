@@ -43,5 +43,7 @@
   "password_min": "At least 4 characters",
   "password_max": "At most 72 characters",
   "expires_future": "Must be in the future",
-  "link_created": "Link created successfully"
+  "link_created": "Link created successfully",
+  "page_label": "Dashboard",
+  "page_heading": "Links"
 }

@@ -19,5 +19,11 @@
   "device_statistics": "Estatísticas de dispositivos",
   "browser_statistics": "Estatísticas de navegadores",
   "regions": "Regiões",
-  "countries": "Países"
+  "countries": "Países",
+  "qr_failed": "Não foi possível gerar o código QR. Tente novamente.",
+  "qr_hint": "Digitalize com a câmara do telemóvel ou descarregue para imprimir.",
+  "qr_alt": "Código QR de {{url}}",
+  "qr_copied": "Copiado",
+  "qr_copy": "Copiar ligação",
+  "qr_download": "Descarregar SVG"
 }
