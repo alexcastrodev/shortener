@@ -47,7 +47,7 @@ Each owner has a time zone (`users.time_zone`, IANA). A copy is kept inside the 
 
 ## Notifications and email
 
-Email is limited by the platform's free quota (`MailBudget`). When the quota is exhausted the in-platform notification still happens and email is skipped, so the owner is never blocked. Notifications are dispatched from a dedicated `notifications` queue, with immediate delivery after commit and a sweep as the safety net. Web Push is an additional channel, not a replacement.
+Email is limited by the platform's free quota (`MailBudget`). When the quota is exhausted the in-platform notification still happens and email is skipped, so the owner is never blocked. Notifications are dispatched from a dedicated `notifications` queue, with immediate delivery after commit and a sweep as the safety net. Web Push is an additional channel, not a replacement. It needs three variables, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (generate the pair once with `WebPush.generate_key` in a Rails console) and `VAPID_SUBJECT` (a `mailto:` or `https:` contact); without all three the channel stays off and nothing fails. The push carries only the event kind and a notification id, never a name or an email, and a subscription the push service reports as gone (404 or 410) is deleted.
 
 ## Known limits
 

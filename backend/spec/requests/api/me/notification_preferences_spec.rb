@@ -69,7 +69,8 @@ RSpec.describe("/api/me/notification_preferences", type: :request) do
       expect(json["preferences"].size).to(eq(15))
       expect(cell("appointment_created", "email")).to(eq("kind" => "appointment_created", "channel" => "email", "supported" => true, "enabled" => true))
       expect(cell("appointment_cancelled", "email")).to(include("supported" => false, "enabled" => false))
-      expect(cell("appointment_created", "push")).to(include("supported" => false, "enabled" => false))
+      expect(cell("appointment_created", "push")).to(include("supported" => true, "enabled" => true))
+      expect(cell("appointment_cancelled", "push")).to(include("supported" => true))
     end
 
     it "saves a change and shows it, leaving the rest alone" do
@@ -98,7 +99,7 @@ RSpec.describe("/api/me/notification_preferences", type: :request) do
         { kind: "appointment_nope", channel: "email", enabled: false },
         { kind: "appointment_created", channel: "sms", enabled: false },
         { kind: "appointment_cancelled", channel: "email", enabled: false },
-        { kind: "appointment_created", channel: "push", enabled: false },
+        { kind: "appointment_cancelled", channel: "sms", enabled: false },
         { kind: "appointment_created", channel: "email", enabled: "no" },
       ].each do |bad|
         change([{ kind: "appointment_created", channel: "in_app", enabled: false }, bad])

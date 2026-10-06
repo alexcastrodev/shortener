@@ -6,6 +6,10 @@ class Api::Me::PushSubscriptionsController < ApplicationController
     render(json: { push_subscriptions: current_user.push_subscriptions.order(:id).map { |row| serialize(row) } }, status: :ok)
   end
 
+  def vapid
+    render(json: { enabled: Push::Config.enabled?, public_key: (Push::Config.public_key if Push::Config.enabled?) }, status: :ok)
+  end
+
   def create
     validate_contract(PushSubscriptionContract) do |params|
       subscription = PushSubscription.find_by(endpoint: params[:endpoint]) || PushSubscription.new(endpoint: params[:endpoint])
