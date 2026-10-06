@@ -77,6 +77,7 @@ test('saving keeps service ids, orders days and times, and sends the rules', () 
     approval_timeout_minutes: 60,
     approval_on_timeout: 'accept',
     approval_within_minutes: null,
+    reminder_minutes: [1440],
     max_per_day: 8,
   });
 });
@@ -94,6 +95,7 @@ test('creating sends the type; automatic approval sends no deadline', () => {
     min_notice_minutes: 0,
     window_days: 60,
     approval_within_minutes: null,
+    reminder_minutes: [1440],
   });
 });
 
@@ -350,4 +352,23 @@ test('the last-minute window is sent only for manual approval with the switch on
   });
   assert.equal(loaded.approval_soon_only, true);
   assert.equal(loaded.approval_within_minutes, 120);
+});
+
+test('reminder times are loaded newest first, deduplicated and sent as a list', () => {
+  const loaded = initialValues({
+    ...field,
+    rules: { ...field.rules!, reminder_minutes: [120, 1440] },
+  });
+  assert.deepEqual(loaded.reminder_minutes, [1440, 120]);
+  assert.deepEqual(
+    toBookingInput({ ...loaded, reminder_minutes: [120, 120, 60] }, false).rules
+      ?.reminder_minutes,
+    [120, 60]
+  );
+  assert.deepEqual(
+    toBookingInput({ ...loaded, reminder_minutes: [] }, false).rules
+      ?.reminder_minutes,
+    []
+  );
+  assert.deepEqual(initialValues(undefined).reminder_minutes, [1440]);
 });
