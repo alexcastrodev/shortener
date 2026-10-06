@@ -23,6 +23,7 @@
   "panel_occupancy": "Vagas",
   "panel_unlimited": "Sem limite",
   "clients_title": "Clientes",
+  "drag_hint": "Arraste um cliente para outra sessão do mesmo serviço para o mover.",
   "no_clients": "Ninguém marcou este horário ainda.",
   "status_pending": "A aguardar aprovação",
   "status_confirmed": "Confirmada",

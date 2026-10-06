@@ -14,6 +14,21 @@ export type Block = {
   lanes: number;
 };
 
+const CASCADE_MAX_INDENT = 16;
+const CASCADE_MIN_TOP_WIDTH = 60;
+
+export function cascadeSpan(lane: number, lanes: number) {
+  const indent =
+    lanes > 1
+      ? Math.min(
+          CASCADE_MAX_INDENT,
+          (100 - CASCADE_MIN_TOP_WIDTH) / (lanes - 1)
+        )
+      : 0;
+  const left = lane * indent;
+  return { left, width: 100 - left };
+}
+
 const toUtc = (date: string) => {
   const [year, month, day] = date.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day));

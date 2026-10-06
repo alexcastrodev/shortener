@@ -24,13 +24,17 @@ import {
   useGetAgenda,
 } from '@internal/core/actions/get-agenda/get-agenda.hook';
 import { useAppointmentAction } from '@internal/core/actions/appointment-action/appointment-action.hook';
-import type { AgendaSession } from '@internal/core/actions/get-agenda/get-agenda.types';
+import type {
+  AgendaAppointment,
+  AgendaSession,
+} from '@internal/core/actions/get-agenda/get-agenda.types';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { formatDate } from '../../i18n/format';
 import {
   HOUR_PX,
   NO_CATEGORY,
   addMonths,
+  cascadeSpan,
   categoryColors,
   categoryOf,
   clock,
@@ -50,7 +54,7 @@ import {
   type View,
 } from '../../modules/agenda/agenda-layout.ts';
 import { FiltersPanel } from './filters-panel';
-import { SessionPanel } from './session-panel';
+import { SessionPanel, agendaErrorText } from './session-panel';
 import {
   onlyPending,
   pendingTargets,
@@ -233,6 +237,40 @@ export default function AgendaPage() {
     (waitingOnly ? 1 : 0) + hiddenForms.size + hiddenCategories.size;
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: getAgendaKey });
+  const [dragged, setDragged] = useState<AgendaAppointment | null>(null);
+  const draggedFrom = dragged
+    ? (scoped.find(session =>
+        session.appointments.some(item => item.id === dragged.id)
+      ) ?? null)
+    : null;
+  const accepts = (session: AgendaSession) =>
+    draggedFrom !== null &&
+    session.form_id === draggedFrom.form_id &&
+    session.service_id === draggedFrom.service_id &&
+    session.starts_at !== draggedFrom.starts_at &&
+    new Date(session.starts_at) > new Date() &&
+    (session.capacity === null || session.booked < session.capacity);
+  const drop = async (session: AgendaSession) => {
+    if (!dragged) return;
+    setDragged(null);
+    try {
+      await act({
+        id: dragged.id,
+        action: 'reschedule',
+        data: {
+          date: session.date,
+          time: clock(minutesOfDay(session.starts_at, zone)),
+        },
+      });
+      notifications.show({ message: t('done_reschedule'), color: 'teal' });
+    } catch (error) {
+      notifications.show({
+        message: agendaErrorText(t, error),
+        color: 'red',
+      });
+    }
+    refresh();
+  };
   const approveAll = async () => {
     const results = await Promise.allSettled(
       targets.map(target => act({ id: target.id, action: 'approve' }))
@@ -339,6 +377,7 @@ export default function AgendaPage() {
     const isSelected = id === selected;
     const color = colors.get(categoryOf(session)) ?? 'var(--color-primary)';
     const compact = block.height < 44;
+    const span = cascadeSpan(block.lane, block.lanes);
     const time = clock(minutesOfDay(session.starts_at, zone));
     const name = session.service_name ?? t('service_fallback');
     const pendingText =
@@ -353,12 +392,21 @@ export default function AgendaPage() {
           .filter(Boolean)
           .join(', ')}
         onClick={() => setSelected(isSelected ? null : id)}
-        className={`absolute overflow-hidden rounded-md border px-1.5 py-1 text-left text-xs focus-visible:z-20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foreground ${session.pending > 0 ? 'border-dashed' : ''} ${isSelected ? 'z-10 ring-2 ring-foreground/70' : ''}`}
+        onDragOver={event => {
+          if (accepts(session)) event.preventDefault();
+        }}
+        onDrop={event => {
+          if (!accepts(session)) return;
+          event.preventDefault();
+          drop(session);
+        }}
+        className={`absolute overflow-hidden rounded-md border px-1.5 py-1 text-left text-xs focus-visible:z-30 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foreground ${session.pending > 0 ? 'border-dashed' : ''} ${accepts(session) ? 'ring-2 ring-primary' : ''} ${isSelected ? 'z-20 ring-2 ring-foreground/70' : 'z-(--lane) transition-[z-index] duration-0 hover:z-30 hover:delay-[600ms]'}`}
         style={{
           top: block.top,
           height: block.height,
-          left: `calc(${(block.lane / block.lanes) * 100}% + 2px)`,
-          width: `calc(${100 / block.lanes}% - 4px)`,
+          left: `calc(${span.left}% + 2px)`,
+          width: `calc(${span.width}% - 4px)`,
+          ['--lane' as string]: block.lane + 1,
           background: `color-mix(in srgb, ${color} ${isSelected ? 34 : 18}%, var(--color-background))`,
           borderColor: `color-mix(in srgb, ${color} ${isSelected ? 100 : 44}%, transparent)`,
         }}
@@ -393,6 +441,7 @@ export default function AgendaPage() {
       onClose={() => setSelected(null)}
       onChanged={refresh}
       onDialog={setDialogOpen}
+      onDragAppointment={setDragged}
     />
   );
 
