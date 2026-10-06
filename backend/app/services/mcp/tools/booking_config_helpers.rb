@@ -38,6 +38,8 @@ module Mcp
           approval_on_timeout: { type: "string", enum: ["decline", "accept"] },
           approval_within_minutes: { type: "integer" },
           verify_email: { type: "boolean" },
+          waitlist: { type: "boolean" },
+          waitlist_confirm_minutes: { type: "integer" },
           reminder_minutes: { type: "array", maxItems: 3, items: { type: "integer" } },
           min_notice_minutes: { type: "integer" },
           window_days: { type: "integer" },

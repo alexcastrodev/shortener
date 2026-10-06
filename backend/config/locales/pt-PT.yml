@@ -31,6 +31,21 @@ pt-PT:
       body: "Pediu para eliminar a conta Kurz %{email}. Os seus links, páginas de bio, formulários, respostas e ficheiros carregados estão offline neste momento e serão eliminados definitivamente a %{date}."
       changed_mind: "Mudou de ideias? Inicie sessão no Kurz antes de %{date} e a eliminação é cancelada; os seus links e páginas voltam."
       not_you: "Se não foi você que pediu isto, inicie sessão para cancelar e altere a sua palavra-passe."
+  waitlist_mailer:
+    joined:
+      subject: "Está na lista de espera: %{service}"
+      title: "Está na lista de espera"
+      intro: "%{service} em %{time} está cheio. Se abrir um lugar, avisamos por e-mail."
+      how: "Terá então um tempo limitado para o confirmar. Nada fica marcado até o fazer."
+      leave: "Sair da lista de espera: %{url}"
+      leave_link: "Sair da lista de espera"
+    offered:
+      subject: "Abriu um lugar: %{service}"
+      title: "Abriu um lugar para si"
+      intro: "%{service} em %{time} tem um lugar livre, guardado para si."
+      until: "Confirme antes de %{time}, ou passa para a pessoa seguinte."
+      confirm: "Confirmar a minha marcação: %{url}"
+      confirm_link: "Confirmar a minha marcação"
   appointment_mailer:
     confirmed:
       subject: "Confirmada: %{service}, %{time}"

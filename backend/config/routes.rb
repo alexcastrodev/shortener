@@ -96,6 +96,7 @@ Rails.application.routes.draw do
         delete "responses", to: "form_responses#destroy_all"
         get "responses_export", to: "form_responses#export", format: false
         get "appointments", to: "form_appointments#index", format: false
+        get "waitlist", to: "form_waitlist#index", format: false
         get "appointments_export", to: "form_appointments#export", format: false
         get :summary, to: "form_responses#summary"
         get "uploads/:id", to: "form_uploads#show", as: :upload, format: false
@@ -129,6 +130,10 @@ Rails.application.routes.draw do
         post "pages/:slug/links/:page_link_id/click", to: "page_link_clicks#create", as: :page_link_click, format: false
       end
       resources :forms, only: [:show], param: :public_id, format: false
+      post "forms/:public_id/waitlist", to: "waitlists#create", as: :form_waitlist, format: false
+      get "waitlist/:token", to: "waitlist_entries#show", as: :waitlist_entry, format: false
+      post "waitlist/:token/claim", to: "waitlist_entries#claim", as: :waitlist_claim, format: false
+      post "waitlist/:token/leave", to: "waitlist_entries#leave", as: :waitlist_leave, format: false
       get "forms/:public_id/slots", to: "form_slots#index", as: :form_slots, format: false
       get "forms/:public_id/cover/:token", to: "form_covers#show", as: :form_cover, format: false
       get "calendar/:token", to: "calendars#show", as: :calendar, format: false

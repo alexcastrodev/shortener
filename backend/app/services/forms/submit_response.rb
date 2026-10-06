@@ -17,10 +17,11 @@ module Forms
       end
     end
 
-    def initialize(form:, answers:, idempotency_key: nil, meta: {}, version: nil, client: {})
+    def initialize(form:, answers:, idempotency_key: nil, meta: {}, version: nil, client: {}, claim_at: nil)
       @form = form
       @version = version
       @client = client
+      @claim_at = claim_at
       @answers = answers
       @idempotency_key = idempotency_key.presence&.to_s&.first(64)
       @meta = meta
@@ -43,7 +44,7 @@ module Forms
 
     private
 
-    attr_reader :form, :answers, :idempotency_key, :meta, :version, :client
+    attr_reader :form, :answers, :idempotency_key, :meta, :version, :client, :claim_at
 
     def definition
       @definition ||= PublicDefinition.for(form)
@@ -79,7 +80,7 @@ module Forms
     def cast_booking(field, raw)
       return [nil, :blank] if raw.nil? || raw == ""
 
-      value, error = Appointments::Book.cast(form: form, booking: field, raw: raw)
+      value, error = Appointments::Book.cast(form: form, booking: field, raw: raw, claim_at: claim_at)
       @booking = value
       [value&.slice("service", "sessions"), error]
     end
@@ -124,7 +125,7 @@ module Forms
       return unless @booking
 
       meta = { time_zone: Appointments::Book.valid_zone(client[:time_zone]), locale: Appointments::Book.valid_locale(client[:locale]) }
-      Appointments::Book.call(form: form, response: response, value: @booking, contact: contact(values), meta: meta, version: definition.published_version)
+      Appointments::Book.call(form: form, response: response, value: @booking, contact: contact(values), meta: meta, version: definition.published_version, held: claim_at.present?)
     end
 
     def attributes
