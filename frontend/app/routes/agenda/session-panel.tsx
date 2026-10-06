@@ -139,7 +139,11 @@ export function SessionPanel({
 
   return (
     <Wrapper
-      className={inline ? 'w-[360px] shrink-0 self-start p-4' : undefined}
+      className={
+        inline
+          ? 'max-h-full w-[360px] shrink-0 self-start overflow-y-auto p-4'
+          : undefined
+      }
     >
       {inline && (
         <div className="mb-3 flex items-start justify-between gap-2">

@@ -3,6 +3,8 @@ import { useMediaQuery } from '@mantine/hooks';
 import {
   IconAdjustmentsHorizontal,
   IconChevronLeft,
+  IconArrowsMaximize,
+  IconArrowsMinimize,
   IconChevronRight,
   IconX,
 } from '@tabler/icons-react';
@@ -16,7 +18,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Card, PageContainer } from '@internal/ui';
+import { Alert, Card } from '@internal/ui';
 import {
   getAgendaKey,
   useGetAgenda,
@@ -71,6 +73,13 @@ const ARROWS: Record<string, Direction> = {
   ArrowDown: 'down',
 };
 const GUTTER = 'w-12 shrink-0 sm:w-14';
+// Bottom sheets keep their last row above the home indicator.
+const SHEET_STYLES = {
+  header: { background: 'transparent' },
+  body: {
+    paddingBottom: 'max(var(--mb-padding, 1rem), env(safe-area-inset-bottom))',
+  },
+};
 
 export default function AgendaPage() {
   const { t } = useTranslation('agenda');
@@ -96,6 +105,7 @@ export default function AgendaPage() {
   );
   const [sheet, setSheet] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const queryClient = useQueryClient();
   const { mutateAsync: act, isPending: approving } = useAppointmentAction();
   const [now, setNow] = useState(() => new Date());
@@ -133,6 +143,16 @@ export default function AgendaPage() {
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
   }, [selected, isXl]);
+
+  useEffect(() => {
+    if (!expanded || selected) return;
+    const shrink = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape' && !document.querySelector('[role=dialog]'))
+        setExpanded(false);
+    };
+    window.addEventListener('keydown', shrink);
+    return () => window.removeEventListener('keydown', shrink);
+  }, [expanded, selected]);
 
   const all = data?.sessions ?? [];
   const colors = useMemo(() => categoryColors(all), [all]);
@@ -377,8 +397,19 @@ export default function AgendaPage() {
   );
 
   return (
-    <PageContainer className="py-3 sm:py-8">
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+    // Below md the bottom nav is on screen, so the Agenda fills the space
+    // between the header and the nav. Expanded, it covers both, inside the
+    // safe area. Either way the hour grid is its only scroller (app.css stops
+    // the page itself from scrolling). One element for both, so expanding
+    // keeps the grid where it was.
+    <div
+      className={
+        expanded
+          ? 'agenda-expanded fixed inset-0 z-[150] flex flex-col bg-background pt-[max(0.75rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))]'
+          : 'agenda-screen mx-auto w-full max-w-7xl px-4 py-3 sm:px-6 md:py-8 lg:px-8 max-md:fixed max-md:inset-x-0 max-md:top-[var(--app-header-offset)] max-md:bottom-[var(--mobile-nav-offset)] max-md:flex max-md:flex-col'
+      }
+    >
+      <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
         <h1 className="sr-only mr-2 text-2xl font-semibold tracking-tight md:not-sr-only">
           {t('title')}
         </h1>
@@ -444,18 +475,42 @@ export default function AgendaPage() {
             ]}
           />
         )}
+        <button
+          type="button"
+          aria-label={expanded ? t('collapse') : t('expand')}
+          aria-pressed={expanded}
+          title={expanded ? t('collapse') : t('expand')}
+          onClick={() => setExpanded(value => !value)}
+          className="inline-flex size-11 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-primary lg:size-9"
+        >
+          {expanded ? (
+            <IconArrowsMinimize size={18} />
+          ) : (
+            <IconArrowsMaximize size={18} />
+          )}
+        </button>
       </div>
 
-      {error && <Alert title={t('title')}>{t('error')}</Alert>}
+      {error && (
+        <div className="shrink-0">
+          <Alert title={t('title')}>{t('error')}</Alert>
+        </div>
+      )}
 
-      <div className="flex gap-4">
+      <div
+        className={`flex gap-4 ${expanded ? 'min-h-0 flex-1' : 'max-md:min-h-0 max-md:flex-1'}`}
+      >
         {isWide && (
-          <aside className="sticky top-20 hidden max-h-[calc(100dvh-6rem)] w-56 shrink-0 self-start overflow-y-auto lg:block xl:w-64">
+          <aside
+            className={`hidden w-56 shrink-0 self-start overflow-y-auto lg:block xl:w-64 ${expanded ? 'max-h-full' : 'sticky top-20 max-h-[calc(100dvh-6rem)]'}`}
+          >
             <FiltersPanel {...filtersProps} large={false} />
           </aside>
         )}
 
-        <Card className="min-w-0 flex-1 overflow-hidden p-0">
+        <Card
+          className={`min-w-0 flex-1 overflow-hidden p-0 ${expanded ? 'flex flex-col' : 'max-md:flex max-md:flex-col'}`}
+        >
           {isPhone && (
             <div
               role="group"
@@ -537,7 +592,7 @@ export default function AgendaPage() {
           <div
             ref={scroller}
             onKeyDown={onGridKey}
-            className="relative max-h-[calc(100dvh-20rem)] min-h-80 overflow-y-auto lg:max-h-[calc(100dvh-14rem)]"
+            className={`relative overflow-y-auto ${expanded ? 'min-h-0 flex-1 overscroll-contain' : 'max-h-[calc(100dvh-20rem)] min-h-80 lg:max-h-[calc(100dvh-14rem)] max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:overscroll-contain'}`}
           >
             {isLoading && (
               <div className="absolute inset-0 z-30 animate-pulse bg-muted/60" />
@@ -605,7 +660,7 @@ export default function AgendaPage() {
           title={t('filters')}
           closeButtonProps={{ 'aria-label': t('panel_close') }}
           classNames={{ close: 'min-h-11 min-w-11' }}
-          styles={{ header: { background: 'transparent' } }}
+          styles={SHEET_STYLES}
         >
           <FiltersPanel {...filtersProps} large />
         </Drawer>
@@ -621,11 +676,11 @@ export default function AgendaPage() {
           title={lastChosen.current?.service_name ?? t('service_fallback')}
           closeButtonProps={{ 'aria-label': t('panel_close') }}
           classNames={{ close: 'min-h-11 min-w-11' }}
-          styles={{ header: { background: 'transparent' } }}
+          styles={SHEET_STYLES}
         >
           {panel}
         </Drawer>
       )}
-    </PageContainer>
+    </div>
   );
 }

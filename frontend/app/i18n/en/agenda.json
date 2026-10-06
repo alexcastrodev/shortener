@@ -75,5 +75,7 @@
   "active_forms": "Active forms",
   "categories": "Categories",
   "has_sessions": "has sessions",
-  "week_days": "Days of the week"
+  "week_days": "Days of the week",
+  "expand": "Expand",
+  "collapse": "Exit full screen"
 }
