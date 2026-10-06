@@ -58,6 +58,16 @@ en:
       expires: "The code expires in %{minutes} minutes and works once."
       footer: "You're getting this because %{reason}. If it wasn't you, you can ignore this email."
   account_mailer:
+    data_export:
+      subject: "Your Kurz data"
+      title: "Your data is attached"
+      body: "You asked for a copy of your data. The attached JSON file has your account, short links, bio pages, forms and their responses, connected apps and saved palettes."
+      leaves_out: "It leaves out passwords, tokens and your visitors' IP addresses."
+      not_you: "If you did not ask for this, sign in and change your password: someone may have access to your account."
+    data_export_too_large:
+      subject: "Your Kurz data is too large to send"
+      title: "We could not send your data"
+      body: "There is too much data for one email. Export your biggest forms to Excel from their responses page, or reply to this address and we will send you a copy another way."
     deletion_scheduled:
       subject: "Your Kurz account is scheduled for deletion"
       body: "You asked to delete the Kurz account %{email}. Your links, bio pages, forms, responses and uploaded files are offline now and will be permanently deleted on %{date}."

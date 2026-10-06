@@ -150,7 +150,7 @@ export default function Privacy() {
         <Section title="Your choices">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong className="text-foreground">Get a copy:</strong> Account, Download your data (JSON), and Export on
+              <strong className="text-foreground">Get a copy:</strong> Account, Email me my data (a JSON file sent to your address), and Export on
               a form’s responses page (Excel or CSV).
             </li>
             <li>
