@@ -40,7 +40,7 @@ module Appointments
       return if covering.any? { |item| item["kind"] == "closed" }
 
       special = covering.find { |item| item["kind"] == "special" }
-      special ? special["times"] : service["times"]
+      special ? special["times"] : service.dig("times_by_day", WEEKDAYS[date.wday]) || service["times"]
     end
 
     def covers?(item, service, date)
