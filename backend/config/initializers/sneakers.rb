@@ -11,3 +11,5 @@ Sneakers.configure(
   log: $stdout,
   ack: true,
 )
+
+Sneakers.logger.level = Logger.const_get(ENV.fetch("SNEAKERS_LOG_LEVEL", "error").upcase)
