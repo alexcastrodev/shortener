@@ -21,14 +21,14 @@ class Api::Me::UsersController < ApplicationController
       render(json: CurrentUserSerializer.new(current_user).serialize, status: :ok)
     else
       error = current_user.errors.include?(:locale) ? "invalid_locale" : "invalid_time_zone"
-      render(json: { error: error }, status: :unprocessable_entity)
+      render(json: { error: error }, status: :unprocessable_content)
     end
   end
 
   # POST /api/me/data_export  { current_password? }
   def export
     if @current_user.password?
-      return render(json: { error: "invalid_current_password" }, status: :unprocessable_entity) unless @current_user.authenticate_password(params[:current_password])
+      return render(json: { error: "invalid_current_password" }, status: :unprocessable_content) unless @current_user.authenticate_password(params[:current_password])
     elsif Time.zone.at(@session_payload["iat"].to_i) < RECENT_SIGN_IN.ago
       return render(json: { error: "reauthentication_required" }, status: :forbidden)
     end
@@ -42,11 +42,11 @@ class Api::Me::UsersController < ApplicationController
   # DELETE /api/me  { confirm_email, current_password? }
   def destroy
     unless params[:confirm_email].to_s.strip.downcase == @current_user.email
-      return render(json: { error: "confirmation_mismatch" }, status: :unprocessable_entity)
+      return render(json: { error: "confirmation_mismatch" }, status: :unprocessable_content)
     end
 
     if @current_user.password?
-      return render(json: { error: "invalid_current_password" }, status: :unprocessable_entity) unless @current_user.authenticate_password(params[:current_password])
+      return render(json: { error: "invalid_current_password" }, status: :unprocessable_content) unless @current_user.authenticate_password(params[:current_password])
     elsif Time.zone.at(@session_payload["iat"].to_i) < RECENT_SIGN_IN.ago
       return render(json: { error: "reauthentication_required" }, status: :forbidden)
     end

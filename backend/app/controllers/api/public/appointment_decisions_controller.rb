@@ -23,7 +23,7 @@ class Api::Public::AppointmentDecisionsController < ApplicationController
 
   def create
     outcome = Appointments::Decide.call(appointment: @appointment, decision: params[:decision].to_s, message: params[:message])
-    return render(json: { error: "invalid_decision" }, status: :unprocessable_entity) if outcome == :invalid
+    return render(json: { error: "invalid_decision" }, status: :unprocessable_content) if outcome == :invalid
 
     render(json: payload.merge(result: outcome), status: :ok)
   end

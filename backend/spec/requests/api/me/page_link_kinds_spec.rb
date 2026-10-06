@@ -20,11 +20,11 @@ RSpec.describe("Page link kinds (link, social icon, section header)", type: :req
   end
 
   it "rejects a header with a URL" do
-    expect(create_link(kind: "header", label: "Sponsors", url: "https://example.com")).to(have_http_status(:unprocessable_entity))
+    expect(create_link(kind: "header", label: "Sponsors", url: "https://example.com")).to(have_http_status(:unprocessable_content))
   end
 
   it "still requires a URL for regular links" do
-    expect(create_link(label: "Site")).to(have_http_status(:unprocessable_entity))
+    expect(create_link(label: "Site")).to(have_http_status(:unprocessable_content))
   end
 
   it "creates a social icon for a known network" do
@@ -38,8 +38,8 @@ RSpec.describe("Page link kinds (link, social icon, section header)", type: :req
   end
 
   it "requires a known icon for social icons" do
-    expect(create_link(kind: "social", label: "Instagram", url: "https://www.instagram.com/marina")).to(have_http_status(:unprocessable_entity))
-    expect(create_link(kind: "social", label: "Myspace", url: "https://myspace.com/x", icon: "myspace")).to(have_http_status(:unprocessable_entity))
+    expect(create_link(kind: "social", label: "Instagram", url: "https://www.instagram.com/marina")).to(have_http_status(:unprocessable_content))
+    expect(create_link(kind: "social", label: "Myspace", url: "https://myspace.com/x", icon: "myspace")).to(have_http_status(:unprocessable_content))
   end
 
   it "switches a social icon to a button and back" do
@@ -58,7 +58,7 @@ RSpec.describe("Page link kinds (link, social icon, section header)", type: :req
 
     patch "/api/me/pages/#{page.id}/links/#{header.id}", params: { kind: "link" }, headers: auth_headers, as: :json
 
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(header.reload.kind).to(eq("header"))
   end
 

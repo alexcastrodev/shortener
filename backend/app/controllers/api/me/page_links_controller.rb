@@ -10,7 +10,7 @@ class Api::Me::PageLinksController < ApplicationController
       if link.save
         render(json: PageLinkSerializer.new(link).serialize, status: :created)
       else
-        render(json: { errors: link.errors.full_messages }, status: :unprocessable_entity)
+        render(json: { errors: link.errors.full_messages }, status: :unprocessable_content)
       end
     end
   end
@@ -21,7 +21,7 @@ class Api::Me::PageLinksController < ApplicationController
       if @link.update(validated_params)
         render(json: PageLinkSerializer.new(@link).serialize, status: :ok)
       else
-        render(json: { errors: @link.errors.full_messages }, status: :unprocessable_entity)
+        render(json: { errors: @link.errors.full_messages }, status: :unprocessable_content)
       end
     end
   end
@@ -38,7 +38,7 @@ class Api::Me::PageLinksController < ApplicationController
     validate_contract(PageLinkReorderContract) do |validated_params|
       ids = validated_params[:ids]
       if ids.uniq.size != ids.size || ids.sort != @page.page_links.ids.sort
-        return render(json: { errors: { ids: ["must list every link of the page exactly once"] } }, status: :unprocessable_entity)
+        return render(json: { errors: { ids: ["must list every link of the page exactly once"] } }, status: :unprocessable_content)
       end
 
       PageLink.transaction do

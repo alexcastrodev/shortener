@@ -95,17 +95,17 @@ RSpec.describe("Publishing page templates to the Community", type: :request) do
     expect(response).to(have_http_status(:not_found))
 
     publish(author_page_id: nil)
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(template.reload).not_to(be_public)
   end
 
   it "rejects links in the public description and name" do
     publish(description: "Visit www.spam-site.com now")
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
 
     template.update!(name: "Go to bit.ly/abc")
     publish
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(template.reload).not_to(be_public)
   end
 

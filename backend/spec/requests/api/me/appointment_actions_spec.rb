@@ -150,7 +150,7 @@ RSpec.describe("owner actions on an appointment: reschedule and remind", type: :
     it "refuses the same time, a closed day, a malformed date and a session that already passed" do
       row = first_row
       reschedule(row, { date: "2026-11-09", time: "09:00" })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["error"]).to(eq("same_time"))
       reschedule(row, { date: "2026-11-14", time: "09:00" })
       expect(response).to(have_http_status(:conflict))
@@ -158,7 +158,7 @@ RSpec.describe("owner actions on an appointment: reschedule and remind", type: :
       expect(response).to(have_http_status(:conflict))
 
       travel_to(Time.utc(2026, 11, 9, 12)) { reschedule(row, { date: "2026-11-11", time: "09:00" }, headers: fresh_headers) }
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["error"]).to(eq("not_reschedulable"))
     end
 
@@ -166,7 +166,7 @@ RSpec.describe("owner actions on an appointment: reschedule and remind", type: :
       row = first_row
       reschedule(row, { date: "2026-11-11", time: "09:00" })
       reschedule(row.reload, { date: "2026-11-12", time: "09:00" })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "never sends an email without an address" do
@@ -203,7 +203,7 @@ RSpec.describe("owner actions on an appointment: reschedule and remind", type: :
       row = first_row
       Appointment.update_all(status: "pending")
       remind(row)
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["error"]).to(eq("nothing_to_remind"))
 
       Appointment.update_all(status: "confirmed")
@@ -214,7 +214,7 @@ RSpec.describe("owner actions on an appointment: reschedule and remind", type: :
     it "says when the client left no email" do
       Appointment.update_all(client_email: nil)
       remind(first_row)
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["error"]).to(eq("no_email"))
     end
   end

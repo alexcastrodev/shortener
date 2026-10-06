@@ -18,7 +18,7 @@ class Api::Public::FormSlotsController < ApplicationController
     raise ActiveRecord::RecordNotFound unless service
 
     from, to = range
-    return render(json: { error: "invalid_range" }, status: :unprocessable_entity) unless from && to && to >= from && (to - from) < Appointments::Slots::MAX_RANGE_DAYS
+    return render(json: { error: "invalid_range" }, status: :unprocessable_content) unless from && to && to >= from && (to - from) < Appointments::Slots::MAX_RANGE_DAYS
 
     body = { time_zone: booking["rules"]["time_zone"], slots: slots_for(form, booking, service, from, to) }
     body[:full] = full_for(booking, service, from..to, body[:slots]) if Appointments::Waitlist.enabled?(booking) && service["capacity"]

@@ -16,7 +16,7 @@ class Api::Me::PushSubscriptionsController < ApplicationController
       if subscription.save
         render(json: { push_subscription: serialize(subscription) }, status: :created)
       else
-        render(json: { errors: subscription.errors.to_hash }, status: :unprocessable_entity)
+        render(json: { errors: subscription.errors.to_hash }, status: :unprocessable_content)
       end
     end
   end

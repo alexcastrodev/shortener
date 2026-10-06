@@ -61,7 +61,7 @@ RSpec.describe("/api/me/pages/:page_id/avatar", type: :request) do
   it "rejects an SVG disguised as a PNG" do
     post "/api/me/pages/#{page.id}/avatar", params: { avatar: upload("evil.png", "image/png") }, headers: auth_headers
 
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(page.reload.avatar_upload).not_to(be_attached)
     expect(ActiveStorage::Blob.count).to(eq(0))
     expect(OptimizeAvatarJob).not_to(have_been_enqueued)
@@ -86,7 +86,7 @@ RSpec.describe("/api/me/pages/:page_id/avatar", type: :request) do
 
     post("/api/me/pages/#{page.id}/avatar", params: { avatar: Rack::Test::UploadedFile.new(bomb, "image/png") }, headers: auth_headers)
 
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(JSON.parse(response.body)["errors"]["avatar"].first).to(include("megapixels"))
     expect(ActiveStorage::Blob.count).to(eq(0))
     expect(OptimizeAvatarJob).not_to(have_been_enqueued)
@@ -99,13 +99,13 @@ RSpec.describe("/api/me/pages/:page_id/avatar", type: :request) do
 
     post "/api/me/pages/#{page.id}/avatar", params: { avatar: upload("avatar.png", "image/png") }, headers: auth_headers
 
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
   end
 
   it "requires a file" do
     post "/api/me/pages/#{page.id}/avatar", params: {}, headers: auth_headers
 
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
   end
 
   it "rate limits uploads per user" do

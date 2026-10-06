@@ -30,7 +30,7 @@ class Api::Me::OauthAuthorizationsController < ApplicationController
     return render(json: { redirect_to: request_data.redirect_url(error: "access_denied") }) if granted.empty?
 
     if granted.intersect?(OauthGrant::PERSONAL_DATA_SCOPES) && granted.intersect?(OauthGrant::PUBLISH_SCOPES)
-      return render(json: { error: "conflicting_scopes", message: "Reading personal data cannot be combined with publishing" }, status: :unprocessable_entity)
+      return render(json: { error: "conflicting_scopes", message: "Reading personal data cannot be combined with publishing" }, status: :unprocessable_content)
     end
 
     grant = OauthGrant.create!(user: current_user, oauth_client: request_data.client, scopes: granted, resource: request_data.resource)

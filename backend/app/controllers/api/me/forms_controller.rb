@@ -35,12 +35,12 @@ class Api::Me::FormsController < ApplicationController
   def create
     validate_contract(FormContract) do |validated_params|
       attributes = attributes_for(validated_params)
-      return render(json: { errors: { template: ["is unknown"] } }, status: :unprocessable_entity) unless attributes
+      return render(json: { errors: { template: ["is unknown"] } }, status: :unprocessable_content) unless attributes
 
       form = Forms::Create.call(user: @current_user, attributes: attributes)
       render(json: FormSerializer.new(form).serialize, status: :created)
     rescue ActiveRecord::RecordInvalid => e
-      render(json: { errors: e.record.errors.to_hash }, status: :unprocessable_entity)
+      render(json: { errors: e.record.errors.to_hash }, status: :unprocessable_content)
     end
   end
 
@@ -49,7 +49,7 @@ class Api::Me::FormsController < ApplicationController
       if @form.update(validated_params)
         render(json: FormSerializer.new(@form).serialize, status: :ok)
       else
-        render(json: { errors: @form.errors.to_hash }, status: :unprocessable_entity)
+        render(json: { errors: @form.errors.to_hash }, status: :unprocessable_content)
       end
     end
   end
@@ -62,16 +62,16 @@ class Api::Me::FormsController < ApplicationController
   def publish
     render(json: FormSerializer.new(Forms::Publish.call(form: @form)).serialize, status: :ok)
   rescue Forms::Publish::NoQuestions
-    render(json: { errors: { fields: ["must have at least one question to publish"] } }, status: :unprocessable_entity)
+    render(json: { errors: { fields: ["must have at least one question to publish"] } }, status: :unprocessable_content)
   rescue Forms::Publish::Blocked => e
-    render(json: { errors: { fields: e.messages } }, status: :unprocessable_entity)
+    render(json: { errors: { fields: e.messages } }, status: :unprocessable_content)
   end
 
   def apply_template
     validate_contract(FormTemplateApplicationContract) do |validated_params|
       render(json: FormSerializer.new(Forms::Definition.apply_template(@form, validated_params[:template])).serialize, status: :ok)
     rescue ActiveRecord::RecordInvalid => e
-      render(json: { errors: e.record.errors.to_hash }, status: :unprocessable_entity)
+      render(json: { errors: e.record.errors.to_hash }, status: :unprocessable_content)
     end
   end
 
@@ -87,7 +87,7 @@ class Api::Me::FormsController < ApplicationController
   def discard
     render(json: FormSerializer.new(Forms::Discard.call(form: @form)).serialize, status: :ok)
   rescue Forms::Discard::NothingPublished
-    render(json: { errors: { base: ["nothing has been published yet"] } }, status: :unprocessable_entity)
+    render(json: { errors: { base: ["nothing has been published yet"] } }, status: :unprocessable_content)
   end
 
   private

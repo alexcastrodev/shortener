@@ -7,7 +7,7 @@ class Api::Me::NotificationPreferencesController < ApplicationController
 
   def update
     changes = params[:preferences]
-    return render(json: { error: "invalid_preferences" }, status: :unprocessable_entity) unless changes.is_a?(Array) && changes.size <= NotificationPreference::KINDS.size * NotificationPreference::CHANNELS.size
+    return render(json: { error: "invalid_preferences" }, status: :unprocessable_content) unless changes.is_a?(Array) && changes.size <= NotificationPreference::KINDS.size * NotificationPreference::CHANNELS.size
 
     saved = NotificationPreference.transaction do
       changes.map do |item|
@@ -19,7 +19,7 @@ class Api::Me::NotificationPreferencesController < ApplicationController
         row.save || raise(ActiveRecord::Rollback)
       end
     end
-    return render(json: { error: "invalid_preferences" }, status: :unprocessable_entity) unless saved
+    return render(json: { error: "invalid_preferences" }, status: :unprocessable_content) unless saved
 
     render(json: { preferences: NotificationPreference.matrix(current_user) }, status: :ok)
   end

@@ -33,7 +33,7 @@ class Api::PasswordResetsController < ApplicationController
     end
 
     error = PasswordPolicy.error_for(params[:password], email: user.email)
-    return render(json: { error: error }, status: :unprocessable_entity) if error
+    return render(json: { error: error }, status: :unprocessable_content) if error
 
     user.clear_login_token!
     user.change_password!(params[:password])

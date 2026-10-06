@@ -56,7 +56,7 @@ RSpec.describe("OAuth consent for the appointments scopes", type: :request) do
     it "refuses personal data together with publishing, for read and for write" do
       ["appointments:read", "appointments:write"].each do |personal|
         allow_scopes(personal, "forms:publish")
-        expect(response).to(have_http_status(:unprocessable_entity), personal)
+        expect(response).to(have_http_status(:unprocessable_content), personal)
         expect(json["error"]).to(eq("conflicting_scopes"))
       end
       expect(OauthGrant.count).to(eq(0))
@@ -64,7 +64,7 @@ RSpec.describe("OAuth consent for the appointments scopes", type: :request) do
 
     it "keeps the existing responses rule: responses with publishing is still refused" do
       post("/api/me/oauth/authorization", params: params.merge(scope: "responses:read forms:publish", decision: "allow", granted_scopes: ["responses:read", "forms:publish"]), headers: auth_headers.merge(xhr), as: :json)
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
   end
 

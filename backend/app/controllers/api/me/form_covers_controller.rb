@@ -27,7 +27,7 @@ class Api::Me::FormCoversController < ApplicationController
   def update
     file = params[:file]
     problem = CoverUpload.error_for(file)
-    return render(json: { error: "invalid_image", message: problem }, status: :unprocessable_entity) if problem
+    return render(json: { error: "invalid_image", message: problem }, status: :unprocessable_content) if problem
     return render(json: { error: "uploads_unavailable" }, status: :service_unavailable) if FormUpload.over_budget?
 
     webp = Imgproc.convert(File.binread(file.tempfile.path))
@@ -37,7 +37,7 @@ class Api::Me::FormCoversController < ApplicationController
     Forms::Covers.prune(@form)
     render(json: FormSerializer.new(@form.reload).serialize, status: :ok)
   rescue Imgproc::Rejected
-    render(json: { error: "invalid_image", message: "could not be read as an image" }, status: :unprocessable_entity)
+    render(json: { error: "invalid_image", message: "could not be read as an image" }, status: :unprocessable_content)
   rescue Imgproc::Unavailable
     render(json: { error: "uploads_unavailable" }, status: :service_unavailable)
   end

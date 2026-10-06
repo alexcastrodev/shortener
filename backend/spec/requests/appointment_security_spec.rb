@@ -112,7 +112,7 @@ RSpec.describe("security checks for appointments", type: :request) do
     it "refuses a very long or oddly shaped email without burning CPU" do
       ["a" * 20_000 + "@example.com", "#{"a." * 5_000}@example.com", "a@" + "b." * 5_000 + "c"].each do |email|
         quickly { submit(answers: { mail_id => email }) }
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
       end
     end
 
@@ -134,7 +134,7 @@ RSpec.describe("security checks for appointments", type: :request) do
 
     it "refuses a name longer than the limit" do
       submit(answers: { name_id => "n" * 501 })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
   end
 

@@ -124,13 +124,13 @@ RSpec.describe("take X, pay Y", type: :request) do
     }.each do |label, invalid|
       it "rejects #{label}" do
         add(service.merge("bundle" => invalid))
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
       end
     end
 
     it "rejects a bundle on a service without a price" do
       add(service.except("price", "currency"))
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
   end
 

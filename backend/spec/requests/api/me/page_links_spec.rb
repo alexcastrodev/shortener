@@ -23,7 +23,7 @@ RSpec.describe("/api/me/pages/:page_id/links", type: :request) do
       it "rejects #{url.inspect}" do
         post "/api/me/pages/#{page.id}/links", params: { label: "Bad", url: url }, headers: auth_headers, as: :json
 
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
       end
     end
 
@@ -77,7 +77,7 @@ RSpec.describe("/api/me/pages/:page_id/links", type: :request) do
 
       patch "/api/me/pages/#{page.id}/links/reorder", params: { ids: [a.id, foreign.id] }, headers: auth_headers, as: :json
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
   end
 end

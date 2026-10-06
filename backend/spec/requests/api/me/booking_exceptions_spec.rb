@@ -71,14 +71,14 @@ RSpec.describe("days off, holidays and special hours", type: :request) do
     }.each do |label, item|
       it "rejects #{label}" do
         set_exceptions([item])
-        expect(response).to(have_http_status(:unprocessable_entity))
+        expect(response).to(have_http_status(:unprocessable_content))
         expect(form.reload.fields.find { |field| field["type"] == "booking" }["exceptions"]).to(eq([]))
       end
     end
 
     it "rejects more than 100 exceptions" do
       set_exceptions(Array.new(101) { |index| { from: (Date.new(2027, 1, 1) + index).iso8601, kind: "closed" } })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
   end
 
@@ -132,9 +132,9 @@ RSpec.describe("days off, holidays and special hours", type: :request) do
         post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t" }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
       end
       book.call("2026-11-09", "09:00")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       book.call("2026-11-10", "09:00")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       book.call("2026-11-10", "14:00")
       expect(response).to(have_http_status(:created))
     end

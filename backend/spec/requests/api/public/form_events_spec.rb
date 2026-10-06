@@ -25,7 +25,7 @@ RSpec.describe("POST /api/public/forms/:public_id/events", type: :request) do
   it "answers 422 for an unknown event and counts nothing" do
     track({ event: "purchase" })
 
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
     expect(JSON.parse(response.body)).to(eq("error" => "invalid_event"))
     expect(FormDailyStat.count).to(eq(0))
   end

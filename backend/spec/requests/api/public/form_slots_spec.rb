@@ -153,11 +153,11 @@ RSpec.describe("GET /api/public/forms/:public_id/slots", type: :request) do
   describe "the requested range" do
     it "answers 422 for a malformed date, a reversed range and a window over 62 days" do
       slots(from: "tomorrow")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       slots(from: "2026-11-05", to: "2026-11-02")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       slots(from: "2026-11-02", to: "2027-01-31")
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "accepts exactly 62 days" do

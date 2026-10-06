@@ -27,7 +27,7 @@ RSpec.describe("Shortlink password and expiration", type: :request) do
   it "rejects passwords that are too short" do
     post "/api/me/shortlinks", params: { original_url: "https://example.com", password: "abc" }, headers: auth_headers, as: :json
 
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
   end
 
   it "locks and unlocks an existing link, refreshing the edge cache" do
@@ -65,7 +65,7 @@ RSpec.describe("Shortlink password and expiration", type: :request) do
   it "rejects an expiration date in the past" do
     patch "/api/me/shortlinks/#{shortlink.id}", params: { expires_at: 1.hour.ago.iso8601 }, headers: auth_headers, as: :json
 
-    expect(response).to(have_http_status(:unprocessable_entity))
+    expect(response).to(have_http_status(:unprocessable_content))
   end
 
   it "removes an expiration date" do

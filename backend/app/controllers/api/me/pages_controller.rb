@@ -62,7 +62,7 @@ class Api::Me::PagesController < ApplicationController
       count_template_use(template) if template
       render(json: PageSerializer.new(page, params: { with_links: true }).serialize, status: :created)
     rescue ActiveRecord::RecordInvalid
-      render(json: { errors: page.errors.full_messages }, status: :unprocessable_entity)
+      render(json: { errors: page.errors.full_messages }, status: :unprocessable_content)
     end
   end
 
@@ -72,7 +72,7 @@ class Api::Me::PagesController < ApplicationController
       if @page.update(validated_params)
         render(json: PageSerializer.new(@page, params: { with_links: true }).serialize, status: :ok)
       else
-        render(json: { errors: @page.errors.full_messages }, status: :unprocessable_entity)
+        render(json: { errors: @page.errors.full_messages }, status: :unprocessable_content)
       end
     end
   end
@@ -103,7 +103,7 @@ class Api::Me::PagesController < ApplicationController
   def upload_avatar
     file = params[:avatar]
     error = AvatarUpload.error_for(file)
-    return render(json: { errors: { avatar: [error] } }, status: :unprocessable_entity) if error
+    return render(json: { errors: { avatar: [error] } }, status: :unprocessable_content) if error
 
     # analyzed: the file is deleted as soon as it is optimized, so there is
     # nothing worth extracting metadata from.

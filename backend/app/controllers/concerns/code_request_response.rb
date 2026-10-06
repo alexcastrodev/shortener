@@ -10,9 +10,9 @@ module CodeRequestResponse
     when :sent
       render(json: { message: "If the email can receive a code, it is on its way." })
     when :invalid_email
-      render(json: { error: "invalid_email" }, status: :unprocessable_entity)
+      render(json: { error: "invalid_email" }, status: :unprocessable_content)
     when :undeliverable
-      render(json: { error: "undeliverable_email" }, status: :unprocessable_entity)
+      render(json: { error: "undeliverable_email" }, status: :unprocessable_content)
     when :budget_exhausted
       render(json: { error: result.reason.to_s }, status: :service_unavailable)
     end

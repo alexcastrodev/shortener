@@ -24,7 +24,7 @@ class Api::Public::AppointmentsController < ApplicationController
   def cancel
     scope = Appointments::ClientCancel::SCOPES.include?(params[:scope].to_s) ? params[:scope].to_s : "all"
     target = scope == "all" ? @appointment : session_row(params[:session])
-    return render(json: { error: "unknown_session" }, status: :unprocessable_entity) unless target
+    return render(json: { error: "unknown_session" }, status: :unprocessable_content) unless target
 
     Appointments::ClientCancel.call(appointment: target, reason: params[:reason], scope: scope)
     render(json: payload, status: :ok)

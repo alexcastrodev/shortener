@@ -152,7 +152,7 @@ RSpec.describe("GET /api/me/agenda", type: :request) do
     it "answers 422 for malformed, missing, reversed and over-62-day ranges" do
       [{ from: "x", to: "2026-11-06" }, { from: "2026-11-02" }, { from: "2026-11-06", to: "2026-11-02" }, { from: "2026-11-02", to: "2027-01-31" }].each do |params|
         get("/api/me/agenda", params: params, headers: auth_headers)
-        expect(response).to(have_http_status(:unprocessable_entity), params.inspect)
+        expect(response).to(have_http_status(:unprocessable_content), params.inspect)
       end
     end
 

@@ -104,7 +104,7 @@ RSpec.describe("PATCH /api/me/shortlinks/:id", type: :request, vcr: true) do
         headers: auth_headers,
         as: :json
 
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(shortlink.reload.original_url).to(eq("https://google.com"))
     end
   end

@@ -84,7 +84,7 @@ RSpec.describe("POST /api/me/appointments/generate_times", type: :request) do
     it "rejects a step outside 30, 60, 90, 120 and 5 to 600" do
       [4, 601, 0].each do |step|
         generate(base.merge(step: step))
-        expect(response).to(have_http_status(:unprocessable_entity), "step #{step}")
+        expect(response).to(have_http_status(:unprocessable_content), "step #{step}")
       end
       generate(base.merge(step: 4))
       expect(json["errors"]).to(include("invalid_step"))
@@ -92,26 +92,26 @@ RSpec.describe("POST /api/me/appointments/generate_times", type: :request) do
 
     it "rejects an end that is not after the start" do
       generate(base.merge(from: "18:00", to: "09:00"))
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]).to(eq(["invalid_range"]))
     end
 
     it "rejects malformed times" do
       generate(base.merge(from: "25:00"))
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]).to(include("invalid_time"))
     end
 
     it "reports when the rules leave no time at all" do
       generate(base.merge(lunch: { from: "09:00", to: "18:00" }))
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]).to(eq(["no_times"]))
       expect(json["times"]).to(eq([]))
     end
 
     it "rejects a missing field" do
       generate({ from: "09:00", to: "18:00" })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]).to(have_key("step"))
     end
   end

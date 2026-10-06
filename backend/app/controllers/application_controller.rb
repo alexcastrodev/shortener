@@ -18,7 +18,7 @@ class ApplicationController < ActionController::API
     # Contract validation
     contract = contract_class.new.call(params.to_unsafe_h, context: context)
     if contract.errors.any?
-      render(json: { errors: contract.errors.to_h }, status: :unprocessable_entity)
+      render(json: { errors: contract.errors.to_h }, status: :unprocessable_content)
     elsif block_given?
       yield contract.to_h, params
     end
@@ -49,11 +49,11 @@ class ApplicationController < ActionController::API
   end
 
   def record_not_destroyed(exception)
-    render(json: { message: "Resource could not be destroyed", details: exception.record.errors.full_messages }, status: :unprocessable_entity)
+    render(json: { message: "Resource could not be destroyed", details: exception.record.errors.full_messages }, status: :unprocessable_content)
   end
 
   def record_invalid(exception)
-    render(json: { message: "Resource is invalid", details: exception.record.errors.full_messages }, status: :unprocessable_entity)
+    render(json: { message: "Resource is invalid", details: exception.record.errors.full_messages }, status: :unprocessable_content)
   end
 
   def user_not_authorized
