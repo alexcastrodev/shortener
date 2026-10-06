@@ -1,5 +1,6 @@
 import { Layout } from '@internal/ui';
 import { AppHeader } from '../components/app-header';
+import { AppSidebar } from '../components/app-sidebar';
 import { MobileNav } from '../components/mobile-nav';
 import { LoadingOverlay } from '@mantine/core';
 import { useEffect } from 'react';
@@ -33,16 +34,17 @@ export default function LayoutComponent() {
   if (!data) return null;
 
   return (
-    <div
-      style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
-    >
-      <AppHeader />
-      <Layout.Main>
-        <div className="pb-[calc(var(--mobile-nav-offset)+0.5rem)] md:pb-0">
-          <Outlet />
-        </div>
-      </Layout.Main>
-      <MobileNav />
+    <div className="flex min-h-screen">
+      <AppSidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <AppHeader />
+        <Layout.Main>
+          <div className="pb-[calc(var(--mobile-nav-offset)+0.5rem)] md:pb-0">
+            <Outlet />
+          </div>
+        </Layout.Main>
+        <MobileNav />
+      </div>
     </div>
   );
 }

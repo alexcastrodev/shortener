@@ -12,5 +12,9 @@
     "admin": "Admin",
     "account": "Conta",
     "my_account": "A minha conta",
-    "agenda": "Agenda"
+    "agenda": "Agenda",
+    "theme_light": "Tema claro",
+    "collapse_menu": "Minimizar menu",
+    "expand_menu": "Expandir menu",
+    "theme_dark": "Tema escuro"
 }

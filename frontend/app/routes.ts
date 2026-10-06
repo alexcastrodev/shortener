@@ -35,6 +35,7 @@ export default [
       route('forms/:id', 'routes/forms/$id.tsx'),
       route('forms/:id/responses', 'routes/forms/responses.tsx'),
       route('account', 'routes/account.tsx'),
+      route('notifications', 'routes/notifications/index.tsx'),
     ]),
     ...prefix('admin', [
       index('routes/admin/index.tsx'),
