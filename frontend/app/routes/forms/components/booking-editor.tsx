@@ -19,6 +19,8 @@ import type { FormField, FormFieldInput } from '@internal/core/types/Form';
 import { BundleOffer } from './bundle-offer';
 import { ExceptionsSection } from './exceptions-section';
 import { TimeGeneratorPanel } from './time-generator-panel';
+import { TimeoutInput } from './timeout-input';
+import { timeoutInRange } from '../../../modules/forms/duration-units.ts';
 import { WeekdayTimes } from './weekday-times';
 import {
   DAYS,
@@ -49,6 +51,8 @@ export function BookingEditor({
       z.object({
         label: z.string().trim().min(1).max(300),
         help: z.string().max(500),
+        approval: z.enum(['auto', 'manual']),
+        approval_timeout_minutes: z.union([z.number(), z.literal('')]),
         exceptions: z.array(
           z
             .object({
@@ -147,6 +151,16 @@ export function BookingEditor({
               }
             })
         ),
+      }).check(ctx => {
+        const { approval, approval_timeout_minutes: minutes } = ctx.value;
+        if (approval === 'manual' && !timeoutInRange(minutes)) {
+          ctx.issues.push({
+            code: 'custom',
+            message: t('error_timeout'),
+            path: ['approval_timeout_minutes'],
+            input: minutes,
+          });
+        }
       }),
     [t]
   );
@@ -408,12 +422,10 @@ export function BookingEditor({
           </div>
           {form.values.approval === 'manual' && (
             <Group grow align="flex-start">
-              <NumberInput
-                label={t('approval_timeout')}
-                min={5}
-                max={43200}
-                allowDecimal={false}
-                {...form.getInputProps('approval_timeout_minutes')}
+              <TimeoutInput
+                minutes={form.values.approval_timeout_minutes}
+                error={form.errors.approval_timeout_minutes as string | undefined}
+                onChange={value => form.setFieldValue('approval_timeout_minutes', value)}
               />
               <div>
                 <p className="mb-1 text-sm">{t('approval_on_timeout')}</p>

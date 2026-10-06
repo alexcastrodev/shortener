@@ -35,7 +35,7 @@
   "approval": "Confirmar marcações",
   "approval_auto": "Automático",
   "approval_manual": "Eu aprovo cada uma",
-  "approval_timeout": "Se eu não responder em (minutos)",
+  "approval_timeout": "Se eu não responder em",
   "approval_on_timeout": "Quando o prazo terminar",
   "on_timeout_decline": "Recusar",
   "on_timeout_accept": "Aceitar",
@@ -108,5 +108,10 @@
   "bundle_pay": "Sessões pagas",
   "bundle_example": "Exemplo: {{take}} sessões custam o preço de {{pay}}.",
   "error_bundle": "As levadas têm de ser de 2 a 31 e as pagas, pelo menos 1 e menos do que as levadas",
-  "error_bundle_price": "Um pacote precisa de um preço"
+  "error_bundle_price": "Um pacote precisa de um preço",
+  "unit_minutes": "minutos",
+  "unit_hours": "horas",
+  "unit_days": "dias",
+  "timeout_range": "De 5 minutos a 30 dias.",
+  "error_timeout": "O prazo tem de ser de 5 minutos a 30 dias"
 }

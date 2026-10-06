@@ -35,7 +35,7 @@
   "approval": "Confirming bookings",
   "approval_auto": "Automatic",
   "approval_manual": "I approve each one",
-  "approval_timeout": "If I do not answer in (minutes)",
+  "approval_timeout": "If I do not answer in",
   "approval_on_timeout": "When time runs out",
   "on_timeout_decline": "Decline",
   "on_timeout_accept": "Accept",
@@ -108,5 +108,10 @@
   "bundle_pay": "Sessions paid",
   "bundle_example": "Example: {{take}} sessions cost the price of {{pay}}.",
   "error_bundle": "Taken must be 2 to 31 and paid at least 1 and fewer than taken",
-  "error_bundle_price": "A package needs a price"
+  "error_bundle_price": "A package needs a price",
+  "unit_minutes": "minutes",
+  "unit_hours": "hours",
+  "unit_days": "days",
+  "timeout_range": "From 5 minutes to 30 days.",
+  "error_timeout": "The deadline must be from 5 minutes to 30 days"
 }
