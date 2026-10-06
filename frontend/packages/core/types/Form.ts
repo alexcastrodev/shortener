@@ -11,7 +11,13 @@ export type FormFieldType =
   | 'rating'
   | 'date'
   | 'image'
+  | 'booking'
   | 'section';
+
+export type BookingAnswer = {
+  service: string;
+  sessions: { date: string; time: string }[];
+};
 
 export const FORM_LAYOUTS = ['page', 'one_at_a_time', 'steps'] as const;
 export type FormLayout = (typeof FORM_LAYOUTS)[number];
@@ -79,7 +85,7 @@ export type FormResponseAnswer = {
   id: string;
   label: string;
   type: FormFieldType;
-  value: string | number | boolean | string[] | null;
+  value: string | number | boolean | string[] | BookingAnswer | null;
 };
 
 export type FormResponse = {
