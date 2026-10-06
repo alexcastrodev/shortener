@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
+import type pagesEn from '../../i18n/en/pages.json';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -20,10 +23,21 @@ const STARTING_COLORS: CustomColors = {
   accent: '#6366f1',
 };
 
-const COLOR_LABELS: Record<keyof CustomColors, string> = {
-  background: 'Background',
-  text: 'Text',
-  accent: 'Buttons',
+type PagesKey = keyof typeof pagesEn;
+
+const COLOR_LABELS: Record<keyof CustomColors, PagesKey> = {
+  background: 'color_background',
+  text: 'color_text',
+  accent: 'color_buttons',
+};
+
+const THEME_NAMES: Record<PageTheme, PagesKey> = {
+  default: 'theme_default',
+  midnight: 'theme_midnight',
+  sunset: 'theme_sunset',
+  forest: 'theme_forest',
+  ocean: 'theme_ocean',
+  paper: 'theme_paper',
 };
 
 export function ThemePicker({
@@ -37,6 +51,7 @@ export function ThemePicker({
   onChange: (theme: PageTheme) => void;
   onColorsChange: (colors: CustomColors | null) => void;
 }) {
+  const { t } = useTranslation('pages');
   const tile = (selected: boolean) =>
     `rounded-lg border-2 p-1 text-xs font-medium transition-colors ${
       selected ? 'border-primary' : 'border-transparent hover:border-border'
@@ -50,7 +65,7 @@ export function ThemePicker({
     notifications.show({
       message: Array.isArray(error?.errors)
         ? error.errors.join(', ')
-        : 'Could not update your palettes',
+        : i18n.t('pages:palette_error'),
       color: 'red',
     });
   const { mutate: savePalette, isPending: isSaving } = useCreateColorPalette({
@@ -68,8 +83,8 @@ export function ThemePicker({
   const unreadable = colors && contrastRatio(colors.text, colors.background) < 4.5;
 
   return (
-    <div role="radiogroup" aria-label="Theme">
-      <p className="mb-2 text-sm font-medium">Theme</p>
+    <div role="radiogroup" aria-label={t('theme_label')}>
+      <p className="mb-2 text-sm font-medium">{t('theme_label')}</p>
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
         {PAGE_THEMES.map(theme => {
           const preset = BIO_THEMES[theme];
@@ -91,7 +106,7 @@ export function ThemePicker({
                 <span className={`h-2 w-10 rounded-full ${preset.button}`} />
                 <span className={`h-2 w-10 rounded-full ${preset.button}`} />
               </span>
-              <span className="mt-1 block">{preset.name}</span>
+              <span className="mt-1 block">{t(THEME_NAMES[theme])}</span>
             </button>
           );
         })}
@@ -109,7 +124,7 @@ export function ThemePicker({
             <span className={`h-2 w-10 rounded-full ${custom.button}`} />
             <span className={`h-2 w-10 rounded-full ${custom.button}`} />
           </span>
-          <span className="mt-1 block">Custom</span>
+          <span className="mt-1 block">{t('theme_custom')}</span>
         </button>
       </div>
 
@@ -125,7 +140,7 @@ export function ThemePicker({
                 }
                 className="h-9 w-12 cursor-pointer rounded border border-border bg-transparent p-0.5"
               />
-              {COLOR_LABELS[key]}
+              {t(COLOR_LABELS[key])}
             </label>
           ))}
           <div className="flex w-full items-center gap-2">
@@ -133,8 +148,8 @@ export function ThemePicker({
               type="text"
               value={paletteName}
               maxLength={40}
-              placeholder="Name this palette"
-              aria-label="Palette name"
+              placeholder={t('palette_name_placeholder')}
+              aria-label={t('palette_name_label')}
               onChange={event => setPaletteName(event.target.value)}
               className="h-9 min-w-0 flex-1 rounded-md border border-border bg-transparent px-3 text-sm"
             />
@@ -146,13 +161,12 @@ export function ThemePicker({
               }
               className="h-9 rounded-md border border-border px-3 text-sm font-medium disabled:opacity-50"
             >
-              Save palette
+              {t('palette_save')}
             </button>
           </div>
           {unreadable && (
             <p role="status" className="w-full text-xs text-amber-600">
-              Text and background are too close: visitors may struggle to read
-              this page.
+              {t('palette_unreadable')}
             </p>
           )}
         </div>
@@ -160,7 +174,7 @@ export function ThemePicker({
 
       {palettes.length > 0 && (
         <div className="mt-3">
-          <p className="mb-2 text-sm font-medium">Your palettes</p>
+          <p className="mb-2 text-sm font-medium">{t('palettes_title')}</p>
           <ul className="flex flex-wrap gap-2">
             {palettes.map(palette => {
               const saved = customTheme(palette.custom_colors);
@@ -182,7 +196,7 @@ export function ThemePicker({
                   </button>
                   <button
                     type="button"
-                    aria-label={`Delete palette ${palette.name}`}
+                    aria-label={t('palette_delete', { name: palette.name })}
                     onClick={() => removePalette(palette.id)}
                     className="py-1 pr-2 pl-1 text-muted-foreground hover:text-foreground"
                   >
