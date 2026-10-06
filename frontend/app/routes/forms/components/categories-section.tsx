@@ -146,7 +146,7 @@ export function CategoriesSection({ form, renderService }: Props) {
   const body = (index: number) => {
     const category = categories[index];
     return (
-      <Stack gap="sm" className="rounded-lg border border-border p-3">
+      <Stack gap="md" className="rounded-lg border border-border p-4">
         {header(index)}
         {list(category.id)}
         <div>
