@@ -6,10 +6,16 @@ import {
   Select,
 } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Card, PageContainer } from '@internal/ui';
-import { useGetAgenda } from '@internal/core/actions/get-agenda/get-agenda.hook';
+import {
+  getAgendaKey,
+  useGetAgenda,
+} from '@internal/core/actions/get-agenda/get-agenda.hook';
+import { useAppointmentAction } from '@internal/core/actions/appointment-action/appointment-action.hook';
 import type { AgendaSession } from '@internal/core/actions/get-agenda/get-agenda.types';
 import { useUserState } from '@internal/core/states/use-user-state';
 import { formatDate, formatDateTime } from '../../i18n/format';
@@ -25,6 +31,11 @@ import {
   todayIn,
   type View,
 } from '../../modules/agenda/agenda-layout.ts';
+import { SessionPanel } from './session-panel';
+import {
+  onlyPending,
+  pendingTargets,
+} from '../../modules/agenda/agenda-actions.ts';
 import type { Route } from './+types/index';
 
 export function meta({}: Route.MetaArgs) {
@@ -45,6 +56,9 @@ export default function AgendaPage() {
   const [anchor, setAnchor] = useState(() => todayIn(fallbackZone));
   const [formId, setFormId] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [waitingOnly, setWaitingOnly] = useState(false);
+  const queryClient = useQueryClient();
+  const { mutateAsync: act, isPending: approving } = useAppointmentAction();
   const [now, setNow] = useState(() => new Date());
   const scroller = useRef<HTMLDivElement>(null);
   const scrolled = useRef(false);
@@ -75,16 +89,37 @@ export default function AgendaPage() {
     return [...seen].map(([value, label]) => ({ value: String(value), label }));
   }, [data]);
 
-  const visible = useMemo(
+  const inForm = useMemo(
     () =>
       (data?.sessions ?? []).filter(
         session => formId === null || session.form_id === formId
       ),
     [data, formId]
   );
+  const visible = useMemo(
+    () => (waitingOnly ? onlyPending(inForm) : inForm),
+    [inForm, waitingOnly]
+  );
   const byDay = useMemo(() => sessionsByDay(visible, null), [visible]);
   const chosen = visible.find(session => keyOf(session) === selected) ?? null;
-  const pending = pendingTotal(visible);
+  const pending = pendingTotal(inForm);
+  const targets = useMemo(() => pendingTargets(inForm), [inForm]);
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: getAgendaKey });
+  const approveAll = async () => {
+    const results = await Promise.allSettled(
+      targets.map(target => act({ id: target.id, action: 'approve' }))
+    );
+    const done = results.filter(result => result.status === 'fulfilled').length;
+    notifications.show({
+      message:
+        done === targets.length
+          ? t('done_approve_all', { count: done })
+          : t('err_unknown'),
+      color: done === targets.length ? 'teal' : 'red',
+    });
+    refresh();
+  };
 
   const label =
     view === 'day'
@@ -140,9 +175,25 @@ export default function AgendaPage() {
           {t('sessions', { count: visible.length })}
         </p>
         {pending > 0 && (
-          <span className="rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-600 dark:text-amber-400">
-            {t('awaiting', { count: pending })}
-          </span>
+          <>
+            <button
+              type="button"
+              aria-pressed={waitingOnly}
+              onClick={() => setWaitingOnly(value => !value)}
+              className={`rounded-full border px-2 py-0.5 text-xs text-amber-600 dark:text-amber-400 ${waitingOnly ? 'border-amber-500 bg-amber-500/20' : 'border-amber-500/50 bg-amber-500/10'}`}
+            >
+              {t('awaiting', { count: pending })} ·{' '}
+              {waitingOnly ? t('filter_all') : t('filter_waiting')}
+            </button>
+            <Button
+              size="compact-xs"
+              color="brand"
+              loading={approving}
+              onClick={approveAll}
+            >
+              {t('approve_all', { count: targets.length })}
+            </Button>
+          </>
         )}
         <div className="ml-auto flex items-center gap-2">
           {forms.length > 1 && (
@@ -278,85 +329,12 @@ export default function AgendaPage() {
         </Card>
 
         {chosen && (
-          <Card className="w-full shrink-0 p-4 lg:w-80">
-            <div className="mb-3 flex items-start justify-between gap-2">
-              <h2 className="text-base font-semibold">
-                {chosen.service_name ?? t('service_fallback')}
-              </h2>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                aria-label={t('panel_close')}
-                onClick={() => setSelected(null)}
-              >
-                <IconX size={16} />
-              </ActionIcon>
-            </div>
-            <dl className="space-y-2 text-sm">
-              <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t('panel_when')}
-                </dt>
-                <dd>
-                  {formatDateTime(chosen.starts_at, {
-                    dateStyle: 'full',
-                    timeStyle: 'short',
-                    timeZone: zone,
-                  })}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t('panel_form')}
-                </dt>
-                <dd>{chosen.form_title}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">
-                  {t('panel_occupancy')}
-                </dt>
-                <dd>
-                  {chosen.capacity === null
-                    ? `${t('booked_unlimited', { count: chosen.booked })} · ${t('panel_unlimited')}`
-                    : t('booked_of', {
-                        booked: chosen.booked,
-                        capacity: chosen.capacity,
-                      })}
-                </dd>
-              </div>
-            </dl>
-            <h3 className="mt-4 mb-2 text-sm font-medium">
-              {t('clients_title')} · {chosen.appointments.length}
-            </h3>
-            {chosen.appointments.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t('no_clients')}</p>
-            ) : (
-              <ul className="space-y-2">
-                {chosen.appointments.map(appointment => (
-                  <li
-                    key={appointment.id}
-                    className="rounded-md border border-border p-2 text-sm"
-                  >
-                    <p className="font-medium">
-                      {appointment.client_name ?? t('no_name')}
-                    </p>
-                    {appointment.client_email && (
-                      <p className="truncate text-xs text-muted-foreground">
-                        {appointment.client_email}
-                      </p>
-                    )}
-                    <p
-                      className={`mt-1 text-xs ${appointment.status === 'pending' ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}
-                    >
-                      {appointment.status === 'pending'
-                        ? t('status_pending')
-                        : t('status_confirmed')}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <SessionPanel
+            session={chosen}
+            zone={zone}
+            onClose={() => setSelected(null)}
+            onChanged={refresh}
+          />
         )}
       </div>
     </PageContainer>
