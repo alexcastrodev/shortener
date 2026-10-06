@@ -11,6 +11,7 @@ import { useUserState } from '@internal/core/states/use-user-state';
 import { useLogout } from '../../modules/auth/use-logout';
 import { AdminGuard } from '../admin-guard';
 import { BrandMark, ThemeToggle } from '@internal/ui';
+import { NotificationBell } from '../notification-bell';
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   [
@@ -56,6 +57,7 @@ export function AppHeader() {
         </div>
 
         <div className="flex items-center gap-3">
+          <NotificationBell />
           <ThemeToggle />
           {user && (
             <NavLink
