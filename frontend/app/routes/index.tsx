@@ -5,6 +5,8 @@ import {
   IconLink,
 } from '@tabler/icons-react';
 import type { MetaFunction } from 'react-router';
+import { useTranslation } from 'react-i18next';
+import type landingEn from '../i18n/en/landing.json';
 import { Layout } from '../layout/web-layout';
 import { BioShowcase } from '../modules/bio-page';
 import { ClickGlobe, FeatureBento, HeroConsole } from '../modules/landing';
@@ -35,7 +37,12 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+type LandingKey = keyof typeof landingEn;
+
+const BIO_ITEMS: LandingKey[] = ['bio_item_themes', 'bio_item_photo', 'bio_item_qr', 'bio_item_clicks'];
+
 export default function LinkShortenerLanding() {
+  const { t } = useTranslation('landing');
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
@@ -88,14 +95,13 @@ export default function LinkShortenerLanding() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="landing-rise mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-sm font-medium text-muted-foreground backdrop-blur">
               <IconLink size={15} stroke={1.8} className="text-primary" />
-              Link shortener · Free &amp; open source
+              {t('hero_badge')}
             </div>
             <h1 className="landing-gradient-text landing-rise font-display text-5xl leading-[1.05] font-semibold tracking-tighter sm:text-6xl lg:text-7xl">
-              Shorten links. Track every click.
+              {t('hero_title')}
             </h1>
             <p className="landing-rise mx-auto mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Kurz turns long URLs into short, shareable links and shows you who
-              clicked, from where, and on what device.
+              {t('hero_lead')}
             </p>
 
             <div className="landing-rise mt-8 flex flex-col justify-center gap-3 sm:flex-row">
@@ -103,14 +109,14 @@ export default function LinkShortenerLanding() {
                 href="/signup"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition-opacity hover:opacity-90"
               >
-                Get started
+                {t('cta_start')}
                 <IconArrowRight size={18} />
               </a>
               <a
                 href="/about"
                 className="inline-flex min-h-12 items-center justify-center rounded-full border border-border bg-card/60 px-6 text-sm font-semibold text-foreground backdrop-blur transition-colors hover:bg-accent hover:text-accent-foreground"
               >
-                Learn more
+                {t('cta_more')}
               </a>
             </div>
           </div>
@@ -121,11 +127,11 @@ export default function LinkShortenerLanding() {
             <div className="pointer-events-none absolute inset-x-0 top-[18%] hidden justify-between px-2 lg:flex">
               <div className="landing-float rounded-xl border border-border bg-card/90 px-3 py-2 text-sm shadow-xl backdrop-blur-md">
                 <span className="mr-2 inline-block size-2 rounded-full bg-primary" />
-                Click from São Paulo · iOS
+                {t('float_sp')}
               </div>
               <div className="landing-float-delayed rounded-xl border border-border bg-card/90 px-3 py-2 text-sm shadow-xl backdrop-blur-md">
                 <span className="mr-2 inline-block size-2 rounded-full bg-primary" />
-                Click from Tokyo · Chrome
+                {t('float_tokyo')}
               </div>
             </div>
 
@@ -146,22 +152,21 @@ export default function LinkShortenerLanding() {
 
           <div className="order-1 max-w-xl lg:order-2">
             <span className="mb-5 inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-              New
+              {t('bio_new')}
             </span>
             <h2 className="font-display text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-              One link for all your links.
+              {t('bio_title')}
             </h2>
             <p className="mt-5 text-base leading-7 text-muted-foreground sm:text-lg">
-              Add your links, pick a theme, share one page. Free, like
-              everything else here.
+              {t('bio_lead')}
             </p>
             <ul className="mt-8 grid gap-3 sm:grid-cols-2">
-              {['Six ready-made themes', 'Your photo on top', 'QR code to print', 'Clicks for every link'].map(item => (
+              {BIO_ITEMS.map(item => (
                 <li key={item} className="flex items-center gap-2 text-sm text-foreground">
                   <span className="flex size-5 items-center justify-center rounded-full bg-primary/15 text-primary">
                     <IconCheck size={13} stroke={2.5} />
                   </span>
-                  {item}
+                  {t(item)}
                 </li>
               ))}
             </ul>
@@ -169,7 +174,7 @@ export default function LinkShortenerLanding() {
               href="/app/pages"
               className="mt-10 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition-opacity hover:opacity-90"
             >
-              Create your page
+              {t('bio_cta')}
               <IconArrowRight size={18} />
             </a>
           </div>
@@ -180,10 +185,10 @@ export default function LinkShortenerLanding() {
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
         <div className="mb-10 max-w-2xl">
           <p className="font-mono text-xs font-medium tracking-widest text-primary uppercase">
-            Every link
+            {t('feat_kicker')}
           </p>
           <h2 className="mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl">
-            More than a short URL.
+            {t('feat_title')}
           </h2>
         </div>
         <FeatureBento />
@@ -195,14 +200,14 @@ export default function LinkShortenerLanding() {
         <div aria-hidden="true" className="landing-glow pointer-events-none absolute inset-0 rotate-180" />
         <div className="relative mx-auto max-w-4xl px-4 py-24 text-center sm:px-6 lg:px-8">
           <p className="landing-gradient-text font-display text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
-            No paid plans. No credit card. Open source.
+            {t('trust')}
           </p>
           <a
             href="/signup"
             className="mt-10 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm font-semibold text-background transition-opacity hover:opacity-90"
           >
             <IconClick size={18} />
-            Shorten your first link
+            {t('trust_cta')}
           </a>
         </div>
       </section>
