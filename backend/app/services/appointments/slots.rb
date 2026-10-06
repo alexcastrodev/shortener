@@ -16,6 +16,12 @@ module Appointments
       end
     end
 
+    def offered?(service:, exceptions:, zone:, starts_at:)
+      local = starts_at.in_time_zone(zone)
+      date = local.to_date
+      service["days"].include?(WEEKDAYS[date.wday]) && Array(times_for(service, date, exceptions)).include?(local.strftime("%H:%M"))
+    end
+
     private
 
     def day_slots(service, rules, context)

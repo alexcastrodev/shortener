@@ -51,6 +51,9 @@ module Mcp
         GetAgenda,
         ListNotifications,
         MarkNotificationRead,
+        UpdateBookingConfig,
+        ApplyTimeSlots,
+        GetBookingImpact,
       ]
     end
 
