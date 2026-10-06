@@ -17,6 +17,8 @@ import {
 } from '@tabler/icons-react';
 import { useClipboard } from '@mantine/hooks';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatNumber } from '../../i18n/format';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Card, PageContainer } from '@internal/ui';
 import { useGetPage } from '@internal/core/actions/get-page/get-page.hook';
@@ -41,11 +43,11 @@ export function meta() {
   return [{ title: 'Page statistics - Kurz' }];
 }
 
-const PERIODS: { label: string; value: PageStatisticsPeriod }[] = [
-  { label: '7 days', value: 7 },
-  { label: '30 days', value: 30 },
-  { label: '90 days', value: 90 },
-];
+const PERIODS = [
+  { label: 'stats_period_7', value: 7 },
+  { label: 'stats_period_30', value: 30 },
+  { label: 'stats_period_90', value: 90 },
+] as const satisfies readonly { label: string; value: PageStatisticsPeriod }[];
 
 function BarList({
   items,
@@ -56,10 +58,11 @@ function BarList({
   label?: (item: PageStatisticsBucket) => React.ReactNode;
   empty?: string;
 }) {
+  const { t } = useTranslation('pages');
   return (
     <SharedBarList
       {...rest}
-      empty={rest.empty ?? 'No clicks in this period.'}
+      empty={rest.empty ?? t('stats_empty_list')}
       items={items.map(item => ({ name: item.name, value: item.clicks }))}
       label={rest.label ? item => rest.label!({ name: item.name, clicks: item.value }) : undefined}
     />
@@ -67,6 +70,7 @@ function BarList({
 }
 
 function LinkRow({ link, max }: { link: PageStatisticsLink; max: number }) {
+  const { t } = useTranslation('pages');
   const network = socialNetworkById(link.icon);
   const Icon = network?.icon ?? IconLink;
 
@@ -84,22 +88,22 @@ function LinkRow({ link, max }: { link: PageStatisticsLink; max: number }) {
       />
       <span className="relative min-w-0 flex-1 truncate text-foreground">
         {link.kind === 'social'
-          ? `${network?.name ?? link.label} icon`
+          ? t('stats_icon', { name: network?.name ?? link.label })
           : link.label}
       </span>
       {!link.active && (
-        <Tooltip label="Hidden from your page" withArrow>
+        <Tooltip label={t('stats_hidden')} withArrow>
           <IconEyeOff
             size={15}
             className="relative shrink-0 text-muted-foreground"
-            aria-label="Hidden"
+            aria-label={t('stats_hidden_label')}
           />
         </Tooltip>
       )}
       <span className="relative shrink-0 text-right tabular-nums">
-        <span className="font-semibold text-foreground">{link.clicks}</span>
+        <span className="font-semibold text-foreground">{formatNumber(link.clicks)}</span>
         <span className="ml-1.5 hidden text-xs text-muted-foreground sm:inline">
-          {link.total_clicks} all time
+          {t('stats_all_time', { n: formatNumber(link.total_clicks) })}
         </span>
       </span>
     </li>
@@ -107,6 +111,7 @@ function LinkRow({ link, max }: { link: PageStatisticsLink; max: number }) {
 }
 
 export default function PageStatisticsPage() {
+  const { t } = useTranslation('pages');
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const clipboard = useClipboard({ timeout: 1500 });
@@ -126,7 +131,7 @@ export default function PageStatisticsPage() {
       leftSection={<IconArrowLeft size={16} />}
       onClick={() => navigate(`/app/pages/${id}`)}
     >
-      Back to editor
+      {t('stats_back')}
     </Button>
   );
 
@@ -137,9 +142,9 @@ export default function PageStatisticsPage() {
         <Alert
           variant="error"
           icon={<IconLock size={24} />}
-          title="Could not load the statistics"
+          title={t('stats_load_failed_title')}
         >
-          This page does not exist or is not yours.
+          {t('stats_load_failed_body')}
         </Alert>
       </PageContainer>
     );
@@ -171,10 +176,10 @@ export default function PageStatisticsPage() {
             <p className="truncate text-sm font-medium text-muted-foreground">
               {page
                 ? `${page.display_title || page.slug} · @${page.slug}`
-                : 'Bio page'}
+                : t('stats_page_fallback')}
             </p>
             <h1 className="text-2xl font-semibold tracking-tight">
-              Statistics
+              {t('stats_title')}
             </h1>
           </div>
         </div>
@@ -182,7 +187,7 @@ export default function PageStatisticsPage() {
           value={String(days)}
           onChange={value => setDays(Number(value) as PageStatisticsPeriod)}
           data={PERIODS.map(period => ({
-            label: period.label,
+            label: t(period.label),
             value: String(period.value),
           }))}
           className={isFetching ? 'opacity-70' : ''}
@@ -194,10 +199,9 @@ export default function PageStatisticsPage() {
           <div className="mx-auto inline-flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <IconClick size={24} />
           </div>
-          <p className="mt-4 font-semibold text-foreground">No clicks yet</p>
+          <p className="mt-4 font-semibold text-foreground">{t('stats_no_clicks_title')}</p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-            Share your page and every click on a link or social icon shows up
-            here: when, where from and on what device.
+            {t('stats_no_clicks_body')}
           </p>
           {page && (
             <Button
@@ -206,7 +210,7 @@ export default function PageStatisticsPage() {
               leftSection={<IconCopy size={16} />}
               onClick={() => clipboard.copy(page.public_url)}
             >
-              {clipboard.copied ? 'Copied' : 'Copy page link'}
+              {clipboard.copied ? t('stats_copied') : t('stats_copy_link')}
             </Button>
           )}
         </Card>
@@ -214,35 +218,35 @@ export default function PageStatisticsPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard
-              label={`Clicks · last ${days} days`}
-              value={stats.period_clicks}
+              label={t('stats_clicks_period', { n: days })}
+              value={formatNumber(stats.period_clicks)}
             />
-            <StatCard label="Clicks · all time" value={stats.total_clicks} />
+            <StatCard label={t('stats_clicks_all')} value={formatNumber(stats.total_clicks)} />
             <StatCard
-              label="Top link"
-              value={topLink ? topLink.clicks : '–'}
+              label={t('stats_top_link')}
+              value={topLink ? formatNumber(topLink.clicks) : '–'}
               hint={
                 topLink
                   ? topLink.kind === 'social'
-                    ? `${socialNetworkById(topLink.icon)?.name ?? topLink.label} icon`
+                    ? t('stats_icon', { name: socialNetworkById(topLink.icon)?.name ?? topLink.label })
                     : topLink.label
-                  : 'No clicks in this period'
+                  : t('stats_no_clicks_period')
               }
             />
             <StatCard
-              label="Top source"
+              label={t('stats_top_source')}
               value={topSource ? topSource.name : '–'}
               hint={
                 topSource
-                  ? `${share(topSource.clicks, stats.period_clicks)}% of clicks`
-                  : 'No clicks in this period'
+                  ? t('stats_source_share', { n: share(topSource.clicks, stats.period_clicks) })
+                  : t('stats_no_clicks_period')
               }
             />
           </div>
 
           <Card className="p-5">
             <h2 className="mb-4 text-sm font-semibold text-foreground">
-              Clicks per day
+              {t('stats_per_day')}
             </h2>
             <AreaChart
               h={220}
@@ -251,7 +255,7 @@ export default function PageStatisticsPage() {
                 day: formatDay(day.date),
               }))}
               dataKey="day"
-              series={[{ name: 'clicks', label: 'Clicks', color: 'brand.5' }]}
+              series={[{ name: 'clicks', label: t('stats_clicks'), color: 'brand.5' }]}
               curveType="monotone"
               withDots={days <= 30}
               gridAxis="x"
@@ -265,10 +269,10 @@ export default function PageStatisticsPage() {
           <Card className="p-5">
             <div className="mb-4 flex items-baseline justify-between gap-3">
               <h2 className="text-sm font-semibold text-foreground">
-                Links and icons
+                {t('stats_links_icons')}
               </h2>
               <span className="text-xs text-muted-foreground">
-                Last {days} days
+                {t('stats_last_days', { n: days })}
               </span>
             </div>
             <ul className="space-y-1">
@@ -279,19 +283,18 @@ export default function PageStatisticsPage() {
           </Card>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <BarList title="Where visitors came from" items={stats.sources} />
+            <BarList title={t('stats_sources')} items={stats.sources} />
             <BarList
-              title="Countries"
+              title={t('stats_countries')}
               items={stats.countries}
               label={item => countryLabel(item.name)}
             />
-            <BarList title="Devices" items={stats.devices} />
-            <BarList title="Browsers" items={stats.browsers} />
+            <BarList title={t('stats_devices')} items={stats.devices} />
+            <BarList title={t('stats_browsers')} items={stats.browsers} />
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Repeated clicks by the same visitor within a few seconds count once.
-            Days are in UTC.
+            {t('stats_footnote')}
           </p>
         </div>
       )}
