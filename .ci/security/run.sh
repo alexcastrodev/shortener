@@ -26,7 +26,13 @@ set -e
 
 if [ "${ZAP:-0}" = 1 ]; then
   mkdir -p security/out/zap
-  for target in / /.well-known/oauth-authorization-server /.well-known/oauth-protected-resource/mcp; do
+  booking=$($C run --rm -T rails bin/rails runner 'form = Form.find_by(title: "Latency"); booking = form&.fields&.find { |field| field["type"] == "booking" }; puts "#{form.public_id} #{booking["services"].first["id"]}" if booking' 2>/dev/null | tail -1)
+  public_targets=""
+  if [ -n "$booking" ]; then
+    set -- $booking
+    public_targets="/api/public/forms/$1 /api/public/forms/$1/slots?service=$2&from=$(date -u +%F)&to=$(date -u -d '+7 days' +%F 2>/dev/null || date -u -v+7d +%F) /api/public/appointments/zapzapzapzapzapzapzapzapzapzapzapzapzapzapzap /api/public/appointment_verifications/zapzapzapzapzapzapzapzapzapzapzapzapzapzapzap /api/public/calendar/zapzapzapzapzapzapzapzapzapzapzapzapzapzapzap"
+  fi
+  for target in / /.well-known/oauth-authorization-server /.well-known/oauth-protected-resource/mcp $public_targets; do
     name=$(echo "$target" | tr -c 'a-z0-9' '_')
     docker run --rm --network kurzsec_sec -v "$PWD/security/out/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable \
       zap-baseline.py -t "http://api.kurz.fyi$target" -r "zap$name.html" -J "zap$name.json" -I -m 1 || true
