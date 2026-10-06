@@ -25,7 +25,10 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useNavigate, useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { z } from 'zod/v4';
+import type { TFunction } from 'i18next';
 import { Alert, Card, PageContainer } from '@internal/ui';
 import {
   getPageKey,
@@ -60,24 +63,22 @@ export function meta({}: Route.MetaArgs) {
 
 export const ssr = false;
 
-const pageSchema = z.object({
-  slug: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .regex(
-      /^[a-z0-9][a-z0-9_.-]{1,28}[a-z0-9]$/,
-      '3–30 characters: letters, numbers, ".", "_" or "-"'
-    ),
-  display_title: z.string().max(80),
-  bio: z.string().max(300),
-  theme: z.enum(PAGE_THEMES),
-  custom_colors: z
-    .object({ background: z.string(), text: z.string(), accent: z.string() })
-    .nullable(),
-  published: z.boolean(),
-  expires_at: z.string().refine(isFutureDateTimeLocal, 'Must be in the future'),
-});
+const makePageSchema = (t: TFunction<'pages'>) =>
+  z.object({
+    slug: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(/^[a-z0-9][a-z0-9_.-]{1,28}[a-z0-9]$/, t('slug_rule')),
+    display_title: z.string().max(80),
+    bio: z.string().max(300),
+    theme: z.enum(PAGE_THEMES),
+    custom_colors: z
+      .object({ background: z.string(), text: z.string(), accent: z.string() })
+      .nullable(),
+    published: z.boolean(),
+    expires_at: z.string().refine(isFutureDateTimeLocal, t('edit_expires_future')),
+  });
 
 function errorMessage(error: unknown) {
   const errors = (error as { errors?: unknown } | undefined)?.errors;
@@ -87,26 +88,27 @@ function errorMessage(error: unknown) {
       .map(([key, value]) => `${key} ${value}`)
       .join(', ');
   }
-  return 'Something went wrong, please try again later.';
+  return i18n.t('pages:generic_error');
 }
 
 function showError(error: unknown) {
   notifications.show({
-    title: 'Error',
+    title: i18n.t('pages:edit_error_title'),
     message: errorMessage(error),
     color: 'red',
   });
 }
 
 export default function PageEditor() {
+  const { t } = useTranslation('pages');
   const { id = '' } = useParams();
   const { data: page, isLoading, error } = useGetPage(id);
 
   if (error) {
     return (
       <PageContainer>
-        <Alert title="Failed to load page">
-          We could not load this page. Please try again later.
+        <Alert title={t('edit_load_failed_title')}>
+          {t('edit_load_failed_body')}
         </Alert>
       </PageContainer>
     );
@@ -127,6 +129,7 @@ export default function PageEditor() {
 }
 
 function Editor({ page }: { page: Page }) {
+  const { t } = useTranslation('pages');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const links = page.links ?? [];
@@ -148,7 +151,7 @@ function Editor({ page }: { page: Page }) {
       published: page.published,
       expires_at: isoToDateTimeLocal(page.expires_at),
     },
-    validate: zod4Resolver(pageSchema),
+    validate: zod4Resolver(makePageSchema(t)),
   });
 
   // The server can change the page behind the form (e.g. applying a
@@ -175,7 +178,7 @@ function Editor({ page }: { page: Page }) {
     onSuccess: () => {
       refresh();
       form.resetDirty();
-      notifications.show({ message: 'Page saved', color: 'green' });
+      notifications.show({ message: t('edit_saved'), color: 'green' });
     },
     onError: showError,
   });
@@ -190,14 +193,9 @@ function Editor({ page }: { page: Page }) {
 
   function confirmDelete() {
     modals.openConfirmModal({
-      title: 'Delete page',
-      children: (
-        <p className="text-sm">
-          kurz.fyi/u/{page.slug} will stop working and its address cannot be
-          reused.
-        </p>
-      ),
-      labels: { confirm: 'Delete page', cancel: 'Cancel' },
+      title: t('edit_delete_title'),
+      children: <p className="text-sm">{t('edit_delete_body', { slug: page.slug })}</p>,
+      labels: { confirm: t('edit_delete_confirm'), cancel: t('edit_cancel') },
       confirmProps: { color: 'red' },
       onConfirm: () => deletePage(page.id),
     });
@@ -212,7 +210,7 @@ function Editor({ page }: { page: Page }) {
           leftSection={<IconArrowLeft size={16} />}
           onClick={() => navigate('/app/pages')}
         >
-          Pages
+          {t('edit_back')}
         </Button>
         <Group gap="xs">
           <Button
@@ -220,14 +218,14 @@ function Editor({ page }: { page: Page }) {
             leftSection={<IconTemplate size={16} />}
             onClick={() => openTemplateGallery({ page, onApplied: refresh })}
           >
-            Templates
+            {t('edit_templates')}
           </Button>
           <Button
             variant="default"
             leftSection={<IconChartBar size={16} />}
             onClick={() => navigate(`/app/pages/${page.id}/stats`)}
           >
-            Statistics
+            {t('edit_statistics')}
           </Button>
           <Button
             variant="default"
@@ -241,7 +239,7 @@ function Editor({ page }: { page: Page }) {
               })
             }
           >
-            QR code
+            {t('edit_qr')}
           </Button>
           <Button
             component="a"
@@ -251,7 +249,7 @@ function Editor({ page }: { page: Page }) {
             variant="default"
             rightSection={<IconExternalLink size={16} />}
           >
-            View page
+            {t('edit_view')}
           </Button>
         </Group>
       </div>
@@ -259,7 +257,7 @@ function Editor({ page }: { page: Page }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <Card className="p-5 sm:p-6">
-            <h2 className="mb-4 font-semibold">Page</h2>
+            <h2 className="mb-4 font-semibold">{t('edit_page_card')}</h2>
             <form
               onSubmit={form.onSubmit(values =>
                 updatePage({
@@ -274,7 +272,7 @@ function Editor({ page }: { page: Page }) {
               <Stack gap="md">
                 <AvatarField page={page} onChange={refresh} />
                 <TextInput
-                  label="Address"
+                  label={t('address')}
                   leftSection={<span className="pl-2 text-xs">/u/</span>}
                   leftSectionWidth={36}
                   key={form.key('slug')}
@@ -282,12 +280,12 @@ function Editor({ page }: { page: Page }) {
                   required
                 />
                 <TextInput
-                  label="Title"
+                  label={t('edit_title')}
                   key={form.key('display_title')}
                   {...form.getInputProps('display_title')}
                 />
                 <Textarea
-                  label="Bio"
+                  label={t('edit_bio')}
                   autosize
                   minRows={3}
                   maxLength={300}
@@ -301,14 +299,14 @@ function Editor({ page }: { page: Page }) {
                   onColorsChange={colors => form.setFieldValue('custom_colors', colors)}
                 />
                 <Switch
-                  label="Published"
+                  label={t('edit_published')}
                   key={form.key('published')}
                   {...form.getInputProps('published', { type: 'checkbox' })}
                 />
                 <TextInput
                   type="datetime-local"
-                  label="Expires at"
-                  description="Optional. The page goes offline at this date and time."
+                  label={t('edit_expires_label')}
+                  description={t('edit_expires_hint')}
                   leftSection={<IconCalendarTime size={16} />}
                   key={form.key('expires_at')}
                   {...form.getInputProps('expires_at')}
@@ -320,10 +318,10 @@ function Editor({ page }: { page: Page }) {
                     leftSection={<IconTrash size={16} />}
                     onClick={confirmDelete}
                   >
-                    Delete page
+                    {t('edit_delete_confirm')}
                   </Button>
                   <Button type="submit" loading={isSaving} color="brand">
-                    Save
+                    {t('edit_save')}
                   </Button>
                 </Group>
               </Stack>
@@ -333,8 +331,8 @@ function Editor({ page }: { page: Page }) {
 
         <div className="lg:sticky lg:top-20 lg:self-start">
           <p className="mb-3 text-center text-sm font-medium text-muted-foreground">
-            Click anything on the page to edit it
-            {form.isDirty() && ' · unsaved changes'}
+            {t('edit_hint')}
+            {form.isDirty() && ` · ${t('edit_unsaved')}`}
           </p>
           <PhoneFrame className="max-w-[360px]" screenClassName="lg:h-[680px]">
             <PageContentEditor
@@ -370,6 +368,7 @@ const AVATAR_POLL_MS = 2000;
 const AVATAR_POLL_LIMIT = 60;
 
 function AvatarField({ page, onChange }: { page: Page; onChange: () => void }) {
+  const { t } = useTranslation('pages');
   const queryClient = useQueryClient();
   const [pollGaveUp, setPollGaveUp] = useState(false);
   const { mutate: upload, isPending: isUploading } = useUploadPageAvatar({
@@ -405,7 +404,7 @@ function AvatarField({ page, onChange }: { page: Page; onChange: () => void }) {
   const pickFile = (file: File | null) => {
     if (!file) return;
     if (file.size > AVATAR_MAX_BYTES) {
-      showError({ errors: { avatar: ['must be at most 50MB'] } });
+      showError({ errors: [t('edit_avatar_too_big')] });
       return;
     }
     upload({ pageId: page.id, file });
@@ -417,7 +416,7 @@ function AvatarField({ page, onChange }: { page: Page; onChange: () => void }) {
         {page.avatar_url ? (
           <img
             src={page.avatar_url}
-            alt="Current avatar"
+            alt={t('edit_avatar_alt')}
             className="h-16 w-16 rounded-full object-cover"
           />
         ) : (
@@ -445,7 +444,7 @@ function AvatarField({ page, onChange }: { page: Page; onChange: () => void }) {
                 loading={isUploading}
                 disabled={isProcessing && !pollGaveUp}
               >
-                {page.avatar_url ? 'Change photo' : 'Upload photo'}
+                {page.avatar_url ? t('edit_avatar_change') : t('edit_avatar_upload')}
               </Button>
             )}
           </FileButton>
@@ -457,18 +456,18 @@ function AvatarField({ page, onChange }: { page: Page; onChange: () => void }) {
               loading={isRemoving}
               onClick={() => remove(page.id)}
             >
-              Remove
+              {t('edit_avatar_remove')}
             </Button>
           )}
         </Group>
         <span className="text-xs text-muted-foreground">
           {isUploading
-            ? 'Uploading…'
+            ? t('edit_avatar_uploading')
             : isProcessing
               ? pollGaveUp
-                ? 'Still processing your photo, check back in a few minutes.'
-                : 'Processing your photo…'
-              : 'PNG, JPEG, WebP or HEIC, up to 50MB.'}
+                ? t('edit_avatar_stalled')
+                : t('edit_avatar_processing')
+              : t('edit_avatar_hint')}
         </span>
       </div>
     </div>
