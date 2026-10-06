@@ -65,3 +65,7 @@ production:
     class: DispatchNotificationsJob
     queue: notifications
     schedule: every minute
+  send_appointment_reminders:
+    class: SendAppointmentRemindersJob
+    queue: notifications
+    schedule: every 5 minutes

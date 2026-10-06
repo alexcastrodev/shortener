@@ -39,6 +39,13 @@ pt-PT:
       reply: "Tem dúvidas? Responda a este e-mail para falar com quem organiza."
       manage: "Ver ou cancelar a sua marcação: %{url}"
       manage_link: "Ver ou cancelar a sua marcação"
+    reminder:
+      subject: "Lembrete: %{service}, %{time}"
+      title: "A sua marcação aproxima-se"
+      intro: "%{service} está marcado para:"
+      reply: "Tem dúvidas? Responda a este e-mail para falar com quem organiza."
+      manage: "Ver ou cancelar a sua marcação: %{url}"
+      manage_link: "Ver ou cancelar a sua marcação"
     cancelled:
       subject: "Cancelada: %{service}, %{time}"
       title: "A sua marcação foi cancelada"

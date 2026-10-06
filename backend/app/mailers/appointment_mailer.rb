@@ -32,6 +32,22 @@ class AppointmentMailer < ApplicationMailer
     end
   end
 
+  def reminder
+    load_group
+    zone = Appointments::Book.valid_zone(@first.client_time_zone) || "UTC"
+    @sessions = sessions(zone)
+    last = @appointments.map { |appointment| appointment.slot.starts_at }.max
+    @manage_url = "#{frontend_url}/m/#{AppointmentToken.issue(booking: @first, expires_at: last + 7.days)}"
+
+    with_recipient_locale(nil, @first.client_locale) do
+      mail(
+        to: @first.client_email,
+        reply_to: @form.user.email,
+        subject: I18n.t("appointment_mailer.reminder.subject", service: @service, time: @sessions.first),
+      )
+    end
+  end
+
   def new_booking
     load_group
     owner = @form.user
