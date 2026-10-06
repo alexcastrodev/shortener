@@ -67,6 +67,7 @@ Rails.application.routes.draw do
       resources :oauth_grants, only: [:index, :destroy]
       resources :form_templates, only: [:index]
       resource :agenda, only: [:show], controller: "agenda"
+      resource :calendar_feed, only: [:show, :create, :destroy]
       resource :notification_preferences, only: [:show, :update]
       resources :appointments, only: [] do
         member do
@@ -130,6 +131,7 @@ Rails.application.routes.draw do
       resources :forms, only: [:show], param: :public_id, format: false
       get "forms/:public_id/slots", to: "form_slots#index", as: :form_slots, format: false
       get "forms/:public_id/cover/:token", to: "form_covers#show", as: :form_cover, format: false
+      get "calendar/:token", to: "calendars#show", as: :calendar, format: false
       get "appointments/:token", to: "appointments#show", as: :appointment, format: false
       post "appointments/:token/cancel", to: "appointments#cancel", as: :appointment_cancel, format: false
       get "appointment_decisions/:token", to: "appointment_decisions#show", as: :appointment_decision, format: false

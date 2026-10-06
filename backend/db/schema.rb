@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -139,6 +139,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_090000) do
     t.index ["created_at"], name: "index_audits_on_created_at"
     t.index ["request_uuid"], name: "index_audits_on_request_uuid"
     t.index ["user_id", "user_type"], name: "user_index"
+  end
+
+  create_table "calendar_feeds", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "digest", limit: 64, null: false
+    t.datetime "last_fetched_at"
+    t.datetime "created_at", null: false
+    t.index ["digest"], name: "index_calendar_feeds_on_digest", unique: true
+    t.index ["user_id"], name: "index_calendar_feeds_on_user_id", unique: true
   end
 
   create_table "color_palettes", force: :cascade do |t|
@@ -639,6 +648,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_090000) do
   add_foreign_key "appointments", "appointments", column: "rescheduled_from_id", on_delete: :nullify
   add_foreign_key "appointments", "form_responses", column: "response_id", on_delete: :cascade
   add_foreign_key "appointments", "forms", on_delete: :cascade
+  add_foreign_key "calendar_feeds", "users"
   add_foreign_key "color_palettes", "users", on_delete: :cascade
   add_foreign_key "events", "shortlinks", on_delete: :cascade
   add_foreign_key "form_daily_stats", "forms", on_delete: :cascade

@@ -54,6 +54,9 @@ owner	GET	/api/me/community_templates
 owner	POST	/api/me/community_templates/:id/report
 owner	GET	/api/me/form_templates
 owner	GET	/api/me/agenda
+owner	DELETE	/api/me/calendar_feed
+owner	GET	/api/me/calendar_feed
+owner	POST	/api/me/calendar_feed
 owner	GET	/api/me/notification_preferences
 owner	PATCH	/api/me/notification_preferences
 owner	PUT	/api/me/notification_preferences
@@ -138,6 +141,7 @@ public	GET	/.well-known/oauth-protected-resource
 public	GET	/.well-known/oauth-protected-resource/mcp
 public	GET	/api/public/forms/:public_id
 public	GET	/api/public/appointments/:token
+public	GET	/api/public/calendar/:token
 public	POST	/api/public/appointments/:token/cancel
 public	GET	/api/public/appointment_decisions/:token
 public	POST	/api/public/appointment_decisions/:token
