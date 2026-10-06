@@ -52,6 +52,19 @@ RSpec.describe("Form responses export", type: :request) do
     expect(sheet.scan("<row ").size).to(eq(2))
   end
 
+  it "writes a booking as the dates and times of its sessions" do
+    form.update_columns(fields: [{ "id" => "when0001", "type" => "booking", "label" => "When", "services" => [] }])
+    booking = { "service" => "svc00001", "sessions" => [{ "date" => "2026-11-03", "time" => "09:00" }, { "date" => "2026-11-04", "time" => "10:00" }] }
+    FormResponse.create!(form: form, answers: { "when0001" => booking })
+
+    export
+
+    entries = sheet_of(response.body)
+    text = entries["xl/worksheets/sheet1.xml"] + entries["xl/sharedStrings.xml"].to_s
+    expect(text).to(include("2026-11-03 09:00, 2026-11-04 10:00"))
+    expect(text).not_to(include("svc00001"))
+  end
+
   it "writes hostile cell text as plain strings, never as formulas" do
     payloads = ["=HYPERLINK(\"http://evil.test\",\"x\")", "+cmd|' /C calc'!A0", "-2+3", "@SUM(1+1)", "=1+1"]
     payloads.each { |payload| FormResponse.create!(form: form, answers: { "name0001" => payload }) }
