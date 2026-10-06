@@ -1,0 +1,15 @@
+{
+  "title": "Esta ligação está protegida",
+  "hint": "Introduza a palavra-passe para continuar.",
+  "password": "Palavra-passe",
+  "continue": "Continuar",
+  "wrong": "Palavra-passe errada. Tente novamente.",
+  "rate": "Demasiadas tentativas. Espere alguns minutos e tente novamente.",
+  "gone": "Esta ligação já não funciona.",
+  "error": "Algo correu mal, tente novamente mais tarde.",
+  "not_found_title": "Ligação não encontrada",
+  "not_found_body": "Esta ligação não existe ou já não está disponível.",
+  "error_title": "Algo correu mal",
+  "error_body": "Tente novamente dentro de instantes.",
+  "home": "Ir para o Kurz"
+}

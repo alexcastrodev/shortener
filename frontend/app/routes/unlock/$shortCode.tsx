@@ -1,4 +1,6 @@
 import { Button, PasswordInput } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { useForm } from '@mantine/form';
 import { IconLock } from '@tabler/icons-react';
 import { data, isRouteErrorResponse } from 'react-router';
@@ -32,13 +34,14 @@ export function meta() {
 }
 
 function errorMessage(status?: number) {
-  if (status === 401) return 'Wrong password. Try again.';
-  if (status === 429) return 'Too many attempts. Wait a few minutes and try again.';
-  if (status === 404) return 'This link no longer works.';
-  return 'Something went wrong, please try again later.';
+  if (status === 401) return i18n.t('unlock:wrong');
+  if (status === 429) return i18n.t('unlock:rate');
+  if (status === 404) return i18n.t('unlock:gone');
+  return i18n.t('unlock:error');
 }
 
 export default function UnlockShortlink({ loaderData }: Route.ComponentProps) {
+  const { t } = useTranslation('unlock');
   const { shortCode } = loaderData;
   const form = useForm({
     mode: 'uncontrolled',
@@ -67,9 +70,9 @@ export default function UnlockShortlink({ loaderData }: Route.ComponentProps) {
         <div className="mb-4 inline-flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
           <IconLock size={20} stroke={1.8} />
         </div>
-        <h1 className="text-lg font-semibold">This link is protected</h1>
+        <h1 className="text-lg font-semibold">{t('title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Enter the password to continue.
+          {t('hint')}
         </p>
         <form
           className="mt-5 space-y-4"
@@ -78,14 +81,14 @@ export default function UnlockShortlink({ loaderData }: Route.ComponentProps) {
           )}
         >
           <PasswordInput
-            label="Password"
+            label={t('password')}
             autoComplete="off"
             autoFocus
             key={form.key('password')}
             {...form.getInputProps('password')}
           />
           <Button type="submit" fullWidth loading={isPending} color="brand">
-            Continue
+            {t('continue')}
           </Button>
         </form>
       </Card>
@@ -94,23 +97,22 @@ export default function UnlockShortlink({ loaderData }: Route.ComponentProps) {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  const { t } = useTranslation('unlock');
   const notFound = isRouteErrorResponse(error) && error.status === 404;
 
   return (
     <div className="min-h-screen bg-background px-4 pt-24 text-center text-foreground">
       <h1 className="text-xl font-semibold">
-        {notFound ? 'Link not found' : 'Something went wrong'}
+        {notFound ? t('not_found_title') : t('error_title')}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        {notFound
-          ? 'This link does not exist or is no longer available.'
-          : 'Please try again in a moment.'}
+        {notFound ? t('not_found_body') : t('error_body')}
       </p>
       <a
         href="/"
         className="mt-6 inline-block text-sm font-medium text-primary hover:underline"
       >
-        Go to Kurz
+        {t('home')}
       </a>
     </div>
   );

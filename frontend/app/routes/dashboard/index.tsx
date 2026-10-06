@@ -4,6 +4,7 @@ import { LinksList, TotalLinksCard } from './components';
 import { QuickCreate } from '../../modules/quick-create';
 import { PageContainer } from '@internal/ui';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -17,6 +18,7 @@ export const ssr = false;
 const PER_PAGE = 20;
 
 export default function Page() {
+  const { t } = useTranslation('dashboard');
   const [page, setPage] = useState(1);
   const { data, isLoading } = useGetShortlinks({ page, per_page: PER_PAGE });
 
@@ -26,9 +28,9 @@ export default function Page() {
   return (
     <PageContainer className="pb-24 sm:pb-10">
       <div className="mb-6">
-        <p className="text-sm font-medium text-muted-foreground">Dashboard</p>
+        <p className="text-sm font-medium text-muted-foreground">{t('page_label')}</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-          Links
+          {t('page_heading')}
         </h1>
       </div>
 

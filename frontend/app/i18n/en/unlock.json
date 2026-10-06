@@ -1,0 +1,15 @@
+{
+  "title": "This link is protected",
+  "hint": "Enter the password to continue.",
+  "password": "Password",
+  "continue": "Continue",
+  "wrong": "Wrong password. Try again.",
+  "rate": "Too many attempts. Wait a few minutes and try again.",
+  "gone": "This link no longer works.",
+  "error": "Something went wrong, please try again later.",
+  "not_found_title": "Link not found",
+  "not_found_body": "This link does not exist or is no longer available.",
+  "error_title": "Something went wrong",
+  "error_body": "Please try again in a moment.",
+  "home": "Go to Kurz"
+}

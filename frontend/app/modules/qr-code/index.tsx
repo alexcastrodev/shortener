@@ -7,6 +7,8 @@ import {
   IconQrcode,
 } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { useGetQrCode } from '@internal/core/actions/get-qr-code/get-qr-code.hook';
 import type { GetQrCodeParams } from '@internal/core/actions/get-qr-code/get-qr-code.types';
 import { queryClient } from '@internal/core/service-provider';
@@ -17,6 +19,7 @@ interface QrCodeViewProps extends GetQrCodeParams {
 }
 
 function QrCodeView({ resource, id, url, filename }: QrCodeViewProps) {
+  const { t } = useTranslation('links');
   // Mantine modals render through a portal mounted above the
   // QueryClientProvider, so the client must be passed explicitly.
   const { data, isLoading, isError } = useGetQrCode(
@@ -35,7 +38,7 @@ function QrCodeView({ resource, id, url, filename }: QrCodeViewProps) {
   if (isError) {
     return (
       <p className="py-6 text-center text-sm text-destructive">
-        Could not generate the QR code. Please try again.
+        {t('qr_failed')}
       </p>
     );
   }
@@ -43,7 +46,7 @@ function QrCodeView({ resource, id, url, filename }: QrCodeViewProps) {
   return (
     <div className="flex flex-col gap-5 pt-3 pb-1">
       <p className="text-center text-sm text-balance text-foreground/80">
-        Scan with a phone camera or download to print.
+        {t('qr_hint')}
       </p>
 
       {/* Always on white: QR readers need the contrast, in either theme. */}
@@ -53,7 +56,7 @@ function QrCodeView({ resource, id, url, filename }: QrCodeViewProps) {
         ) : (
           <img
             src={objectUrl}
-            alt={`QR code for ${url}`}
+            alt={t('qr_alt', { url })}
             className="size-full"
           />
         )}
@@ -69,7 +72,7 @@ function QrCodeView({ resource, id, url, filename }: QrCodeViewProps) {
         <CopyButton value={url} timeout={1500}>
           {({ copied, copy }) => (
             <Tooltip
-              label={copied ? 'Copied' : 'Copy link'}
+              label={copied ? t('qr_copied') : t('qr_copy')}
               withArrow
               position="top"
               zIndex={1000}
@@ -78,7 +81,7 @@ function QrCodeView({ resource, id, url, filename }: QrCodeViewProps) {
                 variant="subtle"
                 color={copied ? 'green' : 'gray'}
                 onClick={copy}
-                aria-label="Copy link"
+                aria-label={t('qr_copy')}
               >
                 {copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
               </ActionIcon>
@@ -97,7 +100,7 @@ function QrCodeView({ resource, id, url, filename }: QrCodeViewProps) {
         size="md"
         fullWidth
       >
-        Download SVG
+        {t('qr_download')}
       </Button>
     </div>
   );
@@ -108,7 +111,7 @@ export function openQrCodeModal(props: QrCodeViewProps) {
     title: (
       <span className="flex items-center gap-2 font-semibold text-foreground">
         <IconQrcode size={18} />
-        QR code
+        {i18n.t('links:qr_code')}
       </span>
     ),
     centered: true,
