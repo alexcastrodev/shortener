@@ -35,7 +35,7 @@ export function NotificationBell({
           ].join(' ')
         }
       >
-        <span className="relative">
+        <span className="relative flex">
           <IconBell size={17} stroke={1.8} />
           {collapsed && unread > 0 && (
             <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-red-500" />

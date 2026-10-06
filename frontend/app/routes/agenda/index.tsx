@@ -406,7 +406,7 @@ export default function AgendaPage() {
       className={
         expanded
           ? 'agenda-expanded fixed inset-0 z-[150] flex flex-col bg-background pt-[max(0.75rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))]'
-          : 'agenda-screen mx-auto w-full max-w-7xl px-4 py-3 sm:px-6 md:py-8 lg:px-8 max-md:fixed max-md:inset-x-0 max-md:top-[var(--app-header-offset)] max-md:bottom-[var(--mobile-nav-offset)] max-md:flex max-md:flex-col'
+          : 'agenda-screen w-full px-4 py-3 sm:px-6 md:py-8 lg:px-8 max-md:fixed max-md:inset-x-0 max-md:top-[var(--app-header-offset)] max-md:bottom-[var(--mobile-nav-offset)] max-md:flex max-md:flex-col'
       }
     >
       <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
