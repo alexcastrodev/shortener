@@ -14,25 +14,56 @@ import {
   type Icon,
 } from '@tabler/icons-react';
 import type { FormFieldType } from '@internal/core/types/Form';
+import i18n from '../../i18n';
 
-export const FIELD_TYPES: { type: FormFieldType; label: string; hint: string }[] = [
-  { type: 'short_text', label: 'Short text', hint: 'A single line' },
-  { type: 'long_text', label: 'Long text', hint: 'A paragraph' },
-  { type: 'email', label: 'E-mail', hint: 'An e-mail address' },
-  { type: 'number', label: 'Number', hint: 'Optional min and max' },
-  { type: 'single_choice', label: 'Single choice', hint: 'Pick one option' },
-  { type: 'multiple_choice', label: 'Multiple choice', hint: 'Pick several options' },
-  { type: 'yes_no', label: 'Yes / No', hint: 'Two answers' },
-  { type: 'rating', label: 'Rating', hint: '1 to 5 or 1 to 10' },
-  { type: 'date', label: 'Date', hint: 'A calendar date' },
-  { type: 'image', label: 'Image', hint: 'A photo upload (PNG, JPEG, WebP or HEIC)' },
-  { type: 'booking', label: 'Booking', hint: 'Let people book a time' },
-  { type: 'section', label: 'Section', hint: 'A heading that groups questions' },
+export const FIELD_TYPES: FormFieldType[] = [
+  'short_text',
+  'long_text',
+  'email',
+  'number',
+  'single_choice',
+  'multiple_choice',
+  'yes_no',
+  'rating',
+  'date',
+  'image',
+  'booking',
+  'section',
 ];
 
-export function fieldTypeLabel(type: FormFieldType) {
-  return FIELD_TYPES.find(item => item.type === type)?.label ?? type;
-}
+const LABELS: Record<FormFieldType, () => string> = {
+  short_text: () => i18n.t('forms:ed_type_short_text'),
+  long_text: () => i18n.t('forms:ed_type_long_text'),
+  email: () => i18n.t('forms:ed_type_email'),
+  number: () => i18n.t('forms:ed_type_number'),
+  single_choice: () => i18n.t('forms:ed_type_single_choice'),
+  multiple_choice: () => i18n.t('forms:ed_type_multiple_choice'),
+  yes_no: () => i18n.t('forms:ed_type_yes_no'),
+  rating: () => i18n.t('forms:ed_type_rating'),
+  date: () => i18n.t('forms:ed_type_date'),
+  image: () => i18n.t('forms:ed_type_image'),
+  booking: () => i18n.t('forms:ed_type_booking'),
+  section: () => i18n.t('forms:ed_type_section'),
+};
+
+const HINTS: Record<FormFieldType, () => string> = {
+  short_text: () => i18n.t('forms:ed_type_short_text_hint'),
+  long_text: () => i18n.t('forms:ed_type_long_text_hint'),
+  email: () => i18n.t('forms:ed_type_email_hint'),
+  number: () => i18n.t('forms:ed_type_number_hint'),
+  single_choice: () => i18n.t('forms:ed_type_single_choice_hint'),
+  multiple_choice: () => i18n.t('forms:ed_type_multiple_choice_hint'),
+  yes_no: () => i18n.t('forms:ed_type_yes_no_hint'),
+  rating: () => i18n.t('forms:ed_type_rating_hint'),
+  date: () => i18n.t('forms:ed_type_date_hint'),
+  image: () => i18n.t('forms:ed_type_image_hint'),
+  booking: () => i18n.t('forms:ed_type_booking_hint'),
+  section: () => i18n.t('forms:ed_type_section_hint'),
+};
+
+export const fieldTypeLabel = (type: FormFieldType) => LABELS[type]();
+
+export const fieldTypeHint = (type: FormFieldType) => HINTS[type]();
 
 export const isSection = (field: { type: FormFieldType }) => field.type === 'section';
 

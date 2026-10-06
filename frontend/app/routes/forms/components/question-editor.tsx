@@ -10,6 +10,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconPlus, IconX } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { z } from 'zod/v4';
 import type {
@@ -18,6 +19,7 @@ import type {
   FormFieldType,
 } from '@internal/core/types/Form';
 import { fieldTypeLabel, isChoiceType } from '../../../modules/forms/field-types';
+import i18n from '../../../i18n';
 import { BookingEditor } from './booking-editor';
 
 type ChoiceValue = { key: string; id?: string; label: string };
@@ -58,12 +60,12 @@ function initialValues(type: FormFieldType, field?: FormField): Values {
 
 function schemaFor(type: FormFieldType) {
   return z.object({
-    label: z.string().trim().min(1, 'Write the question').max(300),
+    label: z.string().trim().min(1, i18n.t('forms:ed_q_write')).max(300),
     help: z.string().max(500),
     choices: isChoiceType(type)
       ? z
-          .array(z.object({ label: z.string().trim().min(1, 'Required').max(100) }))
-          .min(2, 'Add at least 2 options')
+          .array(z.object({ label: z.string().trim().min(1, i18n.t('forms:ed_q_required_option')).max(100) }))
+          .min(2, i18n.t('forms:ed_q_min_options'))
       : z.array(z.any()),
   });
 }
@@ -109,6 +111,7 @@ export function QuestionEditor({
   onSubmit: (input: FormFieldInput) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation('forms');
   const creating = !field;
   const form = useForm<Values>({
     mode: 'controlled',
@@ -127,43 +130,43 @@ export function QuestionEditor({
           {fieldTypeLabel(type)}
         </p>
         <TextInput
-          label={type === 'section' ? 'Section title' : 'Question'}
+          label={type === 'section' ? t('ed_q_section_title') : t('ed_q_question')}
           required
           data-autofocus
           {...form.getInputProps('label')}
         />
         <TextInput
-          label={type === 'section' ? 'Description' : 'Help text'}
+          label={type === 'section' ? t('ed_description_label') : t('ed_q_help_text')}
           description={
             type === 'section'
-              ? 'Optional, shown under the title.'
-              : 'Optional, shown under the question.'
+              ? t('ed_q_help_section')
+              : t('ed_q_help_question')
           }
           {...form.getInputProps('help')}
         />
         {type !== 'section' && (
           <Switch
-            label="Required"
+            label={t('ed_q_required')}
             {...form.getInputProps('required', { type: 'checkbox' })}
           />
         )}
 
         {isChoiceType(type) && (
           <Stack gap="xs">
-            <p className="text-sm font-medium">Options</p>
+            <p className="text-sm font-medium">{t('ed_q_options')}</p>
             {form.values.choices.map((choice, index) => (
               <Group key={choice.key} gap="xs" wrap="nowrap" align="flex-start">
                 <TextInput
                   className="flex-1"
-                  placeholder={`Option ${index + 1}`}
-                  aria-label={`Option ${index + 1}`}
+                  placeholder={t('ed_q_option_n', { n: index + 1 })}
+                  aria-label={t('ed_q_option_n', { n: index + 1 })}
                   {...form.getInputProps(`choices.${index}.label`)}
                 />
                 <ActionIcon
                   variant="subtle"
                   color="gray"
                   size="lg"
-                  aria-label={`Remove option ${index + 1}`}
+                  aria-label={t('ed_q_remove_option_n', { n: index + 1 })}
                   disabled={form.values.choices.length <= 2}
                   onClick={() => form.removeListItem('choices', index)}
                 >
@@ -181,13 +184,13 @@ export function QuestionEditor({
                 leftSection={<IconPlus size={14} />}
                 onClick={() => form.insertListItem('choices', { key: newKey(), label: '' })}
               >
-                Add option
+                {t('ed_q_add_option')}
               </Button>
             </div>
             {type === 'multiple_choice' && (
               <NumberInput
-                label="Maximum selections"
-                description="Leave empty to allow all."
+                label={t('ed_q_max_selections')}
+                description={t('ed_q_max_selections_hint')}
                 min={1}
                 max={form.values.choices.length}
                 allowDecimal={false}
@@ -199,11 +202,11 @@ export function QuestionEditor({
 
         {type === 'rating' && (
           <div>
-            <p className="mb-1 text-sm font-medium">Scale</p>
+            <p className="mb-1 text-sm font-medium">{t('ed_q_scale')}</p>
             <SegmentedControl
               data={[
-                { value: '5', label: '1 to 5' },
-                { value: '10', label: '1 to 10' },
+                { value: '5', label: t('ed_q_scale_5') },
+                { value: '10', label: t('ed_q_scale_10') },
               ]}
               value={form.values.scale}
               onChange={value => form.setFieldValue('scale', value as '5' | '10')}
@@ -213,17 +216,23 @@ export function QuestionEditor({
 
         {type === 'number' && (
           <Group grow>
-            <NumberInput label="Minimum" {...form.getInputProps('min')} />
-            <NumberInput label="Maximum" {...form.getInputProps('max')} />
+            <NumberInput label={t('ed_q_minimum')} {...form.getInputProps('min')} />
+            <NumberInput label={t('ed_q_maximum')} {...form.getInputProps('max')} />
           </Group>
         )}
 
         <Group justify="flex-end" gap="xs">
           <Button variant="default" onClick={onCancel}>
-            Cancel
+            {t('ed_cancel')}
           </Button>
           <Button type="submit" color="brand" loading={loading}>
-            {creating ? 'Add' : 'Save'} {type === 'section' ? 'section' : 'question'}
+            {creating
+              ? type === 'section'
+                ? t('ed_q_add_section')
+                : t('ed_q_add_question')
+              : type === 'section'
+                ? t('ed_q_save_section')
+                : t('ed_q_save_question')}
           </Button>
         </Group>
       </Stack>
