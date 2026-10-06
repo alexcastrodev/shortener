@@ -7,7 +7,7 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "test": "node --test \"app/i18n/*.test.ts\" \"app/modules/forms/*.test.ts\" \"app/modules/agenda/*.test.ts\" \"app/modules/notices/*.test.ts\"",
+    "test": "node --test \"app/i18n/*.test.ts\" \"app/modules/forms/*.test.ts\" \"app/modules/agenda/*.test.ts\" \"app/modules/notices/*.test.ts\" \"app/modules/appointments-tab/*.test.ts\"",
     "format": "prettier --write \"**/*.{ts,tsx}\""
   },
   "dependencies": {

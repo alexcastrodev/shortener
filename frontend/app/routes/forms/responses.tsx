@@ -54,6 +54,7 @@ import {
 } from '../../components/stats';
 import { FIELD_ICONS, isSection } from '../../modules/forms/field-types';
 import { formErrorMessage } from '../../modules/forms/form-errors';
+import { AppointmentsTab } from './components/appointments-tab';
 import type { Route } from './+types/responses';
 
 export const ssr = false;
@@ -71,7 +72,7 @@ const PERIODS = [
 
 const TABLE_QUESTIONS = 4;
 
-type Tab = 'summary' | 'responses';
+type Tab = 'summary' | 'responses' | 'appointments';
 
 function ResponseImage({ formId, token }: { formId: string; token: string }) {
   const { t } = useTranslation('responses');
@@ -119,6 +120,7 @@ const csvCell = (value: string) => {
 
 export default function FormResponsesPage() {
   const { t } = useTranslation('responses');
+  const { t: tAppointments } = useTranslation('appointments');
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -167,6 +169,9 @@ export default function FormResponsesPage() {
       )
     : rows;
   const stats = summary.data;
+  const bookingField = form?.fields.find(field => field.type === 'booking');
+  const hasBooking = Boolean(bookingField);
+  const bookingZone = bookingField?.rules?.time_zone ?? 'UTC';
   const inPeriod = stats?.funnel.completions ?? total;
 
   const exportExcel = async () => {
@@ -355,7 +360,9 @@ export default function FormResponsesPage() {
         <div role="tablist" className="flex gap-1">
           {tabButton('summary', t('tab_summary'))}
           {tabButton('responses', t('tab_responses'), total)}
+          {hasBooking && tabButton('appointments', tAppointments('tab'))}
         </div>
+        {tab !== 'appointments' && (
         <SegmentedControl
           size="xs"
           className="mb-2"
@@ -366,7 +373,12 @@ export default function FormResponsesPage() {
           }
           data={PERIODS.map(period => ({ label: t(period.label), value: String(period.value) }))}
         />
+        )}
       </div>
+
+      {tab === 'appointments' && hasBooking && form && (
+        <AppointmentsTab formId={form.id} title={form.title} timeZone={bookingZone} />
+      )}
 
       {tab === 'summary' &&
         (!stats ? (
