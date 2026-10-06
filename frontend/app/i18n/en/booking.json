@@ -101,5 +101,12 @@
   "wd_closed": "No times: closed that day",
   "wd_add_time": "Add time",
   "wd_remove_time": "Remove time {{time}}",
-  "wd_times": "Times on {{day}}"
+  "wd_times": "Times on {{day}}",
+  "bundle_switch": "Offer a package",
+  "bundle_hint": "For example, take 5 sessions and pay for 4. Needs a price.",
+  "bundle_take": "Sessions taken",
+  "bundle_pay": "Sessions paid",
+  "bundle_example": "Example: {{take}} sessions cost the price of {{pay}}.",
+  "error_bundle": "Taken must be 2 to 31 and paid at least 1 and fewer than taken",
+  "error_bundle_price": "A package needs a price"
 }

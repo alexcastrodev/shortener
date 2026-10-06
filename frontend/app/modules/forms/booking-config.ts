@@ -18,6 +18,9 @@ export type ServiceValues = {
   days: string[];
   times: { key: string; value: string }[];
   byDay: Record<string, { key: string; value: string }[]>;
+  bundle: boolean;
+  bundleTake: number | '';
+  bundlePay: number | '';
 };
 
 export type ExceptionValues = {
@@ -66,6 +69,9 @@ export const blankService = (name: string): ServiceValues => ({
   days: ['mon', 'tue', 'wed', 'thu', 'fri'],
   times: [{ key: newKey(), value: '09:00' }],
   byDay: {},
+  bundle: false,
+  bundleTake: 5,
+  bundlePay: 4,
 });
 
 export function initialValues(field?: FormField): Values {
@@ -83,6 +89,9 @@ export function initialValues(field?: FormField): Values {
       capacity: service.capacity ?? '',
       days: service.days,
       times: service.times.map(value => ({ key: newKey(), value })),
+      bundle: Boolean(service.bundle),
+      bundleTake: service.bundle?.take ?? 5,
+      bundlePay: service.bundle?.pay ?? 4,
       byDay: Object.fromEntries(
         Object.entries(service.times_by_day ?? {}).map(([day, list]) => [
           day,
@@ -159,6 +168,12 @@ export function toBookingInput(
         days: DAYS.filter(day => service.days.includes(day)),
         times: [...new Set(service.times.map(time => time.value))].sort(),
         ...(byDay ? { times_by_day: byDay } : {}),
+        ...(price !== null &&
+        service.bundle &&
+        service.bundleTake !== '' &&
+        service.bundlePay !== ''
+          ? { bundle: { take: service.bundleTake, pay: service.bundlePay } }
+          : {}),
       };
     }),
     rules,

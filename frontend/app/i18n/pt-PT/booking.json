@@ -101,5 +101,12 @@
   "wd_closed": "Sem horários: fechado nesse dia",
   "wd_add_time": "Adicionar horário",
   "wd_remove_time": "Remover o horário {{time}}",
-  "wd_times": "Horários de {{day}}"
+  "wd_times": "Horários de {{day}}",
+  "bundle_switch": "Oferecer um pacote",
+  "bundle_hint": "Por exemplo, leve 5 sessões e pague 4. Precisa de um preço.",
+  "bundle_take": "Sessões levadas",
+  "bundle_pay": "Sessões pagas",
+  "bundle_example": "Exemplo: {{take}} sessões custam o preço de {{pay}}.",
+  "error_bundle": "As levadas têm de ser de 2 a 31 e as pagas, pelo menos 1 e menos do que as levadas",
+  "error_bundle_price": "Um pacote precisa de um preço"
 }
