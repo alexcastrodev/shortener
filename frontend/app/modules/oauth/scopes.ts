@@ -1,16 +1,32 @@
+import type { TFunction } from 'i18next';
+import i18n from '../../i18n';
+import type oauth from '../../i18n/en/oauth.json';
+
 export const FULL_SCOPE = 'account:full';
 
-export const SCOPE_LABELS: Record<string, { label: string; hint: string }> = {
-  'forms:read': { label: 'Read your forms', hint: 'Titles, questions and settings.' },
-  'forms:write': { label: 'Create and edit forms', hint: 'Drafts only; a live form accepts only theme and color changes.' },
-  'forms:publish': { label: 'Publish and unpublish forms', hint: 'Can put a form online or take it offline. Not available together with reading responses.' },
-  'responses:read': { label: 'Read form responses', hint: 'Off by default: contains personal data of respondents.' },
-  'shortlinks:read': { label: 'Read your short links', hint: 'Links and aggregate statistics.' },
-  'shortlinks:write': { label: 'Create short links', hint: 'Cannot change or delete existing links.' },
-  'pages:read': { label: 'Read your bio pages', hint: 'Pages, links and aggregate statistics.' },
-  'pages:write': { label: 'Create and edit bio pages', hint: 'Drafts only; a live page accepts only theme and color changes.' },
-  'appointments:read': { label: 'Read appointments', hint: 'Off by default: contains names and emails of the people who booked. Not available together with publishing.' },
-  'appointments:write': { label: 'Manage appointment settings', hint: 'Includes reading appointments, which contain personal data. Not available together with publishing.' },
-  'account:full': { label: 'Full access', hint: 'Everything you can do in the dashboard with links, bio pages and forms, including deleting them and their responses, and reading responses. Replaces every other permission.' },
-  'pages:publish': { label: 'Publish and unpublish bio pages', hint: 'Can put a page online or take it offline. Not available together with reading responses.' },
+type ScopeKey = keyof typeof oauth;
+
+const SCOPES: Record<string, { label: ScopeKey; hint: ScopeKey }> = {
+  'forms:read': { label: 'scope_forms_read', hint: 'scope_forms_read_hint' },
+  'forms:write': { label: 'scope_forms_write', hint: 'scope_forms_write_hint' },
+  'forms:publish': { label: 'scope_forms_publish', hint: 'scope_forms_publish_hint' },
+  'responses:read': { label: 'scope_responses_read', hint: 'scope_responses_read_hint' },
+  'shortlinks:read': { label: 'scope_shortlinks_read', hint: 'scope_shortlinks_read_hint' },
+  'shortlinks:write': { label: 'scope_shortlinks_write', hint: 'scope_shortlinks_write_hint' },
+  'pages:read': { label: 'scope_pages_read', hint: 'scope_pages_read_hint' },
+  'pages:write': { label: 'scope_pages_write', hint: 'scope_pages_write_hint' },
+  'appointments:read': { label: 'scope_appointments_read', hint: 'scope_appointments_read_hint' },
+  'appointments:write': { label: 'scope_appointments_write', hint: 'scope_appointments_write_hint' },
+  'account:full': { label: 'scope_account_full', hint: 'scope_account_full_hint' },
+  'pages:publish': { label: 'scope_pages_publish', hint: 'scope_pages_publish_hint' },
 };
+
+export function scopeLabel(scope: string, t: TFunction<'oauth'> = i18n.getFixedT(null, 'oauth')) {
+  const entry = SCOPES[scope];
+  return entry ? t(entry.label) : scope;
+}
+
+export function scopeHint(scope: string, t: TFunction<'oauth'> = i18n.getFixedT(null, 'oauth')) {
+  const entry = SCOPES[scope];
+  return entry ? t(entry.hint) : undefined;
+}

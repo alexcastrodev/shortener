@@ -20,7 +20,7 @@ import {
 } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
 import { getOauthGrantsKey, useGetOauthGrants } from '@internal/core/actions/get-oauth-grants/get-oauth-grants.hook';
 import { useRevokeOauthGrant } from '@internal/core/actions/revoke-oauth-grant/revoke-oauth-grant.hook';
-import { SCOPE_LABELS } from '../modules/oauth/scopes';
+import { scopeLabel } from '../modules/oauth/scopes';
 import { modals } from '@mantine/modals';
 import { useUpdatePassword } from '@internal/core/actions/update-password/update-password.hook';
 import { useDeleteAccount } from '@internal/core/actions/delete-account/delete-account.hook';
@@ -371,7 +371,7 @@ function ConnectedApps() {
                 {grant.last_used_at && t('apps_last_used', { date: formatDate(grant.last_used_at) })}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                {grant.scopes.map(scope => SCOPE_LABELS[scope]?.label ?? scope).join(' · ')}
+                {grant.scopes.map(scope => scopeLabel(scope)).join(' · ')}
               </p>
             </div>
             <Button variant="default" size="xs" className="shrink-0 self-start" onClick={() => confirmRevoke(grant.id, grant.client_name)}>
