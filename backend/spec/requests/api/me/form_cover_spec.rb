@@ -74,7 +74,7 @@ RSpec.describe("the form cover and intro", type: :request) do
       expect(form.uploads.where(field_id: Form::COVER_FIELD).count).to(eq(1))
     end
 
-    it "never sends content that is not a PNG, JPEG or WebP by its bytes to imgproc" do
+    it "V07: never sends content that is not a PNG, JPEG or WebP by its bytes to imgproc" do
       ["<svg><script>alert(1)</script></svg>", "GIF89a<script>", "%PDF-1.7", "<html></html>".b].each do |body|
         upload(body)
         expect(response).to(have_http_status(:unprocessable_content), body[0, 8])
@@ -89,13 +89,13 @@ RSpec.describe("the form cover and intro", type: :request) do
       expect(response).to(have_http_status(:unprocessable_content))
     end
 
-    it "refuses a file over 5 MB" do
+    it "V07: refuses a file over 5 MB" do
       upload(png + ("0" * 5.megabytes))
       expect(response).to(have_http_status(:unprocessable_content))
       expect(json["message"]).to(include("5MB"))
     end
 
-    it "refuses a huge canvas hidden in a tiny file, by side and by pixel count" do
+    it "V07: refuses a huge canvas hidden in a tiny file, by side and by pixel count" do
       [Vips::Image.black(8_001, 1), Vips::Image.black(7_000, 7_000)].each do |image|
         upload(image.write_to_buffer(".png"))
         expect(response).to(have_http_status(:unprocessable_content))

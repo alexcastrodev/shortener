@@ -47,13 +47,13 @@ RSpec.describe("the push channel", type: :request) do
   def push_rows = Notification.where(channel: "push")
 
   describe "the key the browser needs" do
-    it "tells the front end whether push is on and gives only the public key" do
+    it "V19: tells the front end whether push is on and gives only the public key" do
       get("/api/me/push_config", headers: auth_headers)
       expect(json).to(eq("enabled" => true, "public_key" => vapid.public_key))
       expect(response.body).not_to(include(vapid.private_key))
     end
 
-    it "says it is off, without a key, when the server has none" do
+    it "V19: says it is off, without a key, when the server has none" do
       allow(ENV).to(receive(:[]).with("VAPID_PRIVATE_KEY").and_return(nil))
       get("/api/me/push_config", headers: auth_headers)
       expect(json).to(eq("enabled" => false, "public_key" => nil))
@@ -69,7 +69,7 @@ RSpec.describe("the push channel", type: :request) do
   end
 
   describe "sending" do
-    it "pushes a booking to the owner's devices with no personal data" do
+    it "V18: pushes a booking to the owner's devices with no personal data" do
       subscription = subscribe
       perform_enqueued_jobs { book }
 

@@ -701,6 +701,94 @@ check("MC13", "MCP full access on the real stack: only account:full lists the de
   expect(!database_text["mcp_tool_calls"].include?("CNRY"), "answer in the call log")
 end
 
+LOAD_IPS = Object.new.tap do |source|
+  count = 0
+  lock = Mutex.new
+  source.define_singleton_method(:next) do
+    n = lock.synchronize { count += 1 }
+    "198.18.#{(n / 250) % 250}.#{n % 250 + 1}"
+  end
+end
+
+def booking_form_for(owner, title, capacity:)
+  form = Form.create!(user: owner, title: title)
+  Forms::Definition.add(form, { "type" => "booking", "label" => "When", "services" => [{ "name" => "Cut", "duration" => 30, "capacity" => capacity, "days" => ["mon", "tue", "wed", "thu", "fri", "sat", "sun"], "times" => ["09:00", "10:00", "11:00", "14:00", "15:00"] }], "rules" => { "approval" => "auto", "window_days" => 60 } })
+  Forms::Definition.add(form.reload, { "type" => "short_text", "label" => "Name", "required" => true })
+  Forms::Definition.add(form.reload, { "type" => "email", "label" => "Email", "required" => true })
+  Forms::Publish.call(form: form.reload)
+  form.reload
+end
+
+def book_payload(form, service_id, date, time, tag)
+  booking = form.fields.find { |field| field["type"] == "booking" }["id"]
+  name = form.fields.find { |field| field["type"] == "short_text" }["id"]
+  mail = form.fields.find { |field| field["type"] == "email" }["id"]
+  { answers: { name => "CNRY-#{tag}", mail => "#{tag}@example.test", booking => { "service" => service_id, "sessions" => [{ "date" => date, "time" => time }] } } }
+end
+
+def percentile(values, share)
+  values.sort[((values.size - 1) * share).ceil]
+end
+
+def timed
+  started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  result = yield
+  [result, (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000]
+end
+
+check("AP01", "load: 50 parallel bookings of one place, five rounds: exactly one is created each time, none is a 5xx, the counter never passes the capacity") do
+  form = booking_form_for(TENANTS[:a], "Race", capacity: 1)
+  service_id = form.fields.find { |field| field["type"] == "booking" }["services"].first["id"]
+  slots = http(:get, "/api/public/forms/#{form.public_id}/slots?service=#{service_id}&from=#{(Date.current + 3).iso8601}&to=#{(Date.current + 8).iso8601}", ip: LOAD_IPS.next).json.fetch("slots")
+  expect(slots.size >= 5, "only #{slots.size} free times")
+  slots.first(5).each_with_index do |slot, round|
+    statuses = parallel(50) { |index| http(:post, "/api/public/forms/#{form.public_id}/responses", body: book_payload(form, service_id, slot["date"], slot["time"], "r#{round}-#{index}"), ip: LOAD_IPS.next).status }
+    expect_eq({ 201 => 1 }, statuses.tally.slice(201), "round #{round} created")
+    expect(statuses.none? { |status| status >= 500 }, "round #{round} had a 5xx: #{statuses.tally}")
+    expect(statuses.all? { |status| [201, 409, 422, 429].include?(status) }, "round #{round}: #{statuses.tally}")
+  end
+  expect_eq(5, sql("select count(*) from appointments where form_id = #{form.id}").to_i, "appointments")
+  expect_eq(0, sql("select count(*) from appointment_slots where form_id = #{form.id} and booked > capacity").to_i, "oversold")
+  expect_eq(5, sql("select coalesce(sum(booked), 0) from appointment_slots where form_id = #{form.id}").to_i, "counter")
+end
+
+check("AP02", "load: p95 under 500 ms for the public form, the free times and a booking, 10 in parallel") do
+  form = booking_form_for(TENANTS[:a], "Latency", capacity: nil)
+  service_id = form.fields.find { |field| field["type"] == "booking" }["services"].first["id"]
+  from = (Date.current + 3).iso8601
+  samples = { form: [], slots: [], book: [] }
+  free = http(:get, "/api/public/forms/#{form.public_id}/slots?service=#{service_id}&from=#{from}&to=#{(Date.current + 9).iso8601}", ip: LOAD_IPS.next).json.fetch("slots")
+  60.times.each_slice(10) do |batch|
+    parallel(batch.size) do |index|
+      slot = free[(batch.first + index) % free.size]
+      samples[:form] << timed { http(:get, "/api/public/forms/#{form.public_id}", ip: LOAD_IPS.next).status }.then { |status, ms| expect_eq(200, status, "form"); ms }
+      samples[:slots] << timed { http(:get, "/api/public/forms/#{form.public_id}/slots?service=#{service_id}&from=#{from}&to=#{(Date.current + 9).iso8601}", ip: LOAD_IPS.next).status }.then { |status, ms| expect_eq(200, status, "slots"); ms }
+      samples[:book] << timed { http(:post, "/api/public/forms/#{form.public_id}/responses", body: book_payload(form, service_id, slot["date"], slot["time"], "lat#{batch.first}-#{index}"), ip: LOAD_IPS.next).status }.then { |status, ms| expect_eq(201, status, "book"); ms }
+    end
+  end
+  samples.each { |name, values| expect(percentile(values, 0.95) < 500, "#{name} p95 #{percentile(values, 0.95).round} ms") }
+end
+
+check("AP03", "load: 5,000 emails waiting in the queue do not slow the sign-in, and the dispatcher still picks a batch at once") do
+  owner = TENANTS[:a]
+  appointment = Appointment.where(form_id: Form.where(user_id: owner.id).select(:id)).first
+  expect(appointment, "no appointment to hang the emails on")
+  now = Time.current
+  rows = Array.new(5_000) { |index| { channel: "email", kind: "appointment_reminder", recipient_kind: "client", recipient_email: "queue#{index}@example.test", appointment_id: appointment.id, event_key: "load-#{index}", payload: {}, status: "pending", next_attempt_at: now, created_at: now } }
+  Notification.insert_all!(rows)
+  expect_eq(5_000, Notification.where(status: "pending", channel: "email").where("event_key like 'load-%'").count, "queued")
+
+  _, picked_in = timed { Notification.where(status: "pending").where(next_attempt_at: ..Time.current).order(:id).limit(DispatchNotificationsJob::BATCH).pluck(:id, :channel) }
+  expect(picked_in < 200, "the dispatcher query took #{picked_in.round} ms")
+
+  login = Array.new(20) { timed { http(:post, "/api/login/password", body: { email: "nobody-#{SecureRandom.hex(3)}@example.test", password: "wrong-password" }, ip: LOAD_IPS.next).status } }
+  expect(login.none? { |status, _| status >= 500 }, "sign-in 5xx: #{login.map(&:first).tally}")
+  expect(percentile(login.map(&:last), 0.95) < 500, "sign-in p95 #{percentile(login.map(&:last), 0.95).round} ms")
+  request = timed { http(:post, "/api/login_request", body: { email: TENANTS[:a].email }, ip: LOAD_IPS.next).status }
+  expect(request.first < 500, "sign-in code request answered #{request.first}")
+  expect(request.last < 1000, "sign-in code request took #{request.last.round} ms")
+end
+
 File.write("/tmp/harness-failed", Harness.failed? ? "1" : "0")
 puts "== #{Harness.results.count { |r| r[2] == 'PASS' }}/#{Harness.results.size} checks passed"
 exit(Harness.failed? ? 1 : 0)
