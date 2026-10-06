@@ -15,6 +15,7 @@ import account from './en/account.json';
 import oauth from './en/oauth.json';
 import responses from './en/responses.json';
 import templates from './en/templates.json';
+import landing from './en/landing.json';
 import menuPt from './pt-PT/menu.json';
 import homePt from './pt-PT/home.json';
 import dashboardPt from './pt-PT/dashboard.json';
@@ -29,10 +30,11 @@ import accountPt from './pt-PT/account.json';
 import oauthPt from './pt-PT/oauth.json';
 import responsesPt from './pt-PT/responses.json';
 import templatesPt from './pt-PT/templates.json';
+import landingPt from './pt-PT/landing.json';
 
 export const resources = {
-  en: { menu, home, dashboard, admin, links, auth, pages, forms, respond, settings, account, oauth, responses, templates },
-  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt, settings: settingsPt, account: accountPt, oauth: oauthPt, responses: responsesPt, templates: templatesPt },
+  en: { menu, home, dashboard, admin, links, auth, pages, forms, respond, settings, account, oauth, responses, templates, landing },
+  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt, settings: settingsPt, account: accountPt, oauth: oauthPt, responses: responsesPt, templates: templatesPt, landing: landingPt },
 } as const;
 
 i18n.use(initReactI18next).init({

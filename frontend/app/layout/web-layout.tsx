@@ -1,8 +1,10 @@
 import { type PropsWithChildren } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BrandMark, ThemeToggle } from '@internal/ui';
 import { UserMenu } from '../modules/auth/user-menu';
 
 export function Layout({ children }: PropsWithChildren) {
+  const { t } = useTranslation('landing');
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
@@ -13,7 +15,7 @@ export function Layout({ children }: PropsWithChildren) {
               href="/about"
               className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
             >
-              About
+              {t('nav_about')}
             </a>
             <ThemeToggle />
             <UserMenu />
@@ -28,8 +30,7 @@ export function Layout({ children }: PropsWithChildren) {
           <div className="max-w-md">
             <BrandMark />
             <p className="mt-3 text-sm text-muted-foreground">
-              Create short links, keep them organized, and review click data
-              from a simple dashboard.
+              {t('footer_tagline')}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -37,19 +38,19 @@ export function Layout({ children }: PropsWithChildren) {
               href="/about"
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
-              About
+              {t('nav_about')}
             </a>
             <a
               href="/privacy"
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
-              Privacy
+              {t('footer_privacy')}
             </a>
             <a
               href="/report"
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
-              Report Abuse
+              {t('footer_report')}
             </a>
             <a
               href="https://github.com/alexcastrodev/shortner"
@@ -57,13 +58,13 @@ export function Layout({ children }: PropsWithChildren) {
               rel="noopener noreferrer"
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
-              Open Source
+              {t('footer_source')}
             </a>
             <a
               href="/app"
               className="text-muted-foreground transition-colors hover:text-foreground"
             >
-              Dashboard
+              {t('footer_dashboard')}
             </a>
           </div>
         </div>
