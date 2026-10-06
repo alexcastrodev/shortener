@@ -23,7 +23,7 @@ module Forms
       "multiple_choice" => ["choices", "max_choices"],
       "rating" => ["scale"],
       "number" => ["min", "max"],
-      "booking" => ["services", "rules", "exceptions"],
+      "booking" => ["services", "categories", "rules", "exceptions"],
     }.freeze
 
     def definition_errors(fields)

@@ -5,6 +5,7 @@ import {
   Group,
   NumberInput,
   SegmentedControl,
+  Select,
   Stack,
   TextInput,
 } from '@mantine/core';
@@ -17,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
 import type { FormField, FormFieldInput } from '@internal/core/types/Form';
 import { BundleOffer } from './bundle-offer';
+import { CategoriesSection } from './categories-section';
 import { ExceptionsSection } from './exceptions-section';
 import { TimeGeneratorPanel } from './time-generator-panel';
 import { TimeoutInput } from './timeout-input';
@@ -27,8 +29,10 @@ import {
   TIME,
   blankService,
   initialValues,
+  isGrouped,
   newKey,
   toBookingInput,
+  type ServiceValues,
   type Values,
 } from '../../../modules/forms/booking-config.ts';
 
@@ -48,120 +52,129 @@ export function BookingEditor({
 
   const schema = useMemo(
     () =>
-      z.object({
-        label: z.string().trim().min(1).max(300),
-        help: z.string().max(500),
-        approval: z.enum(['auto', 'manual']),
-        approval_timeout_minutes: z.union([z.number(), z.literal('')]),
-        exceptions: z.array(
-          z
-            .object({
-              kind: z.enum(['closed', 'special']),
-              from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t('err_exc_from')),
-              to: z.string(),
-              times: z.array(z.object({ value: z.string() })),
+      z
+        .object({
+          label: z.string().trim().min(1).max(300),
+          help: z.string().max(500),
+          approval: z.enum(['auto', 'manual']),
+          approval_timeout_minutes: z.union([z.number(), z.literal('')]),
+          categories: z.array(
+            z.object({
+              name: z.string().trim().min(1, t('category_name_error')).max(60),
             })
-            .check(ctx => {
-              const { kind, from, to, times } = ctx.value;
-              if (to && from && to < from) {
-                ctx.issues.push({
-                  code: 'custom',
-                  message: t('err_exc_range'),
-                  path: ['to'],
-                  input: to,
-                });
-              }
-              if (
-                kind === 'special' &&
-                !times.some(time => TIME.test(time.value))
-              ) {
-                ctx.issues.push({
-                  code: 'custom',
-                  message: t('err_exc_times'),
-                  path: ['times'],
-                  input: times,
-                });
-              }
-            })
-        ),
-        services: z.array(
-          z
-            .object({
-              name: z.string().trim().min(1, t('error_name')).max(100),
-              duration: z
-                .number(t('error_duration'))
-                .int()
-                .min(5, t('error_duration'))
-                .max(600, t('error_duration')),
-              price: z.union([z.number().min(0), z.literal('')]),
-              currency: z.string(),
-              days: z.array(z.string()).min(1, t('error_days')),
-              times: z
-                .array(
-                  z.object({ value: z.string().regex(TIME, t('error_time')) })
-                )
-                .min(1, t('error_times')),
-              bundle: z.boolean(),
-              bundleTake: z.union([z.number(), z.literal('')]),
-              bundlePay: z.union([z.number(), z.literal('')]),
-              byDay: z.record(
-                z.string(),
-                z.array(
-                  z.object({ value: z.string().regex(TIME, t('error_time')) })
-                )
-              ),
-            })
-            .check(ctx => {
-              const { price, currency, bundle, bundleTake, bundlePay } =
-                ctx.value;
-              if (bundle) {
-                if (price === '') {
+          ),
+          exceptions: z.array(
+            z
+              .object({
+                kind: z.enum(['closed', 'special']),
+                from: z
+                  .string()
+                  .regex(/^\d{4}-\d{2}-\d{2}$/, t('err_exc_from')),
+                to: z.string(),
+                times: z.array(z.object({ value: z.string() })),
+              })
+              .check(ctx => {
+                const { kind, from, to, times } = ctx.value;
+                if (to && from && to < from) {
                   ctx.issues.push({
                     code: 'custom',
-                    message: t('error_bundle_price'),
-                    path: ['price'],
-                    input: price,
+                    message: t('err_exc_range'),
+                    path: ['to'],
+                    input: to,
                   });
                 }
-                const valid =
-                  bundleTake !== '' &&
-                  bundlePay !== '' &&
-                  Number.isInteger(bundleTake) &&
-                  Number.isInteger(bundlePay) &&
-                  bundleTake >= 2 &&
-                  bundleTake <= 31 &&
-                  bundlePay >= 1 &&
-                  bundlePay < bundleTake;
-                if (!valid) {
+                if (
+                  kind === 'special' &&
+                  !times.some(time => TIME.test(time.value))
+                ) {
                   ctx.issues.push({
                     code: 'custom',
-                    message: t('error_bundle'),
-                    path: ['bundlePay'],
-                    input: bundlePay,
+                    message: t('err_exc_times'),
+                    path: ['times'],
+                    input: times,
                   });
                 }
-              }
-              if (price !== '' && !/^[A-Za-z]{3}$/.test(currency.trim())) {
-                ctx.issues.push({
-                  code: 'custom',
-                  message: t('error_price_currency'),
-                  path: ['currency'],
-                  input: currency,
-                });
-              }
-            })
-        ),
-      }).check(ctx => {
-        const { approval, approval_timeout_minutes: minutes } = ctx.value;
-        if (approval === 'manual' && !timeoutInRange(minutes)) {
-          ctx.issues.push({
-            code: 'custom',
-            message: t('error_timeout'),
-            path: ['approval_timeout_minutes'],
-            input: minutes,
-          });
-        }
-      }),
+              })
+          ),
+          services: z.array(
+            z
+              .object({
+                name: z.string().trim().min(1, t('error_name')).max(100),
+                duration: z
+                  .number(t('error_duration'))
+                  .int()
+                  .min(5, t('error_duration'))
+                  .max(600, t('error_duration')),
+                price: z.union([z.number().min(0), z.literal('')]),
+                currency: z.string(),
+                days: z.array(z.string()).min(1, t('error_days')),
+                times: z
+                  .array(
+                    z.object({ value: z.string().regex(TIME, t('error_time')) })
+                  )
+                  .min(1, t('error_times')),
+                bundle: z.boolean(),
+                bundleTake: z.union([z.number(), z.literal('')]),
+                bundlePay: z.union([z.number(), z.literal('')]),
+                byDay: z.record(
+                  z.string(),
+                  z.array(
+                    z.object({ value: z.string().regex(TIME, t('error_time')) })
+                  )
+                ),
+              })
+              .check(ctx => {
+                const { price, currency, bundle, bundleTake, bundlePay } =
+                  ctx.value;
+                if (bundle) {
+                  if (price === '') {
+                    ctx.issues.push({
+                      code: 'custom',
+                      message: t('error_bundle_price'),
+                      path: ['price'],
+                      input: price,
+                    });
+                  }
+                  const valid =
+                    bundleTake !== '' &&
+                    bundlePay !== '' &&
+                    Number.isInteger(bundleTake) &&
+                    Number.isInteger(bundlePay) &&
+                    bundleTake >= 2 &&
+                    bundleTake <= 31 &&
+                    bundlePay >= 1 &&
+                    bundlePay < bundleTake;
+                  if (!valid) {
+                    ctx.issues.push({
+                      code: 'custom',
+                      message: t('error_bundle'),
+                      path: ['bundlePay'],
+                      input: bundlePay,
+                    });
+                  }
+                }
+                if (price !== '' && !/^[A-Za-z]{3}$/.test(currency.trim())) {
+                  ctx.issues.push({
+                    code: 'custom',
+                    message: t('error_price_currency'),
+                    path: ['currency'],
+                    input: currency,
+                  });
+                }
+              })
+          ),
+        })
+        .check(ctx => {
+          const { approval, approval_timeout_minutes: minutes } = ctx.value;
+          if (approval === 'manual' && !timeoutInRange(minutes)) {
+            ctx.issues.push({
+              code: 'custom',
+              message: t('error_timeout'),
+              path: ['approval_timeout_minutes'],
+              input: minutes,
+            });
+          }
+        }),
     [t]
   );
 
@@ -199,6 +212,160 @@ export function BookingEditor({
     });
   };
 
+  const renderService = (service: ServiceValues, index: number) => (
+    <div key={service.key} className="rounded-lg border border-border p-3">
+      <Stack gap="sm">
+        <Group gap="xs" wrap="nowrap" align="flex-end">
+          <TextInput
+            className="flex-1"
+            label={t('service_name')}
+            {...form.getInputProps(`services.${index}.name`)}
+          />
+          <ActionIcon
+            variant="subtle"
+            color="red"
+            size="lg"
+            aria-label={t('service_remove', {
+              name: service.name || t('service_new'),
+            })}
+            onClick={() => confirmRemove(index)}
+          >
+            <IconTrash size={16} />
+          </ActionIcon>
+        </Group>
+        {isGrouped(form.values) && (
+          <Select
+            label={t('service_move')}
+            allowDeselect={false}
+            data={form.values.categories.map(item => ({
+              value: item.id,
+              label: item.name || t('category_new'),
+            }))}
+            value={service.categoryId}
+            onChange={value =>
+              value && form.setFieldValue(`services.${index}.categoryId`, value)
+            }
+          />
+        )}
+        <Group grow align="flex-start">
+          <NumberInput
+            label={t('service_duration')}
+            min={5}
+            max={600}
+            allowDecimal={false}
+            {...form.getInputProps(`services.${index}.duration`)}
+          />
+          <NumberInput
+            label={t('service_capacity')}
+            description={t('service_capacity_hint')}
+            min={1}
+            max={1000}
+            allowDecimal={false}
+            {...form.getInputProps(`services.${index}.capacity`)}
+          />
+        </Group>
+        <Group grow align="flex-start">
+          <NumberInput
+            label={t('service_price')}
+            min={0}
+            decimalScale={2}
+            {...form.getInputProps(`services.${index}.price`)}
+          />
+          <TextInput
+            label={t('service_currency')}
+            maxLength={3}
+            placeholder="EUR"
+            {...form.getInputProps(`services.${index}.currency`)}
+          />
+        </Group>
+        <div>
+          <p className="mb-1 text-sm font-medium">{t('service_days')}</p>
+          <Chip.Group
+            multiple
+            value={service.days}
+            onChange={value =>
+              form.setFieldValue(`services.${index}.days`, value)
+            }
+          >
+            <Group gap={6}>
+              {DAYS.map(day => (
+                <Chip key={day} value={day} size="xs">
+                  {dayLabels[day]}
+                </Chip>
+              ))}
+            </Group>
+          </Chip.Group>
+          {typeof form.errors[`services.${index}.days`] === 'string' && (
+            <p className="mt-1 text-xs text-red-500">
+              {form.errors[`services.${index}.days`]}
+            </p>
+          )}
+        </div>
+        <div>
+          <p className="mb-1 text-sm font-medium">{t('service_times')}</p>
+          <Group gap="xs">
+            {service.times.map((time, timeIndex) => (
+              <Group key={time.key} gap={2} wrap="nowrap">
+                <TextInput
+                  type="time"
+                  size="xs"
+                  aria-label={t('service_times')}
+                  {...form.getInputProps(
+                    `services.${index}.times.${timeIndex}.value`
+                  )}
+                />
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  aria-label={t('service_remove_time', {
+                    time: time.value,
+                  })}
+                  onClick={() =>
+                    form.removeListItem(`services.${index}.times`, timeIndex)
+                  }
+                >
+                  <IconX size={14} />
+                </ActionIcon>
+              </Group>
+            ))}
+            <Button
+              variant="subtle"
+              size="compact-xs"
+              leftSection={<IconPlus size={12} />}
+              onClick={() =>
+                form.insertListItem(`services.${index}.times`, {
+                  key: newKey(),
+                  value: '',
+                })
+              }
+            >
+              {t('service_add_time')}
+            </Button>
+          </Group>
+          <div className="mt-2">
+            <TimeGeneratorPanel
+              duration={Number(service.duration) || 60}
+              hasTimes={service.times.length > 0}
+              onApply={times =>
+                form.setFieldValue(
+                  `services.${index}.times`,
+                  times.map(value => ({ key: newKey(), value }))
+                )
+              }
+            />
+          </div>
+          {typeof form.errors[`services.${index}.times`] === 'string' && (
+            <p className="mt-1 text-xs text-red-500">
+              {form.errors[`services.${index}.times`]}
+            </p>
+          )}
+        </div>
+        <BundleOffer form={form} index={index} />
+        <WeekdayTimes form={form} index={index} dayLabels={dayLabels} />
+      </Stack>
+    </div>
+  );
+
   return (
     <form
       onSubmit={form.onSubmit(values =>
@@ -224,174 +391,7 @@ export function BookingEditor({
               {t('services_hint')}
             </p>
           </div>
-          {form.values.services.length === 0 && (
-            <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-              {t('no_services')}
-            </p>
-          )}
-          {form.values.services.map((service, index) => (
-            <div
-              key={service.key}
-              className="rounded-lg border border-border p-3"
-            >
-              <Stack gap="sm">
-                <Group gap="xs" wrap="nowrap" align="flex-end">
-                  <TextInput
-                    className="flex-1"
-                    label={t('service_name')}
-                    {...form.getInputProps(`services.${index}.name`)}
-                  />
-                  <ActionIcon
-                    variant="subtle"
-                    color="red"
-                    size="lg"
-                    aria-label={t('service_remove', {
-                      name: service.name || t('service_new'),
-                    })}
-                    onClick={() => confirmRemove(index)}
-                  >
-                    <IconTrash size={16} />
-                  </ActionIcon>
-                </Group>
-                <Group grow align="flex-start">
-                  <NumberInput
-                    label={t('service_duration')}
-                    min={5}
-                    max={600}
-                    allowDecimal={false}
-                    {...form.getInputProps(`services.${index}.duration`)}
-                  />
-                  <NumberInput
-                    label={t('service_capacity')}
-                    description={t('service_capacity_hint')}
-                    min={1}
-                    max={1000}
-                    allowDecimal={false}
-                    {...form.getInputProps(`services.${index}.capacity`)}
-                  />
-                </Group>
-                <Group grow align="flex-start">
-                  <NumberInput
-                    label={t('service_price')}
-                    min={0}
-                    decimalScale={2}
-                    {...form.getInputProps(`services.${index}.price`)}
-                  />
-                  <TextInput
-                    label={t('service_currency')}
-                    maxLength={3}
-                    placeholder="EUR"
-                    {...form.getInputProps(`services.${index}.currency`)}
-                  />
-                </Group>
-                <div>
-                  <p className="mb-1 text-sm font-medium">
-                    {t('service_days')}
-                  </p>
-                  <Chip.Group
-                    multiple
-                    value={service.days}
-                    onChange={value =>
-                      form.setFieldValue(`services.${index}.days`, value)
-                    }
-                  >
-                    <Group gap={6}>
-                      {DAYS.map(day => (
-                        <Chip key={day} value={day} size="xs">
-                          {dayLabels[day]}
-                        </Chip>
-                      ))}
-                    </Group>
-                  </Chip.Group>
-                  {typeof form.errors[`services.${index}.days`] ===
-                    'string' && (
-                    <p className="mt-1 text-xs text-red-500">
-                      {form.errors[`services.${index}.days`]}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <p className="mb-1 text-sm font-medium">
-                    {t('service_times')}
-                  </p>
-                  <Group gap="xs">
-                    {service.times.map((time, timeIndex) => (
-                      <Group key={time.key} gap={2} wrap="nowrap">
-                        <TextInput
-                          type="time"
-                          size="xs"
-                          aria-label={t('service_times')}
-                          {...form.getInputProps(
-                            `services.${index}.times.${timeIndex}.value`
-                          )}
-                        />
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          aria-label={t('service_remove_time', {
-                            time: time.value,
-                          })}
-                          onClick={() =>
-                            form.removeListItem(
-                              `services.${index}.times`,
-                              timeIndex
-                            )
-                          }
-                        >
-                          <IconX size={14} />
-                        </ActionIcon>
-                      </Group>
-                    ))}
-                    <Button
-                      variant="subtle"
-                      size="compact-xs"
-                      leftSection={<IconPlus size={12} />}
-                      onClick={() =>
-                        form.insertListItem(`services.${index}.times`, {
-                          key: newKey(),
-                          value: '',
-                        })
-                      }
-                    >
-                      {t('service_add_time')}
-                    </Button>
-                  </Group>
-                  <div className="mt-2">
-                    <TimeGeneratorPanel
-                      duration={Number(service.duration) || 60}
-                      hasTimes={service.times.length > 0}
-                      onApply={times =>
-                        form.setFieldValue(
-                          `services.${index}.times`,
-                          times.map(value => ({ key: newKey(), value }))
-                        )
-                      }
-                    />
-                  </div>
-                  {typeof form.errors[`services.${index}.times`] ===
-                    'string' && (
-                    <p className="mt-1 text-xs text-red-500">
-                      {form.errors[`services.${index}.times`]}
-                    </p>
-                  )}
-                </div>
-                <BundleOffer form={form} index={index} />
-                <WeekdayTimes form={form} index={index} dayLabels={dayLabels} />
-              </Stack>
-            </div>
-          ))}
-          <div>
-            <Button
-              variant="subtle"
-              size="xs"
-              leftSection={<IconPlus size={14} />}
-              onClick={() =>
-                form.insertListItem('services', blankService(t('service_new')))
-              }
-            >
-              {t('service_add')}
-            </Button>
-          </div>
+          <CategoriesSection form={form} renderService={renderService} />
         </Stack>
 
         <ExceptionsSection form={form} />
@@ -424,8 +424,12 @@ export function BookingEditor({
             <Group grow align="flex-start">
               <TimeoutInput
                 minutes={form.values.approval_timeout_minutes}
-                error={form.errors.approval_timeout_minutes as string | undefined}
-                onChange={value => form.setFieldValue('approval_timeout_minutes', value)}
+                error={
+                  form.errors.approval_timeout_minutes as string | undefined
+                }
+                onChange={value =>
+                  form.setFieldValue('approval_timeout_minutes', value)
+                }
               />
               <div>
                 <p className="mb-1 text-sm">{t('approval_on_timeout')}</p>

@@ -165,10 +165,10 @@ RSpec.describe("the booking question", type: :request) do
       form.reload.tap { |f| Forms::Publish.call(form: f) }
     end
 
-    it "lists only the closed set of service keys plus the time zone" do
+    it "lists only the closed set of service keys plus the categories and the time zone" do
       get("/api/public/forms/#{public_form.public_id}")
       shown = JSON.parse(response.body)["form"]["fields"].find { |field| field["type"] == "booking" }
-      expect(shown.keys).to(match_array(["id", "type", "label", "services", "time_zone"]))
+      expect(shown.keys).to(match_array(["id", "type", "label", "services", "categories", "time_zone"]))
       expect(shown["services"].first.keys).to(match_array(["id", "name", "duration", "price", "currency", "days", "times"]))
       expect(shown["time_zone"]).to(eq("UTC"))
       expect(response.body).not_to(include("approval", "capacity"))

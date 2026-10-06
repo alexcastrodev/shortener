@@ -12,8 +12,13 @@ class FormFieldContract < ApplicationContract
       required(:label).filled(:string)
       optional(:id).filled(:string)
     end
+    optional(:categories).array(:hash) do
+      optional(:id).filled(:string)
+      required(:name).filled(:string)
+    end
     optional(:services).array(:hash) do
       optional(:id).filled(:string)
+      optional(:category_id).maybe(:string)
       required(:name).filled(:string)
       required(:duration).filled(:integer)
       optional(:price).maybe(:float)

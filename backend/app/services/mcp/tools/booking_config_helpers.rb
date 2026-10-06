@@ -8,6 +8,7 @@ module Mcp
         type: "object",
         properties: {
           id: { type: "string", maxLength: 8 },
+          category_id: { type: "string", maxLength: 8 },
           name: { type: "string", maxLength: 100 },
           duration: { type: "integer", minimum: 5, maximum: 600 },
           price: { type: "number", minimum: 0 },
@@ -19,6 +20,12 @@ module Mcp
           bundle: { type: "object", properties: { take: { type: "integer" }, pay: { type: "integer" } }, required: ["take", "pay"], additionalProperties: false },
         },
         required: ["name", "duration", "days", "times"],
+        additionalProperties: false,
+      }.freeze
+      CATEGORY = {
+        type: "object",
+        properties: { id: { type: "string", maxLength: 8 }, name: { type: "string", maxLength: 60 } },
+        required: ["name"],
         additionalProperties: false,
       }.freeze
       RULES = {
@@ -56,6 +63,7 @@ module Mcp
           published: form.published,
           question: Content.clean(booking["label"], max: Forms::FieldSchema::LABEL_MAX),
           rules: booking["rules"],
+          categories: booking["categories"].to_a.map { |item| item.merge("name" => Content.clean(item["name"], max: 60)) },
           services: booking["services"].map { |service| service.except("name").merge("name" => Content.clean(service["name"], max: 100)) },
           exceptions: booking["exceptions"].to_a.map { |item| item.except("note") },
         }

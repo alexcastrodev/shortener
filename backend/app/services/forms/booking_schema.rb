@@ -2,8 +2,8 @@ module Forms
   module BookingSchema
     extend self
 
-    SERVICE_KEYS = ["id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day", "bundle"].freeze
-    PUBLIC_SERVICE_KEYS = ["id", "name", "duration", "price", "currency", "days", "times", "bundle"].freeze
+    SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day", "bundle"].freeze
+    PUBLIC_SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "days", "times", "bundle"].freeze
     RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
     RULE_RANGES = { "min_notice_minutes" => (0..43_200), "window_days" => (1..365), "buffer_minutes" => (0..600), "max_per_day" => (1..1000), "approval_timeout_minutes" => (5..43_200) }.freeze
     APPROVALS = ["auto", "manual"].freeze
@@ -12,6 +12,9 @@ module Forms
     DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].freeze
     TIME = /\A([01]\d|2[0-3]):[0-5]\d\z/
     SERVICES_MAX = 20
+    CATEGORIES_MAX = 10
+    CATEGORY_KEYS = ["id", "name"].freeze
+    CATEGORY_NAME_MAX = 60
     BUNDLE_TAKE_MAX = 31
     TIMES_MAX = 96
     NAME_MAX = 100
@@ -34,6 +37,8 @@ module Forms
 
       result = []
       result << "can have at most #{SERVICES_MAX} services" if services.size > SERVICES_MAX
+      category_ids = []
+      result.concat(category_errors(field["categories"], category_ids))
       ids = []
       services.each_with_index do |raw, index|
         label = "service #{index + 1}"
@@ -46,6 +51,7 @@ module Forms
         result << "#{label} id is invalid or repeated" unless service["id"].to_s.match?(FieldSchema::ID_FORMAT) && !ids.include?(service["id"])
         ids << service["id"]
         result.concat(service_errors(service).map { |message| "#{label} #{message}" })
+        result.concat(category_link_errors(service, category_ids).map { |message| "#{label} #{message}" })
       end
       result.concat(rule_errors(rules.stringify_keys))
       result.concat(exception_errors(field["exceptions"], ids))
@@ -54,6 +60,7 @@ module Forms
     def defaults(attributes, user)
       attributes = attributes.stringify_keys
       attributes["services"] ||= []
+      attributes["categories"] ||= []
       attributes["exceptions"] ||= []
       rules = (attributes["rules"] || {}).stringify_keys
       rules["time_zone"] ||= user.time_zone
@@ -69,6 +76,7 @@ module Forms
     end
 
     def with_new_ids(field)
+      field = field.merge("categories" => field["categories"].map { |item| item.is_a?(Hash) ? item.stringify_keys.tap { |row| row["id"] ||= FieldSchema.new_id } : item }) if field["categories"].is_a?(Array)
       field = field.merge("exceptions" => field["exceptions"].map { |item| item.is_a?(Hash) ? item.stringify_keys.tap { |row| row["id"] ||= FieldSchema.new_id } : item }) if field["exceptions"].is_a?(Array)
       return field unless field["services"].is_a?(Array)
 
@@ -98,6 +106,37 @@ module Forms
     end
 
     private
+
+    def category_errors(list, ids)
+      return [] if list.nil?
+      return ["categories must be a list"] unless list.is_a?(Array)
+
+      result = []
+      result << "can have at most #{CATEGORIES_MAX} categories" if list.size > CATEGORIES_MAX
+      list.each_with_index do |raw, index|
+        label = "category #{index + 1}"
+        unless raw.is_a?(Hash)
+          result << "#{label} must be an object"
+          next
+        end
+
+        item = raw.stringify_keys
+        result << "#{label} has unknown keys" unless (item.keys - CATEGORY_KEYS).empty?
+        result << "#{label} id is invalid or repeated" unless item["id"].to_s.match?(FieldSchema::ID_FORMAT) && !ids.include?(item["id"])
+        ids << item["id"]
+        name = item["name"]
+        result << "#{label} name is required (max #{CATEGORY_NAME_MAX})" unless name.is_a?(String) && name.strip.present? && name.length <= CATEGORY_NAME_MAX && !name.include?("\u0000")
+      end
+      result
+    end
+
+    def category_link_errors(service, category_ids)
+      id = service["category_id"]
+      return ["needs a category"] if id.nil? && category_ids.size >= 2
+      return [] if id.nil?
+
+      category_ids.include?(id) ? [] : ["category is unknown"]
+    end
 
     def exception_errors(list, service_ids)
       return [] if list.nil?

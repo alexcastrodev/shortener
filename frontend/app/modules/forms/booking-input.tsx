@@ -35,9 +35,15 @@ export function BookingInput({
   reloadKey?: string;
 }) {
   const { t } = useTranslation('respond');
-  const services = field.services ?? [];
+  const allServices = field.services ?? [];
+  const categories = field.categories ?? [];
+  const grouped = categories.length >= 2;
+  const [categoryId, setCategoryId] = useState<string | undefined>(
+    allServices.find(item => item.id === value?.service)?.category_id ?? undefined
+  );
+  const services = grouped ? allServices.filter(item => item.category_id === categoryId) : allServices;
   const [serviceId, setServiceId] = useState<string | undefined>(
-    value?.service ?? (services.length === 1 ? services[0].id : undefined)
+    value?.service ?? (!grouped && services.length === 1 ? services[0].id : undefined)
   );
   const [days, setDays] = useState(STEP_DAYS);
   const [attempt, setAttempt] = useState(0);
@@ -82,6 +88,16 @@ export function BookingInput({
     );
   }
 
+  const chooseCategory = (id: string) => {
+    if (id === categoryId) return;
+    setCategoryId(id);
+    const inside = allServices.filter(item => item.category_id === id);
+    setServiceId(inside.length === 1 ? inside[0].id : undefined);
+    setDropped(false);
+    setDays(STEP_DAYS);
+    onChange(undefined);
+  };
+
   const chooseService = (id: string) => {
     if (id === serviceId) return;
     setServiceId(id);
@@ -107,6 +123,26 @@ export function BookingInput({
 
   return (
     <div id={inputId} className="space-y-4">
+      {grouped && (
+        <fieldset role="radiogroup" aria-label={t('booking_category')} className="space-y-2">
+          {categories.map(item => {
+            const count = allServices.filter(entry => entry.category_id === item.id).length;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="radio"
+                aria-checked={item.id === categoryId}
+                onClick={() => chooseCategory(item.id)}
+                className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left ${theme.button} ${item.id === categoryId ? 'ring-2 ring-current' : ''}`}
+              >
+                <span className="font-medium">{item.name}</span>
+                <span className="text-sm opacity-80">{t('booking_services_count', { count })}</span>
+              </button>
+            );
+          })}
+        </fieldset>
+      )}
       {services.length > 1 ? (
         <fieldset role="radiogroup" aria-label={t('booking_service')} className="space-y-2">
           {services.map(item => (
