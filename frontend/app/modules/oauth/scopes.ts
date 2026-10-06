@@ -17,6 +17,7 @@ const SCOPES: Record<string, { label: ScopeKey; hint: ScopeKey }> = {
   'pages:write': { label: 'scope_pages_write', hint: 'scope_pages_write_hint' },
   'appointments:read': { label: 'scope_appointments_read', hint: 'scope_appointments_read_hint' },
   'appointments:write': { label: 'scope_appointments_write', hint: 'scope_appointments_write_hint' },
+  'appointments:manage': { label: 'scope_appointments_manage', hint: 'scope_appointments_manage_hint' },
   'account:full': { label: 'scope_account_full', hint: 'scope_account_full_hint' },
   'pages:publish': { label: 'scope_pages_publish', hint: 'scope_pages_publish_hint' },
 };

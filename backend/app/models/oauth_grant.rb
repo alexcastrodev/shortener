@@ -1,9 +1,9 @@
 class OauthGrant < ApplicationRecord
-  SCOPES = ["forms:read", "forms:write", "forms:publish", "responses:read", "shortlinks:read", "shortlinks:write", "pages:read", "pages:write", "pages:publish", "appointments:read", "appointments:write", "account:full"].freeze
+  SCOPES = ["forms:read", "forms:write", "forms:publish", "responses:read", "shortlinks:read", "shortlinks:write", "pages:read", "pages:write", "pages:publish", "appointments:read", "appointments:write", "appointments:manage", "account:full"].freeze
   FULL_SCOPE = "account:full".freeze
   PUBLISH_SCOPES = ["forms:publish", "pages:publish"].freeze
-  PERSONAL_DATA_SCOPES = ["responses:read", "appointments:read", "appointments:write"].freeze
-  APPOINTMENT_SCOPES = ["appointments:read", "appointments:write"].freeze
+  PERSONAL_DATA_SCOPES = ["responses:read", "appointments:read", "appointments:write", "appointments:manage"].freeze
+  APPOINTMENT_SCOPES = ["appointments:read", "appointments:write", "appointments:manage"].freeze
 
   audited only: [:scopes, :revoked_at]
 

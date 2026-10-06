@@ -35,5 +35,7 @@
   "personal_title": "Respondents' personal data",
   "personal_body": "Reading responses sends what people typed in your forms to the AI service behind this app. Only turn this on if you are allowed to share that data. Text typed by respondents is untrusted.",
   "deny": "Deny",
-  "allow": "Allow"
+  "allow": "Allow",
+  "scope_appointments_manage": "Act on bookings and email clients",
+  "scope_appointments_manage_hint": "Can approve, decline, cancel, move and remind bookings, which sends emails to your clients in your name. Each action needs your go-ahead in the chat and is limited per hour and per day. Off by default. Not available together with publishing."
 }

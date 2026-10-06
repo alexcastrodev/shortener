@@ -54,6 +54,11 @@ module Mcp
         UpdateBookingConfig,
         ApplyTimeSlots,
         GetBookingImpact,
+        ApproveAppointment,
+        DeclineAppointment,
+        CancelAppointment,
+        RescheduleAppointment,
+        RemindAppointment,
       ]
     end
 

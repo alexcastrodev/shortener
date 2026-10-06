@@ -35,5 +35,7 @@
   "personal_title": "Dados pessoais de quem responde",
   "personal_body": "Ler respostas envia o que as pessoas escreveram nos seus formulários ao serviço de IA por trás desta aplicação. Ative isto apenas se tiver autorização para partilhar esses dados. O texto escrito por quem responde não é de confiança.",
   "deny": "Recusar",
-  "allow": "Permitir"
+  "allow": "Permitir",
+  "scope_appointments_manage": "Agir sobre marcações e enviar e-mails aos clientes",
+  "scope_appointments_manage_hint": "Pode aprovar, recusar, cancelar, mover e lembrar marcações, o que envia e-mails aos seus clientes em seu nome. Cada ação precisa do seu aval na conversa e tem limite por hora e por dia. Desligado por defeito. Não disponível em conjunto com a publicação."
 }

@@ -4,6 +4,25 @@ module Mcp
       PAGE_MAX = 20
       AGENDA_MAX_SESSIONS = 300
 
+      MANAGE_LIMITS = [[30, 1.hour], [100, 1.day]].freeze
+      MESSAGE_MAX = 500
+
+      def self.manage!(user, id, confirm)
+        row = Appointment.where(form_id: user.forms.select(:id)).find(id)
+        raise Mcp::ToolError.new("confirmation_mismatch", "To confirm, pass the appointment id again as confirm, and only after the owner agreed") unless confirm.to_s.strip == id.to_s
+
+        Throttle.check!(user, "appointment_manage", MANAGE_LIMITS)
+        row
+      end
+
+      def self.note(value)
+        Content.clean(value, max: MESSAGE_MAX).strip.presence
+      end
+
+      def self.state(row)
+        { id: row.id, status: row.reload.status }
+      end
+
       def self.date(value)
         Date.iso8601(value.to_s)
       rescue Date::Error
