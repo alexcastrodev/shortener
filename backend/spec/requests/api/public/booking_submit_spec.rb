@@ -97,6 +97,41 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
     end
   end
 
+  describe "manual approval" do
+    let(:rules) { { "approval" => "manual", "approval_timeout_minutes" => 90 } }
+
+    it "records the booking as pending, holding the place until the deadline" do
+      book
+      expect(response).to(have_http_status(:created))
+      expect(json["appointments"].first["status"]).to(eq("pending"))
+      expect(Appointment.last).to(have_attributes(status: "pending", expires_at: now + 90.minutes))
+      expect(slot_at(Time.utc(2026, 11, 3, 9)).booked).to(eq(1))
+    end
+
+    it "asks the owner to approve and tells the client the request was received" do
+      book
+      expect(Notification.pluck(:channel, :kind, :recipient_kind)).to(match_array([["in_app", "appointment_requested", "owner"], ["email", "appointment_requested", "owner"], ["email", "appointment_request_received", "client"]]))
+    end
+
+    it "refuses a second request for the same time while the first is waiting" do
+      book(extra: { idempotency_key: "a" })
+      book(extra: { idempotency_key: "b" }, ip: "198.51.100.8")
+      expect(response).to(have_http_status(:unprocessable_entity))
+    end
+
+    it "reports the pending status on the manage page" do
+      book
+      get("/api/public/appointments/#{json["manage_url"][%r{/m/(.+)\z}, 1]}")
+      expect(json["appointment"]["status"]).to(eq("pending"))
+    end
+
+    it "sends neither a confirmation nor a reminder before a decision" do
+      book
+      Appointments::SendReminders.call(now: Time.utc(2026, 11, 2, 9, 5))
+      expect(Notification.where(kind: ["appointment_confirmed", "appointment_reminder"])).to(be_empty)
+    end
+  end
+
   describe "places" do
     it "refuses a time that is already taken and stores nothing from that request" do
       book(extra: { idempotency_key: "a" })

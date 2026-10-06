@@ -5,6 +5,7 @@
   "mark_all": "Marcar todas como lidas",
   "empty": "Ainda sem notificações.",
   "kind_appointment_created": "Nova marcação",
+  "kind_appointment_requested": "Marcação por aprovar",
   "kind_appointment_cancelled": "Marcação cancelada",
   "kind_unknown": "Atualização",
   "sessions_one": "{{count, number}} sessão",

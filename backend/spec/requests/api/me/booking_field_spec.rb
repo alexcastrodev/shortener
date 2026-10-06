@@ -131,11 +131,23 @@ RSpec.describe("the booking question", type: :request) do
       expect(response).to(have_http_status(:unprocessable_entity))
     end
 
-    it "rejects a manual approval and an unknown time zone for now" do
+    it "takes a manual approval with a one-day deadline that declines by default" do
       add_booking({ rules: { approval: "manual" } })
-      expect(response).to(have_http_status(:unprocessable_entity))
-      add_booking({ rules: { time_zone: "Mars/Olympus" } })
-      expect(response).to(have_http_status(:unprocessable_entity))
+      expect(response).to(have_http_status(:created))
+      expect(booking_field["rules"]).to(include("approval" => "manual", "approval_timeout_minutes" => 1440, "approval_on_timeout" => "decline"))
+    end
+
+    {
+      "an unknown approval mode" => { approval: "sometimes" },
+      "a deadline under five minutes" => { approval: "manual", approval_timeout_minutes: 4 },
+      "a deadline over thirty days" => { approval: "manual", approval_timeout_minutes: 43_201 },
+      "accepting on timeout, not available yet" => { approval: "manual", approval_on_timeout: "accept" },
+      "an unknown time zone" => { time_zone: "Mars/Olympus" },
+    }.each do |label, rules|
+      it "rejects #{label}" do
+        add_booking({ rules: rules })
+        expect(response).to(have_http_status(:unprocessable_entity))
+      end
     end
 
     it "treats an empty capacity as unlimited" do

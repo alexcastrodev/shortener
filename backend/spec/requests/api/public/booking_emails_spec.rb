@@ -188,4 +188,24 @@ RSpec.describe("emails for a booking", type: :request) do
       expect { described_class.perform_now }.to(have_enqueued_job(NotificationDeliveryJob).exactly(1).times)
     end
   end
+
+  describe "manual approval" do
+    before do
+      Forms::Definition.update(form.reload, form.fields.first["id"], { "rules" => { "approval" => "manual", "approval_timeout_minutes" => 60 } })
+      Forms::Publish.call(form: form.reload)
+    end
+
+    it "writes the owner's request with the deadline and the client's receipt with a manage link" do
+      book(extra: { client_locale: "pt-PT" })
+      deliveries.clear
+      deliver_all
+
+      owner_mail = deliveries.find { |mail| mail.to == [current_user.email] }
+      client_mail = deliveries.find { |mail| mail.to == ["ana@example.com"] }
+      expect(owner_mail.subject).to(start_with("Booking to approve: Haircut"))
+      expect(owner_mail.text_part.body.to_s).to(include("2026-11-02 09:00"))
+      expect(client_mail.subject).to(start_with("Pedido recebido: Haircut"))
+      expect(client_mail.text_part.body.to_s).to(include("/m/"))
+    end
+  end
 end

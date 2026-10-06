@@ -5,6 +5,7 @@
   "error_title": "Algo correu mal",
   "error_body": "Não foi possível carregar a sua marcação. Tente novamente.",
   "status_confirmed": "Confirmada",
+  "status_pending": "A aguardar aprovação",
   "status_cancelled": "Cancelada",
   "service": "Serviço",
   "status": "Estado",

@@ -1,0 +1,12 @@
+<%= t(".title") %>
+
+<%= t(".intro", service: @service) %>
+<% @sessions.each do |session| %>
+- <%= session %>
+<% end %>
+
+<%= t(".reply") %>
+
+<%= t(".manage", url: @manage_url) %>
+
+Kurz · https://kurz.fyi
