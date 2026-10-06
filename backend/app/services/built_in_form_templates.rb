@@ -94,21 +94,36 @@ module BuiltInFormTemplates
     },
   ].freeze
 
-  def all
-    TEMPLATES
+  def all(locale: nil)
+    TEMPLATES.map { |template| localized(template, locale) }
   end
 
-  def find(id)
-    TEMPLATES.find { |template| template["id"] == id }
+  def find(id, locale: nil)
+    template = TEMPLATES.find { |item| item["id"] == id }
+    template && localized(template, locale)
   end
 
-  def build(id)
-    template = find(id) || return
+  def build(id, locale: nil)
+    template = find(id, locale: locale) || return
     {
       "title" => template["title"],
       "theme" => template["theme"],
       "thank_you_message" => template["thank_you_message"],
       "fields" => template["fields"].map { |field| Forms::FieldSchema.with_new_ids(field) },
     }
+  end
+
+  def localized(template, locale)
+    texts = BuiltInFormTemplatesPt::TEXTS[template["id"]] if locale == "pt-PT"
+    return template unless texts
+
+    template.merge(texts.slice("name", "description", "title", "thank_you_message")).merge("fields" => template["fields"].zip(texts["fields"]).map { |field, text| translate(field, text) })
+  end
+
+  def translate(field, text)
+    field = field.merge("label" => text["label"])
+    field = field.merge("help" => text["help"]) if field.key?("help") && text["help"]
+    field = field.merge("choices" => text["choices"].map { |label| { "label" => label } }) if text["choices"]
+    field
   end
 end

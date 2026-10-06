@@ -44,8 +44,8 @@ module Forms
       form
     end
 
-    def apply_template(form, template_id)
-      built = BuiltInFormTemplates.build(template_id)
+    def apply_template(form, template_id, locale: nil)
+      built = BuiltInFormTemplates.build(template_id, locale: locale)
       reject(form, :template, "is unknown") unless built
 
       form.with_lock do
