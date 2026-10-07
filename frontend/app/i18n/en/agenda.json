@@ -5,6 +5,8 @@
   "next": "Next",
   "view_label": "View",
   "view_week": "Week",
+  "view_month": "Month",
+  "more": "+{{count}} more",
   "view_day": "Day",
   "sessions_one": "{{count}} session",
   "sessions_other": "{{count}} sessions",

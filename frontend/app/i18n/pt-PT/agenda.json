@@ -5,6 +5,8 @@
   "next": "Seguinte",
   "view_label": "Vista",
   "view_week": "Semana",
+  "view_month": "Mês",
+  "more": "+{{count}} mais",
   "view_day": "Dia",
   "sessions_one": "{{count}} sessão",
   "sessions_other": "{{count}} sessões",

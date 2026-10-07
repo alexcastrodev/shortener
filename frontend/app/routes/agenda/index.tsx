@@ -297,15 +297,21 @@ export default function AgendaPage() {
   };
 
   const label =
-    view === 'day'
+    view === 'month'
       ? formatDate(`${anchor}T12:00:00Z`, {
-          weekday: 'long',
-          day: 'numeric',
           month: 'long',
-          ...(isPhone ? {} : { year: 'numeric' }),
+          year: 'numeric',
           timeZone: 'UTC',
         })
-      : `${formatDate(`${from}T12:00:00Z`, { day: 'numeric', month: 'short', timeZone: 'UTC' })} – ${formatDate(`${to}T12:00:00Z`, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}`;
+      : view === 'day'
+        ? formatDate(`${anchor}T12:00:00Z`, {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            ...(isPhone ? {} : { year: 'numeric' }),
+            timeZone: 'UTC',
+          })
+        : `${formatDate(`${from}T12:00:00Z`, { day: 'numeric', month: 'short', timeZone: 'UTC' })} – ${formatDate(`${to}T12:00:00Z`, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}`;
 
   const occupancyText = (session: AgendaSession) =>
     session.capacity === null
@@ -542,6 +548,7 @@ export default function AgendaPage() {
             data={[
               { value: 'week', label: t('view_week') },
               { value: 'day', label: t('view_day') },
+              { value: 'month', label: t('view_month') },
             ]}
           />
         )}
@@ -629,7 +636,7 @@ export default function AgendaPage() {
               })}
             </div>
           )}
-          {!isPhone && (
+          {!isPhone && view !== 'month' && (
             <div className="flex border-b border-border">
               <div className={GUTTER} />
               {days.map(day => (
@@ -659,8 +666,102 @@ export default function AgendaPage() {
               {t('empty')}
             </p>
           )}
+          {view === 'month' && (
+            <div
+              className={`relative overflow-y-auto ${expanded ? 'min-h-0 flex-1' : 'max-h-[calc(100dvh-14rem)] min-h-80'}`}
+            >
+              {isLoading && (
+                <div className="absolute inset-0 z-30 animate-pulse bg-muted/60" />
+              )}
+              <div className="grid grid-cols-7 border-b border-border">
+                {days.slice(0, 7).map(day => (
+                  <p
+                    key={day}
+                    className="py-2 text-center text-[11px] font-medium text-muted-foreground uppercase"
+                  >
+                    {formatDate(`${day}T12:00:00Z`, {
+                      weekday: 'short',
+                      timeZone: 'UTC',
+                    })}
+                  </p>
+                ))}
+              </div>
+              <div className="grid grid-cols-7">
+                {days.map(day => {
+                  const items = [...(byDay.get(day) ?? [])].sort((a, b) =>
+                    a.starts_at.localeCompare(b.starts_at)
+                  );
+                  const inMonth = day.slice(0, 7) === anchor.slice(0, 7);
+                  const shown = items.slice(0, 3);
+                  return (
+                    <div
+                      key={day}
+                      className={`min-h-28 min-w-0 border-r border-b border-border p-1 ${inMonth ? '' : 'bg-muted/30 text-muted-foreground'}`}
+                    >
+                      <button
+                        type="button"
+                        aria-label={formatDate(`${day}T12:00:00Z`, {
+                          dateStyle: 'full',
+                          timeZone: 'UTC',
+                        })}
+                        onClick={() => {
+                          pick(day);
+                          setView('day');
+                        }}
+                        className={`flex size-7 items-center justify-center rounded-full text-sm hover:bg-accent focus-visible:outline-2 focus-visible:outline-primary ${day === today ? 'bg-primary text-primary-foreground hover:bg-primary' : ''}`}
+                      >
+                        {Number(day.slice(8))}
+                      </button>
+                      <div className="mt-1 flex flex-col gap-0.5">
+                        {shown.map(session => {
+                          const id = keyOf(session);
+                          const color =
+                            colors.get(categoryOf(session)) ??
+                            'var(--color-primary)';
+                          const isSelected = id === selected;
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() =>
+                                setSelected(isSelected ? null : id)
+                              }
+                              className={`truncate rounded border px-1 py-0.5 text-left text-[11px] text-foreground focus-visible:outline-2 focus-visible:outline-foreground ${session.pending > 0 ? 'border-dashed' : ''} ${isSelected ? 'ring-2 ring-foreground/70' : ''}`}
+                              style={{
+                                background: `color-mix(in srgb, ${color} ${isSelected ? 34 : 18}%, var(--color-background))`,
+                                borderColor: `color-mix(in srgb, ${color} 44%, transparent)`,
+                              }}
+                            >
+                              <span className="font-mono">
+                                {clock(minutesOfDay(session.starts_at, zone))}
+                              </span>{' '}
+                              {session.service_name ?? t('service_fallback')}
+                            </button>
+                          );
+                        })}
+                        {items.length > shown.length && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              pick(day);
+                              setView('day');
+                            }}
+                            className="rounded px-1 text-left text-[11px] text-muted-foreground hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-primary"
+                          >
+                            {t('more', { count: items.length - shown.length })}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div
             ref={scroller}
+            hidden={view === 'month'}
             onKeyDown={onGridKey}
             className={`relative overflow-y-auto ${expanded ? 'min-h-0 flex-1 overscroll-contain' : 'max-h-[calc(100dvh-20rem)] min-h-80 lg:max-h-[calc(100dvh-14rem)] max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:overscroll-contain'}`}
           >

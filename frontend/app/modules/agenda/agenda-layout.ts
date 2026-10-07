@@ -4,7 +4,7 @@ export const HOUR_PX = 52;
 export const MIN_BLOCK_PX = 26;
 export const DEFAULT_DURATION = 60;
 
-export type View = 'week' | 'day';
+export type View = 'week' | 'day' | 'month';
 
 export type Block = {
   session: AgendaSession;
@@ -65,6 +65,10 @@ export function weekStart(date: string) {
 
 export function rangeFor(view: View, anchor: string) {
   if (view === 'day') return { from: anchor, to: anchor, days: [anchor] };
+  if (view === 'month') {
+    const { from, to } = monthRange(anchor);
+    return { from, to, days: monthDays(anchor).map(item => item.date) };
+  }
   const from = weekStart(anchor);
   return {
     from,
@@ -74,6 +78,7 @@ export function rangeFor(view: View, anchor: string) {
 }
 
 export function step(view: View, anchor: string, direction: -1 | 1) {
+  if (view === 'month') return addMonths(anchor, direction);
   return addDays(anchor, (view === 'week' ? 7 : 1) * direction);
 }
 

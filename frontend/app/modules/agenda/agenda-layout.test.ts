@@ -247,3 +247,13 @@ test('canReceive: same service, other time, in the future, with room', () => {
     false
   );
 });
+
+test('the month view covers six weeks starting on a Monday and steps by month', () => {
+  const range = rangeFor('month', '2026-10-07');
+  assert.equal(range.days.length, 42);
+  assert.equal(range.days[0], '2026-09-28');
+  assert.equal(range.from, '2026-09-28');
+  assert.equal(range.to, '2026-11-08');
+  assert.equal(step('month', '2026-10-31', 1), '2026-11-30');
+  assert.equal(step('month', '2026-03-31', -1), '2026-02-28');
+});
