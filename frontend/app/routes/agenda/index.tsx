@@ -31,29 +31,23 @@ import type {
 import { useUserState } from '@internal/core/states/use-user-state';
 import { formatDate } from '../../i18n/format';
 import {
-  HOUR_PX,
   NO_CATEGORY,
   addMonths,
-  canReceive,
-  cascadeSpan,
   categoryColors,
   categoryOf,
   clock,
   datesWithSessions,
-  dayBlocks,
   minutesOfDay,
   monthRange,
-  neighbour,
   pendingTotal,
   rangeFor,
   sessionsByDay,
   step,
   todayIn,
-  type Block,
-  type Direction,
-  type NavBlock,
   type View,
 } from '../../modules/agenda/agenda-layout.ts';
+import { keyOf } from '../../modules/agenda/schedule-events.ts';
+import { AgendaCalendar } from './agenda-calendar';
 import { FiltersPanel } from './filters-panel';
 import { SessionPanel, agendaErrorText } from './session-panel';
 import {
@@ -68,16 +62,6 @@ export function meta({}: Route.MetaArgs) {
 
 export const ssr = false;
 
-const keyOf = (session: AgendaSession) =>
-  `${session.form_id}:${session.service_id}:${session.starts_at}`;
-const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
-const ARROWS: Record<string, Direction> = {
-  ArrowLeft: 'left',
-  ArrowRight: 'right',
-  ArrowUp: 'up',
-  ArrowDown: 'down',
-};
-const GUTTER = 'w-12 shrink-0 sm:w-14';
 // Bottom sheets keep their last row above the home indicator.
 const SHEET_STYLES = {
   header: { background: 'transparent' },
@@ -99,9 +83,6 @@ export default function AgendaPage() {
   const isXl = useMediaQuery('(min-width: 1536px)', false, {
     getInitialValueInEffect: false,
   });
-  const canDrag = useMediaQuery('(hover: hover) and (pointer: fine)', false, {
-    getInitialValueInEffect: false,
-  });
   const [chosenView, setView] = useState<View>('week');
   const view: View = isPhone ? 'day' : chosenView;
   const [anchor, setAnchor] = useState(() => todayIn(fallbackZone));
@@ -117,8 +98,6 @@ export default function AgendaPage() {
   const queryClient = useQueryClient();
   const { mutateAsync: act, isPending: approving } = useAppointmentAction();
   const [now, setNow] = useState(() => new Date());
-  const scroller = useRef<HTMLDivElement>(null);
-  const scrolled = useRef(false);
   const lastChosen = useRef<AgendaSession | null>(null);
 
   const { from: monthFrom, to: monthTo } = monthRange(anchor);
@@ -132,15 +111,6 @@ export default function AgendaPage() {
     const timer = window.setInterval(() => setNow(new Date()), 30_000);
     return () => window.clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    if (scrolled.current || !scroller.current || !data) return;
-    scrolled.current = true;
-    scroller.current.scrollTop = Math.max(
-      0,
-      (minutesOfDay(now, zone) / 60 - 2) * HOUR_PX
-    );
-  }, [data, now, zone]);
 
   useEffect(() => {
     if (!selected || !isXl) return;
@@ -217,22 +187,6 @@ export default function AgendaPage() {
     [all, hiddenForms, hiddenCategories]
   );
   const byDay = useMemo(() => sessionsByDay(visible, null), [visible]);
-  const columns = useMemo(
-    () => days.map(day => dayBlocks(byDay.get(day) ?? [], zone)),
-    [days, byDay, zone]
-  );
-  const navBlocks = useMemo<NavBlock[]>(
-    () =>
-      columns.flatMap((column, index) =>
-        column.map(block => ({
-          id: keyOf(block.session),
-          day: days[index],
-          start: block.top,
-          lane: block.lane,
-        }))
-      ),
-    [columns, days]
-  );
   const chosen = visible.find(session => keyOf(session) === selected) ?? null;
   if (chosen) lastChosen.current = chosen;
   const pending = pendingTotal(scoped);
@@ -241,27 +195,18 @@ export default function AgendaPage() {
     (waitingOnly ? 1 : 0) + hiddenForms.size + hiddenCategories.size;
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: getAgendaKey });
-  const [drag, setDrag] = useState<{
-    from: AgendaSession;
-    clients: AgendaAppointment[];
-  } | null>(null);
-  const accepts = (session: AgendaSession) =>
-    drag !== null && canReceive(drag.from, drag.clients.length, session);
   const clientsOf = (session: AgendaSession) =>
     session.appointments.filter(item => item.status !== 'unverified');
-  const drop = async (session: AgendaSession) => {
-    if (!drag) return;
-    const { clients } = drag;
-    setDrag(null);
+  const move = async (from: AgendaSession, target: AgendaSession) => {
     let failure: unknown = null;
-    for (const client of clients) {
+    for (const client of clientsOf(from)) {
       try {
         await act({
           id: client.id,
           action: 'reschedule',
           data: {
-            date: session.date,
-            time: clock(minutesOfDay(session.starts_at, zone)),
+            date: target.date,
+            time: clock(minutesOfDay(target.starts_at, zone)),
           },
         });
       } catch (error) {
@@ -297,15 +242,21 @@ export default function AgendaPage() {
   };
 
   const label =
-    view === 'day'
+    view === 'month'
       ? formatDate(`${anchor}T12:00:00Z`, {
-          weekday: 'long',
-          day: 'numeric',
           month: 'long',
-          ...(isPhone ? {} : { year: 'numeric' }),
+          year: 'numeric',
           timeZone: 'UTC',
         })
-      : `${formatDate(`${from}T12:00:00Z`, { day: 'numeric', month: 'short', timeZone: 'UTC' })} – ${formatDate(`${to}T12:00:00Z`, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}`;
+      : view === 'day'
+        ? formatDate(`${anchor}T12:00:00Z`, {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            ...(isPhone ? {} : { year: 'numeric' }),
+            timeZone: 'UTC',
+          })
+        : `${formatDate(`${from}T12:00:00Z`, { day: 'numeric', month: 'short', timeZone: 'UTC' })} – ${formatDate(`${to}T12:00:00Z`, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}`;
 
   const occupancyText = (session: AgendaSession) =>
     session.capacity === null
@@ -316,23 +267,6 @@ export default function AgendaPage() {
             booked: session.booked,
             capacity: session.capacity,
           });
-
-  const focusBlock = (id: string) => {
-    const target = document.querySelector<HTMLElement>(
-      `[data-block="${CSS.escape(id)}"]`
-    );
-    target?.focus();
-    target?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  };
-
-  const onGridKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    const direction = ARROWS[event.key];
-    const id = (event.target as HTMLElement).dataset.block;
-    if (!direction || !id) return;
-    event.preventDefault();
-    const next = neighbour(navBlocks, id, direction);
-    if (next) focusBlock(next);
-  };
 
   const pick = (day: string) => {
     setAnchor(day);
@@ -375,78 +309,6 @@ export default function AgendaPage() {
       setHiddenCategories(set => toggle(set, id)),
   };
 
-  const renderBlock = (block: Block) => {
-    const session = block.session;
-    const id = keyOf(session);
-    const isSelected = id === selected;
-    const color = colors.get(categoryOf(session)) ?? 'var(--color-primary)';
-    const compact = block.height < 44;
-    const span = cascadeSpan(block.lane, block.lanes);
-    const time = clock(minutesOfDay(session.starts_at, zone));
-    const name = session.service_name ?? t('service_fallback');
-    const pendingText =
-      session.pending > 0 ? t('pending', { count: session.pending }) : '';
-    return (
-      <button
-        key={id}
-        type="button"
-        data-block={id}
-        aria-pressed={isSelected}
-        aria-label={[name, time, occupancyText(session), pendingText]
-          .filter(Boolean)
-          .join(', ')}
-        onClick={() => setSelected(isSelected ? null : id)}
-        draggable={
-          canDrag &&
-          clientsOf(session).length > 0 &&
-          new Date(session.starts_at) > new Date()
-        }
-        onDragStart={event => {
-          event.dataTransfer.effectAllowed = 'move';
-          event.dataTransfer.setData('text/plain', id);
-          setDrag({ from: session, clients: clientsOf(session) });
-        }}
-        onDragEnd={() => setDrag(null)}
-        onDragOver={event => {
-          if (accepts(session)) event.preventDefault();
-        }}
-        onDrop={event => {
-          if (!accepts(session)) return;
-          event.preventDefault();
-          drop(session);
-        }}
-        className={`absolute overflow-hidden rounded-md border px-1.5 py-1 text-left text-xs focus-visible:z-30 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foreground ${session.pending > 0 ? 'border-dashed' : ''} ${accepts(session) ? 'ring-2 ring-primary' : ''} ${isSelected ? 'z-20 ring-2 ring-foreground/70' : 'z-(--lane) transition-[z-index] duration-0 hover:z-30 hover:delay-[600ms]'}`}
-        style={{
-          top: block.top,
-          height: block.height,
-          left: `calc(${span.left}% + 2px)`,
-          width: `calc(${span.width}% - 4px)`,
-          ['--lane' as string]: block.lane + 1,
-          background: `color-mix(in srgb, ${color} ${isSelected ? 34 : 18}%, var(--color-background))`,
-          borderColor: `color-mix(in srgb, ${color} ${isSelected ? 100 : 44}%, transparent)`,
-        }}
-      >
-        <span
-          className={`block truncate font-semibold ${compact ? 'leading-none' : ''}`}
-        >
-          {name}
-          {compact && (
-            <span className="ml-1 text-[11px] font-normal text-foreground/75">
-              {occupancyText(session)}
-              {pendingText ? ` · ${pendingText}` : ''}
-            </span>
-          )}
-        </span>
-        {!compact && (
-          <span className="block truncate text-[11px] text-foreground/75">
-            {time} · {occupancyText(session)}
-            {pendingText ? ` · ${pendingText}` : ''}
-          </span>
-        )}
-      </button>
-    );
-  };
-
   const panel = lastChosen.current && (
     <SessionPanel
       session={lastChosen.current}
@@ -456,13 +318,6 @@ export default function AgendaPage() {
       onClose={() => setSelected(null)}
       onChanged={refresh}
       onDialog={setDialogOpen}
-      onDragAppointment={appointment =>
-        setDrag(
-          appointment && lastChosen.current
-            ? { from: lastChosen.current, clients: [appointment] }
-            : null
-        )
-      }
     />
   );
 
@@ -542,6 +397,7 @@ export default function AgendaPage() {
             data={[
               { value: 'week', label: t('view_week') },
               { value: 'day', label: t('view_day') },
+              { value: 'month', label: t('view_month') },
             ]}
           />
         )}
@@ -629,92 +485,37 @@ export default function AgendaPage() {
               })}
             </div>
           )}
-          {!isPhone && (
-            <div className="flex border-b border-border">
-              <div className={GUTTER} />
-              {days.map(day => (
-                <div
-                  key={day}
-                  className="min-w-0 flex-1 border-l border-border py-2 text-center"
-                >
-                  <p
-                    className={`text-[11px] font-medium uppercase ${day === today ? 'text-primary' : 'text-muted-foreground'}`}
-                  >
-                    {formatDate(`${day}T12:00:00Z`, {
-                      weekday: 'short',
-                      timeZone: 'UTC',
-                    })}
-                  </p>
-                  <p
-                    className={`mx-auto mt-0.5 flex size-8 items-center justify-center rounded-full text-sm ${day === today ? 'bg-primary text-primary-foreground' : ''}`}
-                  >
-                    {Number(day.slice(8))}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
           {!isLoading && visible.length === 0 && (
             <p className="border-b border-border p-3 text-center text-sm text-muted-foreground">
               {t('empty')}
             </p>
           )}
-          <div
-            ref={scroller}
-            onKeyDown={onGridKey}
-            className={`relative overflow-y-auto ${expanded ? 'min-h-0 flex-1 overscroll-contain' : 'max-h-[calc(100dvh-20rem)] min-h-80 lg:max-h-[calc(100dvh-14rem)] max-md:max-h-none max-md:min-h-0 max-md:flex-1 max-md:overscroll-contain'}`}
-          >
+          <div className="relative">
             {isLoading && (
               <div className="absolute inset-0 z-30 animate-pulse bg-muted/60" />
             )}
-            <div className="relative flex" style={{ height: 24 * HOUR_PX }}>
-              <div className={GUTTER}>
-                {HOURS.map(hour => (
-                  <div
-                    key={hour}
-                    className="relative pr-2 text-right font-mono text-[10.5px] text-muted-foreground"
-                    style={{ height: HOUR_PX }}
-                  >
-                    {hour === 0 ? null : (
-                      <span className="absolute right-2 -top-2">
-                        {clock(hour * 60)}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {days.map((day, index) => (
-                <div
-                  key={day}
-                  className={`relative min-w-0 flex-1 border-l border-border ${day === today ? 'bg-primary/5' : ''}`}
-                >
-                  {HOURS.map(hour => (
-                    <div
-                      key={hour}
-                      className="border-b border-border/60"
-                      style={{ height: HOUR_PX }}
-                    />
-                  ))}
-                  {columns[index].map(renderBlock)}
-                  {day === today && (
-                    <div
-                      role="img"
-                      aria-label={`${t('now')} ${clock(minutesOfDay(now, zone))}`}
-                      className="pointer-events-none absolute right-0 left-0 z-20 h-0.5 bg-red-600"
-                      style={{ top: (minutesOfDay(now, zone) / 60) * HOUR_PX }}
-                    >
-                      <span className="absolute -top-1 -left-1 size-2.5 rounded-full bg-red-600" />
-                      <span
-                        aria-hidden="true"
-                        className="absolute right-0 bottom-0.5 rounded-sm bg-red-600 px-1 font-mono text-[10px] text-white"
-                      >
-                        {clock(minutesOfDay(now, zone))}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            <AgendaCalendar
+              view={view}
+              anchor={anchor}
+              sessions={visible}
+              zone={zone}
+              colors={colors}
+              height={
+                isPhone
+                  ? 'calc(100dvh - 24rem)'
+                  : expanded
+                    ? 'calc(100dvh - 8rem)'
+                    : 'calc(100dvh - 14rem)'
+              }
+              occupancyText={occupancyText}
+              clientsOf={clientsOf}
+              onSelect={id => setSelected(selected === id ? null : id)}
+              onPickDay={day => {
+                pick(day);
+                setView('day');
+              }}
+              onMove={move}
+            />
           </div>
         </Card>
 
