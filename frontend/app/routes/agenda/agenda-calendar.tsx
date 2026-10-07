@@ -2,6 +2,7 @@ import 'dayjs/locale/en';
 import 'dayjs/locale/pt';
 import { DayView, MonthView, WeekView } from '@mantine/schedule';
 import type { ScheduleEventData } from '@mantine/schedule';
+import { notifications } from '@mantine/notifications';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AgendaSession } from '@internal/core/actions/get-agenda/get-agenda.types';
@@ -29,7 +30,7 @@ type Props = {
   clientsOf: (session: AgendaSession) => unknown[];
   onSelect: (key: string) => void;
   onPickDay: (day: string) => void;
-  onMove: (from: AgendaSession, target: AgendaSession) => void;
+  onMove: (from: AgendaSession, to: { date: string; time: string }) => void;
 };
 
 const sessionOf = (event: ScheduleEventData) =>
@@ -77,8 +78,10 @@ export function AgendaCalendar({
     start: string;
   }) => {
     const from = sessionOf(event);
+    if (start.replace('T', ' ').slice(0, 16) <= nowLocal().slice(0, 16))
+      return false;
     const target = targetFor(sessions, from, start, zone);
-    return !!target && canReceive(from, clientsOf(from).length, target);
+    return !target || canReceive(from, clientsOf(from).length, target);
   };
   const onEventDrop = ({
     event,
@@ -87,9 +90,11 @@ export function AgendaCalendar({
     event: ScheduleEventData;
     newStart: string;
   }) => {
-    const from = sessionOf(event);
-    const target = targetFor(sessions, from, newStart, zone);
-    if (target) onMove(from, target);
+    const normal = newStart.replace('T', ' ');
+    onMove(sessionOf(event), {
+      date: normal.slice(0, 10),
+      time: normal.slice(11, 16),
+    });
   };
   const renderEventBody = (event: ScheduleEventData) => {
     const session = sessionOf(event);
@@ -142,6 +147,8 @@ export function AgendaCalendar({
     canDragEvent,
     canDropEvent,
     onEventDrop,
+    onEventPlacementRejected: () =>
+      notifications.show({ message: t('drop_rejected'), color: 'orange' }),
     renderEventBody,
     renderEvent,
     onEventClick: (event: ScheduleEventData) =>

@@ -139,6 +139,30 @@ RSpec.describe("owner actions on an appointment: reschedule and remind", type: :
       expect(json["error"]).to(eq("unavailable"))
     end
 
+    it "lets the owner drop a session on any future time with force, and still tells the client" do
+      row = first_row
+      perform_enqueued_jobs { reschedule(row, { date: "2026-11-14", time: "09:30", force: true }) }
+
+      expect(response).to(have_http_status(:ok))
+      moved = Appointment.find(json["appointment"]["id"])
+      expect(moved.slot.starts_at).to(eq(Time.utc(2026, 11, 14, 9, 30)))
+      expect(row.reload.status).to(eq("rescheduled"))
+      expect(deliveries.map(&:to)).to(eq([["ana@example.com"]]))
+      expect(deliveries.last.text_part.body.to_s).to(include("Now: 2026-11-14 09:30 (Europe/Lisbon)"))
+    end
+
+    it "keeps force from moving a session into the past, onto a full time or with a bad time" do
+      book([["2026-11-11", "09:00"]], name: "Bo", ip: "198.51.100.8")
+      row = first_row
+      expect { reschedule(row, { date: "2026-11-11", time: "09:00", force: true }) }.not_to(change { [Appointment.count, AppointmentSlot.pluck(:starts_at, :booked)] })
+      expect(response).to(have_http_status(:conflict))
+      reschedule(row, { date: "2026-11-01", time: "09:00", force: true })
+      expect(response).to(have_http_status(:conflict))
+      reschedule(row, { date: "2026-11-12", time: "25:99", force: true })
+      expect(response).to(have_http_status(:conflict))
+      expect(row.reload.status).to(eq("confirmed"))
+    end
+
     it "refuses a taken time and changes nothing" do
       book([["2026-11-11", "09:00"]], name: "Bo", ip: "198.51.100.8")
       row = first_row

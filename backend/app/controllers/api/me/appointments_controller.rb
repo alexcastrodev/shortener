@@ -18,7 +18,7 @@ class Api::Me::AppointmentsController < ApplicationController
   end
 
   def reschedule
-    result = Appointments::Reschedule.call(row: @appointment, date: params[:date], time: params[:time], message: params[:message])
+    result = Appointments::Reschedule.call(row: @appointment, date: params[:date], time: params[:time], message: params[:message], force: ActiveModel::Type::Boolean.new.cast(params[:force]) == true)
     case result.status
     when :ok then render(json: { appointment: Appointments::Search.row(result.record) }, status: :ok)
     when :same_time then render(json: { error: "same_time" }, status: :unprocessable_content)
