@@ -8,6 +8,7 @@
   "view_month": "Mês",
   "more": "+{{count}} mais",
   "drop_rejected": "Esse horário já passou ou não tem vagas para estes clientes.",
+  "done_move": "Movido. O horário anterior continua livre para novas marcações.",
   "view_day": "Dia",
   "sessions_one": "{{count}} sessão",
   "sessions_other": "{{count}} sessões",

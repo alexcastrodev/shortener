@@ -8,6 +8,7 @@
   "view_month": "Month",
   "more": "+{{count}} more",
   "drop_rejected": "That time is in the past or has no room for these clients.",
+  "done_move": "Moved. The earlier time stays open for new bookings.",
   "view_day": "Day",
   "sessions_one": "{{count}} session",
   "sessions_other": "{{count}} sessions",
