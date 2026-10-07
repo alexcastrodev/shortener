@@ -9,6 +9,7 @@ export interface AppointmentActionParams {
     reason?: string;
     date?: string;
     time?: string;
+    force?: boolean;
     scope?: 'all' | 'one' | 'remaining';
   };
 }

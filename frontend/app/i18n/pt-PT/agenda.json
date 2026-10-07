@@ -7,6 +7,7 @@
   "view_week": "Semana",
   "view_month": "Mês",
   "more": "+{{count}} mais",
+  "drop_rejected": "Esse horário já passou ou não tem vagas para estes clientes.",
   "view_day": "Dia",
   "sessions_one": "{{count}} sessão",
   "sessions_other": "{{count}} sessões",

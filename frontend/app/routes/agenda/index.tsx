@@ -197,17 +197,17 @@ export default function AgendaPage() {
     queryClient.invalidateQueries({ queryKey: getAgendaKey });
   const clientsOf = (session: AgendaSession) =>
     session.appointments.filter(item => item.status !== 'unverified');
-  const move = async (from: AgendaSession, target: AgendaSession) => {
+  const move = async (
+    from: AgendaSession,
+    to: { date: string; time: string }
+  ) => {
     let failure: unknown = null;
     for (const client of clientsOf(from)) {
       try {
         await act({
           id: client.id,
           action: 'reschedule',
-          data: {
-            date: target.date,
-            time: clock(minutesOfDay(target.starts_at, zone)),
-          },
+          data: { ...to, force: true },
         });
       } catch (error) {
         failure ??= error;

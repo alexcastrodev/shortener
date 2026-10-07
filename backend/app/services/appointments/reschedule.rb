@@ -5,7 +5,7 @@ module Appointments
     MESSAGE_MAX = 500
     Result = Data.define(:status, :record)
 
-    def call(row:, date:, time:, message: nil, now: Time.current)
+    def call(row:, date:, time:, message: nil, now: Time.current, force: false)
       form = row.form
       booking = Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" }
       service = booking&.fetch("services", [])&.find { |item| item["id"] == row.slot.service_key }
@@ -14,7 +14,7 @@ module Appointments
       context = { form: form, booking: booking, service: service, now: now }
       return Result.new(:same_time, nil) if same_time?(context, row, date, time)
 
-      target = free_slot(context, date, time)
+      target = force ? any_slot(context, date, time, now) : free_slot(context, date, time)
       return Result.new(:unavailable, nil) unless target
 
       moved = nil
@@ -45,10 +45,23 @@ module Appointments
       nil
     end
 
-    def same_time?(context, row, date, time)
+    def any_slot(context, date, time, now)
+      starts_at = local_time(context, date, time)
+      starts_at && starts_at > now ? { starts_at: starts_at } : nil
+    rescue Date::Error
+      nil
+    end
+
+    def local_time(context, date, time)
       day = Date.iso8601(date.to_s)
       hours, minutes = time.to_s.split(":").map(&:to_i)
-      Time.find_zone!(context[:booking]["rules"]["time_zone"]).local(day.year, day.month, day.day, hours, minutes).utc == row.slot.starts_at
+      return unless time.to_s.match?(/\A([01]\d|2[0-3]):[0-5]\d\z/)
+
+      Time.find_zone!(context[:booking]["rules"]["time_zone"]).local(day.year, day.month, day.day, hours, minutes).utc
+    end
+
+    def same_time?(context, row, date, time)
+      local_time(context, date, time) == row.slot.starts_at
     rescue Date::Error
       false
     end
