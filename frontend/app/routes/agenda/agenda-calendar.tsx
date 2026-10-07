@@ -121,8 +121,9 @@ export function AgendaCalendar({
           ...props.style,
           ['--event-bg' as string]: `color-mix(in srgb, ${color} 26%, var(--color-background))`,
           ['--event-hover' as string]: `color-mix(in srgb, ${color} 38%, var(--color-background))`,
-          ['--event-color' as string]: 'var(--color-foreground)',
+          ['--event-color' as string]: `color-mix(in srgb, ${color} 55%, var(--color-foreground))`,
           border: `1px ${pending ? 'dashed' : 'solid'} ${color}`,
+          borderRadius: 'var(--event-radius)',
         }}
       />
     );
