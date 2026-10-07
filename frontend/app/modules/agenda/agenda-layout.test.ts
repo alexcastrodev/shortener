@@ -9,6 +9,7 @@ import {
   addDays,
   addMonths,
   categoryColors,
+  canReceive,
   cascadeSpan,
   categoryOf,
   datesWithSessions,
@@ -221,4 +222,28 @@ test('cascadeSpan: the top block keeps at least 60% however many overlap', () =>
     const { width } = cascadeSpan(lanes - 1, lanes);
     assert.ok(width >= 60 - 1e-9, `${lanes} lanes -> ${width}`);
   }
+});
+
+test('canReceive: same service, other time, in the future, with room', () => {
+  const from = session('2030-01-02T10:00:00Z', { booked: 1 });
+  const now = new Date('2029-12-31T00:00:00Z');
+  const target = session('2030-01-03T10:00:00Z');
+  assert.equal(canReceive(from, 1, target, now), true);
+  assert.equal(canReceive(from, 3, target, now), false);
+  assert.equal(canReceive(from, 0, target, now), false);
+  assert.equal(canReceive(from, 1, from, now), false);
+  assert.equal(
+    canReceive(from, 1, { ...target, service_id: 'other' }, now),
+    false
+  );
+  assert.equal(canReceive(from, 1, { ...target, form_id: 2 }, now), false);
+  assert.equal(canReceive(from, 1, { ...target, booked: 2 }, now), false);
+  assert.equal(
+    canReceive(from, 1, { ...target, capacity: null, booked: 9 }, now),
+    true
+  );
+  assert.equal(
+    canReceive(from, 1, session('2029-12-30T10:00:00Z'), now),
+    false
+  );
 });

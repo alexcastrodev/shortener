@@ -29,6 +29,22 @@ export function cascadeSpan(lane: number, lanes: number) {
   return { left, width: 100 - left };
 }
 
+export function canReceive(
+  from: AgendaSession,
+  moving: number,
+  target: AgendaSession,
+  now = new Date()
+) {
+  return (
+    moving > 0 &&
+    target.form_id === from.form_id &&
+    target.service_id === from.service_id &&
+    target.starts_at !== from.starts_at &&
+    new Date(target.starts_at) > now &&
+    (target.capacity === null || target.booked + moving <= target.capacity)
+  );
+}
+
 const toUtc = (date: string) => {
   const [year, month, day] = date.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day));
