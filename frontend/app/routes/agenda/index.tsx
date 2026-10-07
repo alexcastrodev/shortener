@@ -216,7 +216,7 @@ export default function AgendaPage() {
     notifications.show(
       failure
         ? { message: agendaErrorText(t, failure), color: 'red' }
-        : { message: t('done_reschedule'), color: 'teal' }
+        : { message: t('done_move'), color: 'teal' }
     );
     refresh();
   };
