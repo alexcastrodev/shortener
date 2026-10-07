@@ -26,6 +26,7 @@ import {
   todayIn,
   weekStart,
 } from './agenda-layout.ts';
+import { sameMoment, targetFor, toEvent } from './schedule-events.ts';
 
 const session = (
   startsAt: string,
@@ -246,4 +247,39 @@ test('canReceive: same service, other time, in the future, with room', () => {
     canReceive(from, 1, session('2029-12-30T10:00:00Z'), now),
     false
   );
+});
+
+test('schedule events use the wall clock of the agenda time zone', () => {
+  const lisbon = session('2026-10-07T08:30:00Z', { duration: 45 });
+  const event = toEvent(lisbon, 'Europe/Lisbon', new Map());
+  assert.equal(event.start, '2026-10-07 09:30:00');
+  assert.equal(event.end, '2026-10-07 10:15:00');
+  assert.equal(sameMoment('2026-10-07T09:30:00', '2026-10-07 09:30:00'), true);
+  assert.equal(
+    targetFor(
+      [lisbon],
+      session('2026-10-08T08:30:00Z'),
+      '2026-10-07 09:30:00',
+      'Europe/Lisbon'
+    ),
+    lisbon
+  );
+  assert.equal(
+    targetFor(
+      [lisbon],
+      session('2026-10-08T08:30:00Z', { service_id: 'x' }),
+      '2026-10-07 09:30:00',
+      'Europe/Lisbon'
+    ),
+    null
+  );
+});
+
+test('the month view covers six weeks starting on a Monday and steps by month', () => {
+  const range = rangeFor('month', '2026-10-07');
+  assert.equal(range.days.length, 42);
+  assert.equal(range.from, '2026-09-28');
+  assert.equal(range.to, '2026-11-08');
+  assert.equal(step('month', '2026-10-31', 1), '2026-11-30');
+  assert.equal(step('month', '2026-03-31', -1), '2026-02-28');
 });

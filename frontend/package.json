@@ -21,6 +21,7 @@
     "@mantine/hooks": "9.7.1",
     "@mantine/modals": "9.7.1",
     "@mantine/notifications": "9.7.1",
+    "@mantine/schedule": "9.7.1",
     "@react-router/node": "^8.4.0",
     "@react-router/serve": "^8.4.0",
     "@tabler/icons-react": "^3.48.0",

@@ -61,7 +61,6 @@ export function SessionPanel({
   onClose,
   onChanged,
   onDialog,
-  onDragAppointment,
 }: {
   session: AgendaSession;
   zone: string;
@@ -70,7 +69,6 @@ export function SessionPanel({
   onClose: () => void;
   onChanged: () => void;
   onDialog: (open: boolean) => void;
-  onDragAppointment: (appointment: AgendaAppointment | null) => void;
 }) {
   const { t } = useTranslation('agenda');
   const touch = inline
@@ -201,104 +199,85 @@ export function SessionPanel({
       {session.appointments.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('no_clients')}</p>
       ) : (
-        <>
-          {inline && session.appointments.some(a => a.status !== 'pending') && (
-            <p className="mb-2 text-xs text-muted-foreground">
-              {t('drag_hint')}
-            </p>
-          )}
-          <ul className="space-y-2">
-            {session.appointments.map(appointment => (
-              <li
-                key={appointment.id}
-                draggable={inline && appointment.status !== 'pending'}
-                onDragStart={event => {
-                  event.dataTransfer.effectAllowed = 'move';
-                  event.dataTransfer.setData(
-                    'text/plain',
-                    String(appointment.id)
-                  );
-                  onDragAppointment(appointment);
-                }}
-                onDragEnd={() => onDragAppointment(null)}
-                className={`rounded-md border border-border p-2 text-sm ${inline && appointment.status !== 'pending' ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        <ul className="space-y-2">
+          {session.appointments.map(appointment => (
+            <li
+              key={appointment.id}
+              className="rounded-md border border-border p-2 text-sm"
+            >
+              <p className="font-medium break-words">
+                {appointment.client_name ?? t('no_name')}
+              </p>
+              {appointment.client_email && (
+                <p className="text-xs break-all text-muted-foreground">
+                  {appointment.client_email}
+                </p>
+              )}
+              <p
+                className={`mt-1 text-xs ${appointment.status === 'pending' ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}
               >
-                <p className="font-medium break-words">
-                  {appointment.client_name ?? t('no_name')}
-                </p>
-                {appointment.client_email && (
-                  <p className="text-xs break-all text-muted-foreground">
-                    {appointment.client_email}
-                  </p>
+                {appointment.status === 'pending'
+                  ? t('status_pending')
+                  : appointment.status === 'unverified'
+                    ? t('status_unverified')
+                    : t('status_confirmed')}
+              </p>
+              <Group gap={6} mt={6}>
+                {appointment.status === 'pending' ? (
+                  <>
+                    <Button
+                      {...touch}
+                      color="brand"
+                      loading={isPending}
+                      onClick={() => run(appointment, 'approve')}
+                    >
+                      {t('approve')}
+                    </Button>
+                    <Button
+                      {...touch}
+                      variant="default"
+                      disabled={isPending}
+                      onClick={() => open({ kind: 'decline', appointment })}
+                    >
+                      {t('decline')}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      {...touch}
+                      variant="default"
+                      disabled={isPending}
+                      onClick={() => run(appointment, 'remind')}
+                    >
+                      {t('remind')}
+                    </Button>
+                    <Button
+                      {...touch}
+                      variant="default"
+                      disabled={isPending}
+                      onClick={() => open({ kind: 'reschedule', appointment })}
+                    >
+                      {t('reschedule')}
+                    </Button>
+                  </>
                 )}
-                <p
-                  className={`mt-1 text-xs ${appointment.status === 'pending' ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}
+                <Button
+                  {...touch}
+                  variant="subtle"
+                  color="red"
+                  disabled={isPending}
+                  onClick={() => {
+                    setScope('one');
+                    open({ kind: 'cancel', appointment });
+                  }}
                 >
-                  {appointment.status === 'pending'
-                    ? t('status_pending')
-                    : appointment.status === 'unverified'
-                      ? t('status_unverified')
-                      : t('status_confirmed')}
-                </p>
-                <Group gap={6} mt={6}>
-                  {appointment.status === 'pending' ? (
-                    <>
-                      <Button
-                        {...touch}
-                        color="brand"
-                        loading={isPending}
-                        onClick={() => run(appointment, 'approve')}
-                      >
-                        {t('approve')}
-                      </Button>
-                      <Button
-                        {...touch}
-                        variant="default"
-                        disabled={isPending}
-                        onClick={() => open({ kind: 'decline', appointment })}
-                      >
-                        {t('decline')}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        {...touch}
-                        variant="default"
-                        disabled={isPending}
-                        onClick={() => run(appointment, 'remind')}
-                      >
-                        {t('remind')}
-                      </Button>
-                      <Button
-                        {...touch}
-                        variant="default"
-                        disabled={isPending}
-                        onClick={() =>
-                          open({ kind: 'reschedule', appointment })
-                        }
-                      >
-                        {t('reschedule')}
-                      </Button>
-                    </>
-                  )}
-                  <Button
-                    {...touch}
-                    variant="subtle"
-                    color="red"
-                    disabled={isPending}
-                    onClick={() => {
-                      setScope('one');
-                      open({ kind: 'cancel', appointment });
-                    }}
-                  >
-                    {t('cancel')}
-                  </Button>
-                </Group>
-              </li>
-            ))}
-          </ul>
-        </>
+                  {t('cancel')}
+                </Button>
+              </Group>
+            </li>
+          ))}
+        </ul>
       )}
 
       <Modal
