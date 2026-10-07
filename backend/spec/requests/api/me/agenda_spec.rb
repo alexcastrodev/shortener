@@ -96,6 +96,17 @@ RSpec.describe("GET /api/me/agenda", type: :request) do
     expect(future[1]).to(include("booked" => 0, "pending" => 0, "appointments" => []))
   end
 
+  it "does not list a stored time that nobody holds any more, unless the schedule offers it" do
+    form = booking_form
+    book(form, Time.utc(2026, 11, 5, 7, 30))
+    AppointmentSlot.where(starts_at: Time.utc(2026, 11, 5, 7, 30)).update_all(booked: 0)
+    book(form, Time.utc(2026, 11, 5, 9))
+    AppointmentSlot.where(starts_at: Time.utc(2026, 11, 5, 9)).update_all(booked: 0)
+    agenda
+    times = json["sessions"].select { |session| session["date"] == "2026-11-05" }.map { |session| session["starts_at"] }
+    expect(times).to(eq(["2026-11-05T09:00:00Z", "2026-11-05T15:00:00Z"]))
+  end
+
   it "gives every session its length in minutes, from the booking when there is one and from the service otherwise" do
     form = booking_form
     book(form, Time.utc(2026, 11, 2, 9))
