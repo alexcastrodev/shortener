@@ -3,7 +3,7 @@ import 'dayjs/locale/pt';
 import { DayView, MonthView, WeekView } from '@mantine/schedule';
 import type { ScheduleEventData } from '@mantine/schedule';
 import { notifications } from '@mantine/notifications';
-import { IconTicket } from '@tabler/icons-react';
+import { IconTicket, IconUser } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AgendaSession } from '@internal/core/actions/get-agenda/get-agenda.types';
@@ -126,15 +126,30 @@ export function AgendaCalendar({
         </div>
       );
     const session = sessionOf(event);
+    const clients = clientsOf(session).length;
+    const clientsLabel = t('clients_count', { count: clients });
     return (
       <div className="min-w-0 text-left leading-tight">
-        <p className="truncate text-sm font-semibold">{event.title}</p>
+        <p className="flex items-center gap-1 text-sm font-semibold">
+          <span className="min-w-0 flex-1 truncate">{event.title}</span>
+          {clients > 0 && (
+            <span
+              aria-hidden="true"
+              className="flex shrink-0 items-center gap-0.5 text-[11px]"
+              title={clientsLabel}
+            >
+              <IconUser size={12} />
+              {clients}
+            </span>
+          )}
+        </p>
         <p className="truncate text-[11px] opacity-80">
           {clock(minutesOfDay(session.starts_at, zone))} ·{' '}
           {occupancyText(session)}
           {session.pending > 0
             ? ` · ${t('pending', { count: session.pending })}`
             : ''}
+          {clients > 0 && <span className="sr-only"> · {clientsLabel}</span>}
         </p>
       </div>
     );
