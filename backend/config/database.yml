@@ -16,6 +16,10 @@ test:
   <<: *default
   database: 'test'
 
+e2e:
+  <<: *default
+  database: 'e2e'
+
 production:
   <<: *default
   database: 'production'
