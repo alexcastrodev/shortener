@@ -233,6 +233,7 @@ function ServiceFields({
           <Checkbox
             mt={6}
             size="xs"
+            styles={{ label: { whiteSpace: 'nowrap', fontSize: '0.6875rem' } }}
             label={t('summary_unlimited')}
             checked={service.capacity === ''}
             onChange={event =>

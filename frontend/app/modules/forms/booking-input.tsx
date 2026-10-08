@@ -295,13 +295,13 @@ export function BookingInput({
         <fieldset
           role="radiogroup"
           aria-label={t('booking_mode')}
-          className="flex flex-wrap gap-2"
+          className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-2"
         >
           <button
             type="button"
             role="radio"
             aria-checked={mode === 'days'}
-            className={chip(mode === 'days')}
+            className={`${chip(mode === 'days')} flex flex-col items-center justify-center text-center`}
             onClick={() => chooseMode('days')}
           >
             {t('booking_mode_days')}
@@ -310,13 +310,15 @@ export function BookingInput({
             type="button"
             role="radio"
             aria-checked={mode === 'monthly'}
-            className={chip(mode === 'monthly')}
+            className={`${chip(mode === 'monthly')} flex flex-col items-center justify-center text-center`}
             onClick={() => chooseMode('monthly')}
           >
-            {t('booking_mode_monthly')}
-            {service.monthly.price
-              ? ` · ${formatCurrency(service.monthly.price, service.currency ?? 'EUR')}`
-              : ''}
+            <span>{t('booking_mode_monthly')}</span>
+            {service.monthly.price ? (
+              <span className="text-xs font-normal opacity-80">
+                {formatCurrency(service.monthly.price, service.currency ?? 'EUR')}
+              </span>
+            ) : null}
           </button>
         </fieldset>
       )}
