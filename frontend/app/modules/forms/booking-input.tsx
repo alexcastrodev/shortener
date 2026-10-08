@@ -11,7 +11,6 @@ import { WaitlistJoin, type JoinWaitlist } from './waitlist-join';
 import { BookingCalendar } from './booking-calendar.tsx';
 import {
   canGoNext,
-  firstFreeDay,
   keepFree,
   monthOf,
   monthRange,
@@ -39,6 +38,14 @@ const dayLabel = (iso: string) =>
     weekday: 'short',
     day: 'numeric',
     month: 'short',
+    timeZone: 'UTC',
+  });
+
+const dayHeading = (iso: string) =>
+  formatDate(`${iso}T00:00:00Z`, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
     timeZone: 'UTC',
   });
 
@@ -214,13 +221,14 @@ export function BookingInput({
     for (const slot of data.slots)
       byDay.set(slot.date, [...(byDay.get(slot.date) ?? []), slot]);
   const shown =
-    viewed && viewed.startsWith(month) && byDay.has(viewed)
-      ? viewed
-      : firstFreeDay(loaded?.slots ?? []);
+    viewed && viewed.startsWith(month) && byDay.has(viewed) ? viewed : undefined;
   const today = new Date();
   const service = services.find(item => item.id === serviceId);
   const chip = (selected: boolean) =>
-    `min-h-10 rounded-lg px-3 py-1.5 text-sm font-medium ${theme.button} ${selected ? 'ring-2 ring-current' : ''}`;
+    `min-h-11 rounded-lg px-3 py-1.5 text-sm font-medium ${theme.button} ${selected ? 'ring-2 ring-current' : ''}`;
+  const picked = new Map(sessions.map(session => [session.date, session.time]));
+  const modeCard = (selected: boolean) =>
+    `flex min-w-0 flex-col gap-1 rounded-xl p-4 text-left ${theme.button} ${selected ? 'ring-2 ring-current' : ''}`;
 
   return (
     <div id={inputId} className="space-y-4">
@@ -281,46 +289,77 @@ export function BookingInput({
         service && (
           <p className="text-sm font-medium">
             {service.name}
-            <span className="font-normal opacity-80">
-              {` · ${t('booking_minutes', { count: service.duration })}`}
-              {service.price
-                ? ` · ${formatCurrency(service.price, service.currency ?? 'EUR')}`
-                : ''}
-            </span>
+            {!service.monthly && (
+              <span className="font-normal opacity-80">
+                {` · ${t('booking_minutes', { count: service.duration })}`}
+                {service.price
+                  ? ` · ${formatCurrency(service.price, service.currency ?? 'EUR')}`
+                  : ''}
+              </span>
+            )}
           </p>
         )
       )}
 
       {serviceId && service?.monthly && (
-        <fieldset
-          role="radiogroup"
-          aria-label={t('booking_mode')}
-          className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-2"
-        >
-          <button
-            type="button"
-            role="radio"
-            aria-checked={mode === 'days'}
-            className={`${chip(mode === 'days')} flex flex-col items-center justify-center text-center`}
-            onClick={() => chooseMode('days')}
+        <div className="space-y-2">
+          <p id={`${inputId}-mode`} className="text-sm font-medium">
+            {t('booking_mode')}
+          </p>
+          <fieldset
+            role="radiogroup"
+            aria-labelledby={`${inputId}-mode`}
+            className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(13rem,1fr))] gap-2"
           >
-            {t('booking_mode_days')}
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={mode === 'monthly'}
-            className={`${chip(mode === 'monthly')} flex flex-col items-center justify-center text-center`}
-            onClick={() => chooseMode('monthly')}
-          >
-            <span>{t('booking_mode_monthly')}</span>
-            {service.monthly.price ? (
-              <span className="text-xs font-normal opacity-80">
-                {formatCurrency(service.monthly.price, service.currency ?? 'EUR')}
+            <button
+              type="button"
+              role="radio"
+              aria-checked={mode === 'days'}
+              className={modeCard(mode === 'days')}
+              onClick={() => chooseMode('days')}
+            >
+              <span className="text-sm font-semibold">
+                {t('booking_mode_days')}
               </span>
-            ) : null}
-          </button>
-        </fieldset>
+              {service.price ? (
+                <span className="text-xl font-semibold">
+                  {formatCurrency(service.price, service.currency ?? 'EUR')}
+                  <span className="text-xs font-normal opacity-80">
+                    {` ${t('booking_unit_session')}`}
+                  </span>
+                </span>
+              ) : null}
+              <span className="text-xs opacity-80">
+                {t('booking_mode_days_desc', { count: service.duration })}
+              </span>
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={mode === 'monthly'}
+              className={modeCard(mode === 'monthly')}
+              onClick={() => chooseMode('monthly')}
+            >
+              <span className="text-sm font-semibold">
+                {t('booking_mode_monthly')}
+              </span>
+              {service.monthly.price ? (
+                <span className="text-xl font-semibold">
+                  {formatCurrency(
+                    service.monthly.price,
+                    service.currency ?? 'EUR'
+                  )}
+                  <span className="text-xs font-normal opacity-80">
+                    {` ${t('booking_unit_month')}`}
+                  </span>
+                </span>
+              ) : null}
+              <span className="text-xs opacity-80">
+                {t('booking_mode_monthly_desc')}
+              </span>
+            </button>
+          </fieldset>
+        </div>
       )}
 
       {serviceId && service && mode === 'monthly' && (
@@ -346,7 +385,14 @@ export function BookingInput({
               {t('booking_taken')}
             </p>
           )}
-          <p className="text-sm font-medium">{t('booking_pick')}</p>
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-sm font-medium">{t('booking_pick')}</p>
+            {field.time_zone && (
+              <p className="text-xs opacity-70">
+                {t('booking_zone', { zone: field.time_zone })}
+              </p>
+            )}
+          </div>
           {status === 'error' ? (
             <div className="space-y-2">
               <p role="alert" className="text-sm">
@@ -366,7 +412,7 @@ export function BookingInput({
                 month={month}
                 today={today}
                 available={new Set(loaded?.slots.map(slot => slot.date))}
-                chosen={new Set(sessions.map(session => session.date))}
+                chosen={picked}
                 viewed={shown}
                 theme={theme}
                 onView={setViewed}
@@ -381,21 +427,32 @@ export function BookingInput({
               {preview && (
                 <p className="text-xs opacity-70">{t('booking_preview_note')}</p>
               )}
-              {shown && (
+              {shown ? (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">{dayLabel(shown)}</p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="min-w-0 text-sm font-medium">
+                      <span className="font-normal opacity-80">
+                        {t('booking_times_on')}
+                      </span>{' '}
+                      <span className="first-letter:uppercase">
+                        {dayHeading(shown)}
+                      </span>
+                    </p>
+                    <p className="shrink-0 whitespace-nowrap text-xs opacity-70">
+                      {t('booking_free_count', {
+                        count: byDay.get(shown)!.length,
+                      })}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-2">
                     {byDay.get(shown)!.map(slot => {
-                      const selected = sessions.some(
-                        session =>
-                          session.date === shown && session.time === slot.time
-                      );
+                      const selected = picked.get(shown) === slot.time;
                       return (
                         <button
                           key={slot.starts_at}
                           type="button"
                           aria-pressed={selected}
-                          className={chip(selected)}
+                          className={`${chip(selected)} min-h-12`}
                           onClick={() => toggle(shown, slot.time)}
                         >
                           {slot.time}
@@ -403,7 +460,15 @@ export function BookingInput({
                       );
                     })}
                   </div>
+                  <p className="text-xs opacity-70">{t('booking_pick_hint')}</p>
                 </div>
+              ) : (
+                status === 'ready' &&
+                loaded.slots.length > 0 && (
+                  <p className="rounded-lg border border-dashed border-current/30 p-4 text-center text-sm opacity-80">
+                    {t('booking_choose_day')}
+                  </p>
+                )
               )}
               {field.waitlist && joinWaitlist && serviceId && (
                 <WaitlistJoin
@@ -417,11 +482,6 @@ export function BookingInput({
                 />
               )}
             </>
-          )}
-          {field.time_zone && (
-            <p className="text-xs opacity-70">
-              {t('booking_zone', { zone: field.time_zone })}
-            </p>
           )}
         </div>
       )}

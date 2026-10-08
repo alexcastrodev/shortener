@@ -172,7 +172,7 @@ test('calendar: month navigation keeps the chosen time in the summary', async ({
   await expect(page.getByRole('listitem').filter({ hasText: `${shortDate(target)} · 10:00` })).toBeVisible();
 
   await page.getByRole('button', { name: 'Mês seguinte' }).click();
-  await expect(page.getByRole('button', { name: `${dayLabel(target)}, hora escolhida`, exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: `${dayLabel(target)}, hora escolhida 10:00`, exact: true })).toBeVisible();
 
   await view.submit();
   await expect(page.getByRole('heading', { name: 'Obrigado' })).toBeVisible();
@@ -259,9 +259,12 @@ test('the two ways to book are equally wide and line up, also on a narrow screen
   const view = new PublicForm(page, form);
   await view.open();
 
-  const days = page.getByRole('radio', { name: 'Escolher dias' });
+  const days = page.getByRole('radio', { name: /Sessões avulsas/ });
   const monthly = page.getByRole('radio', { name: /Reserva fixa mensal/ });
+  await expect(days).toContainText('120,00');
+  await expect(days).toContainText('/sessão');
   await expect(monthly).toContainText('200,00');
+  await expect(monthly).toContainText('/mês');
 
   const measure = async () => {
     const [first, second] = [await days.boundingBox(), await monthly.boundingBox()];

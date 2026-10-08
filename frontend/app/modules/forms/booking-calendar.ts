@@ -57,8 +57,28 @@ export function monthGrid(month: string): (string | null)[][] {
   return weeks;
 }
 
-export function firstFreeDay(slots: { date: string }[]): string | undefined {
-  return slots.map(slot => slot.date).sort()[0];
+export type DayCell = {
+  enabled: boolean;
+  time: string | undefined;
+  viewed: boolean;
+  today: boolean;
+};
+
+export function dayCell(
+  iso: string,
+  state: {
+    available: Set<string>;
+    chosen: Map<string, string>;
+    viewed: string | undefined;
+    todayIso: string;
+  }
+): DayCell {
+  return {
+    enabled: state.available.has(iso),
+    time: state.chosen.get(iso),
+    viewed: iso === state.viewed,
+    today: iso === state.todayIso,
+  };
 }
 
 export function keepFree<T extends { date: string; time: string }>(

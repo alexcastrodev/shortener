@@ -1,3 +1,4 @@
+import { pickDay } from '../support/calendar.ts';
 import { BookingEditor, bookingOf } from '../support/editor.ts';
 import { nextWeekdays } from '../support/dates.ts';
 import { expect, test } from '../support/fixtures.ts';
@@ -15,6 +16,8 @@ test('adding the booking question creates a ready service and the preview shows 
   await expect(editor.services.getByText('Seg–Sex · 18 horários')).toBeVisible();
   await expect(editor.serviceField('Nome do serviço')).toHaveValue('Sessão');
   await expect(page.getByRole('button', { name: 'Mês seguinte' })).toBeVisible();
+  await expect(page.getByText('Escolha um dia no calendário para ver as horas.')).toBeVisible();
+  await pickDay(page, nextWeekdays(1, 3)[0]);
   await expect(page.getByRole('button', { name: '09:00', exact: true })).toBeVisible();
 
   await expect.poll(async () => bookingOf(await ownerForm(form.id))?.services.length).toBe(1);
