@@ -41,6 +41,7 @@ type Props = {
   joinWaitlist?: JoinWaitlist;
   invalid?: string;
   confirm?: { checked: boolean; onChange: (checked: boolean) => void };
+  hideBookingSummary?: boolean;
 };
 
 const inputBase =
@@ -57,6 +58,7 @@ export function FieldInput({
   joinWaitlist,
   invalid,
   confirm,
+  hideBookingSummary,
 }: Props) {
   const { t } = useTranslation('respond');
   const common = { id: inputId, 'aria-describedby': `${inputId}-help` };
@@ -247,6 +249,7 @@ export function FieldInput({
           loadSlots={loadSlots}
           joinWaitlist={joinWaitlist}
           reloadKey={invalid}
+          hideSummary={hideBookingSummary}
         />
       );
     case 'image':

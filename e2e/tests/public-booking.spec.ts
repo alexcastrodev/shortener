@@ -46,7 +46,7 @@ test('page layout: the confirmation checkbox follows the e-mail values and ticks
 
   await view.chooseService('Sessão');
   await view.pickSlot(day, '09:00');
-  await expect(page.getByText('A sua marcação')).toBeVisible();
+  await expect(page.getByText('Sessão · 1 sessão')).toBeVisible();
   await view.submit();
 
   await expect(page.getByRole('heading', { name: 'Obrigado' })).toBeVisible();
@@ -165,11 +165,11 @@ test('calendar: month navigation keeps the chosen time in the summary', async ({
 
   await page.getByRole('button', { name: dayLabel(target), exact: true }).click();
   await page.getByRole('button', { name: '10:00', exact: true }).click();
-  await expect(page.getByRole('listitem').filter({ hasText: `${shortDate(target)} · 10:00` })).toBeVisible();
+  await expect(page.getByText(`${shortDate(target)} · 10:00`)).toBeVisible();
 
   await page.getByRole('button', { name: 'Mês anterior' }).click();
   await expect(page.getByText(monthLabel(today), { exact: true })).toBeVisible();
-  await expect(page.getByRole('listitem').filter({ hasText: `${shortDate(target)} · 10:00` })).toBeVisible();
+  await expect(page.getByText(`${shortDate(target)} · 10:00`)).toBeVisible();
 
   await page.getByRole('button', { name: 'Mês seguinte' }).click();
   await expect(page.getByRole('button', { name: `${dayLabel(target)}, hora escolhida 10:00`, exact: true })).toBeVisible();
