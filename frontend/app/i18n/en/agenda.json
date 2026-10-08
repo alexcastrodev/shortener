@@ -25,6 +25,8 @@
   "panel_when": "When",
   "panel_occupancy": "Places",
   "panel_unlimited": "No limit",
+  "clients_count_one": "{{count}} client",
+  "clients_count_other": "{{count}} clients",
   "clients_title": "Clients",
   "no_clients": "Nobody has booked this time yet.",
   "status_pending": "Awaiting approval",

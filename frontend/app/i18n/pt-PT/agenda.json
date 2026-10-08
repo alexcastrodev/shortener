@@ -25,6 +25,8 @@
   "panel_when": "Quando",
   "panel_occupancy": "Vagas",
   "panel_unlimited": "Sem limite",
+  "clients_count_one": "{{count}} cliente",
+  "clients_count_other": "{{count}} clientes",
   "clients_title": "Clientes",
   "no_clients": "Ninguém marcou este horário ainda.",
   "status_pending": "A aguardar aprovação",
