@@ -22,7 +22,8 @@ class Api::Public::AppointmentVerificationsController < ApplicationController
   end
 
   def create
-    render(json: payload.merge(result: Appointments::Verify.call(appointment: @appointment)), status: :ok)
+    result = Appointments::Verify.call(appointment: @appointment)
+    render(json: payload.merge(result: result), status: :ok)
   end
 
   private

@@ -101,6 +101,7 @@ RSpec.describe("email verification in automatic mode", type: :request) do
       perform_enqueued_jobs { post("/api/public/appointment_verifications/#{token}", as: :json) }
       expect(response).to(have_http_status(:ok))
       expect(json["result"]).to(eq("verified"))
+      expect(json["appointment"]).to(include("status" => "confirmed", "expires_at" => nil))
       expect(row).to(have_attributes(status: "confirmed", expires_at: nil))
       expect(Notification.where(kind: "appointment_created", recipient_kind: "owner").count).to(be >= 1)
       expect(deliveries.map(&:to).flatten).to(include("ana@example.com", current_user.email))
