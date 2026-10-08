@@ -3,7 +3,7 @@ import 'dayjs/locale/pt';
 import { DayView, MonthView, WeekView } from '@mantine/schedule';
 import type { ScheduleEventData } from '@mantine/schedule';
 import { notifications } from '@mantine/notifications';
-import { IconTicket } from '@tabler/icons-react';
+import { IconTicket, IconUser } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AgendaSession } from '@internal/core/actions/get-agenda/get-agenda.types';
@@ -126,9 +126,24 @@ export function AgendaCalendar({
         </div>
       );
     const session = sessionOf(event);
+    const clients = clientsOf(session).length;
     return (
       <div className="min-w-0 text-left leading-tight">
-        <p className="truncate text-sm font-semibold">{event.title}</p>
+        <p className="flex items-center gap-1 text-sm font-semibold">
+          <span className="min-w-0 flex-1 truncate">{event.title}</span>
+          {clients > 0 && (
+            <span
+              className="flex shrink-0 items-center gap-0.5 text-[11px]"
+              title={t('clients_count', { count: clients })}
+            >
+              <IconUser size={12} aria-hidden="true" />
+              <span aria-hidden="true">{clients}</span>
+              <span className="sr-only">
+                {t('clients_count', { count: clients })}
+              </span>
+            </span>
+          )}
+        </p>
         <p className="truncate text-[11px] opacity-80">
           {clock(minutesOfDay(session.starts_at, zone))} ·{' '}
           {occupancyText(session)}
