@@ -52,6 +52,7 @@
   "booking_load_failed": "Não conseguimos carregar os horários.",
   "booking_retry": "Tentar novamente",
   "receipt_pending": "O seu pedido de marcação aguarda aprovação. Avisamos quando houver resposta.",
+  "receipt_unverified": "A sua marcação ainda não está confirmada. Enviámos-lhe um e-mail com uma ligação para confirmar o endereço; se não confirmar a tempo, o lugar é libertado. O e-mail pode demorar alguns minutos ou não chegar: veja a pasta de spam.",
   "receipt_keep_link": "Guarde esta ligação para ver ou cancelar a sua marcação:",
   "receipt_email_queued": "Também lha enviamos por e-mail. O e-mail pode demorar alguns minutos ou não chegar: veja a pasta de spam.",
   "receipt_email_none": "Não será enviado nenhum e-mail, por isso guarde esta ligação.",

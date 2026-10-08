@@ -1,0 +1,140 @@
+import { BookingEditor, bookingOf } from '../support/editor.ts';
+import { nextWeekdays } from '../support/dates.ts';
+import { expect, test } from '../support/fixtures.ts';
+import { createForm, ownerForm, service } from '../support/forms.ts';
+
+test('adding the booking question creates a ready service and the preview shows a calendar', async ({ page, signIn }) => {
+  const form = await createForm();
+  await signIn('owner');
+  await page.goto(`/app/forms/${form.id}`);
+
+  await page.getByRole('button', { name: 'Marcação de serviço' }).click();
+
+  const editor = new BookingEditor(page);
+  await expect(editor.services.getByText('30 min · 1 vaga por horário')).toBeVisible();
+  await expect(editor.services.getByText('Seg–Sex · 18 horários')).toBeVisible();
+  await expect(editor.serviceField('Nome do serviço')).toHaveValue('Sessão');
+  await expect(page.getByRole('button', { name: 'Mês seguinte' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '09:00', exact: true })).toBeVisible();
+
+  await expect.poll(async () => bookingOf(await ownerForm(form.id))?.services.length).toBe(1);
+  const [created] = bookingOf(await ownerForm(form.id)).services;
+  expect(created).toMatchObject({ name: 'Sessão', duration: 30, capacity: 1 });
+  expect(created.times).toHaveLength(18);
+  expect(created.times[0]).toBe('09:00');
+  expect(created.times[17]).toBe('17:30');
+});
+
+test('one save persists a new service, a price and a day off', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Corte', { times: ['09:00'] })] });
+  const [day] = nextWeekdays(1);
+  await signIn('owner');
+  const editor = new BookingEditor(page);
+  await editor.open(form.id);
+
+  await editor.serviceField('Preço').fill('25');
+  const added = await editor.addService('Massagem');
+  await expect(editor.services.getByText('Seg–Sex · 18 horários')).toBeVisible();
+  expect(added).toBe(1);
+
+  await editor.expand('daysOff');
+  await editor.daysOff.getByRole('textbox', { name: 'Data', exact: true }).fill(day);
+  await editor.daysOff.getByRole('button', { name: 'Adicionar', exact: true }).click();
+
+  await editor.save();
+  await expect(editor.saved).toBeVisible();
+
+  const saved = bookingOf(await ownerForm(form.id));
+  expect(saved.services).toHaveLength(2);
+  const [corte, massagem] = saved.services;
+  expect(corte).toMatchObject({ name: 'Corte', times: ['09:00'] });
+  expect(corte.price).toBeTruthy();
+  expect(massagem.name).toBe('Massagem');
+  expect(massagem.id).toBeTruthy();
+  expect(massagem.times).toHaveLength(18);
+  expect(saved.exceptions).toHaveLength(1);
+  expect(saved.exceptions[0]).toMatchObject({ from: day, kind: 'closed' });
+  expect(saved.exceptions[0].id).toBeTruthy();
+});
+
+test('a service without times blocks the save until the generator creates them', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Corte', { times: ['09:00'] })] });
+  await signIn('owner');
+  const editor = new BookingEditor(page);
+  await editor.open(form.id);
+
+  await editor.services.getByRole('button', { name: 'Remover o horário 09:00' }).click();
+  await editor.save();
+
+  await expect(editor.invalid).toBeVisible();
+  await expect(editor.services.getByText('Adicione pelo menos um horário').first()).toBeVisible();
+  await expect(editor.services.getByText('Horário de trabalho')).toBeVisible();
+  expect(bookingOf(await ownerForm(form.id)).services[0].times).toEqual(['09:00']);
+
+  await editor.services.getByRole('button', { name: 'Gerar horários' }).click();
+  await expect(editor.services.getByText('18 horários criados.')).toBeVisible();
+  await expect(editor.services.getByText('Adicione pelo menos um horário')).toBeHidden();
+
+  await editor.save();
+  await expect(editor.saved).toBeVisible();
+  expect(bookingOf(await ownerForm(form.id)).services[0].times).toHaveLength(18);
+});
+
+test('the booking rules persist after a reload and show in the summary', async ({ page, signIn }) => {
+  const form = await createForm({
+    emails: [{ label: 'E-mail', required: true }],
+    services: [service('Corte')],
+  });
+  await signIn('owner');
+  const editor = new BookingEditor(page);
+  await editor.open(form.id);
+  await editor.expand('rules');
+
+  await editor.rules.getByText('Eu aprovo cada uma').click();
+  await editor.rules.getByRole('switch', { name: /Lista de espera para horários cheios/ }).click();
+  await editor.rules.getByRole('textbox', { name: 'Tempo para confirmar um lugar' }).fill('12');
+  await editor.rules.getByRole('combobox', { name: 'Tempo para confirmar um lugar' }).click();
+  await page.getByRole('option', { name: 'horas', exact: true }).click();
+  await editor.rules.getByRole('textbox', { name: 'Intervalo entre sessões (minutos)' }).fill('15');
+  await editor.rules.getByRole('textbox', { name: 'Máximo por dia (opcional)' }).fill('5');
+
+  await editor.save();
+  await expect(editor.saved).toBeVisible();
+
+  const { rules } = bookingOf(await ownerForm(form.id));
+  expect(rules).toMatchObject({
+    approval: 'manual',
+    waitlist: true,
+    waitlist_confirm_minutes: 720,
+    buffer_minutes: 15,
+    max_per_day: 5,
+  });
+
+  await editor.open(form.id);
+  await expect(editor.rules.getByText(/Aprova cada marcação/)).toBeVisible();
+  await expect(editor.rules.getByText(/Lista de espera/)).toBeVisible();
+  await editor.expand('rules');
+  await expect(editor.rules.getByRole('textbox', { name: 'Intervalo entre sessões (minutos)' })).toHaveValue('15');
+  await expect(editor.rules.getByRole('textbox', { name: 'Máximo por dia (opcional)' })).toHaveValue('5');
+  await expect(editor.rules.getByRole('textbox', { name: 'Tempo para confirmar um lugar' })).toHaveValue('12');
+});
+
+test('a single category shows the hint that two are needed', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Corte')] });
+  await signIn('owner');
+  const editor = new BookingEditor(page);
+  await editor.open(form.id);
+
+  const hint = 'As categorias só são guardadas e mostradas ao cliente quando há pelo menos duas.';
+  await expect(editor.services.getByText(hint)).toBeHidden();
+
+  await editor.services.getByRole('textbox', { name: 'Nova categoria' }).fill('Cabelo');
+  await editor.services.getByRole('textbox', { name: 'Nova categoria' }).press('Enter');
+  await expect(editor.services.getByRole('textbox', { name: 'Nome da categoria' })).toHaveValue('Cabelo');
+  await expect(editor.services.getByText(hint)).toBeVisible();
+
+  await editor.services.getByRole('textbox', { name: 'Nova categoria' }).fill('Barba');
+  await editor.services.getByRole('textbox', { name: 'Nova categoria' }).press('Enter');
+  await expect(editor.services.getByRole('textbox', { name: 'Nome da categoria' })).toHaveCount(2);
+  await expect(editor.services.getByText(hint)).toBeHidden();
+});
