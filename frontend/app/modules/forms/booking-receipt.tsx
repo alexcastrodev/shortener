@@ -11,11 +11,17 @@ type Props = {
 export function BookingReceipt({ receipt, linkClass, textClass }: Props) {
   const { t } = useTranslation('respond');
   if (!receipt?.manage_url) return null;
+  const unverified = receipt.appointments?.some(item => item.status === 'unverified');
 
   return (
     <div className={`mt-6 text-sm ${textClass}`}>
       {receipt.appointments?.some(item => item.status === 'pending') && (
         <p className="mb-2 font-medium">{t('receipt_pending')}</p>
+      )}
+      {unverified && (
+        <p role="status" className="mb-2 font-medium">
+          {t('receipt_unverified')}
+        </p>
       )}
       {receipt.skipped && receipt.skipped.length > 0 && (
         <p className="mb-2">
@@ -39,11 +45,13 @@ export function BookingReceipt({ receipt, linkClass, textClass }: Props) {
       >
         {receipt.manage_url}
       </a>
-      <p className="mt-2">
-        {receipt.email_delivery === 'queued'
-          ? t('receipt_email_queued')
-          : t('receipt_email_none')}
-      </p>
+      {!unverified && (
+        <p className="mt-2">
+          {receipt.email_delivery === 'queued'
+            ? t('receipt_email_queued')
+            : t('receipt_email_none')}
+        </p>
+      )}
       {receipt.email_delivery === 'queued' && (
         <p className="mt-2">
           <a href="/login" className={`underline ${linkClass}`}>
