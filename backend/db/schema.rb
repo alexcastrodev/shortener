@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -236,6 +236,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_090000) do
     t.integer "cover_position", default: 50, null: false
     t.boolean "intro_enabled", default: false, null: false
     t.string "start_label", limit: 40
+    t.boolean "accepting_responses", default: true, null: false
     t.index ["public_id"], name: "index_forms_on_public_id", unique: true
     t.index ["shortlink_id"], name: "index_forms_on_shortlink_id"
     t.index ["user_id", "created_at"], name: "index_forms_on_user_id_and_created_at"

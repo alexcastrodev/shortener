@@ -17,7 +17,7 @@ module Forms
       end
 
       def codes
-        blocks.map { |block| block.slice(:code, :name) }
+        blocks.map { |block| block.slice(:code, :name, :service_id) }
       end
     end
 

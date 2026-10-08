@@ -60,12 +60,12 @@ RSpec.describe(Form, type: :model) do
     end
   end
 
-  it "audits only title and published" do
+  it "audits only title, published and accepting_responses" do
     form = build_form.tap(&:save!)
-    form.update!(title: "New", description: "private note", thank_you_message: "thanks", published: true)
+    form.update!(title: "New", description: "private note", thank_you_message: "thanks", published: true, accepting_responses: false)
 
     changes = form.audits.map(&:audited_changes).reduce({}, :merge)
-    expect(changes.keys).to(match_array(["title", "published"]))
+    expect(changes.keys).to(match_array(["title", "published", "accepting_responses"]))
   end
 
   it "is destroyed with its owner" do

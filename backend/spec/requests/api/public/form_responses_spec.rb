@@ -30,6 +30,24 @@ RSpec.describe("POST /api/public/forms/:public_id/responses", type: :request) do
     expect(form.reload.responses_count).to(eq(1))
   end
 
+  describe "when the form stopped accepting responses" do
+    before { form.update!(accepting_responses: false) }
+
+    it "answers 410 closed and stores nothing" do
+      expect { submit }.not_to(change(FormResponse, :count))
+
+      expect(response).to(have_http_status(:gone))
+      expect(json).to(eq("error" => "closed"))
+    end
+
+    it "accepts responses again once reopened" do
+      form.update!(accepting_responses: true)
+
+      expect { submit }.to(change(FormResponse, :count).by(1))
+      expect(response).to(have_http_status(:created))
+    end
+  end
+
   it "keeps only country, device, browser and source, never the IP or raw user agent" do
     submit(
       { answers: { "name0001" => "Ana" }, turnstile_token: "t", referer: "https://www.instagram.com/p/abc?token=SECRET" },

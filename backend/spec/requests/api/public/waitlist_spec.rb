@@ -71,6 +71,14 @@ RSpec.describe("the waiting list", type: :request) do
       expect(slot).to(have_attributes(booked: 1, held: 0))
     end
 
+    it "refuses new joins with 410 once the form stopped accepting responses" do
+      form.update!(accepting_responses: false)
+      join
+      expect(response).to(have_http_status(:gone))
+      expect(json).to(eq("error" => "closed"))
+      expect(WaitlistEntry.count).to(eq(0))
+    end
+
     it "is not needed when the time has room: it says so" do
       join(time: "10:00")
       expect(response).to(have_http_status(:conflict))
@@ -196,6 +204,19 @@ RSpec.describe("the waiting list", type: :request) do
       Forms::Publish.call(form: form.reload)
       get("/api/public/forms/#{form.public_id}/slots", params: { service: service_id, from: "2026-11-03", to: "2026-11-03" }, headers: { "CF-Connecting-IP" => "198.51.100.79" })
       expect(json).not_to(have_key("full"))
+    end
+
+    it "still lets someone already offered a place confirm it after the form closed" do
+      join
+      cancel_booking
+      form.update!(accepting_responses: false)
+      token = token_of
+      get("/api/public/waitlist/#{token}")
+      expect(response).to(have_http_status(:ok))
+      post("/api/public/waitlist/#{token}/claim", as: :json)
+      expect(response).to(have_http_status(:ok))
+      expect(json["result"]).to(eq("claimed"))
+      expect(Appointment.where(client_name: "Bo", status: "confirmed").count).to(eq(1))
     end
 
     it "lets the person confirm and books them, once" do

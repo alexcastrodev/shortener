@@ -6,7 +6,7 @@ class Form < ApplicationRecord
   LAYOUTS = ["page", "one_at_a_time", "steps"].freeze
   COVER_FIELD = "coverimg".freeze
   START_LABEL_MAX = 40
-  audited only: [:title, :published]
+  audited only: [:title, :published, :accepting_responses]
   PUBLIC_ID_LENGTH = 12
   before_validation(on: :create) { self.public_id ||= SecureRandom.alphanumeric(PUBLIC_ID_LENGTH) }
 

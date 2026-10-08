@@ -190,6 +190,11 @@ function Builder({ form: current }: { form: Form }) {
     onError: showError,
   });
 
+  const { mutate: setAccepting, isPending: isTogglingAccepting } = useUpdateForm({
+    onSuccess: () => refresh(),
+    onError: showError,
+  });
+
   const { mutate: setPublished, isPending: isPublishing } = useSetFormPublished({
     onSuccess: () => refresh(),
     onError: showError,
@@ -332,6 +337,27 @@ function Builder({ form: current }: { form: Form }) {
             />
             {current.published ? t('ed_published') : t('draft')}
           </label>
+          <Tooltip label={t('ed_accepting_hint')} disabled={current.published}>
+            <label
+              className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium ${
+                current.published ? 'cursor-pointer border-border' : 'cursor-not-allowed opacity-60'
+              }`}
+            >
+              <Switch
+                size="sm"
+                aria-label={t('ed_accepting')}
+                checked={current.accepting_responses}
+                disabled={!current.published || isTogglingAccepting}
+                onChange={event =>
+                  setAccepting({
+                    id: current.id,
+                    data: { accepting_responses: event.currentTarget.checked },
+                  })
+                }
+              />
+              {t('ed_accepting')}
+            </label>
+          </Tooltip>
         </Group>
       </div>
 

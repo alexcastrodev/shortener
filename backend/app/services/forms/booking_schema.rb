@@ -100,7 +100,7 @@ module Forms
       services = booking["services"].to_a
       blocks << block("no_service", "add at least one service") if services.empty?
       services.each do |service|
-        blocks << block("service_incomplete", "#{service["name"]} needs at least one day and one time", name: service["name"]) if service["days"].blank? || service["times"].blank?
+        blocks << block("service_incomplete", "#{service["name"]} needs at least one day and one time", name: service["name"], service_id: service["id"]) if service["days"].blank? || service["times"].blank?
       end
       answerable = fields.select { |field| field["required"] }
       if booking.dig("rules", "waitlist") == true
@@ -113,8 +113,8 @@ module Forms
 
     private
 
-    def block(code, message, name: nil)
-      { code: code, message: message, name: name }.compact
+    def block(code, message, name: nil, service_id: nil)
+      { code: code, message: message, name: name, service_id: service_id }.compact
     end
 
     def category_errors(list, ids)

@@ -181,7 +181,7 @@ RSpec.describe("the booking question", type: :request) do
       complete_form(booking: { services: [service.merge(times: [])] })
       publish
       expect(json["errors"]["fields"]).to(include("Haircut needs at least one day and one time"))
-      expect(json["blocks"]).to(include({ "code" => "service_incomplete", "name" => "Haircut" }))
+      expect(json["blocks"]).to(include({ "code" => "service_incomplete", "name" => "Haircut", "service_id" => form.reload.fields.find { |field| field["type"] == "booking" }["services"].first["id"] }))
 
       patch("/api/me/forms/#{form.id}/fields/#{form.reload.fields.find { |field| field["type"] == "booking" }["id"]}", params: { services: [service.merge(days: [])] }, headers: auth_headers, as: :json)
       publish

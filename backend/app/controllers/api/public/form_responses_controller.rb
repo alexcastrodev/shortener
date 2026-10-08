@@ -12,6 +12,7 @@ class Api::Public::FormResponsesController < ApplicationController
 
   before_action :load_form
   before_action :swallow_honeypot
+  before_action :reject_closed
   before_action :verify_turnstile
 
   rate_limit to: 5,
@@ -63,6 +64,10 @@ class Api::Public::FormResponsesController < ApplicationController
 
   def swallow_honeypot
     render(json: { ok: true }, status: :created) if request.request_parameters["website"].present?
+  end
+
+  def reject_closed
+    render(json: { error: "closed" }, status: :gone) unless @form.accepting_responses
   end
 
   def verify_turnstile

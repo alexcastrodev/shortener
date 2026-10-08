@@ -29,18 +29,23 @@ Allow: /
 Disallow: /api/
 Disallow: /app/
 
-# Block AI crawlers that don't respect content
+# Block AI crawlers, except for /llms.txt
 User-agent: GPTBot
+Allow: /llms.txt
 Disallow: /
 
 User-agent: ChatGPT-User
+Allow: /llms.txt
 Disallow: /
 
 User-agent: CCBot
+Allow: /llms.txt
 Disallow: /
 
 User-agent: anthropic-ai
+Allow: /llms.txt
 Disallow: /
 
 User-agent: Claude-Web
+Allow: /llms.txt
 Disallow: /

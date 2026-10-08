@@ -43,6 +43,15 @@ RSpec.describe("public form definition", type: :request) do
     expect(json["form"]["fields"].first.keys).not_to(include("secret"))
   end
 
+  it "tells the visitor whether the form still accepts responses, outside the served definition" do
+    get("/api/public/forms/#{form.public_id}")
+    expect(json["form"]["accepting_responses"]).to(be(true))
+
+    form.update!(accepting_responses: false)
+    get("/api/public/forms/#{form.public_id}")
+    expect(JSON.parse(response.body)["form"]).to(include("accepting_responses" => false, "title" => "Served title"))
+  end
+
   it "tells the visitor whether the booking asks to verify the email" do
     booking = { "id" => "book0001", "type" => "booking", "label" => "When", "services" => [], "rules" => { "verify_email" => true, "approval" => "manual" } }
     allow(Forms::PublicDefinition).to(receive(:for).with(form).and_return(served.with(fields: [booking])))

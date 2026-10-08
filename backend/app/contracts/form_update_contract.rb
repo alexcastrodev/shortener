@@ -13,5 +13,6 @@ class FormUpdateContract < ApplicationContract
     optional(:cover_position).filled(:integer)
     optional(:intro_enabled).filled(:bool)
     optional(:start_label).maybe(:string)
+    optional(:accepting_responses).filled(:bool)
   end
 end

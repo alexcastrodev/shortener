@@ -151,8 +151,8 @@ RSpec.describe("/api/me/forms", type: :request) do
       post_form(title: "Contact", description: "Say hi")
 
       expect(response).to(have_http_status(:created))
-      expect(form_json.keys).to(match_array(["id", "created_at", "updated_at", "public_id", "title", "description", "thank_you_message", "theme", "custom_colors", "layout", "published", "fields", "responses_count", "public_url", "shortlink_id", "published_version", "cover_position", "intro_enabled", "start_label", "cover_token", "has_unpublished_changes", "publish_blocks", "short_url"]))
-      expect(form_json).to(include("title" => "Contact", "published" => false, "fields" => [], "responses_count" => 0, "publish_blocks" => [{ "code" => "no_questions" }]))
+      expect(form_json.keys).to(match_array(["id", "created_at", "updated_at", "public_id", "title", "description", "thank_you_message", "theme", "custom_colors", "layout", "published", "fields", "responses_count", "public_url", "shortlink_id", "published_version", "cover_position", "intro_enabled", "start_label", "accepting_responses", "cover_token", "has_unpublished_changes", "publish_blocks", "short_url"]))
+      expect(form_json).to(include("title" => "Contact", "published" => false, "accepting_responses" => true, "fields" => [], "responses_count" => 0, "publish_blocks" => [{ "code" => "no_questions" }]))
       expect(form_json["public_id"]).to(match(/\A[A-Za-z0-9]{12}\z/))
     end
 
@@ -219,6 +219,24 @@ RSpec.describe("/api/me/forms", type: :request) do
       delete "/api/me/forms/#{form.id}", headers: auth_headers
       expect(response).to(have_http_status(:no_content))
       expect(Form.exists?(form.id)).to(be(false))
+    end
+
+    it "closes and reopens a form, also while it is published" do
+      form.update!(fields: [{ "id" => "text0001", "type" => "short_text", "label" => "Name" }])
+      post "/api/me/forms/#{form.id}/publish", headers: auth_headers
+      expect(form.reload.published).to(be(true))
+
+      patch "/api/me/forms/#{form.id}", params: { accepting_responses: false }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:ok))
+      expect(response.parsed_body["form"]["accepting_responses"]).to(be(false))
+      expect(form.reload).to(have_attributes(accepting_responses: false, published: true))
+      expect(form.audits.last.audited_changes).to(eq("accepting_responses" => [true, false]))
+
+      patch "/api/me/forms/#{form.id}", params: { accepting_responses: true }, headers: auth_headers, as: :json
+      expect(form.reload.accepting_responses).to(be(true))
+
+      patch "/api/me/forms/#{form.id}", params: { accepting_responses: nil }, headers: auth_headers, as: :json
+      expect(response).to(have_http_status(:unprocessable_content))
     end
 
     it "updates the layout and rejects unknown ones" do
@@ -290,7 +308,7 @@ RSpec.describe("/api/me/forms", type: :request) do
 
       get "/api/me/forms/#{form.id}", headers: auth_headers
       blocks = response.parsed_body["form"]["publish_blocks"]
-      expect(blocks).to(eq([{ "code" => "service_incomplete", "name" => "Cut" }, { "code" => "no_email" }]))
+      expect(blocks).to(eq([{ "code" => "service_incomplete", "name" => "Cut", "service_id" => "svc00001" }, { "code" => "no_email" }]))
 
       post "/api/me/forms/#{form.id}/publish", headers: auth_headers
       expect(response.parsed_body["blocks"]).to(eq(blocks))
