@@ -33,6 +33,12 @@ export type CreatedForm = {
 
 let counter = 0;
 
+const createdIds: number[] = [];
+
+export async function deleteCreatedForms() {
+  for (const id of createdIds.splice(0)) await owner.delete(`/api/me/forms/${id}`);
+}
+
 export const uniqueTitle = (prefix = 'E2E') => `${prefix} ${Date.now().toString(36)}${counter++}`;
 
 export const service = (name: string, overrides: Partial<ServiceInput> = {}): ServiceInput => ({
@@ -49,6 +55,7 @@ export async function createForm(options: FormOptions = {}): Promise<CreatedForm
   const created = await owner.post('/api/me/forms', { title, layout: options.layout ?? 'page' });
   if (created.status !== 201) throw new Error(`createForm failed: ${created.status}`);
   const id: number = created.body.form.id;
+  createdIds.push(id);
 
   if (options.name !== false) {
     await owner.post(`/api/me/forms/${id}/fields`, { type: 'short_text', label: 'Nome', required: true });

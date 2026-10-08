@@ -9,8 +9,10 @@ export const dayLabel = (iso: string) =>
     timeZone: 'UTC',
   }).format(new Date(`${iso}T12:00:00Z`));
 
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export async function pickDay(page: Page, iso: string) {
-  const target = page.getByRole('button', { name: dayLabel(iso), exact: true });
+  const target = page.getByRole('button', { name: new RegExp(`^${escape(dayLabel(iso))}`) });
   for (let step = 0; step < 3 && (await target.count()) === 0; step++) {
     await page.getByRole('button', { name: 'Mês seguinte' }).click();
   }

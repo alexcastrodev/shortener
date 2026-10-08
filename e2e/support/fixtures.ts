@@ -1,9 +1,11 @@
 import { test as base, expect, type Page } from '@playwright/test';
 import { signInAs, type Role } from './auth.ts';
+import { deleteCreatedForms } from './forms.ts';
 import { flushCache } from './redis.ts';
 
 type Fixtures = {
   cacheReset: void;
+  formCleanup: void;
   signIn: (role: Role) => Promise<Page>;
 };
 
@@ -12,6 +14,13 @@ export const test = base.extend<Fixtures>({
     async ({}, use) => {
       await flushCache();
       await use();
+    },
+    { auto: true },
+  ],
+  formCleanup: [
+    async ({}, use) => {
+      await use();
+      await deleteCreatedForms();
     },
     { auto: true },
   ],
