@@ -2,7 +2,7 @@ import {
   IconAlignLeft,
   IconAt,
   IconCalendar,
-  IconCalendarEvent,
+  IconCalendarCheck,
   IconCircleDot,
   IconHash,
   IconHeading,
@@ -16,19 +16,19 @@ import {
 import type { FormFieldType } from '@internal/core/types/Form';
 import i18n from '../../i18n';
 
-export const FIELD_TYPES: FormFieldType[] = [
-  'short_text',
-  'long_text',
-  'email',
-  'number',
-  'single_choice',
-  'multiple_choice',
-  'yes_no',
-  'rating',
-  'date',
-  'image',
-  'booking',
-  'section',
+export const FIELD_GROUPS: { label: () => string; types: FormFieldType[] }[] = [
+  {
+    label: () => i18n.t('forms:ed_group_text'),
+    types: ['short_text', 'long_text', 'email', 'number'],
+  },
+  {
+    label: () => i18n.t('forms:ed_group_choice'),
+    types: ['single_choice', 'multiple_choice', 'yes_no'],
+  },
+  { label: () => i18n.t('forms:ed_group_rating'), types: ['rating'] },
+  { label: () => i18n.t('forms:ed_group_date'), types: ['date', 'booking'] },
+  { label: () => i18n.t('forms:ed_group_attachment'), types: ['image'] },
+  { label: () => i18n.t('forms:ed_group_structure'), types: ['section'] },
 ];
 
 const LABELS: Record<FormFieldType, () => string> = {
@@ -90,6 +90,6 @@ export const FIELD_ICONS: Record<FormFieldType, Icon> = {
   rating: IconStar,
   date: IconCalendar,
   image: IconPhoto,
-  booking: IconCalendarEvent,
+  booking: IconCalendarCheck,
   section: IconHeading,
 };

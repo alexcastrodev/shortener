@@ -30,7 +30,14 @@ import type {
   FormFieldInput,
   FormFieldType,
 } from '@internal/core/types/Form';
-import { FIELD_TYPES, fieldTypeHint, fieldTypeLabel, isChoiceType, isSection } from '../../../modules/forms/field-types';
+import {
+  FIELD_GROUPS,
+  FIELD_ICONS,
+  fieldTypeHint,
+  fieldTypeLabel,
+  isChoiceType,
+  isSection,
+} from '../../../modules/forms/field-types';
 import { formErrorMessage } from '../../../modules/forms/form-errors';
 import { QuestionEditor } from './question-editor';
 
@@ -72,7 +79,10 @@ export function QuestionList({
   const { t } = useTranslation('forms');
   const queryClient = useQueryClient();
   const hasBooking = form.fields.some(field => field.type === 'booking');
-  const addable = FIELD_TYPES.filter(type => type !== 'booking' || !hasBooking);
+  const groups = FIELD_GROUPS.map(group => ({
+    ...group,
+    types: group.types.filter(type => type !== 'booking' || !hasBooking),
+  })).filter(group => group.types.length > 0);
 
   const onSuccess = (updated: Form) => {
     queryClient.setQueryData(getFormKey(form.id), updated);
@@ -267,19 +277,35 @@ export function QuestionList({
         </Droppable>
       </DragDropContext>
 
-      <p className="mt-5 mb-2 text-xs text-muted-foreground">{t('ed_add_field')}</p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {addable.map(type => (
-          <button
-            key={type}
-            type="button"
-            disabled={isCreating}
-            title={fieldTypeHint(type)}
-            onClick={() => create({ formId: form.id, data: defaultsFor(type) })}
-            className="rounded-lg border border-border bg-card px-3 py-2 text-left text-sm hover:border-primary disabled:opacity-50"
-          >
-            {fieldTypeLabel(type)}
-          </button>
+      <div className="mt-5 rounded-xl border border-border p-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="text-sm font-semibold">{t('ed_q_add_question')}</h3>
+          <span className="text-xs text-muted-foreground">{t('ed_add_at_end')}</span>
+        </div>
+        {groups.map(group => (
+          <section key={group.label()} className="mt-3">
+            <h4 className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {group.label()}
+            </h4>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2">
+              {group.types.map(type => {
+                const Icon = FIELD_ICONS[type];
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    disabled={isCreating}
+                    title={fieldTypeHint(type)}
+                    onClick={() => create({ formId: form.id, data: defaultsFor(type) })}
+                    className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-2 text-left text-[13px] hover:border-primary focus-visible:border-primary focus-visible:outline-none disabled:opacity-50"
+                  >
+                    <Icon size={16} className="shrink-0 text-primary" />
+                    <span className="truncate">{fieldTypeLabel(type)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
         ))}
       </div>
     </Card>
