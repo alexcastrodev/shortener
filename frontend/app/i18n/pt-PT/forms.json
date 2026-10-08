@@ -184,5 +184,14 @@
   "ed_generic_error": "Algo correu mal, tente novamente mais tarde.",
   "ed_accepting": "Aceitar respostas",
   "ed_accepting_hint": "Só se aplica depois de publicar o formulário",
+  "ed_version": "versão {{version}}",
+  "ed_changes_pending": "alterações por publicar",
+  "ed_publish_changes": "Publicar alterações",
+  "ed_republish_title": "Publicar a versão {{version}}?",
+  "ed_republish_body": "As alterações passam a valer para quem abrir o formulário a partir de agora. O link continua o mesmo: {{url}}",
+  "ed_republish_confirm": "Publicar versão {{version}}",
+  "ed_unpublish": "Despublicar",
+  "ed_unpublish_title": "Tirar o formulário do ar?",
+  "ed_unpublish_body": "O link {{url}} deixa de funcionar até voltar a publicar, e será o mesmo. As respostas e marcações já feitas ficam guardadas.",
   "closed": "Fechado"
 }
