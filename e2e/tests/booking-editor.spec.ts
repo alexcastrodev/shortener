@@ -165,3 +165,20 @@ test('a service can offer unlimited places and go back to a number', async ({ pa
   await expect(editor.saved).toBeVisible();
   await expect.poll(async () => bookingOf(await ownerForm(form.id)).services[0].capacity).toBe(5);
 });
+
+test('the no-limit label stays on one small line', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Aula', { capacity: 3 })] });
+  await signIn('owner');
+  const editor = new BookingEditor(page);
+  await editor.open(form.id);
+
+  const unlimited = editor.services.getByRole('checkbox', { name: 'Sem limite de vagas' });
+  const label = await unlimited.evaluate(input => {
+    const element = (input as HTMLInputElement).labels![0];
+    const style = getComputedStyle(element);
+    return { lines: Math.round(element.getBoundingClientRect().height / parseFloat(style.lineHeight)), size: parseFloat(style.fontSize), wrap: style.whiteSpace };
+  });
+  expect(label.wrap).toBe('nowrap');
+  expect(label.lines).toBe(1);
+  expect(label.size).toBeLessThanOrEqual(12);
+});

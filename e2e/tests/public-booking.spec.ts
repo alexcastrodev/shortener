@@ -250,3 +250,33 @@ test('e-mail verification: no confirmation checkbox and the appointment is unver
   const [appointment] = await appointmentsOf(form.id);
   expect(appointment.status).toBe('unverified');
 });
+
+test('the two ways to book are equally wide and line up, also on a narrow screen', async ({ page }) => {
+  const form = await createForm({
+    services: [service('Sessão', { price: 120, currency: 'EUR', monthly: { price: 200 } })],
+    publish: true,
+  });
+  const view = new PublicForm(page, form);
+  await view.open();
+
+  const days = page.getByRole('radio', { name: 'Escolher dias' });
+  const monthly = page.getByRole('radio', { name: /Reserva fixa mensal/ });
+  await expect(monthly).toContainText('200,00');
+
+  const measure = async () => {
+    const [first, second] = [await days.boundingBox(), await monthly.boundingBox()];
+    expect(first).not.toBeNull();
+    expect(second).not.toBeNull();
+    return { first: first!, second: second! };
+  };
+
+  let { first, second } = await measure();
+  expect(Math.abs(first.width - second.width)).toBeLessThan(1);
+  expect(Math.abs(first.y - second.y)).toBeLessThan(1);
+  expect(Math.abs(first.height - second.height)).toBeLessThan(1);
+
+  await page.setViewportSize({ width: 360, height: 800 });
+  ({ first, second } = await measure());
+  expect(Math.abs(first.width - second.width)).toBeLessThan(1);
+  expect(Math.abs(first.x - second.x)).toBeLessThan(1);
+});

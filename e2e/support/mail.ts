@@ -44,22 +44,28 @@ export async function mailsTo(address: string): Promise<Mail[]> {
 
 export async function waitForMail(address: string, subject?: RegExp | string): Promise<Mail> {
   let found: Mail | undefined;
-  await expect
-    .poll(
-      async () => {
-        const mails = await mailsTo(address);
-        found = mails.find(mail =>
-          subject === undefined
-            ? true
-            : typeof subject === 'string'
-              ? mail.subject.includes(subject)
-              : subject.test(mail.subject)
-        );
-        return found !== undefined;
-      },
-      { timeout: 30_000, intervals: [250, 500, 1_000], message: `no e-mail to ${address} matching ${String(subject)}` }
-    )
-    .toBe(true);
+  let seen: string[] = [];
+  try {
+    await expect
+      .poll(
+        async () => {
+          const mails = await mailsTo(address);
+          seen = mails.map(mail => mail.subject);
+          found = mails.find(mail =>
+            subject === undefined
+              ? true
+              : typeof subject === 'string'
+                ? mail.subject.includes(subject)
+                : subject.test(mail.subject)
+          );
+          return found !== undefined;
+        },
+        { timeout: 30_000, intervals: [250, 500, 1_000] }
+      )
+      .toBe(true);
+  } catch {
+    throw new Error(`no e-mail to ${address} matching ${String(subject)}; the mailbox has: ${JSON.stringify(seen)}`);
+  }
   return found!;
 }
 
