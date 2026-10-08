@@ -1,0 +1,16 @@
+{
+  "name": "kurz-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@types/node": "^22",
+    "redis": "6.3.0",
+    "typescript": "^5.9.2"
+  }
+}

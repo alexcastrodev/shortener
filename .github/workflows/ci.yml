@@ -78,6 +78,86 @@ jobs:
         env:
           NODE_OPTIONS: --dns-result-order=ipv4first
 
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+      valkey:
+        image: valkey/valkey:8.1.4
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "valkey-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      RAILS_ENV: test
+      POSTGRES_HOST: localhost
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      REDIS_URL: redis://localhost:6379/0
+      E2E_START_SERVERS: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install libvips
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libvips libheif-plugin-libde265
+      - uses: ruby/setup-ruby@v1
+        with:
+          working-directory: backend
+          bundler-cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Install e2e dependencies
+        run: npm ci
+        working-directory: e2e
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+        working-directory: e2e
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+      - name: Install Playwright system dependencies
+        run: npx playwright install-deps chromium
+        working-directory: e2e
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+      - name: Set up database and accounts
+        run: bin/rails db:create db:schema:load && bin/rails runner ../e2e/support/seed.rb
+        working-directory: backend
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+        env:
+          NODE_OPTIONS: --dns-result-order=ipv4first
+          VITE_BASE_URL: http://localhost:3000
+          VITE_TURNSTILE_SITE_KEY: ""
+      - name: End-to-end tests
+        run: npx playwright test
+        working-directory: e2e
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7
+
   edge-function:
     runs-on: ubuntu-latest
     defaults:
