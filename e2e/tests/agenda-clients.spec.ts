@@ -25,6 +25,7 @@ test('a session with clients shows a user icon and how many, and an empty one sh
   await expect(full.getByTitle('2 clientes')).toBeVisible();
   await expect(full.getByTitle('2 clientes')).toContainText('2');
   await expect(full).toContainText('2/3');
+  await expect(page.getByRole('button', { name: new RegExp(`^${name} 09:00 · 2/3 · 2 clientes$`) })).toBeVisible();
 
   const empty = page.getByRole('button', { name: new RegExp(`${name}.*10:00`) });
   await expect(empty).toBeVisible();

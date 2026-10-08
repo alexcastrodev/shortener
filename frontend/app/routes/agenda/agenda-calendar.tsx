@@ -127,20 +127,19 @@ export function AgendaCalendar({
       );
     const session = sessionOf(event);
     const clients = clientsOf(session).length;
+    const clientsLabel = t('clients_count', { count: clients });
     return (
       <div className="min-w-0 text-left leading-tight">
         <p className="flex items-center gap-1 text-sm font-semibold">
           <span className="min-w-0 flex-1 truncate">{event.title}</span>
           {clients > 0 && (
             <span
+              aria-hidden="true"
               className="flex shrink-0 items-center gap-0.5 text-[11px]"
-              title={t('clients_count', { count: clients })}
+              title={clientsLabel}
             >
-              <IconUser size={12} aria-hidden="true" />
-              <span aria-hidden="true">{clients}</span>
-              <span className="sr-only">
-                {t('clients_count', { count: clients })}
-              </span>
+              <IconUser size={12} />
+              {clients}
             </span>
           )}
         </p>
@@ -150,6 +149,7 @@ export function AgendaCalendar({
           {session.pending > 0
             ? ` · ${t('pending', { count: session.pending })}`
             : ''}
+          {clients > 0 && <span className="sr-only"> · {clientsLabel}</span>}
         </p>
       </div>
     );
