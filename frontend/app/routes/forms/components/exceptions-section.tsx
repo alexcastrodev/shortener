@@ -26,19 +26,14 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 function shortDate(iso: string, locale: string) {
   const date = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return iso;
-  const parts = new Intl.DateTimeFormat(locale, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).formatToParts(date);
-  const pick = (type: string) =>
-    (parts.find(part => part.type === type)?.value ?? '').replace(/\.$/, '');
-  const weekday = pick('weekday');
-  const year =
-    pick('year') === String(new Date().getFullYear()) ? '' : ` ${pick('year')}`;
-  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${pick('day')} ${pick('month')}${year}`;
+  const piece = (options: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' })
+      .format(date)
+      .replace(/\.$/, '');
+  const weekday = piece({ weekday: 'short' }).slice(0, 3);
+  const year = piece({ year: 'numeric' });
+  const suffix = year === String(new Date().getFullYear()) ? '' : ` ${year}`;
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${piece({ day: 'numeric' })} ${piece({ month: 'short' })}${suffix}`;
 }
 
 type DraftErrors = { from?: string; to?: string; times?: string };
