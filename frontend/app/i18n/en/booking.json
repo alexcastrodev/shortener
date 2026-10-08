@@ -129,6 +129,7 @@
   "exc_services": "Applies to",
   "exc_all_services": "All services",
   "exc_services_hint": "Save a new service first to pick it here.",
+  "exc_chosen_services": "Only the chosen services.",
   "exc_note": "Note (only you see it)",
   "err_exc_from": "Pick the date",
   "err_exc_range": "The end cannot be before the start",

@@ -267,7 +267,9 @@ export function ExceptionsSection({
                   <p className="mt-1 text-xs text-muted-foreground">
                     {draft.serviceIds.length === 0
                       ? t('exc_all_services')
-                      : t('exc_services_hint')}
+                      : t('exc_chosen_services')}
+                    {form.values.services.length > savedServices.length &&
+                      ` ${t('exc_services_hint')}`}
                   </p>
                 </>
               )}
