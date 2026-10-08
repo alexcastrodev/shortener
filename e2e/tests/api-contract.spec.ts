@@ -119,3 +119,29 @@ test('repeated public submissions end in a 429 rate_limited answer', async () =>
   expect(last?.body).toEqual({ error: 'rate_limited' });
   expect(statuses.slice(0, -1).every(status => status !== 429)).toBe(true);
 });
+
+test('a service without a limit takes any number of bookings at the same time, a limited one does not', async () => {
+  const open = await createForm({
+    name: true,
+    emails: [{ label: 'E-mail' }],
+    services: [service('Aula livre', { capacity: null })],
+    publish: true,
+  });
+  for (const name of ['Ana', 'Rui', 'Eva']) {
+    const booked = await book(open, day, { email: `${name.toLowerCase()}-livre@example.test`, name, confirm: null });
+    expect(booked.status).toBe(201);
+  }
+  const slots = await anonymous.get(`/api/public/forms/${open.publicId}/slots?service=${open.serviceIds[0]}&from=${day}&to=${day}`);
+  expect(slots.body.slots.map((slot: { time: string }) => slot.time)).toContain('09:00');
+
+  const single = await createForm({
+    name: true,
+    emails: [{ label: 'E-mail' }],
+    services: [service('Aula única', { capacity: 1 })],
+    publish: true,
+  });
+  expect((await book(single, day, { email: 'um@example.test', confirm: null })).status).toBe(201);
+  const refused = await book(single, day, { email: 'dois@example.test', confirm: null });
+  expect(refused.status).toBe(422);
+  expect(refused.body.errors.answers[single.bookingId]).toEqual(['unavailable']);
+});
