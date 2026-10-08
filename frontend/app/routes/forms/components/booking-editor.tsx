@@ -57,6 +57,7 @@ export function BookingEditor({
               name: z.string().trim().min(1, t('category_name_error')).max(60),
             })
           ),
+          exceptionDraft: z.object({ from: z.string() }).loose(),
           exceptions: z.array(
             z
               .object({
@@ -187,7 +188,16 @@ export function BookingEditor({
             approval_timeout_minutes: minutes,
             waitlist,
             waitlist_confirm_minutes: confirm,
+            exceptionDraft,
           } = ctx.value;
+          if (exceptionDraft.from) {
+            ctx.issues.push({
+              code: 'custom',
+              message: t('err_exc_pending'),
+              path: ['exceptionDraft', 'from'],
+              input: exceptionDraft.from,
+            });
+          }
           if (approval === 'manual' && soonOnly && !timeoutInRange(within)) {
             ctx.issues.push({
               code: 'custom',

@@ -46,14 +46,14 @@ export function ExceptionsSection({
   const { t, i18n } = useTranslation('booking');
   const savedServices = form.values.services.filter(service => service.id);
   const [open, setOpen] = useOpenOnErrors(form.errors, key =>
-    key.startsWith('exceptions')
+    key.startsWith('exception')
   );
-  const [draft, setDraft] = useState<ExceptionValues>(blankException);
+  const draft = form.values.exceptionDraft;
   const [draftErrors, setDraftErrors] = useState<DraftErrors>({});
 
   const date = (iso: string) => shortDate(iso, i18n.language);
   const patch = (changes: Partial<ExceptionValues>) =>
-    setDraft(current => ({ ...current, ...changes }));
+    form.setFieldValue('exceptionDraft', { ...draft, ...changes });
 
   const summary = summarizeExceptions(form.values.exceptions, {
     none: t('exc_sum_none'),
@@ -83,7 +83,7 @@ export function ExceptionsSection({
       times,
       note: draft.note.trim(),
     });
-    setDraft(blankException());
+    form.setFieldValue('exceptionDraft', blankException());
   };
 
   return (
@@ -165,7 +165,7 @@ export function ExceptionsSection({
                 type="date"
                 label={t('exc_from')}
                 value={draft.from}
-                error={draftErrors.from}
+                error={draftErrors.from ?? form.errors['exceptionDraft.from']}
                 onChange={event => {
                   patch({ from: event.currentTarget.value });
                   setDraftErrors(errors => ({ ...errors, from: undefined }));

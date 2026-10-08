@@ -24,7 +24,8 @@ export async function submitFormResponse({
       client_locale: clientLocale || undefined,
       confirm_field_id: confirmFieldId ?? null,
     });
-    return { manage_url: response.data.manage_url, email_delivery: response.data.email_delivery };
+    const { manage_url, email_delivery, skipped, appointments } = response.data;
+    return { manage_url, email_delivery, skipped, appointments };
   } catch (error) {
     if (error instanceof AxiosError) {
       throw { ...error.response?.data, status: error.response?.status };

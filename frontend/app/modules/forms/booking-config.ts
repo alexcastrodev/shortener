@@ -50,6 +50,7 @@ export type Values = {
   categories: CategoryValues[];
   services: ServiceValues[];
   exceptions: ExceptionValues[];
+  exceptionDraft: ExceptionValues;
   approval: 'auto' | 'manual';
   approval_timeout_minutes: number | '';
   approval_on_timeout: 'decline' | 'accept';
@@ -190,6 +191,7 @@ export function initialValues(field?: FormField): Values {
       serviceIds: item.service_ids ?? [],
       note: item.note ?? '',
     })),
+    exceptionDraft: blankException(),
     approval: rules?.approval ?? 'auto',
     approval_timeout_minutes: rules?.approval_timeout_minutes ?? 1440,
     approval_on_timeout: rules?.approval_on_timeout ?? 'decline',

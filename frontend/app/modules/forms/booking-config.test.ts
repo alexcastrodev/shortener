@@ -476,3 +476,13 @@ test('the waiting list is sent with its confirmation time, or cleared', () => {
   assert.equal(toBookingInput(off, false).rules?.waitlist_confirm_minutes, null);
   assert.equal(initialValues(field).waitlist_confirm_minutes, 120);
 });
+
+test('a day off that was typed but not added starts blank and is never sent', () => {
+  const values = initialValues(undefined);
+  assert.equal(values.exceptionDraft.from, '');
+  const typed = {
+    ...values,
+    exceptionDraft: { ...values.exceptionDraft, from: '2026-12-24' },
+  };
+  assert.deepEqual(toBookingInput(typed, true).exceptions, []);
+});
