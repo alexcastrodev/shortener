@@ -27,7 +27,7 @@ class Notification < ApplicationRecord
   end
 
   def self.mirror_to_client(kind, event_key, source, payload, email)
-    user = User.active.where.not(verified_at: nil).find_by("lower(email) = ?", email.to_s.downcase)
+    user = client_account(email)
     return unless user
 
     create!(
@@ -42,6 +42,24 @@ class Notification < ApplicationRecord
       status: "sent",
       sent_at: Time.current,
     )
+  end
+
+  def self.client_account(email)
+    User.active.where.not(verified_at: nil).find_by("lower(email) = ?", email.to_s.downcase)
+  end
+
+  def self.bell(user)
+    in_app.where(user_id: user.id, recipient_kind: ["owner", "client"])
+  end
+
+  def self.present(rows, user)
+    ids = rows.filter_map { |row| row.payload["waitlist_entry_id"] }
+    entries = ids.empty? ? {} : WaitlistEntry.active.where(id: ids).where("lower(email) = ?", user.email.downcase).index_by(&:id)
+    rows.map do |row|
+      entry = entries[row.payload["waitlist_entry_id"]]
+      item = { id: row.id, kind: row.kind, recipient_kind: row.recipient_kind, payload: row.payload.except("waitlist_entry_id"), read_at: row.read_at&.iso8601, created_at: row.created_at.iso8601 }
+      entry ? item.merge(waitlist_path: "/w/#{entry.token}") : item
+    end
   end
 
   def self.notify_owner(user_id:, kind:, event_key:, source:, payload:)

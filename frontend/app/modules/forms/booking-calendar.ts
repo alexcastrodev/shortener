@@ -1,3 +1,4 @@
+import type { BookingService } from '@internal/core/types/Form';
 import { pad } from './monthly-booking.ts';
 
 export const MAX_DAYS = 56;
@@ -72,4 +73,34 @@ export function keepFree<T extends { date: string; time: string }>(
       session.date > range.to ||
       free.has(`${session.date}|${session.time}`)
   );
+}
+
+const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+export function previewSlots(
+  service: Pick<BookingService, 'days' | 'times'> &
+    Partial<Pick<BookingService, 'times_by_day' | 'capacity'>>,
+  from: string,
+  to: string,
+  today: Date
+): { starts_at: string; date: string; time: string; remaining: number }[] {
+  const slots = [];
+  const first = isoDay(today);
+  const [year, month, day] = from.split('-').map(Number);
+  for (let cursor = new Date(year, month - 1, day); isoDay(cursor) <= to; ) {
+    const date = isoDay(cursor);
+    const weekday = WEEKDAY_KEYS[cursor.getDay()];
+    if (date > first && service.days.includes(weekday)) {
+      const times = service.times_by_day?.[weekday] ?? service.times;
+      for (const time of [...times].sort())
+        slots.push({
+          starts_at: `${date}T${time}:00`,
+          date,
+          time,
+          remaining: service.capacity ?? 1,
+        });
+    }
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);
+  }
+  return slots;
 }

@@ -15,6 +15,7 @@ import {
   keepFree,
   monthOf,
   monthRange,
+  previewSlots,
   shiftMonth,
 } from './booking-calendar.ts';
 import {
@@ -90,22 +91,35 @@ export function BookingInput({
   const cached = useRef(cache);
   cached.current = cache;
   const key = `${serviceId}|${reloadKey ?? ''}|${attempt}`;
-  const loader = useRef(loadSlots);
-  loader.current = loadSlots;
+  const preview = !loadSlots;
+  const loader = useRef<LoadSlots>(async () => ({ slots: [], full: [] }));
+  loader.current =
+    loadSlots ??
+    (async (id, from, to) => ({
+      slots: previewSlots(
+        allServices.find(item => item.id === id) ?? {
+          days: [],
+          times: [],
+        },
+        from,
+        to,
+        new Date()
+      ),
+      full: [],
+    }));
   const latest = useRef({ value, onChange });
   latest.current = { value, onChange };
-  const live = !!loadSlots;
   const sessions = value?.sessions ?? [];
   const monthly = value?.monthly;
 
   useEffect(() => {
-    if (!live || !serviceId || mode === 'monthly') return;
+    if (!serviceId || mode === 'monthly') return;
     if (cached.current.key === key && cached.current.months[month]) return;
     const today = new Date();
     const range = monthRange(month, today);
     if (!range) return;
     let current = true;
-    loader.current!(serviceId, range.from, range.to)
+    loader.current(serviceId, range.from, range.to)
       .then(loaded => {
         if (!current) return;
         setCache(previous => ({
@@ -135,18 +149,7 @@ export function BookingInput({
     return () => {
       current = false;
     };
-  }, [live, serviceId, mode, month, key]);
-
-  if (!live) {
-    return (
-      <p
-        id={inputId}
-        className={`rounded-lg px-3 py-3 text-sm ${theme.button}`}
-      >
-        {t('booking_preview')}
-      </p>
-    );
-  }
+  }, [serviceId, mode, month, key]);
 
   const restartView = () => {
     seeking.current = true;
@@ -372,6 +375,9 @@ export function BookingInput({
               )}
               {status === 'ready' && loaded.slots.length === 0 && (
                 <p className="text-sm opacity-80">{t('booking_none')}</p>
+              )}
+              {preview && (
+                <p className="text-xs opacity-70">{t('booking_preview_note')}</p>
               )}
               {shown && (
                 <div className="space-y-2">

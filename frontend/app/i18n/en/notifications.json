@@ -14,6 +14,8 @@
   "client_kind_appointment_declined": "Your booking was declined",
   "client_kind_appointment_cancelled": "Your booking was cancelled",
   "client_kind_appointment_reminder": "Reminder: you have a booking",
+  "client_kind_waitlist_joined": "You joined the waiting list for {{service}}",
+  "client_kind_waitlist_offered": "A spot opened up for {{service}} — {{when}}",
   "client_kind_appointment_rescheduled": "Your booking was rescheduled",
   "kind_unknown": "Update",
   "sessions_one": "{{count, number}} session",

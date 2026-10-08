@@ -333,6 +333,93 @@ RSpec.describe("the waiting list", type: :request) do
     end
   end
 
+  describe "in-app notices for someone with a Kurz account" do
+    let!(:bo) { FactoryBot.create(:user, email: "Bo@Example.com", verified_at: now) }
+    let(:bo_headers) { { "Authorization" => "Bearer #{SessionToken.issue(bo)}" } }
+
+    before { book }
+
+    def notices = Notification.in_app.where(recipient_kind: "client").order(:id)
+
+    def bell(headers = bo_headers)
+      get("/api/me/notifications", headers: headers)
+      json["notifications"]
+    end
+
+    it "tells a verified account when it joins and when a place is offered, without the link token" do
+      join
+      cancel_booking
+      expect(notices.pluck(:kind, :user_id, :recipient_email, :appointment_id, :event_key, :status)).to(eq([
+        ["waitlist_joined", bo.id, "bo@example.com", nil, "waitlist:#{entry.id}:joined", "sent"],
+        ["waitlist_offered", bo.id, "bo@example.com", nil, "waitlist:#{entry.id}:offered", "sent"],
+      ]))
+      expect(notices.first.payload).to(eq("waitlist_entry_id" => entry.id, "form_title" => "Salon", "service" => "Haircut", "starts_at" => "2026-11-03T09:00:00Z"))
+      expect(notices.map(&:payload).to_json).not_to(include(entry.token))
+    end
+
+    it "tells nobody without a verified, active account" do
+      join(name: "Cy")
+      bo.update!(verified_at: nil)
+      join(name: "Bo")
+      entry.update!(status: "left")
+      bo.update!(verified_at: now, deactivated_at: now)
+      join(name: "Bo")
+      expect(WaitlistEntry.count).to(eq(3))
+      expect(notices).to(be_empty)
+    end
+
+    it "notices even when the email budget is spent" do
+      allow(MailBudget).to(receive(:reserve).and_return(MailBudget::Result.new(ok: false, reason: "daily")))
+      perform_enqueued_jobs { join }
+      expect(response).to(have_http_status(:created))
+      expect(deliveries.map(&:to).flatten).not_to(include("bo@example.com"))
+      expect(notices.pluck(:kind)).to(eq(["waitlist_joined"]))
+    end
+
+    it "never lets a failed notice break joining or offering" do
+      allow(Rails.logger).to(receive(:error).and_call_original)
+      allow(Notification).to(receive(:create!).and_raise(ActiveRecord::StatementInvalid))
+      join
+      expect(response).to(have_http_status(:created))
+      expect(entry.status).to(eq("waiting"))
+      expect(Rails.logger).to(have_received(:error).with(/in-app notice failed entry=#{entry.id} kind=joined/))
+    end
+
+    it "keeps offering when the notice collides inside the cancellation" do
+      join
+      Notification.create!(channel: "in_app", kind: "waitlist_offered", recipient_kind: "client", user_id: bo.id, recipient_email: "bo@example.com", event_key: "waitlist:#{entry.id}:offered", payload: {}, status: "sent")
+      cancel_booking
+      expect(response).to(have_http_status(:ok))
+      expect(entry.reload.status).to(eq("offered"))
+      expect(Appointment.order(:id).first.status).to(eq("cancelled"))
+    end
+
+    it "links to the place only while it is open, and never shows the entry id" do
+      join
+      cancel_booking
+      items = bell
+      expect(items.map { |item| item["kind"] }).to(eq(["waitlist_offered", "waitlist_joined"]))
+      expect(items.map { |item| item["waitlist_path"] }).to(eq(["/w/#{entry.token}"] * 2))
+      expect(items.first["payload"]).to(eq("form_title" => "Salon", "service" => "Haircut", "starts_at" => "2026-11-03T09:00:00Z"))
+      expect(response.body).not_to(include("waitlist_entry_id"))
+
+      ["claimed", "expired", "left"].each do |status|
+        entry.update!(status: status)
+        expect(bell.map { |item| item.key?("waitlist_path") }).to(eq([false, false]), status)
+      end
+    end
+
+    it "never gives someone else a link to a place that is not theirs" do
+      join
+      cy = FactoryBot.create(:user, verified_at: now)
+      Notification.create!(channel: "in_app", kind: "waitlist_joined", recipient_kind: "client", user_id: cy.id, recipient_email: cy.email, event_key: "forged", payload: { waitlist_entry_id: entry.id }, status: "sent")
+      items = bell("Authorization" => "Bearer #{SessionToken.issue(cy)}")
+      expect(items.size).to(eq(1))
+      expect(items.first).not_to(have_key("waitlist_path"))
+      expect(response.body).not_to(include(entry.token))
+    end
+  end
+
   describe "a form that asks for no name and no email" do
     let(:bare) { Form.create!(user: current_user, title: "Bare") }
     let(:field) { bare.reload.fields.first }

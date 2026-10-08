@@ -47,7 +47,7 @@
   "booking_day_chosen": "{{date}}, time chosen",
   "booking_zone": "Times are in {{zone}}",
   "booking_summary": "Your booking",
-  "booking_preview": "Available times appear on the live form.",
+  "booking_preview_note": "Sample times based on your schedule. The published form shows real availability.",
   "booking_taken": "That time was just taken. Please pick another.",
   "booking_load_failed": "We could not load the times.",
   "booking_retry": "Try again",

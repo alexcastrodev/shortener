@@ -14,6 +14,8 @@
   "client_kind_appointment_declined": "A sua marcação foi recusada",
   "client_kind_appointment_cancelled": "A sua marcação foi cancelada",
   "client_kind_appointment_reminder": "Lembrete: tem uma marcação",
+  "client_kind_waitlist_joined": "Entrou na lista de espera de {{service}}",
+  "client_kind_waitlist_offered": "Abriu-se uma vaga para {{service}} — {{when}}",
   "client_kind_appointment_rescheduled": "A sua marcação foi reagendada",
   "kind_unknown": "Atualização",
   "sessions_one": "{{count, number}} sessão",

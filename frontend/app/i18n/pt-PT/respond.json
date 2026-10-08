@@ -47,7 +47,7 @@
   "booking_day_chosen": "{{date}}, hora escolhida",
   "booking_zone": "Os horários são em {{zone}}",
   "booking_summary": "A sua marcação",
-  "booking_preview": "Os horários disponíveis aparecem no formulário publicado.",
+  "booking_preview_note": "Horários de exemplo com base no seu calendário. O formulário publicado mostra a disponibilidade real.",
   "booking_taken": "Esse horário acabou de ser ocupado. Escolha outro.",
   "booking_load_failed": "Não conseguimos carregar os horários.",
   "booking_retry": "Tentar novamente",

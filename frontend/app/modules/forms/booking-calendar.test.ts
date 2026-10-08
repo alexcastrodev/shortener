@@ -8,6 +8,7 @@ import {
   lastBookable,
   monthGrid,
   monthRange,
+  previewSlots,
   shiftMonth,
 } from './booking-calendar.ts';
 
@@ -68,4 +69,30 @@ test('only sessions inside the loaded range can be dropped', () => {
     { date: '2026-11-03', time: '10:00' },
   ];
   assert.deepEqual(keepFree(sessions, slots, range), [sessions[0], sessions[2]]);
+});
+
+test('preview slots follow weekdays, per-day times and start tomorrow', () => {
+  const today = new Date(2026, 9, 8);
+  const service = {
+    days: ['mon', 'fri'],
+    times: ['10:00', '09:00'],
+    times_by_day: { fri: ['15:00'] },
+    capacity: 3,
+  };
+  const slots = previewSlots(service, '2026-10-08', '2026-10-19', today);
+  assert.deepEqual(
+    slots.map(slot => `${slot.date} ${slot.time}`),
+    ['2026-10-09 15:00', '2026-10-12 09:00', '2026-10-12 10:00', '2026-10-16 15:00', '2026-10-19 09:00', '2026-10-19 10:00']
+  );
+  assert.equal(slots[0].remaining, 3);
+});
+
+test('preview slots are empty without days or times and clip to the range', () => {
+  const today = new Date(2026, 9, 8);
+  const all = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  assert.deepEqual(previewSlots({ days: [], times: ['09:00'] }, '2026-10-08', '2026-10-31', today), []);
+  assert.deepEqual(previewSlots({ days: all, times: [] }, '2026-10-08', '2026-10-31', today), []);
+  const clipped = previewSlots({ days: all, times: ['09:00'] }, '2026-10-10', '2026-10-11', today);
+  assert.deepEqual(clipped.map(slot => slot.date), ['2026-10-10', '2026-10-11']);
+  assert.equal(clipped[0].remaining, 1);
 });
