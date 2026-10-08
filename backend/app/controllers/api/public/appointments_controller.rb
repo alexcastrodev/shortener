@@ -50,17 +50,6 @@ class Api::Public::AppointmentsController < ApplicationController
 
   def payload
     rows = Appointment.where(group_key: @appointment.group_key).where.not(status: "rescheduled").includes(:slot).order("appointment_slots.starts_at").references(:slot).to_a
-    first = rows.first
-    {
-      appointment: {
-        form_title: @appointment.form.title,
-        service: first.snapshot["name"],
-        status: (Appointment::HOLDING & rows.map(&:status)).min_by { |status| status == "confirmed" ? 0 : 1 } || "cancelled",
-        cancellable: rows.any? { |row| Appointment::HOLDING.include?(row.status) && row.slot.starts_at > Time.current },
-        time_zone: Appointments::Book.valid_zone(first.client_time_zone) || "UTC",
-        series: first.snapshot["monthly"].present?,
-        sessions: rows.map { |row| { starts_at: row.slot.starts_at.iso8601, status: row.status } },
-      },
-    }
+    { appointment: { form_title: @appointment.form.title, **Appointments::ForClient.summary(rows) } }
   end
 end

@@ -7,6 +7,7 @@ export interface SubmitFormResponseParams {
   referer?: string;
   clientTimeZone?: string;
   clientLocale?: string;
+  confirmFieldId?: string | null;
 }
 
 export interface SubmitFormReceipt {

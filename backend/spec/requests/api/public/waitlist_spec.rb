@@ -333,6 +333,35 @@ RSpec.describe("the waiting list", type: :request) do
     end
   end
 
+  describe "a form that asks for no name and no email" do
+    let(:bare) { Form.create!(user: current_user, title: "Bare") }
+    let(:field) { bare.reload.fields.first }
+    let(:ip) { { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" } }
+
+    before do
+      Forms::Definition.add(bare, { "type" => "booking", "label" => "When", "services" => [service], "rules" => rules })
+      Forms::Publish.call(form: bare.reload)
+    end
+
+    it "books the person who waited under their name and still emails them the confirmation" do
+      answers = { field["id"] => { "service" => field["services"].first["id"], "sessions" => [{ "date" => "2026-11-03", "time" => "09:00" }] } }
+      post("/api/public/forms/#{bare.public_id}/responses", params: { answers: answers, turnstile_token: "t" }, headers: ip, as: :json)
+      expect(json["email_delivery"]).to(eq("none"))
+      post("/api/public/forms/#{bare.public_id}/waitlist", params: { service: field["services"].first["id"], date: "2026-11-03", time: "09:00", name: "Bo", email: "bo@example.com", turnstile_token: "t" }, headers: ip, as: :json)
+      expect(response).to(have_http_status(:created))
+      cancel_booking(Appointment.find_by(form_id: bare.id))
+      deliveries.clear
+
+      perform_enqueued_jobs { post("/api/public/waitlist/#{token_of}/claim", as: :json) }
+
+      expect(json["result"]).to(eq("claimed"))
+      expect(Appointment.find_by(form_id: bare.id, status: "confirmed")).to(have_attributes(client_name: "Bo", client_email: "bo@example.com"))
+      expect(FormResponse.where(form_id: bare.id).last.answers.keys).to(eq([field["id"]]))
+      expect(Notification.where(channel: "email", recipient_kind: "client", kind: "appointment_confirmed").pluck(:recipient_email)).to(eq(["bo@example.com"]))
+      expect(deliveries.map(&:to).flatten).to(include("bo@example.com"))
+    end
+  end
+
   describe "turning it on" do
     def update(rules)
       patch("/api/me/forms/#{form.id}/fields/#{booking_id}", params: { rules: rules }, headers: auth_headers, as: :json)

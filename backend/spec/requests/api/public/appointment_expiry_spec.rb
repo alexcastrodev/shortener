@@ -39,7 +39,7 @@ RSpec.describe("pending requests that nobody answers", type: :request) do
   def book(list, name: "Ana", ip: "198.51.100.7")
     sessions = list.map { |date, time| { "date" => date, "time" => time } }
     answers = { name_id => name, mail_id => "#{name.downcase}@example.com", booking_id => { "service" => service_id, "sessions" => sessions } }
-    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t" }, headers: { "CF-Connecting-IP" => ip }, as: :json)
+    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", confirm_field_id: mail_id }, headers: { "CF-Connecting-IP" => ip }, as: :json)
   end
 
   def free_times

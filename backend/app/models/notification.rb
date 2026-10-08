@@ -10,7 +10,7 @@ class Notification < ApplicationRecord
   def self.queue_email(kind:, event_key:, source:, recipient_kind:, payload:, user_id: nil, recipient_email: nil)
     return if recipient_kind == "owner" && !NotificationPreference.enabled?(user_id: user_id, kind: kind, channel: "email")
 
-    create!(
+    row = create!(
       channel: "email",
       kind: kind,
       recipient_kind: recipient_kind,
@@ -21,6 +21,26 @@ class Notification < ApplicationRecord
       payload: payload,
       status: "pending",
       next_attempt_at: Time.current,
+    )
+    mirror_to_client(kind, event_key, source, payload, recipient_email) if recipient_kind == "client" && kind != "appointment_verify"
+    row
+  end
+
+  def self.mirror_to_client(kind, event_key, source, payload, email)
+    user = User.active.where.not(verified_at: nil).find_by("lower(email) = ?", email.to_s.downcase)
+    return unless user
+
+    create!(
+      channel: "in_app",
+      kind: kind,
+      recipient_kind: "client",
+      user_id: user.id,
+      recipient_email: email,
+      event_key: event_key,
+      appointment: source,
+      payload: payload.to_h.with_indifferent_access.slice(:group_key, :sessions),
+      status: "sent",
+      sent_at: Time.current,
     )
   end
 

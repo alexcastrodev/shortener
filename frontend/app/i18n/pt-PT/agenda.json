@@ -80,5 +80,14 @@
   "has_sessions": "tem sessões",
   "week_days": "Dias da semana",
   "expand": "Expandir",
-  "collapse": "Sair do ecrã inteiro"
+  "collapse": "Sair do ecrã inteiro",
+  "status_cancelled": "Cancelada",
+  "status_declined": "Recusada",
+  "status_expired": "Expirada",
+  "panel_status": "Estado",
+  "show_mine": "Mostrar as minhas marcações",
+  "mine_label": "A minha marcação",
+  "mine_sessions": "Sessões desta marcação",
+  "mine_manage": "Gerir marcação",
+  "mine_zone_hint": "{{time}} no fuso horário da marcação ({{zone}})"
 }

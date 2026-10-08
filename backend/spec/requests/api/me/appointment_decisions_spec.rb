@@ -41,7 +41,7 @@ RSpec.describe("the owner approves, declines and cancels from the agenda", type:
   def book(list, name: "Ana", ip: "198.51.100.7")
     sessions = list.map { |date, time| { "date" => date, "time" => time } }
     answers = { name_id => name, mail_id => "#{name.downcase}@example.com", booking_id => { "service" => service_id, "sessions" => sessions } }
-    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", client_locale: "en" }, headers: { "CF-Connecting-IP" => ip }, as: :json)
+    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", confirm_field_id: mail_id, client_locale: "en" }, headers: { "CF-Connecting-IP" => ip }, as: :json)
   end
 
   def first_row = Appointment.order(:id).first

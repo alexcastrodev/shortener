@@ -84,6 +84,8 @@ Rails.application.routes.draw do
         member { post :read }
         collection { post :read_all }
       end
+      resources :bookings, only: [:index]
+      post "bookings/:group_key/manage_link", to: "bookings#manage_link"
       resources :forms, only: [:index, :show, :create, :update, :destroy] do
         member do
           post :publish

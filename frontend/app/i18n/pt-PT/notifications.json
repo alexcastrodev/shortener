@@ -9,6 +9,12 @@
   "kind_appointment_cancelled": "Marcação cancelada",
   "kind_appointment_expired": "Pedido expirou",
   "kind_appointment_auto_confirmed": "Marcação confirmada automaticamente",
+  "client_kind_appointment_confirmed": "A sua marcação foi confirmada",
+  "client_kind_appointment_request_received": "O seu pedido de marcação foi recebido",
+  "client_kind_appointment_declined": "A sua marcação foi recusada",
+  "client_kind_appointment_cancelled": "A sua marcação foi cancelada",
+  "client_kind_appointment_reminder": "Lembrete: tem uma marcação",
+  "client_kind_appointment_rescheduled": "A sua marcação foi reagendada",
   "kind_unknown": "Atualização",
   "sessions_one": "{{count, number}} sessão",
   "sessions_other": "{{count, number}} sessões"

@@ -107,8 +107,7 @@ module Forms
         extra = answerable.reject { |field| ["booking"].include?(field["type"]) }.group_by { |field| field["type"] }
         blocks << block("waitlist_questions", "the waiting list works only with a name, an email and the booking as required questions") if (extra.keys - ["short_text", "email"]).any? || extra.values.any? { |list| list.size > 1 }
       end
-      blocks << block("no_email", "add a required email question to send the confirmation") unless answerable.any? { |field| field["type"] == "email" }
-      blocks << block("no_name", "add a required short text question for the name") unless answerable.any? { |field| field["type"] == "short_text" }
+      blocks << block("no_email", "add a required email question to send the verification code") if booking.dig("rules", "verify_email") == true && answerable.none? { |field| field["type"] == "email" }
       blocks
     end
 

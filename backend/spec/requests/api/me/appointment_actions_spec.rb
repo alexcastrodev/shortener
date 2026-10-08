@@ -41,7 +41,7 @@ RSpec.describe("owner actions on an appointment: reschedule and remind", type: :
   def book(list, name: "Ana", ip: "198.51.100.7", locale: "en")
     sessions = list.map { |date, time| { "date" => date, "time" => time } }
     answers = { name_id => name, mail_id => "#{name.downcase}@example.com", booking_id => { "service" => service_id, "sessions" => sessions } }
-    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", client_locale: locale, client_time_zone: "Europe/Lisbon" }, headers: { "CF-Connecting-IP" => ip }, as: :json)
+    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", confirm_field_id: mail_id, client_locale: locale, client_time_zone: "Europe/Lisbon" }, headers: { "CF-Connecting-IP" => ip }, as: :json)
   end
 
   def first_row = Appointment.joins(:slot).order("appointment_slots.starts_at").first

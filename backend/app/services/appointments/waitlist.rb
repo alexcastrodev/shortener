@@ -160,8 +160,10 @@ module Appointments
       fields = Forms::PublicDefinition.for(form).fields
       name_id = fields.find { |field| field["type"] == "short_text" && field["required"] }&.fetch("id")
       mail_id = fields.find { |field| field["type"] == "email" && field["required"] }&.fetch("id")
-      answers = { name_id => entry.name, mail_id => entry.email, booking["id"] => { "service" => entry.service_key, "sessions" => [{ "date" => local.to_date.iso8601, "time" => local.strftime("%H:%M") }] } }
-      Forms::SubmitResponse.call(form: form, answers: answers, client: { time_zone: entry.time_zone, locale: entry.locale }, claim_at: entry.starts_at)
+      answers = { booking["id"] => { "service" => entry.service_key, "sessions" => [{ "date" => local.to_date.iso8601, "time" => local.strftime("%H:%M") }] } }
+      answers[name_id] = entry.name if name_id
+      answers[mail_id] = entry.email if mail_id
+      Forms::SubmitResponse.call(form: form, answers: answers, client: { time_zone: entry.time_zone, locale: entry.locale }, claim_at: entry.starts_at, contact: { name: entry.name, email: entry.email })
     end
 
     module Mailing

@@ -37,7 +37,7 @@ RSpec.describe("fixed monthly booking", type: :request) do
 
   def monthly(month: "2026-11", weekdays: ["mon", "wed"], time: "09:00", name: "Ana", service: service_id)
     answers = { name_id => name, mail_id => "#{name.downcase}@example.com", booking_id => { "service" => service, "monthly" => { "month" => month, "weekdays" => weekdays, "time" => time } } }
-    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", client_time_zone: "UTC" }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
+    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", confirm_field_id: mail_id, client_time_zone: "UTC" }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
   end
 
   def days = Appointment.joins(:slot).order("appointment_slots.starts_at").pluck("appointment_slots.starts_at").map { |time| time.strftime("%m-%d") }

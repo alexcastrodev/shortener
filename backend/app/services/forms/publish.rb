@@ -23,12 +23,22 @@ module Forms
 
     DIGEST_SQL = "published_digest = encode(sha256(convert_to(published_snapshot::text, 'UTF8')), 'hex')".freeze
 
+    def self.questions?(form)
+      form.fields.any? { |field| FieldSchema.answerable?(field) }
+    end
+
+    def self.blocks(form)
+      return [{ code: "no_questions" }] unless questions?(form)
+
+      BookingSchema.publish_blocks(form.fields)
+    end
+
     def initialize(form:)
       @form = form
     end
 
     def call
-      raise NoQuestions if form.fields.none? { |field| FieldSchema.answerable?(field) }
+      raise NoQuestions unless self.class.questions?(form)
 
       blocks = BookingSchema.publish_blocks(form.fields)
       raise Blocked, blocks if blocks.any?

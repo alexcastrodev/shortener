@@ -9,6 +9,10 @@ class FormSerializer < BaseSerializer
     Forms::Snapshot.changed?(form)
   end
 
+  attribute :publish_blocks do |form|
+    Forms::Publish.blocks(form).map { |block| block.slice(:code, :name) }
+  end
+
   attribute :cover_token do |form|
     form.cover_token
   end

@@ -39,6 +39,7 @@ import {
   isSection,
 } from '../../../modules/forms/field-types';
 import { formErrorMessage } from '../../../modules/forms/form-errors';
+import { PublishChecklist } from './publish-checklist';
 import { QuestionEditor } from './question-editor';
 
 const defaultsFor = (type: FormFieldType): FormFieldInput => ({
@@ -158,8 +159,24 @@ export function QuestionList({
     []
   );
 
+  const addEmail = (required: boolean) =>
+    create({
+      formId: form.id,
+      data: {
+        ...defaultsFor('email'),
+        label: t('ed_checklist_email_label'),
+        required,
+      },
+    });
+
   return (
     <Card className="p-5 sm:p-6">
+      <PublishChecklist
+        form={form}
+        adding={isCreating}
+        onAddEmail={addEmail}
+        onSelect={onSelect}
+      />
       {form.fields.length === 0 && (
         <p className="mb-4 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
           {t('ed_no_questions')}

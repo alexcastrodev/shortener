@@ -41,7 +41,7 @@ RSpec.describe("/api/me/notification_preferences", type: :request) do
       Forms::Publish.call(form: form.reload)
     end
     answers = { name_id => "Ana", mail_id => "ana@example.com", booking_id => { "service" => service_id, "sessions" => [{ "date" => "2026-11-03", "time" => "09:00" }] } }
-    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t" }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
+    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", confirm_field_id: mail_id }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
     expect(response).to(have_http_status(:created))
   end
 

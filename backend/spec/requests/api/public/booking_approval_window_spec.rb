@@ -37,7 +37,7 @@ RSpec.describe("approval only for last-minute bookings", type: :request) do
   def book(list, name: "Ana")
     sessions = list.map { |date, time| { "date" => date, "time" => time } }
     answers = { name_id => name, mail_id => "#{name.downcase}@example.com", booking_id => { "service" => service_id, "sessions" => sessions } }
-    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t" }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
+    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", confirm_field_id: mail_id }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
   end
 
   def statuses = Appointment.order(:id).pluck(:status)

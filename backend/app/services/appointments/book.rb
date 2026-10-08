@@ -149,11 +149,15 @@ module Appointments
 
       first = rows.min_by(&:id)
       last = rows.map { |row| row.slot.starts_at }.max
-      raw = AppointmentToken.issue(booking: first, expires_at: [last, now].max + 7.days)
-      receipt = { manage_url: "#{ENV.fetch("FRONTEND_URL", "https://kurz.fyi")}/m/#{raw}", email_delivery: first.client_email.present? ? "queued" : "none" }
+      receipt = { manage_url: manage_url(first, last, now: now), email_delivery: first.client_email.present? ? "queued" : "none" }
       receipt[:skipped] = first.snapshot.dig("monthly", "skipped").to_a if first.snapshot["monthly"]
       receipt[:price] = { total: first.snapshot["total"], currency: first.snapshot["currency"], free_sessions: first.snapshot["free_sessions"] } if first.snapshot["total"]
       receipt
+    end
+
+    def manage_url(first, last, now: Time.current)
+      raw = AppointmentToken.issue(booking: first, expires_at: [last, now].max + 7.days)
+      "#{ENV.fetch("FRONTEND_URL", "https://kurz.fyi")}/m/#{raw}"
     end
 
     def valid_zone(value)

@@ -79,7 +79,10 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
     trackFormEvent(publicId, 'view');
   }, [publicId]);
 
-  const onSubmit = async (answers: Record<string, unknown>) => {
+  const onSubmit = async (
+    answers: Record<string, unknown>,
+    { confirmFieldId }: { confirmFieldId: string | null }
+  ) => {
     if (TURNSTILE_SITE_KEY && !token) {
       throw { message: i18n.t('respond:err_verifying') } satisfies SubmitFailure;
     }
@@ -93,6 +96,7 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
         referer: document.referrer,
         clientTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         clientLocale: i18n.language,
+        confirmFieldId,
       });
     } catch (error) {
       throw failureFor(error as SubmitFormResponseError);

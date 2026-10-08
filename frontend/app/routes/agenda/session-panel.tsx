@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Badge,
   Button,
   Group,
   Modal,
@@ -9,12 +10,13 @@ import {
   TextInput,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconX } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { IconTicket, IconX } from '@tabler/icons-react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@internal/ui';
 import { useAppointmentAction } from '@internal/core/actions/appointment-action/appointment-action.hook';
+import { useCreateBookingManageLink } from '@internal/core/actions/create-booking-manage-link/create-booking-manage-link.hook';
 import type { AppointmentActionName } from '@internal/core/actions/appointment-action/appointment-action.types';
 import type {
   AgendaAppointment,
@@ -22,6 +24,7 @@ import type {
 } from '@internal/core/actions/get-agenda/get-agenda.types';
 import { formatDateTime } from '../../i18n/format';
 import { actionError } from '../../modules/agenda/agenda-actions.ts';
+import type { MySlot } from '../../modules/agenda/schedule-events.ts';
 
 type Dialog =
   | { kind: 'decline' | 'cancel'; appointment: AgendaAppointment }
@@ -51,6 +54,176 @@ export function agendaErrorText(t: TFunction<'agenda'>, error: unknown) {
     default:
       return t('err_unknown');
   }
+}
+
+export function statusText(t: TFunction<'agenda'>, status: string) {
+  switch (status) {
+    case 'pending':
+      return t('status_pending');
+    case 'unverified':
+      return t('status_unverified');
+    case 'cancelled':
+      return t('status_cancelled');
+    case 'declined':
+      return t('status_declined');
+    case 'expired':
+      return t('status_expired');
+    default:
+      return t('status_confirmed');
+  }
+}
+
+function Frame({
+  inline,
+  title,
+  onClose,
+  children,
+}: {
+  inline: boolean;
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const { t } = useTranslation('agenda');
+  const Wrapper = inline ? Card : 'div';
+  return (
+    <Wrapper
+      className={
+        inline
+          ? 'max-h-full w-[360px] shrink-0 self-start overflow-y-auto p-4'
+          : undefined
+      }
+    >
+      {inline && (
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <h2 className="min-w-0 text-base font-semibold break-words">
+            {title}
+          </h2>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            aria-label={t('panel_close')}
+            onClick={onClose}
+          >
+            <IconX size={16} />
+          </ActionIcon>
+        </div>
+      )}
+      {children}
+    </Wrapper>
+  );
+}
+
+export function MyBookingPanel({
+  slot,
+  zone,
+  inline,
+  onClose,
+}: {
+  slot: MySlot;
+  zone: string;
+  inline: boolean;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation('agenda');
+  const { booking } = slot;
+  const { mutate, isPending } = useCreateBookingManageLink({
+    onSuccess: ({ manage_url }) => {
+      window.open(manage_url, '_blank', 'noopener');
+    },
+    onError: () => {
+      notifications.show({ message: t('err_unknown'), color: 'red' });
+    },
+  });
+
+  return (
+    <Frame inline={inline} title={booking.service} onClose={onClose}>
+      <p className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+        <IconTicket size={14} aria-hidden="true" />
+        {t('mine_label')}
+      </p>
+      <dl className="space-y-2 text-sm">
+        <div>
+          <dt className="text-xs text-muted-foreground">{t('panel_when')}</dt>
+          <dd>
+            {formatDateTime(slot.starts_at, {
+              dateStyle: 'full',
+              timeStyle: 'short',
+              timeZone: zone,
+            })}
+            {booking.time_zone !== zone && (
+              <span className="block text-xs text-muted-foreground">
+                {t('mine_zone_hint', {
+                  time: formatDateTime(slot.starts_at, {
+                    timeStyle: 'short',
+                    timeZone: booking.time_zone,
+                  }),
+                  zone: booking.time_zone,
+                })}
+              </span>
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">{t('panel_form')}</dt>
+          <dd>{booking.form_title}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">
+            {t('panel_status')}
+          </dt>
+          <dd>
+            <Badge
+              variant="light"
+              color={slot.status === 'confirmed' ? 'teal' : 'yellow'}
+            >
+              {statusText(t, slot.status)}
+            </Badge>
+          </dd>
+        </div>
+      </dl>
+
+      {booking.sessions.length > 1 && (
+        <>
+          <h3 className="mt-4 mb-2 text-sm font-medium">
+            {t('mine_sessions')} · {booking.sessions.length}
+          </h3>
+          <ul className="space-y-1 text-sm">
+            {booking.sessions.map(session => (
+              <li
+                key={session.starts_at}
+                aria-current={session.starts_at === slot.starts_at || undefined}
+                className={`flex justify-between gap-2 ${session.starts_at === slot.starts_at ? 'font-medium' : ''}`}
+              >
+                <span>
+                  {formatDateTime(session.starts_at, {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                    timeZone: zone,
+                  })}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {statusText(t, session.status)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <Button
+        mt="md"
+        variant="light"
+        color="brand"
+        size={inline ? 'xs' : 'sm'}
+        className={inline ? undefined : 'min-h-11'}
+        loading={isPending}
+        onClick={() => mutate(booking.group_key)}
+      >
+        {t('mine_manage')}
+      </Button>
+    </Frame>
+  );
 }
 
 export function SessionPanel({
@@ -138,31 +311,12 @@ export function SessionPanel({
     setDialog(next);
   };
 
-  const Wrapper = inline ? Card : 'div';
-
   return (
-    <Wrapper
-      className={
-        inline
-          ? 'max-h-full w-[360px] shrink-0 self-start overflow-y-auto p-4'
-          : undefined
-      }
+    <Frame
+      inline={inline}
+      title={session.service_name ?? t('service_fallback')}
+      onClose={onClose}
     >
-      {inline && (
-        <div className="mb-3 flex items-start justify-between gap-2">
-          <h2 className="min-w-0 text-base font-semibold break-words">
-            {session.service_name ?? t('service_fallback')}
-          </h2>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            aria-label={t('panel_close')}
-            onClick={onClose}
-          >
-            <IconX size={16} />
-          </ActionIcon>
-        </div>
-      )}
       <dl className="space-y-2 text-sm">
         <div>
           <dt className="text-xs text-muted-foreground">{t('panel_when')}</dt>
@@ -216,11 +370,7 @@ export function SessionPanel({
               <p
                 className={`mt-1 text-xs ${appointment.status === 'pending' ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}
               >
-                {appointment.status === 'pending'
-                  ? t('status_pending')
-                  : appointment.status === 'unverified'
-                    ? t('status_unverified')
-                    : t('status_confirmed')}
+                {statusText(t, appointment.status)}
               </p>
               <Group gap={6} mt={6}>
                 {appointment.status === 'pending' ? (
@@ -413,6 +563,6 @@ export function SessionPanel({
           </Group>
         </Stack>
       </Modal>
-    </Wrapper>
+    </Frame>
   );
 }

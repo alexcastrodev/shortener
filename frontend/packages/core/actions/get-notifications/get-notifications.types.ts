@@ -7,6 +7,7 @@ export interface AppNotification {
     group_key?: string;
     sessions?: number;
   };
+  recipient_kind: 'owner' | 'client';
   read_at: string | null;
   created_at: string;
 }

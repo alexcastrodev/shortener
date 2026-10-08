@@ -151,8 +151,8 @@ RSpec.describe("/api/me/forms", type: :request) do
       post_form(title: "Contact", description: "Say hi")
 
       expect(response).to(have_http_status(:created))
-      expect(form_json.keys).to(match_array(["id", "created_at", "updated_at", "public_id", "title", "description", "thank_you_message", "theme", "custom_colors", "layout", "published", "fields", "responses_count", "public_url", "shortlink_id", "published_version", "cover_position", "intro_enabled", "start_label", "cover_token", "has_unpublished_changes", "short_url"]))
-      expect(form_json).to(include("title" => "Contact", "published" => false, "fields" => [], "responses_count" => 0))
+      expect(form_json.keys).to(match_array(["id", "created_at", "updated_at", "public_id", "title", "description", "thank_you_message", "theme", "custom_colors", "layout", "published", "fields", "responses_count", "public_url", "shortlink_id", "published_version", "cover_position", "intro_enabled", "start_label", "cover_token", "has_unpublished_changes", "publish_blocks", "short_url"]))
+      expect(form_json).to(include("title" => "Contact", "published" => false, "fields" => [], "responses_count" => 0, "publish_blocks" => [{ "code" => "no_questions" }]))
       expect(form_json["public_id"]).to(match(/\A[A-Za-z0-9]{12}\z/))
     end
 
@@ -283,6 +283,21 @@ RSpec.describe("/api/me/forms", type: :request) do
 
       expect(response).to(have_http_status(:unprocessable_content))
       expect(form.reload.published).to(be(false))
+    end
+
+    it "tells the owner what still blocks publishing, with the same rule as publishing" do
+      form = make_form(fields: [{ "id" => "book0001", "type" => "booking", "label" => "When", "services" => [{ "id" => "svc00001", "name" => "Cut", "duration" => 30, "days" => [], "times" => [] }], "rules" => { "time_zone" => "UTC", "approval" => "auto", "verify_email" => true } }])
+
+      get "/api/me/forms/#{form.id}", headers: auth_headers
+      blocks = response.parsed_body["form"]["publish_blocks"]
+      expect(blocks).to(eq([{ "code" => "service_incomplete", "name" => "Cut" }, { "code" => "no_email" }]))
+
+      post "/api/me/forms/#{form.id}/publish", headers: auth_headers
+      expect(response.parsed_body["blocks"]).to(eq(blocks))
+
+      form.update!(fields: [field])
+      get "/api/me/forms/#{form.id}", headers: auth_headers
+      expect(response.parsed_body["form"]["publish_blocks"]).to(eq([]))
     end
 
     it "publishes and unpublishes a form that has questions" do

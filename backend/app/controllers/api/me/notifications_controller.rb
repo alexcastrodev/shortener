@@ -26,10 +26,10 @@ class Api::Me::NotificationsController < ApplicationController
   private
 
   def mine
-    Notification.in_app.where(user_id: current_user.id, recipient_kind: "owner")
+    Notification.in_app.where(user_id: current_user.id, recipient_kind: ["owner", "client"])
   end
 
   def serialize(row)
-    { id: row.id, kind: row.kind, payload: row.payload, read_at: row.read_at&.iso8601, created_at: row.created_at.iso8601 }
+    { id: row.id, kind: row.kind, recipient_kind: row.recipient_kind, payload: row.payload, read_at: row.read_at&.iso8601, created_at: row.created_at.iso8601 }
   end
 end

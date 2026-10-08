@@ -42,7 +42,9 @@
   "booking_pick": "Pick a day and a time",
   "booking_loading": "Loading times…",
   "booking_none": "No times available in this period.",
-  "booking_more_dates": "Show more dates",
+  "booking_prev_month": "Previous month",
+  "booking_next_month": "Next month",
+  "booking_day_chosen": "{{date}}, time chosen",
   "booking_zone": "Times are in {{zone}}",
   "booking_summary": "Your booking",
   "booking_preview": "Available times appear on the live form.",
@@ -82,5 +84,7 @@
   "waitlist_not_full": "This time has room now: pick it above.",
   "waitlist_list_full": "The waiting list for this time is full.",
   "waitlist_invalid": "Check your name and email.",
-  "waitlist_failed": "We could not add you. Please try again."
+  "waitlist_failed": "We could not add you. Please try again.",
+  "confirm_here": "I want the confirmation sent to this e-mail",
+  "receipt_account": "Have a Kurz account with this e-mail? Sign in to see your bookings and get notifications in the app."
 }

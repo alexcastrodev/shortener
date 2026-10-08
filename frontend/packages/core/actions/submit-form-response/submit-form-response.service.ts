@@ -11,6 +11,7 @@ export async function submitFormResponse({
   referer,
   clientTimeZone,
   clientLocale,
+  confirmFieldId,
 }: SubmitFormResponseParams): Promise<SubmitFormReceipt> {
   try {
     const response = await publicApi.post<SubmitFormReceipt>(`/api/public/forms/${encodeURIComponent(publicId)}/responses`, {
@@ -21,6 +22,7 @@ export async function submitFormResponse({
       referer: referer || undefined,
       client_time_zone: clientTimeZone || undefined,
       client_locale: clientLocale || undefined,
+      confirm_field_id: confirmFieldId ?? null,
     });
     return { manage_url: response.data.manage_url, email_delivery: response.data.email_delivery };
   } catch (error) {

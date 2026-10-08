@@ -38,7 +38,7 @@ RSpec.describe("/api/me/notifications", type: :request) do
       expect(response).to(have_http_status(:ok))
       expect(json["notifications"].map { |row| row["id"] }).to(eq([second.id, first.id]))
       expect(json["unread_count"]).to(eq(1))
-      expect(json["notifications"].first.keys).to(match_array(["id", "kind", "payload", "read_at", "created_at"]))
+      expect(json["notifications"].first.keys).to(match_array(["id", "kind", "recipient_kind", "payload", "read_at", "created_at"]))
     end
 
     it "never lists notifications of other channels or recipients" do

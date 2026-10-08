@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { FormField } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
 import { FieldInput, focusFirstInput, isBlank, type Answer } from './field-inputs';
+import { useConfirmEmail } from './confirm-email';
 import { isSection } from './field-types';
 import type { Props, SubmitFailure, SubmitFormReceipt } from './form-renderer';
 import { BookingReceipt } from './booking-receipt';
@@ -48,6 +49,7 @@ export function PagedForm({
   const [receipt, setReceipt] = useState<SubmitFormReceipt | null>(null);
   const [introduced, setIntroduced] = useState(!form.intro_enabled);
   const started = useRef(false);
+  const { confirmFor, confirmFieldId, resetConfirm } = useConfirmEmail(form.fields, answers);
   const root = useRef<HTMLDivElement>(null);
   const current = Math.min(page, pages.length - 1);
   const last = current === pages.length - 1;
@@ -92,7 +94,7 @@ export function PagedForm({
     if (mode === 'live' && onSubmit) {
       setSubmitting(true);
       try {
-        setReceipt((await onSubmit(answers)) ?? null);
+        setReceipt((await onSubmit(answers, { confirmFieldId })) ?? null);
         setDone(true);
       } catch (failure) {
         const { message, fieldErrors } = (failure ?? {}) as SubmitFailure;
@@ -139,6 +141,7 @@ export function PagedForm({
               className={`text-sm underline ${theme.footer}`}
               onClick={() => {
                 setAnswers({});
+                resetConfirm();
                 setErrors({});
                 setPage(0);
                 setDone(false);
@@ -268,6 +271,7 @@ export function PagedForm({
                 loadSlots={mode === 'live' ? loadSlots : undefined}
                 joinWaitlist={mode === 'live' ? joinWaitlist : undefined}
                 invalid={errors[field.id]}
+                confirm={confirmFor(field)}
               />
               {errors[field.id] && (
                 <p role="alert" className={`mt-3 inline-block ${alertClass}`}>

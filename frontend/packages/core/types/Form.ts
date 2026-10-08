@@ -91,7 +91,10 @@ export type FormField = {
   exceptions?: BookingException[];
   time_zone?: string;
   waitlist?: boolean;
+  verify_email?: boolean;
 };
+
+export type PublishBlock = { code: string; name?: string };
 
 export type Form = {
   id: number;
@@ -108,6 +111,7 @@ export type Form = {
   start_label?: string | null;
   published: boolean;
   fields: FormField[];
+  publish_blocks: PublishBlock[];
   responses_count: number;
   public_url: string;
   shortlink_id: number | null;

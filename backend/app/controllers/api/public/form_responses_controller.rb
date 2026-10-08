@@ -29,6 +29,7 @@ class Api::Public::FormResponsesController < ApplicationController
       meta: meta,
       version: request.request_parameters["form_version"],
       client: { time_zone: request.request_parameters["client_time_zone"], locale: request.request_parameters["client_locale"] },
+      confirm_field_id: request.request_parameters["confirm_field_id"],
     )
 
     if result.errors

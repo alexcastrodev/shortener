@@ -306,6 +306,16 @@ function Builder({ form: current }: { form: Form }) {
               </Tooltip>
             )}
           </div>
+          {!current.published && (
+            <Button
+              size="sm"
+              color="brand"
+              loading={isPublishing}
+              onClick={() => setPublished({ id: current.id, published: true })}
+            >
+              {t('ed_publish')}
+            </Button>
+          )}
           <label
             className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium ${
               current.published ? 'border-primary/50 bg-primary/10' : 'border-border'
