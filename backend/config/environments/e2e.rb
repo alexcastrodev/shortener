@@ -11,7 +11,7 @@ Rails.application.configure do
   config.logger = ActiveSupport::TaggedLogging.logger($stdout)
   config.active_support.report_deprecations = false
   config.active_storage.service = :test
-  config.active_job.queue_adapter = :async
+  config.active_job.queue_adapter = :inline
   config.active_job.log_arguments = false
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
