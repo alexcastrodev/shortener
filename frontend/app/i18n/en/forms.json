@@ -57,6 +57,7 @@
   "ed_load_failed_body": "We could not load this form. Please try again later.",
   "ed_title_required": "Give your form a title",
   "ed_saved": "Form saved",
+  "ed_changes_saved": "Changes saved",
   "ed_cancel": "Cancel",
   "ed_back": "Back to forms",
   "ed_responses": "Responses",
@@ -168,5 +169,11 @@
   "ed_q_save_question": "Save question",
   "ed_q_save_section": "Save section",
   "ed_daily_limit": "You reached the limit of 20 new forms per day. Try again tomorrow.",
+  "err_publish_no_questions": "Add at least one question before publishing.",
+  "err_publish_no_service": "Add at least one service to the booking.",
+  "err_publish_service_incomplete": "The service “{{name}}” needs at least one day and one time.",
+  "err_publish_waitlist": "The waiting list only works with a name, an e-mail and the booking as the only required questions.",
+  "err_publish_no_email": "Add a required e-mail question so the booking confirmation can be sent.",
+  "err_publish_no_name": "Add a required short answer question for the name.",
   "ed_generic_error": "Something went wrong, please try again later."
 }

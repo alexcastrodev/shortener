@@ -5,11 +5,19 @@ module Forms
     class NoQuestions < StandardError; end
 
     class Blocked < StandardError
-      attr_reader :messages
+      attr_reader :blocks
 
-      def initialize(messages)
-        @messages = messages
+      def initialize(blocks)
+        @blocks = blocks
         super(messages.to_sentence)
+      end
+
+      def messages
+        blocks.pluck(:message)
+      end
+
+      def codes
+        blocks.map { |block| block.slice(:code, :name) }
       end
     end
 

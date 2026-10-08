@@ -51,6 +51,7 @@
   "save": "Save booking",
   "add": "Add booking",
   "cancel": "Cancel",
+  "fix_errors": "Some fields need fixing. Check the messages in red.",
   "gen_open": "Fill from working hours",
   "gen_close": "Hide",
   "gen_title": "Working hours",

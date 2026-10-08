@@ -51,6 +51,7 @@
   "save": "Guardar marcação",
   "add": "Adicionar marcação",
   "cancel": "Cancelar",
+  "fix_errors": "Há campos por corrigir. Veja as mensagens a vermelho.",
   "gen_open": "Preencher a partir do horário de trabalho",
   "gen_close": "Esconder",
   "gen_title": "Horário de trabalho",
