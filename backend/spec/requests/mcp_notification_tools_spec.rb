@@ -63,7 +63,7 @@ RSpec.describe("MCP notification tools", type: :request) do
       reply = data(tool("list_notifications"))
       expect(reply["notifications"].map { |row| row["id"] }).to(eq([second.id, first.id]))
       expect(reply["unread_count"]).to(eq(1))
-      expect(reply["notifications"].first).to(include("kind" => "appointment_created", "payload" => { "form_id" => 1, "sessions" => 2 }))
+      expect(reply["notifications"].first).to(include("kind" => "appointment_created", "recipient_kind" => "owner", "payload" => { "form_id" => 1, "sessions" => 2 }))
     end
 
     it "filters unread, pages with a cursor and never counts against the records budget" do
@@ -78,9 +78,23 @@ RSpec.describe("MCP notification tools", type: :request) do
       expect(McpToolCall.where(tool: "list_notifications").sum(:records_returned)).to(eq(0))
     end
 
-    it "only sees owner in-app rows, not emails" do
+    it "only sees my in-app rows, not emails" do
       Notification.create!(channel: "email", kind: "appointment_created", recipient_kind: "owner", user_id: user.id, event_key: "e", payload: {})
+      Notification.create!(channel: "email", kind: "appointment_confirmed", recipient_kind: "client", recipient_email: user.email, event_key: "c", payload: {})
       expect(data(tool("list_notifications"))["notifications"]).to(eq([]))
+    end
+
+    it "also lists what I receive as a client, counted like the web bell" do
+      user.update!(verified_at: Time.current)
+      owner_row = make
+      Notification.queue_email(kind: "appointment_confirmed", event_key: "g1", source: nil, recipient_kind: "client", recipient_email: user.email.upcase, payload: { form_id: 9, response_id: 9, group_key: "g1", sessions: 1 })
+      client_row = Notification.in_app.find_by!(recipient_kind: "client")
+
+      reply = data(tool("list_notifications"))
+
+      expect(reply["notifications"].map { |row| [row["id"], row["recipient_kind"]] }).to(eq([[client_row.id, "client"], [owner_row.id, "owner"]]))
+      expect(reply["notifications"].first["payload"]).to(eq("group_key" => "g1", "sessions" => 1))
+      expect(reply["unread_count"]).to(eq(2))
     end
 
     it "rejects extra arguments and answers for an unavailable account" do
@@ -97,7 +111,7 @@ RSpec.describe("MCP notification tools", type: :request) do
       expect(reply).to(include("id" => row.id, "unread_count" => 0))
       first = row.reload.read_at
       expect(first).to(be_present)
-      travel_to(1.hour.from_now) { tool("mark_notification_read", { id: row.id }) }
+      travel_to(30.minutes.from_now) { tool("mark_notification_read", { id: row.id }) }
       expect(row.reload.read_at).to(eq(first))
     end
 
@@ -106,6 +120,15 @@ RSpec.describe("MCP notification tools", type: :request) do
       expect(data(tool("mark_notification_read", { id: theirs.id }))["error"]).to(eq("not_found"))
       expect(data(tool("mark_notification_read", { id: 0 + 999_999 }))["error"]).to(eq("not_found"))
       expect(theirs.reload.read_at).to(be_nil)
+    end
+
+    it "marks a notification I received as a client" do
+      user.update!(verified_at: Time.current)
+      make
+      Notification.queue_email(kind: "appointment_confirmed", event_key: "g1", source: nil, recipient_kind: "client", recipient_email: user.email, payload: { group_key: "g1" })
+      row = Notification.in_app.find_by!(recipient_kind: "client")
+      expect(data(tool("mark_notification_read", { id: row.id }))).to(include("id" => row.id, "unread_count" => 1))
+      expect(row.reload.read_at).to(be_present)
     end
 
     it "leaves the other notifications unread" do

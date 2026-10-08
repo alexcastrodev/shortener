@@ -17,11 +17,13 @@ module Forms
       end
     end
 
-    def initialize(form:, answers:, idempotency_key: nil, meta: {}, version: nil, client: {}, claim_at: nil)
+    def initialize(form:, answers:, idempotency_key: nil, meta: {}, version: nil, client: {}, claim_at: nil, confirm_field_id: nil, contact: nil)
       @form = form
       @version = version
       @client = client
       @claim_at = claim_at
+      @confirm_field_id = confirm_field_id
+      @contact = contact
       @answers = answers
       @idempotency_key = idempotency_key.presence&.to_s&.first(64)
       @meta = meta
@@ -44,7 +46,7 @@ module Forms
 
     private
 
-    attr_reader :form, :answers, :idempotency_key, :meta, :version, :client, :claim_at
+    attr_reader :form, :answers, :idempotency_key, :meta, :version, :client, :claim_at, :confirm_field_id
 
     def definition
       @definition ||= PublicDefinition.for(form)
@@ -86,10 +88,22 @@ module Forms
     end
 
     def contact(values)
+      return @contact if @contact
+
       fields = definition.fields
-      email_id = fields.find { |field| field["type"] == "email" && field["required"] }&.fetch("id")
       name_id = fields.find { |field| field["type"] == "short_text" && field["required"] }&.fetch("id")
-      { email: values[email_id], name: values[name_id] }
+      { email: values[email_field_id(fields)], name: values[name_id] }
+    end
+
+    def email_field_id(fields)
+      emails = fields.select { |field| field["type"] == "email" }
+      return emails.find { |field| field["required"] }&.fetch("id") if verify_email?(fields)
+
+      emails.find { |field| field["id"] == confirm_field_id }&.fetch("id")
+    end
+
+    def verify_email?(fields)
+      fields.find { |field| field["type"] == "booking" }&.dig("rules", "verify_email") == true
     end
 
     def cast_image(field, raw)

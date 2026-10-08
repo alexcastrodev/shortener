@@ -1,33 +1,16 @@
-import {
-  ActionIcon,
-  Button,
-  Group,
-  SegmentedControl,
-  Select,
-  Stack,
-  Tabs,
-  TextInput,
-} from '@mantine/core';
+import { ActionIcon, Button, Group, Select, Stack } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { modals } from '@mantine/modals';
-import { IconPlus, IconTrash } from '@tabler/icons-react';
-import { useState, type ReactNode } from 'react';
+import { IconX } from '@tabler/icons-react';
+import { useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   MAX_CATEGORIES,
-  blankService,
   isGrouped,
   newCategoryId,
   removeCategory,
-  splitIntoCategories,
-  type ServiceValues,
   type Values,
 } from '../../../modules/forms/booking-config.ts';
-
-type Props = {
-  form: UseFormReturnType<Values>;
-  renderService: (service: ServiceValues, index: number) => ReactNode;
-};
 
 function MoveAndRemove({
   options,
@@ -69,192 +52,138 @@ function MoveAndRemove({
   );
 }
 
-export function CategoriesSection({ form, renderService }: Props) {
+const keepEnter = (event: KeyboardEvent<HTMLInputElement>) => {
+  if (event.key === 'Enter') event.preventDefault();
+};
+
+export function CategoriesSection({
+  form,
+}: {
+  form: UseFormReturnType<Values>;
+}) {
   const { t } = useTranslation('booking');
-  const [view, setView] = useState<'sections' | 'tabs'>('sections');
-  const [active, setActive] = useState<string | null>(null);
-  const { services, categories } = form.values;
-  const grouped = isGrouped(form.values);
+  const [draft, setDraft] = useState('');
+  const { categories } = form.values;
+  const errors = categories
+    .map((_, index) => form.errors[`categories.${index}.name`])
+    .filter(Boolean);
 
-  const addService = (categoryId: string) =>
-    form.insertListItem('services', blankService(t('service_new'), categoryId));
+  const add = () => {
+    const name = draft.trim();
+    setDraft('');
+    if (!name || categories.length >= MAX_CATEGORIES) return;
+    const values = form.getValues();
+    const id = newCategoryId();
+    const first = values.categories[0]?.id ?? id;
+    form.setValues({
+      categories: [...values.categories, { id, name }],
+      services: values.services.map(service =>
+        values.categories.some(item => item.id === service.categoryId)
+          ? service
+          : { ...service, categoryId: first }
+      ),
+    });
+  };
 
-  const confirmRemove = (id: string) => {
-    const options = categories
-      .filter(item => item.id !== id)
-      .map(item => ({ value: item.id, label: item.name || t('category_new') }));
+  const remove = (id: string) => {
+    const values = form.getValues();
+    if (values.categories.length === 1) {
+      form.setValues({
+        categories: [],
+        services: values.services.map(service => ({
+          ...service,
+          categoryId: '',
+        })),
+      });
+      return;
+    }
     modals.open({
       title: t('category_remove_title'),
       centered: true,
       children: (
         <MoveAndRemove
-          options={options}
-          onConfirm={moveTo => {
-            form.setValues(removeCategory(form.values, id, moveTo));
-            setActive(null);
-          }}
+          options={values.categories
+            .filter(item => item.id !== id)
+            .map(item => ({
+              value: item.id,
+              label: item.name || t('category_new'),
+            }))}
+          onConfirm={moveTo =>
+            form.setValues(removeCategory(form.getValues(), id, moveTo))
+          }
         />
       ),
     });
   };
 
-  const addCategory = () => {
-    const id = newCategoryId();
-    form.insertListItem('categories', { id, name: t('category_new') });
-    setActive(id);
-  };
-
-  const list = (categoryId: string | null) => {
-    const own = services
-      .map((service, index) => ({ service, index }))
-      .filter(
-        entry => categoryId === null || entry.service.categoryId === categoryId
-      );
-    return own.map(entry => renderService(entry.service, entry.index));
-  };
-
-  const header = (index: number) => {
-    const category = categories[index];
-    const count = services.filter(
-      item => item.categoryId === category.id
-    ).length;
-    return (
-      <Group gap="xs" wrap="nowrap" align="flex-end">
-        <TextInput
-          className="flex-1"
-          label={t('category_name')}
-          {...form.getInputProps(`categories.${index}.name`)}
-        />
-        <p className="pb-2 text-xs text-muted-foreground">
-          {t('category_count', { count })}
-        </p>
-        <ActionIcon
-          variant="subtle"
-          color="red"
-          size="lg"
-          aria-label={t('category_remove', {
-            name: category.name || t('category_new'),
-          })}
-          onClick={() => confirmRemove(category.id)}
-        >
-          <IconTrash size={16} />
-        </ActionIcon>
-      </Group>
-    );
-  };
-
-  const body = (index: number) => {
-    const category = categories[index];
-    return (
-      <Stack gap="md" className="rounded-lg border border-border p-4">
-        {header(index)}
-        {list(category.id)}
-        <div>
-          <Button
-            variant="subtle"
-            size="xs"
-            leftSection={<IconPlus size={14} />}
-            onClick={() => addService(category.id)}
-          >
-            {t('service_add_in', {
-              name: category.name || t('category_new'),
-            })}
-          </Button>
-        </div>
-      </Stack>
-    );
-  };
-
-  if (!grouped) {
-    return (
-      <>
-        {services.length === 0 && (
-          <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-            {t('no_services')}
-          </p>
-        )}
-        {list(null)}
-        <Group gap="xs">
-          <Button
-            variant="subtle"
-            size="xs"
-            leftSection={<IconPlus size={14} />}
-            onClick={() => addService(categories[0]?.id ?? '')}
-          >
-            {t('service_add')}
-          </Button>
-          <Button
-            variant="subtle"
-            size="xs"
-            color="gray"
-            onClick={() =>
-              form.setValues(
-                splitIntoCategories(form.values, [
-                  t('category_first'),
-                  t('category_second'),
-                ])
-              )
-            }
-          >
-            {t('categories_separate')}
-          </Button>
-        </Group>
-      </>
-    );
-  }
-
-  const current = categories.some(item => item.id === active)
-    ? active
-    : categories[0].id;
-
   return (
-    <Stack gap="sm">
-      <Group justify="space-between">
-        <p className="text-xs text-muted-foreground">{t('categories_hint')}</p>
-        <SegmentedControl
-          size="xs"
-          aria-label={t('categories_view')}
-          value={view}
-          onChange={value => setView(value as 'sections' | 'tabs')}
-          data={[
-            { value: 'sections', label: t('categories_view_sections') },
-            { value: 'tabs', label: t('categories_view_tabs') },
-          ]}
-        />
-      </Group>
-      {view === 'sections' ? (
-        categories.map((category, index) => (
-          <div key={category.id}>{body(index)}</div>
-        ))
-      ) : (
-        <Tabs value={current} onChange={setActive}>
-          <Tabs.List>
-            {categories.map(category => (
-              <Tabs.Tab key={category.id} value={category.id}>
-                {category.name || t('category_new')}
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-          {categories.map((category, index) => (
-            <Tabs.Panel key={category.id} value={category.id} pt="sm">
-              {body(index)}
-            </Tabs.Panel>
-          ))}
-        </Tabs>
-      )}
-      {categories.length < MAX_CATEGORIES && (
-        <div>
-          <Button
-            variant="default"
-            size="xs"
-            style={{ borderStyle: 'dashed' }}
-            leftSection={<IconPlus size={14} />}
-            onClick={addCategory}
+    <div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted-foreground">
+          {t('categories_label')}
+        </span>
+        {categories.map((category, index) => (
+          <div
+            key={category.id}
+            className={`flex max-w-full items-center rounded-full border py-0.5 pl-3 pr-1 focus-within:border-primary ${
+              form.errors[`categories.${index}.name`]
+                ? 'border-red-500'
+                : 'border-border'
+            }`}
           >
-            {t('category_add')}
-          </Button>
-        </div>
+            <input
+              aria-label={t('category_name')}
+              aria-invalid={Boolean(form.errors[`categories.${index}.name`])}
+              className="min-w-0 bg-transparent text-sm outline-none"
+              size={Math.max(category.name.length, 4)}
+              maxLength={60}
+              value={category.name}
+              onKeyDown={keepEnter}
+              onChange={event =>
+                form.setFieldValue(
+                  `categories.${index}.name`,
+                  event.currentTarget.value
+                )
+              }
+            />
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              radius="xl"
+              aria-label={t('category_remove', {
+                name: category.name || t('category_new'),
+              })}
+              onClick={() => remove(category.id)}
+            >
+              <IconX size={12} />
+            </ActionIcon>
+          </div>
+        ))}
+        {categories.length < MAX_CATEGORIES && (
+          <input
+            aria-label={t('category_new')}
+            placeholder={`+ ${t('category_new')}`}
+            className="w-40 max-w-full rounded-full border border-dashed border-border bg-transparent px-3 py-1 text-sm outline-none focus:border-primary"
+            maxLength={60}
+            value={draft}
+            onChange={event => setDraft(event.currentTarget.value)}
+            onKeyDown={event => {
+              keepEnter(event);
+              if (event.key === 'Enter') add();
+            }}
+            onBlur={add}
+          />
+        )}
+      </div>
+      {errors.length > 0 && (
+        <p className="mt-1 text-xs text-red-500">{errors[0]}</p>
       )}
-    </Stack>
+      {isGrouped(form.values) && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t('categories_hint')}
+        </p>
+      )}
+    </div>
   );
 }

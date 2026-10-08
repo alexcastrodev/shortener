@@ -8,7 +8,7 @@ export const WEEKDAYS = [
   'sun',
 ] as const;
 
-const pad = (value: number) => String(value).padStart(2, '0');
+export const pad = (value: number) => String(value).padStart(2, '0');
 
 export function monthOptions(today: Date): { value: string; date: Date }[] {
   return [0, 1].map(offset => {

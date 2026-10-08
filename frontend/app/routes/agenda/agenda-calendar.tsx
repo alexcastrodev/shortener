@@ -3,6 +3,7 @@ import 'dayjs/locale/pt';
 import { DayView, MonthView, WeekView } from '@mantine/schedule';
 import type { ScheduleEventData } from '@mantine/schedule';
 import { notifications } from '@mantine/notifications';
+import { IconTicket } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AgendaSession } from '@internal/core/actions/get-agenda/get-agenda.types';
@@ -13,16 +14,19 @@ import {
   type View,
 } from '../../modules/agenda/agenda-layout.ts';
 import {
-  keyOf,
+  slotEvent,
   targetFor,
   toEvent,
   wallClock,
+  type MySlot,
 } from '../../modules/agenda/schedule-events.ts';
+import { statusText } from './session-panel';
 
 type Props = {
   view: View;
   anchor: string;
   sessions: AgendaSession[];
+  mine: MySlot[];
   zone: string;
   colors: Map<string, string>;
   height: string;
@@ -36,10 +40,14 @@ type Props = {
 const sessionOf = (event: ScheduleEventData) =>
   event.payload?.session as AgendaSession;
 
+const slotOf = (event: ScheduleEventData) =>
+  event.payload?.slot as MySlot | undefined;
+
 export function AgendaCalendar({
   view,
   anchor,
   sessions,
+  mine,
   zone,
   colors,
   height,
@@ -51,8 +59,11 @@ export function AgendaCalendar({
 }: Props) {
   const { t, i18n } = useTranslation('agenda');
   const events = useMemo(
-    () => sessions.map(session => toEvent(session, zone, colors)),
-    [sessions, zone, colors]
+    () => [
+      ...sessions.map(session => toEvent(session, zone, colors)),
+      ...mine.map(slot => slotEvent(slot, zone)),
+    ],
+    [sessions, mine, zone, colors]
   );
   const locale = i18n.language.startsWith('pt') ? 'pt' : 'en';
   const nowLocal = () => {
@@ -65,6 +76,7 @@ export function AgendaCalendar({
   const startScrollTime = `${clock(Math.max(0, minutesOfDay(new Date(), zone) - 120)).slice(0, 2)}:00:00`;
 
   const canDragEvent = (event: ScheduleEventData) => {
+    if (slotOf(event)) return false;
     const session = sessionOf(event);
     return (
       new Date(session.starts_at) > new Date() && clientsOf(session).length > 0
@@ -97,6 +109,22 @@ export function AgendaCalendar({
     });
   };
   const renderEventBody = (event: ScheduleEventData) => {
+    const slot = slotOf(event);
+    if (slot)
+      return (
+        <div className="min-w-0 text-left leading-tight">
+          <p className="flex items-center gap-1 text-sm font-semibold">
+            <IconTicket size={12} className="shrink-0" aria-hidden="true" />
+            <span className="truncate">{event.title}</span>
+          </p>
+          <p className="truncate text-[11px] opacity-80">
+            {clock(minutesOfDay(slot.starts_at, zone))} · {t('mine_label')}
+            {slot.status === 'confirmed'
+              ? ''
+              : ` · ${statusText(t, slot.status)}`}
+          </p>
+        </div>
+      );
     const session = sessionOf(event);
     return (
       <div className="min-w-0 text-left leading-tight">
@@ -118,16 +146,23 @@ export function AgendaCalendar({
     }
   ) => {
     const color = event.color ?? 'var(--color-primary)';
-    const pending = sessionOf(event).pending > 0;
+    const slot = slotOf(event);
+    const line = slot
+      ? `color-mix(in srgb, ${color} 45%, var(--color-background))`
+      : color;
+    const pending = slot
+      ? slot.status !== 'confirmed'
+      : sessionOf(event).pending > 0;
     return (
       <button
         {...props}
         style={{
           ...props.style,
-          ['--event-bg' as string]: `color-mix(in srgb, ${color} 26%, var(--color-background))`,
-          ['--event-hover' as string]: `color-mix(in srgb, ${color} 38%, var(--color-background))`,
+          ['--event-bg' as string]: `color-mix(in srgb, ${color} ${slot ? 6 : 26}%, var(--color-background))`,
+          ['--event-hover' as string]: `color-mix(in srgb, ${color} ${slot ? 14 : 38}%, var(--color-background))`,
           ['--event-color' as string]: `color-mix(in srgb, ${color} 55%, var(--color-foreground))`,
-          border: `1px ${pending ? 'dashed' : 'solid'} ${color}`,
+          border: `1px ${pending ? 'dashed' : 'solid'} ${line}`,
+          ...(slot ? { borderLeft: `3px solid ${line}` } : {}),
           borderRadius: 'var(--event-radius)',
         }}
       />
@@ -151,8 +186,7 @@ export function AgendaCalendar({
       notifications.show({ message: t('drop_rejected'), color: 'orange' }),
     renderEventBody,
     renderEvent,
-    onEventClick: (event: ScheduleEventData) =>
-      onSelect(keyOf(sessionOf(event))),
+    onEventClick: (event: ScheduleEventData) => onSelect(String(event.id)),
   };
 
   if (view === 'month') {

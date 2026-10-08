@@ -11,6 +11,7 @@ export interface UpdateFormRequestBody {
   cover_position?: number;
   intro_enabled?: boolean;
   start_label?: string | null;
+  accepting_responses?: boolean;
 }
 
 export interface UpdateFormParams {

@@ -91,7 +91,7 @@ RSpec.describe("security checks for appointments", type: :request) do
     end
 
     it "does not let the client pick the contact fields of another appointment" do
-      submit(answers: { "client_email" => "evil@example.com", "client_name" => "Evil" })
+      submit(answers: { "client_email" => "evil@example.com", "client_name" => "Evil" }, extra: { confirm_field_id: mail_id })
       expect(Appointment.last).to(have_attributes(client_name: "Ana", client_email: "ana@example.com"))
     end
   end

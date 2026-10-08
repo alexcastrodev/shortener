@@ -44,6 +44,13 @@ export function BookingReceipt({ receipt, linkClass, textClass }: Props) {
           ? t('receipt_email_queued')
           : t('receipt_email_none')}
       </p>
+      {receipt.email_delivery === 'queued' && (
+        <p className="mt-2">
+          <a href="/login" className={`underline ${linkClass}`}>
+            {t('receipt_account')}
+          </a>
+        </p>
+      )}
     </div>
   );
 }

@@ -42,7 +42,7 @@ RSpec.describe("take X, pay Y", type: :request) do
   def book(count, ip: "198.51.100.#{rand(1..250)}")
     sessions = (1..count).map { |index| { "date" => (Date.new(2026, 11, 2) + index).iso8601, "time" => "09:00" } }
     answers = { name_id => "Ana", mail_id => "ana@example.com", booking_id => { "service" => service_id, "sessions" => sessions } }
-    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", client_locale: "en" }, headers: { "CF-Connecting-IP" => ip }, as: :json)
+    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", confirm_field_id: mail_id, client_locale: "en" }, headers: { "CF-Connecting-IP" => ip }, as: :json)
   end
 
   describe "the price of a booking" do

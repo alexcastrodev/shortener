@@ -3,6 +3,7 @@ import type {
   FormField,
   FormFieldInput,
 } from '@internal/core/types/Form';
+import { defaultTimes } from './time-generator.ts';
 
 export const WAITLIST_MINUTES_DEFAULT = 120;
 export const REMINDER_CHOICES = [60, 120, 360, 1440, 2880, 10080] as const;
@@ -60,6 +61,7 @@ export type Values = {
   waitlist_confirm_minutes: number | '';
   min_notice_minutes: number | '';
   window_days: number | '';
+  buffer_minutes: number | '';
   max_per_day: number | '';
 };
 
@@ -122,16 +124,22 @@ export const blankException = (): ExceptionValues => ({
   note: '',
 });
 
+export const DEFAULT_CURRENCY = 'EUR';
+const DEFAULT_DURATION = 30;
+
 export const blankService = (name: string, categoryId = ''): ServiceValues => ({
   key: newKey(),
   categoryId,
   name,
-  duration: 60,
+  duration: DEFAULT_DURATION,
   price: '',
-  currency: '',
-  capacity: '',
+  currency: DEFAULT_CURRENCY,
+  capacity: 1,
   days: ['mon', 'tue', 'wed', 'thu', 'fri'],
-  times: [{ key: newKey(), value: '09:00' }],
+  times: defaultTimes(DEFAULT_DURATION).map(value => ({
+    key: newKey(),
+    value,
+  })),
   byDay: {},
   monthly: false,
   monthlyPrice: '',
@@ -156,7 +164,7 @@ export function initialValues(field?: FormField): Values {
       name: service.name,
       duration: service.duration,
       price: service.price ?? '',
-      currency: service.currency ?? '',
+      currency: service.currency || DEFAULT_CURRENCY,
       capacity: service.capacity ?? '',
       days: service.days,
       times: service.times.map(value => ({ key: newKey(), value })),
@@ -195,6 +203,7 @@ export function initialValues(field?: FormField): Values {
     ),
     min_notice_minutes: rules?.min_notice_minutes ?? 0,
     window_days: rules?.window_days ?? 60,
+    buffer_minutes: rules?.buffer_minutes ?? 0,
     max_per_day: rules?.max_per_day ?? '',
   };
 }
@@ -210,6 +219,7 @@ export function toBookingInput(
     min_notice_minutes:
       values.min_notice_minutes === '' ? 0 : values.min_notice_minutes,
     window_days: values.window_days === '' ? 60 : values.window_days,
+    buffer_minutes: values.buffer_minutes === '' ? 0 : values.buffer_minutes,
   };
   if (values.approval === 'manual') {
     rules.approval_timeout_minutes =

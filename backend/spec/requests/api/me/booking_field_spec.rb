@@ -144,7 +144,7 @@ RSpec.describe("the booking question", type: :request) do
     it "lists only the closed set of service keys plus the categories and the time zone" do
       get("/api/public/forms/#{public_form.public_id}")
       shown = JSON.parse(response.body)["form"]["fields"].find { |field| field["type"] == "booking" }
-      expect(shown.keys).to(match_array(["id", "type", "label", "services", "categories", "waitlist", "time_zone"]))
+      expect(shown.keys).to(match_array(["id", "type", "label", "services", "categories", "waitlist", "verify_email", "time_zone"]))
       expect(shown["services"].first.keys).to(match_array(["id", "name", "duration", "price", "currency", "days", "times"]))
       expect(shown["time_zone"]).to(eq("UTC"))
       expect(response.body).not_to(include("approval", "capacity"))
@@ -181,25 +181,38 @@ RSpec.describe("the booking question", type: :request) do
       complete_form(booking: { services: [service.merge(times: [])] })
       publish
       expect(json["errors"]["fields"]).to(include("Haircut needs at least one day and one time"))
-      expect(json["blocks"]).to(include({ "code" => "service_incomplete", "name" => "Haircut" }))
+      expect(json["blocks"]).to(include({ "code" => "service_incomplete", "name" => "Haircut", "service_id" => form.reload.fields.find { |field| field["type"] == "booking" }["services"].first["id"] }))
 
       patch("/api/me/forms/#{form.id}/fields/#{form.reload.fields.find { |field| field["type"] == "booking" }["id"]}", params: { services: [service.merge(days: [])] }, headers: auth_headers, as: :json)
       publish
       expect(json["errors"]["fields"]).to(include("Haircut needs at least one day and one time"))
     end
 
-    it "is blocked without a required email question" do
-      complete_form(extra: [name, email.merge("required" => false)])
+    it "publishes without any name or email question" do
+      complete_form(extra: [])
       publish
-      expect(json["errors"]["fields"]).to(include("add a required email question to send the confirmation"))
-      expect(json["blocks"]).to(include({ "code" => "no_email" }))
+      expect(response).to(have_http_status(:ok))
+      expect(json["form"]["published"]).to(be(true))
     end
 
-    it "is blocked without a required short text question for the name" do
-      complete_form(extra: [email])
+    it "publishes with an optional email question when the email is not verified" do
+      complete_form(extra: [email.merge("required" => false)])
       publish
-      expect(json["errors"]["fields"]).to(include("add a required short text question for the name"))
-      expect(json["blocks"]).to(include({ "code" => "no_name" }))
+      expect(response).to(have_http_status(:ok))
+    end
+
+    it "is blocked without a required email question when the email must be verified" do
+      complete_form(booking: { services: [service], rules: { verify_email: true } }, extra: [name, email.merge("required" => false)])
+      publish
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(json["errors"]["fields"]).to(include("add a required email question to send the verification code"))
+      expect(json["blocks"]).to(eq([{ "code" => "no_email" }]))
+    end
+
+    it "publishes a verified booking with a required email question and no name" do
+      complete_form(booking: { services: [service], rules: { verify_email: true } }, extra: [email])
+      publish
+      expect(response).to(have_http_status(:ok))
     end
 
     it "does not block forms without a booking question" do

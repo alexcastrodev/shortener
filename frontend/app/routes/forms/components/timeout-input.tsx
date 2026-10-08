@@ -2,6 +2,10 @@ import { Group, NumberInput, Select } from '@mantine/core';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  MAX_TIMEOUT,
+  MIN_TIMEOUT,
+  UNIT_MINUTES,
+  amountBound,
   joinMinutes,
   splitMinutes,
   type Unit,
@@ -11,20 +15,23 @@ export function TimeoutInput({
   minutes,
   error,
   label,
+  hint,
+  min = MIN_TIMEOUT,
+  max = MAX_TIMEOUT,
   onChange,
 }: {
   minutes: number | '';
   error?: string;
   label?: string;
+  hint?: string;
+  min?: number;
+  max?: number;
   onChange: (minutes: number | '') => void;
 }) {
   const { t } = useTranslation('booking');
   const initial = splitMinutes(minutes === '' ? 1440 : minutes);
   const [unit, setUnit] = useState<Unit>(initial.unit);
-  const amount =
-    minutes === ''
-      ? ''
-      : minutes / (unit === 'days' ? 1440 : unit === 'hours' ? 60 : 1);
+  const amount = minutes === '' ? '' : minutes / UNIT_MINUTES[unit];
 
   const shown = amount === '' ? 2 : amount;
 
@@ -34,7 +41,8 @@ export function TimeoutInput({
       <Group gap="xs" wrap="nowrap" align="flex-start">
         <NumberInput
           aria-label={label ?? t('approval_timeout')}
-          min={1}
+          min={amountBound(min, unit)}
+          max={amountBound(max, unit)}
           decimalScale={unit === 'minutes' ? 0 : 2}
           value={amount}
           error={error}
@@ -59,7 +67,9 @@ export function TimeoutInput({
           }}
         />
       </Group>
-      <p className="mt-1 text-xs text-muted-foreground">{t('timeout_range')}</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {hint ?? t('timeout_range')}
+      </p>
     </div>
   );
 }

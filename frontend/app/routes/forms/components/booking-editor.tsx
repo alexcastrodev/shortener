@@ -1,54 +1,39 @@
-import {
-  ActionIcon,
-  Button,
-  Chip,
-  Group,
-  NumberInput,
-  SegmentedControl,
-  Select,
-  Stack,
-  Switch,
-  TextInput,
-} from '@mantine/core';
-import { useForm } from '@mantine/form';
+import { Button, Group, Stack, TextInput } from '@mantine/core';
+import { useForm, type FormErrors } from '@mantine/form';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconPlus, IconTrash, IconX } from '@tabler/icons-react';
+import { IconPlus } from '@tabler/icons-react';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod/v4';
 import type { FormField, FormFieldInput } from '@internal/core/types/Form';
-import { BundleOffer } from './bundle-offer';
-import { MonthlyOffer } from './monthly-offer';
 import { CategoriesSection } from './categories-section';
 import { ExceptionsSection } from './exceptions-section';
-import { TimeGeneratorPanel } from './time-generator-panel';
-import { TimeoutInput } from './timeout-input';
+import { RulesSection } from './rules-section';
+import { ServiceCard } from './service-card';
 import { timeoutInRange } from '../../../modules/forms/duration-units.ts';
-import { WeekdayTimes } from './weekday-times';
 import {
   DAYS,
-  REMINDERS_MAX,
-  REMINDER_CHOICES,
   TIME,
   blankService,
   initialValues,
-  isGrouped,
-  newKey,
   toBookingInput,
-  type ServiceValues,
   type Values,
 } from '../../../modules/forms/booking-config.ts';
+
+const SERVICE_ERROR = /^services\.(\d+)\./;
 
 export function BookingEditor({
   field,
   loading,
+  openService,
   onSubmit,
   onCancel,
 }: {
   field?: FormField;
   loading: boolean;
+  openService?: { id: string } | null;
   onSubmit: (input: FormFieldInput) => void;
   onCancel: () => void;
 }) {
@@ -64,8 +49,8 @@ export function BookingEditor({
           approval: z.enum(['auto', 'manual']),
           approval_timeout_minutes: z.union([z.number(), z.literal('')]),
           waitlist: z.boolean(),
-        waitlist_confirm_minutes: z.union([z.number(), z.literal('')]),
-        approval_soon_only: z.boolean(),
+          waitlist_confirm_minutes: z.union([z.number(), z.literal('')]),
+          approval_soon_only: z.boolean(),
           approval_within_minutes: z.union([z.number(), z.literal('')]),
           categories: z.array(
             z.object({
@@ -211,10 +196,10 @@ export function BookingEditor({
               input: within,
             });
           }
-          if (waitlist && !timeoutInRange(confirm)) {
+          if (waitlist && !timeoutInRange(confirm, 15, 4320)) {
             ctx.issues.push({
               code: 'custom',
-              message: t('error_timeout'),
+              message: t('error_waitlist_timeout'),
               path: ['waitlist_confirm_minutes'],
               input: confirm,
             });
@@ -237,13 +222,50 @@ export function BookingEditor({
     validate: zod4Resolver(schema),
   });
 
-  const reminderLabels: Record<(typeof REMINDER_CHOICES)[number], string> = {
-    60: t('reminder_60'),
-    120: t('reminder_120'),
-    360: t('reminder_360'),
-    1440: t('reminder_1440'),
-    2880: t('reminder_2880'),
-    10080: t('reminder_10080'),
+  const [expanded, setExpanded] = useState<Set<string>>(() => {
+    const { services } = form.getValues();
+    const wanted = services.find(item => item.id === openService?.id);
+    const only = services.length === 1 ? services[0] : undefined;
+    return new Set(
+      [wanted?.key, only?.key].filter((key): key is string => Boolean(key))
+    );
+  });
+
+  const expand = (keys: string[]) =>
+    setExpanded(current => new Set([...current, ...keys]));
+
+  const toggle = (key: string) =>
+    setExpanded(current => {
+      const next = new Set(current);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+
+  useEffect(() => {
+    if (!openService) return;
+    const service = form
+      .getValues()
+      .services.find(item => item.id === openService.id);
+    if (!service) return;
+    expand([service.key]);
+    requestAnimationFrame(() =>
+      document
+        .getElementById(`service-${service.key}`)
+        ?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    );
+  }, [openService]);
+
+  const openInvalidServices = (errors: FormErrors) => {
+    const { services } = form.getValues();
+    expand(
+      Object.keys(errors)
+        .map(path => SERVICE_ERROR.exec(path)?.[1])
+        .map(index =>
+          index === undefined ? undefined : services[Number(index)]?.key
+        )
+        .filter((key): key is string => Boolean(key))
+    );
+    notifications.show({ message: t('fix_errors'), color: 'red' });
   };
 
   const dayLabels: Record<(typeof DAYS)[number], string> = {
@@ -256,8 +278,19 @@ export function BookingEditor({
     sun: t('day_sun'),
   };
 
-  const confirmRemove = (index: number) => {
-    const name = form.values.services[index].name || t('service_new');
+  const addService = () => {
+    const service = blankService(
+      t('service_new'),
+      form.getValues().categories[0]?.id ?? ''
+    );
+    form.insertListItem('services', service);
+    expand([service.key]);
+  };
+
+  const confirmRemove = (key: string) => {
+    const service = form.getValues().services.find(item => item.key === key);
+    if (!service) return;
+    const name = service.name || t('service_new');
     modals.openConfirmModal({
       title: t('service_remove_title'),
       centered: true,
@@ -270,170 +303,22 @@ export function BookingEditor({
         color: 'red',
         'aria-label': t('service_remove', { name }),
       },
-      onConfirm: () => form.removeListItem('services', index),
+      onConfirm: () => {
+        const index = form
+          .getValues()
+          .services.findIndex(item => item.key === key);
+        if (index >= 0) form.removeListItem('services', index);
+      },
     });
   };
 
-  const renderService = (service: ServiceValues, index: number) => (
-    <div key={service.key} className="rounded-lg border border-border p-4">
-      <Stack gap="md">
-        <Group gap="xs" wrap="nowrap" align="flex-end">
-          <TextInput
-            className="flex-1"
-            label={t('service_name')}
-            {...form.getInputProps(`services.${index}.name`)}
-          />
-          <ActionIcon
-            variant="subtle"
-            color="red"
-            size="lg"
-            aria-label={t('service_remove', {
-              name: service.name || t('service_new'),
-            })}
-            onClick={() => confirmRemove(index)}
-          >
-            <IconTrash size={16} />
-          </ActionIcon>
-        </Group>
-        {isGrouped(form.values) && (
-          <Select
-            label={t('service_move')}
-            allowDeselect={false}
-            data={form.values.categories.map(item => ({
-              value: item.id,
-              label: item.name || t('category_new'),
-            }))}
-            value={service.categoryId}
-            onChange={value =>
-              value && form.setFieldValue(`services.${index}.categoryId`, value)
-            }
-          />
-        )}
-        <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
-          <NumberInput
-            label={t('service_duration')}
-            min={5}
-            max={600}
-            allowDecimal={false}
-            {...form.getInputProps(`services.${index}.duration`)}
-          />
-          <NumberInput
-            label={t('service_capacity')}
-            description={t('service_capacity_hint')}
-            min={1}
-            max={1000}
-            allowDecimal={false}
-            {...form.getInputProps(`services.${index}.capacity`)}
-          />
-        </div>
-        <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
-          <NumberInput
-            label={t('service_price')}
-            min={0}
-            decimalScale={2}
-            {...form.getInputProps(`services.${index}.price`)}
-          />
-          <TextInput
-            label={t('service_currency')}
-            maxLength={3}
-            placeholder="EUR"
-            {...form.getInputProps(`services.${index}.currency`)}
-          />
-        </div>
-        <div>
-          <p className="mb-1 text-sm font-medium">{t('service_days')}</p>
-          <Chip.Group
-            multiple
-            value={service.days}
-            onChange={value =>
-              form.setFieldValue(`services.${index}.days`, value)
-            }
-          >
-            <Group gap={6}>
-              {DAYS.map(day => (
-                <Chip key={day} value={day} size="xs">
-                  {dayLabels[day]}
-                </Chip>
-              ))}
-            </Group>
-          </Chip.Group>
-          {typeof form.errors[`services.${index}.days`] === 'string' && (
-            <p className="mt-1 text-xs text-red-500">
-              {form.errors[`services.${index}.days`]}
-            </p>
-          )}
-        </div>
-        <div>
-          <p className="mb-1 text-sm font-medium">{t('service_times')}</p>
-          <Group gap="xs">
-            {service.times.map((time, timeIndex) => (
-              <Group key={time.key} gap={2} wrap="nowrap">
-                <TextInput
-                  type="time"
-                  size="xs"
-                  aria-label={t('service_times')}
-                  {...form.getInputProps(
-                    `services.${index}.times.${timeIndex}.value`
-                  )}
-                />
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  aria-label={t('service_remove_time', {
-                    time: time.value,
-                  })}
-                  onClick={() =>
-                    form.removeListItem(`services.${index}.times`, timeIndex)
-                  }
-                >
-                  <IconX size={14} />
-                </ActionIcon>
-              </Group>
-            ))}
-            <Button
-              variant="subtle"
-              size="compact-xs"
-              leftSection={<IconPlus size={12} />}
-              onClick={() =>
-                form.insertListItem(`services.${index}.times`, {
-                  key: newKey(),
-                  value: '',
-                })
-              }
-            >
-              {t('service_add_time')}
-            </Button>
-          </Group>
-          <div className="mt-2">
-            <TimeGeneratorPanel
-              duration={Number(service.duration) || 60}
-              hasTimes={service.times.length > 0}
-              onApply={times =>
-                form.setFieldValue(
-                  `services.${index}.times`,
-                  times.map(value => ({ key: newKey(), value }))
-                )
-              }
-            />
-          </div>
-          {typeof form.errors[`services.${index}.times`] === 'string' && (
-            <p className="mt-1 text-xs text-red-500">
-              {form.errors[`services.${index}.times`]}
-            </p>
-          )}
-        </div>
-        <BundleOffer form={form} index={index} />
-        <MonthlyOffer form={form} index={index} />
-        <WeekdayTimes form={form} index={index} dayLabels={dayLabels} />
-      </Stack>
-    </div>
-  );
+  const { services } = form.values;
 
   return (
     <form
       onSubmit={form.onSubmit(
         values => onSubmit(toBookingInput(values, creating)),
-        () => notifications.show({ message: t('fix_errors'), color: 'red' })
+        openInvalidServices
       )}
     >
       <Stack gap="xl">
@@ -450,180 +335,55 @@ export function BookingEditor({
           <TextInput label={t('help_label')} {...form.getInputProps('help')} />
         </Stack>
 
-        <Stack gap="md" className="border-t border-border pt-6">
-          <div>
-            <p className="text-sm font-medium">{t('services_title')}</p>
-            <p className="text-xs text-muted-foreground">
-              {t('services_hint')}
-            </p>
+        <section
+          aria-labelledby="booking-services-title"
+          className="flex flex-col gap-4 border-t border-border pt-6"
+        >
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 id="booking-services-title" className="text-sm font-medium">
+              {t('services_title')}
+            </h3>
+            <span className="text-xs text-muted-foreground">
+              {t('category_count', { count: services.length })}
+            </span>
           </div>
-          <CategoriesSection form={form} renderService={renderService} />
-        </Stack>
+          <CategoriesSection form={form} />
+          {services.length === 0 && (
+            <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+              {t('no_services')}
+            </p>
+          )}
+          {services.map((service, index) => (
+            <ServiceCard
+              key={service.key}
+              form={form}
+              index={index}
+              dayLabels={dayLabels}
+              expanded={expanded.has(service.key)}
+              onToggle={() => toggle(service.key)}
+              onRemove={() => confirmRemove(service.key)}
+            />
+          ))}
+          <Button
+            variant="default"
+            fullWidth
+            style={{ borderStyle: 'dashed' }}
+            leftSection={<IconPlus size={14} />}
+            onClick={addService}
+          >
+            {t('service_add')}
+          </Button>
+        </section>
 
         <ExceptionsSection form={form} />
 
-        <Stack gap="md" className="border-t border-border pt-6">
-          <p className="text-sm font-medium">{t('rules_title')}</p>
-          {field?.rules?.time_zone && (
-            <div>
-              <p className="text-xs text-muted-foreground">{t('time_zone')}</p>
-              <p className="text-sm">{field.rules.time_zone}</p>
-              <p className="text-xs text-muted-foreground">
-                {t('time_zone_hint')}
-              </p>
-            </div>
-          )}
-          <div>
-            <p className="mb-1 text-sm">{t('approval')}</p>
-            <SegmentedControl
-              data={[
-                { value: 'auto', label: t('approval_auto') },
-                { value: 'manual', label: t('approval_manual') },
-              ]}
-              value={form.values.approval}
-              onChange={value =>
-                form.setFieldValue('approval', value as 'auto' | 'manual')
-              }
-            />
-          </div>
-          {form.values.approval === 'auto' && (
-            <Switch
-              label={t('verify_email')}
-              description={t('verify_email_hint')}
-              checked={form.values.verify_email}
-              onChange={event =>
-                form.setFieldValue('verify_email', event.currentTarget.checked)
-              }
-            />
-          )}
-          {form.values.approval === 'manual' && (
-            <Stack gap="xs">
-              <Switch
-                label={t('approval_soon_only')}
-                description={t('approval_soon_hint')}
-                checked={form.values.approval_soon_only}
-                onChange={event =>
-                  form.setFieldValue(
-                    'approval_soon_only',
-                    event.currentTarget.checked
-                  )
-                }
-              />
-              {form.values.approval_soon_only && (
-                <TimeoutInput
-                  label={t('approval_within')}
-                  minutes={form.values.approval_within_minutes}
-                  error={
-                    form.errors.approval_within_minutes as string | undefined
-                  }
-                  onChange={value =>
-                    form.setFieldValue('approval_within_minutes', value)
-                  }
-                />
-              )}
-            </Stack>
-          )}
-          {form.values.approval === 'manual' && (
-            <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
-              <TimeoutInput
-                minutes={form.values.approval_timeout_minutes}
-                error={
-                  form.errors.approval_timeout_minutes as string | undefined
-                }
-                onChange={value =>
-                  form.setFieldValue('approval_timeout_minutes', value)
-                }
-              />
-              <div>
-                <p className="mb-1 text-sm">{t('approval_on_timeout')}</p>
-                <SegmentedControl
-                  data={[
-                    { value: 'decline', label: t('on_timeout_decline') },
-                    { value: 'accept', label: t('on_timeout_accept') },
-                  ]}
-                  value={form.values.approval_on_timeout}
-                  onChange={value =>
-                    form.setFieldValue(
-                      'approval_on_timeout',
-                      value as 'decline' | 'accept'
-                    )
-                  }
-                />
-              </div>
-            </div>
-          )}
-          <Stack gap="xs">
-            <Switch
-              label={t('waitlist')}
-              description={t('waitlist_hint')}
-              checked={form.values.waitlist}
-              onChange={event =>
-                form.setFieldValue('waitlist', event.currentTarget.checked)
-              }
-            />
-            {form.values.waitlist && (
-              <TimeoutInput
-                label={t('waitlist_confirm')}
-                minutes={form.values.waitlist_confirm_minutes}
-                error={
-                  form.errors.waitlist_confirm_minutes as string | undefined
-                }
-                onChange={value =>
-                  form.setFieldValue('waitlist_confirm_minutes', value)
-                }
-              />
-            )}
-          </Stack>
-          <div>
-            <p className="mb-1 text-sm">{t('reminders')}</p>
-            <Chip.Group
-              multiple
-              value={form.values.reminder_minutes.map(String)}
-              onChange={value =>
-                form.setFieldValue(
-                  'reminder_minutes',
-                  value.slice(-REMINDERS_MAX).map(Number)
-                )
-              }
-            >
-              <Group gap={6}>
-                {REMINDER_CHOICES.map(minutes => (
-                  <Chip key={minutes} value={String(minutes)} size="xs">
-                    {reminderLabels[minutes]}
-                  </Chip>
-                ))}
-              </Group>
-            </Chip.Group>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t('reminders_hint')}
-            </p>
-          </div>
-          <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-3">
-            <NumberInput
-              label={t('min_notice')}
-              min={0}
-              max={43200}
-              allowDecimal={false}
-              {...form.getInputProps('min_notice_minutes')}
-            />
-            <NumberInput
-              label={t('window_days')}
-              min={1}
-              max={365}
-              allowDecimal={false}
-              {...form.getInputProps('window_days')}
-            />
-            <NumberInput
-              label={t('max_per_day')}
-              min={1}
-              max={1000}
-              allowDecimal={false}
-              {...form.getInputProps('max_per_day')}
-            />
-          </div>
-        </Stack>
+        <RulesSection form={form} timeZone={field?.rules?.time_zone} />
 
-        <Group justify="flex-end" gap="sm" className="border-t border-border pt-6">
+        <Group
+          justify="flex-end"
+          gap="sm"
+          className="border-t border-border pt-6"
+        >
           <Button variant="default" onClick={onCancel}>
             {t('cancel')}
           </Button>

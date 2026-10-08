@@ -37,6 +37,7 @@ RSpec.describe("reminders for a booking", type: :request) do
     body = {
       answers: { name_id => name, mail_id => "ana@example.com", booking_id => { "service" => service_id, "sessions" => [{ "date" => date, "time" => "09:00" }] } },
       turnstile_token: "t",
+      confirm_field_id: mail_id,
     }.merge(extra)
     post("/api/public/forms/#{form.public_id}/responses", params: body, headers: { "CF-Connecting-IP" => "198.51.100.7" }, as: :json)
   end

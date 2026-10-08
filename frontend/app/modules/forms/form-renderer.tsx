@@ -5,6 +5,7 @@ import { getBioTheme } from '../bio-page/themes';
 import { FieldInput, focusFirstInput, isBlank, type Answer, type UploadImage } from './field-inputs';
 import type { JoinWaitlist, LoadSlots } from './booking-input';
 import { isSection, sectionOf } from './field-types';
+import { useConfirmEmail } from './confirm-email';
 import { PagedForm } from './paged-form';
 import { BookingReceipt } from './booking-receipt';
 import { FormCover } from './form-cover';
@@ -26,7 +27,10 @@ export type Props = {
   form: RenderableForm;
   coverUrl?: string | null;
   mode: 'preview' | 'live';
-  onSubmit?: (answers: Record<string, Answer>) => Promise<SubmitFormReceipt | void> | SubmitFormReceipt | void;
+  onSubmit?: (
+    answers: Record<string, Answer>,
+    options: { confirmFieldId: string | null }
+  ) => Promise<SubmitFormReceipt | void> | SubmitFormReceipt | void;
   onUploadImage?: UploadImage;
   loadSlots?: LoadSlots;
   joinWaitlist?: JoinWaitlist;
@@ -74,6 +78,7 @@ function SequentialForm({
   const [submitting, setSubmitting] = useState(false);
   const [receipt, setReceipt] = useState<SubmitFormReceipt | null>(null);
   const container = useRef<HTMLDivElement>(null);
+  const { confirmFor, confirmFieldId, resetConfirm } = useConfirmEmail(form.fields, answers);
 
   useEffect(() => {
     if (activeIndex >= 0) setStep(activeIndex);
@@ -104,7 +109,7 @@ function SequentialForm({
     if (mode === 'live' && onSubmit) {
       setSubmitting(true);
       try {
-        setReceipt((await onSubmit(answers)) ?? null);
+        setReceipt((await onSubmit(answers, { confirmFieldId })) ?? null);
         setStep(total);
       } catch (failure) {
         const { message, fieldErrors } = (failure ?? {}) as SubmitFailure;
@@ -191,6 +196,7 @@ function SequentialForm({
               className={`text-sm underline ${theme.footer}`}
               onClick={() => {
                 setAnswers({});
+                resetConfirm();
                 setStep(-1);
               }}
             >
@@ -256,6 +262,7 @@ function SequentialForm({
         loadSlots={mode === 'live' ? loadSlots : undefined}
         joinWaitlist={mode === 'live' ? joinWaitlist : undefined}
         invalid={error ?? undefined}
+        confirm={confirmFor(field!)}
       />
       {step === total - 1 && lastStepSlot}
       {error && (

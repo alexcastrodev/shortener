@@ -43,6 +43,9 @@ type Props = {
   approveCount: number;
   approving: boolean;
   onApproveAll: () => void;
+  showMine: boolean;
+  onShowMine: () => void;
+  mineCount: number;
   forms: FormOption[];
   hiddenForms: Set<number>;
   onToggleForm: (id: number) => void;
@@ -212,6 +215,17 @@ export function FiltersPanel(props: Props) {
           </Button>
         )}
       </div>
+
+      <ul>
+        <Option
+          large={large}
+          checked={props.showMine}
+          onChange={props.onShowMine}
+          color={null}
+          label={t('show_mine')}
+          count={props.mineCount}
+        />
+      </ul>
 
       {forms.length > 0 && (
         <Section title={t('active_forms')}>

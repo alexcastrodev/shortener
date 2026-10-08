@@ -10,7 +10,7 @@ import type { AppNotification } from '@internal/core/actions/get-notifications/g
 import { useReadNotification } from '@internal/core/actions/read-notification/read-notification.hook';
 import { useReadAllNotifications } from '@internal/core/actions/read-all-notifications/read-all-notifications.hook';
 import { PageContainer } from '@internal/ui';
-import { formatRelative } from '../../i18n/format';
+import { formatDateTime, formatRelative } from '../../i18n/format';
 
 export const ssr = false;
 
@@ -30,8 +30,37 @@ export default function NotificationsPage() {
     onSuccess: refresh,
   });
 
-  const kindLabel = (kind: string) => {
-    switch (kind) {
+  const kindLabel = (item: AppNotification) => {
+    if (item.recipient_kind === 'client') {
+      switch (item.kind) {
+        case 'appointment_confirmed':
+          return t('client_kind_appointment_confirmed');
+        case 'appointment_request_received':
+          return t('client_kind_appointment_request_received');
+        case 'appointment_declined':
+          return t('client_kind_appointment_declined');
+        case 'appointment_cancelled':
+          return t('client_kind_appointment_cancelled');
+        case 'appointment_reminder':
+          return t('client_kind_appointment_reminder');
+        case 'appointment_rescheduled':
+          return t('client_kind_appointment_rescheduled');
+        case 'waitlist_joined':
+          return t('client_kind_waitlist_joined', {
+            service: item.payload.service,
+          });
+        case 'waitlist_offered':
+          return t('client_kind_waitlist_offered', {
+            service: item.payload.service,
+            when: item.payload.starts_at
+              ? formatDateTime(item.payload.starts_at)
+              : '',
+          });
+        default:
+          return t('kind_unknown');
+      }
+    }
+    switch (item.kind) {
       case 'appointment_created':
         return t('kind_appointment_created');
       case 'appointment_requested':
@@ -57,7 +86,9 @@ export default function NotificationsPage() {
 
   const open = (item: AppNotification) => {
     if (!item.read_at) readOne(item.id);
-    if (item.payload.form_id) {
+    if (item.recipient_kind === 'client') {
+      navigate(item.waitlist_path ?? '/app/agenda');
+    } else if (item.payload.form_id) {
       navigate(`/app/forms/${item.payload.form_id}/responses`);
     }
   };
@@ -98,7 +129,7 @@ export default function NotificationsPage() {
                   <span
                     className={`block text-sm ${item.read_at ? 'text-muted-foreground' : 'font-semibold text-foreground'}`}
                   >
-                    {kindLabel(item.kind)}
+                    {kindLabel(item)}
                     {item.payload.sessions ? (
                       <span className="font-normal text-muted-foreground">
                         {' · '}

@@ -25,7 +25,7 @@ RSpec.describe("several reminder times", type: :request) do
 
   def book(date: "2026-11-09", time: "10:00", name: "Ana")
     answers = { name_id => name, mail_id => "#{name.downcase}@example.com", booking_id => { "service" => service_id, "sessions" => [{ "date" => date, "time" => time }] } }
-    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t" }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
+    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", confirm_field_id: mail_id }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
   end
 
   def reminders = Notification.where(kind: "appointment_reminder").order(:id)

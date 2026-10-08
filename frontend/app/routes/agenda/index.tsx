@@ -24,6 +24,7 @@ import {
   useGetAgenda,
 } from '@internal/core/actions/get-agenda/get-agenda.hook';
 import { useAppointmentAction } from '@internal/core/actions/appointment-action/appointment-action.hook';
+import { useGetMyBookings } from '@internal/core/actions/get-my-bookings/get-my-bookings.hook';
 import type {
   AgendaAppointment,
   AgendaSession,
@@ -46,10 +47,18 @@ import {
   todayIn,
   type View,
 } from '../../modules/agenda/agenda-layout.ts';
-import { keyOf } from '../../modules/agenda/schedule-events.ts';
+import {
+  keyOf,
+  mySlots,
+  type MySlot,
+} from '../../modules/agenda/schedule-events.ts';
 import { AgendaCalendar } from './agenda-calendar';
 import { FiltersPanel } from './filters-panel';
-import { SessionPanel, agendaErrorText } from './session-panel';
+import {
+  MyBookingPanel,
+  SessionPanel,
+  agendaErrorText,
+} from './session-panel';
 import {
   onlyPending,
   pendingTargets,
@@ -88,6 +97,7 @@ export default function AgendaPage() {
   const [anchor, setAnchor] = useState(() => todayIn(fallbackZone));
   const [selected, setSelected] = useState<string | null>(null);
   const [waitingOnly, setWaitingOnly] = useState(false);
+  const [showMine, setShowMine] = useState(true);
   const [hiddenForms, setHiddenForms] = useState<Set<number>>(new Set());
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(
     new Set()
@@ -98,12 +108,13 @@ export default function AgendaPage() {
   const queryClient = useQueryClient();
   const { mutateAsync: act, isPending: approving } = useAppointmentAction();
   const [now, setNow] = useState(() => new Date());
-  const lastChosen = useRef<AgendaSession | null>(null);
+  const lastChosen = useRef<AgendaSession | MySlot | null>(null);
 
   const { from: monthFrom, to: monthTo } = monthRange(anchor);
   const { from, to, days } = rangeFor(view, anchor);
   const week = rangeFor('week', anchor).days;
   const { data, error, isLoading } = useGetAgenda(monthFrom, monthTo);
+  const { data: myBookings } = useGetMyBookings(monthFrom, monthTo);
   const zone = data?.time_zone ?? fallbackZone;
   const today = todayIn(zone, now);
 
@@ -137,6 +148,18 @@ export default function AgendaPage() {
   const inRange = useMemo(
     () => all.filter(session => session.date >= from && session.date <= to),
     [all, from, to]
+  );
+  const allMine = useMemo(
+    () => mySlots(myBookings?.bookings ?? [], zone),
+    [myBookings, zone]
+  );
+  const mineInRange = useMemo(
+    () => allMine.filter(slot => slot.date >= from && slot.date <= to),
+    [allMine, from, to]
+  );
+  const mine = useMemo(
+    () => (showMine ? mineInRange : []),
+    [mineInRange, showMine]
   );
   const allowed = (session: AgendaSession) =>
     !hiddenForms.has(session.form_id) &&
@@ -183,16 +206,27 @@ export default function AgendaPage() {
     [scoped, waitingOnly]
   );
   const withSessions = useMemo(
-    () => datesWithSessions(all.filter(allowed)),
-    [all, hiddenForms, hiddenCategories]
+    () =>
+      new Set([
+        ...datesWithSessions(all.filter(allowed)),
+        ...(showMine ? allMine.map(slot => slot.date) : []),
+      ]),
+    [all, hiddenForms, hiddenCategories, showMine, allMine]
   );
   const byDay = useMemo(() => sessionsByDay(visible, null), [visible]);
-  const chosen = visible.find(session => keyOf(session) === selected) ?? null;
+  const chosen =
+    visible.find(session => keyOf(session) === selected) ??
+    mine.find(slot => slot.key === selected) ??
+    null;
   if (chosen) lastChosen.current = chosen;
+  const last = lastChosen.current;
   const pending = pendingTotal(scoped);
   const targets = useMemo(() => pendingTargets(scoped), [scoped]);
   const activeFilters =
-    (waitingOnly ? 1 : 0) + hiddenForms.size + hiddenCategories.size;
+    (waitingOnly ? 1 : 0) +
+    (showMine ? 0 : 1) +
+    hiddenForms.size +
+    hiddenCategories.size;
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: getAgendaKey });
   const clientsOf = (session: AgendaSession) =>
@@ -300,6 +334,9 @@ export default function AgendaPage() {
     approveCount: targets.length,
     approving,
     onApproveAll: approveAll,
+    showMine,
+    onShowMine: () => setShowMine(value => !value),
+    mineCount: mineInRange.length,
     forms,
     hiddenForms,
     onToggleForm: (id: number) => setHiddenForms(set => toggle(set, id)),
@@ -309,17 +346,26 @@ export default function AgendaPage() {
       setHiddenCategories(set => toggle(set, id)),
   };
 
-  const panel = lastChosen.current && (
-    <SessionPanel
-      session={lastChosen.current}
-      zone={zone}
-      inline={isXl}
-      phone={isPhone}
-      onClose={() => setSelected(null)}
-      onChanged={refresh}
-      onDialog={setDialogOpen}
-    />
-  );
+  const panel =
+    last &&
+    ('booking' in last ? (
+      <MyBookingPanel
+        slot={last}
+        zone={zone}
+        inline={isXl}
+        onClose={() => setSelected(null)}
+      />
+    ) : (
+      <SessionPanel
+        session={last}
+        zone={zone}
+        inline={isXl}
+        phone={isPhone}
+        onClose={() => setSelected(null)}
+        onChanged={refresh}
+        onDialog={setDialogOpen}
+      />
+    ));
 
   return (
     // Below md the bottom nav is on screen, so the Agenda fills the space
@@ -386,7 +432,7 @@ export default function AgendaPage() {
             {label}
           </p>
           <p className="text-xs text-muted-foreground sm:ml-auto">
-            {t('sessions', { count: visible.length })}
+            {t('sessions', { count: visible.length + mine.length })}
           </p>
         </div>
         {!isPhone && (
@@ -485,7 +531,7 @@ export default function AgendaPage() {
               })}
             </div>
           )}
-          {!isLoading && visible.length === 0 && (
+          {!isLoading && visible.length + mine.length === 0 && (
             <p className="border-b border-border p-3 text-center text-sm text-muted-foreground">
               {t('empty')}
             </p>
@@ -498,6 +544,7 @@ export default function AgendaPage() {
               view={view}
               anchor={anchor}
               sessions={visible}
+              mine={mine}
               zone={zone}
               colors={colors}
               height={
@@ -544,7 +591,11 @@ export default function AgendaPage() {
           onClose={() => setSelected(null)}
           position={isPhone ? 'bottom' : 'right'}
           size={isPhone ? '90%' : 400}
-          title={lastChosen.current?.service_name ?? t('service_fallback')}
+          title={
+            last && 'booking' in last
+              ? last.booking.service
+              : (last?.service_name ?? t('service_fallback'))
+          }
           closeButtonProps={{ 'aria-label': t('panel_close') }}
           classNames={{ close: 'min-h-11 min-w-11' }}
           styles={SHEET_STYLES}

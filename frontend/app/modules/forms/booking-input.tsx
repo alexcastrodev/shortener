@@ -3,12 +3,21 @@ import { useTranslation } from 'react-i18next';
 import type { BookingAnswer, FormField } from '@internal/core/types/Form';
 import type {
   FormSlot,
-  FullSlot,
   LoadedSlots,
 } from '@internal/core/actions/get-form-slots/get-form-slots.types';
 import type { BioTheme } from '../bio-page/themes';
 import { formatCurrency, formatDate } from '../../i18n/format';
 import { WaitlistJoin, type JoinWaitlist } from './waitlist-join';
+import { BookingCalendar } from './booking-calendar.tsx';
+import {
+  canGoNext,
+  firstFreeDay,
+  keepFree,
+  monthOf,
+  monthRange,
+  previewSlots,
+  shiftMonth,
+} from './booking-calendar.ts';
 import {
   WEEKDAYS,
   monthOptions,
@@ -25,12 +34,6 @@ export type LoadSlots = (
 
 export type { JoinWaitlist };
 
-const STEP_DAYS = 14;
-const MAX_DAYS = 56;
-
-const pad = (value: number) => String(value).padStart(2, '0');
-const isoDay = (date: Date) =>
-  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 const dayLabel = (iso: string) =>
   formatDate(`${iso}T00:00:00Z`, {
     weekday: 'short',
@@ -39,11 +42,7 @@ const dayLabel = (iso: string) =>
     timeZone: 'UTC',
   });
 
-type State = {
-  status: 'loading' | 'ready' | 'error';
-  slots: FormSlot[];
-  full: FullSlot[];
-};
+type Cache = { key: string; months: Record<string, LoadedSlots> };
 
 export function BookingInput({
   field,
@@ -82,41 +81,56 @@ export function BookingInput({
   const [mode, setMode] = useState<'days' | 'monthly'>(
     value?.monthly ? 'monthly' : 'days'
   );
-  const [days, setDays] = useState(STEP_DAYS);
+  const [month, setMonth] = useState(() => monthOf(new Date()));
+  const [viewed, setViewed] = useState<string>();
   const [attempt, setAttempt] = useState(0);
   const [dropped, setDropped] = useState(false);
-  const [state, setState] = useState<State>({
-    status: 'loading',
-    slots: [],
-    full: [],
-  });
-  const loader = useRef(loadSlots);
-  loader.current = loadSlots;
+  const [cache, setCache] = useState<Cache>({ key: '', months: {} });
+  const [failed, setFailed] = useState<string | null>(null);
+  const seeking = useRef(true);
+  const cached = useRef(cache);
+  cached.current = cache;
+  const key = `${serviceId}|${reloadKey ?? ''}|${attempt}`;
+  const preview = !loadSlots;
+  const loader = useRef<LoadSlots>(async () => ({ slots: [], full: [] }));
+  loader.current =
+    loadSlots ??
+    (async (id, from, to) => ({
+      slots: previewSlots(
+        allServices.find(item => item.id === id) ?? {
+          days: [],
+          times: [],
+        },
+        from,
+        to,
+        new Date()
+      ),
+      full: [],
+    }));
   const latest = useRef({ value, onChange });
   latest.current = { value, onChange };
-  const live = !!loadSlots;
   const sessions = value?.sessions ?? [];
   const monthly = value?.monthly;
 
   useEffect(() => {
-    if (!live || !serviceId || mode === 'monthly') return;
+    if (!serviceId || mode === 'monthly') return;
+    if (cached.current.key === key && cached.current.months[month]) return;
+    const today = new Date();
+    const range = monthRange(month, today);
+    if (!range) return;
     let current = true;
-    const from = new Date();
-    const to = new Date(from.getTime() + (days - 1) * 86_400_000);
-    setState(previous => ({
-      status: 'loading',
-      slots: previous.slots,
-      full: previous.full,
-    }));
-    loader.current!(serviceId, isoDay(from), isoDay(to))
-      .then(({ slots, full }) => {
+    loader.current(serviceId, range.from, range.to)
+      .then(loaded => {
         if (!current) return;
-        setState({ status: 'ready', slots, full });
+        setCache(previous => ({
+          key,
+          months: {
+            ...(previous.key === key ? previous.months : {}),
+            [month]: loaded,
+          },
+        }));
         const { value: chosen, onChange: update } = latest.current;
-        const free = new Set(slots.map(slot => `${slot.date}|${slot.time}`));
-        const kept = (chosen?.sessions ?? []).filter(session =>
-          free.has(`${session.date}|${session.time}`)
-        );
+        const kept = keepFree(chosen?.sessions ?? [], loaded.slots, range);
         if (chosen && kept.length !== chosen.sessions.length) {
           setDropped(true);
           update(
@@ -125,23 +139,28 @@ export function BookingInput({
               : undefined
           );
         }
+        if (seeking.current) {
+          if (loaded.slots.length === 0 && canGoNext(month, today))
+            setMonth(shiftMonth(month, 1));
+          else seeking.current = false;
+        }
       })
-      .catch(() => current && setState({ status: 'error', slots: [], full: [] }));
+      .catch(() => current && setFailed(`${key}|${month}`));
     return () => {
       current = false;
     };
-  }, [live, serviceId, mode, days, reloadKey, attempt]);
+  }, [serviceId, mode, month, key]);
 
-  if (!live) {
-    return (
-      <p
-        id={inputId}
-        className={`rounded-lg px-3 py-3 text-sm ${theme.button}`}
-      >
-        {t('booking_preview')}
-      </p>
-    );
-  }
+  const restartView = () => {
+    seeking.current = true;
+    setMonth(monthOf(new Date()));
+    setViewed(undefined);
+  };
+
+  const goMonth = (next: string) => {
+    seeking.current = false;
+    setMonth(next);
+  };
 
   const chooseCategory = (id: string) => {
     if (id === categoryId) return;
@@ -149,7 +168,7 @@ export function BookingInput({
     const inside = allServices.filter(item => item.category_id === id);
     setServiceId(inside.length === 1 ? inside[0].id : undefined);
     setDropped(false);
-    setDays(STEP_DAYS);
+    restartView();
     onChange(undefined);
   };
 
@@ -158,7 +177,7 @@ export function BookingInput({
     setServiceId(id);
     setMode('days');
     setDropped(false);
-    setDays(STEP_DAYS);
+    restartView();
     onChange(undefined);
   };
 
@@ -183,9 +202,22 @@ export function BookingInput({
     onChange(next.length ? { service: serviceId, sessions: next } : undefined);
   };
 
+  const months = cache.key === key ? cache.months : {};
+  const loaded = months[month];
+  const status = loaded
+    ? 'ready'
+    : failed === `${key}|${month}`
+      ? 'error'
+      : 'loading';
   const byDay = new Map<string, FormSlot[]>();
-  for (const slot of state.slots)
-    byDay.set(slot.date, [...(byDay.get(slot.date) ?? []), slot]);
+  for (const data of Object.values(months))
+    for (const slot of data.slots)
+      byDay.set(slot.date, [...(byDay.get(slot.date) ?? []), slot]);
+  const shown =
+    viewed && viewed.startsWith(month) && byDay.has(viewed)
+      ? viewed
+      : firstFreeDay(loaded?.slots ?? []);
+  const today = new Date();
   const service = services.find(item => item.id === serviceId);
   const chip = (selected: boolean) =>
     `min-h-10 rounded-lg px-3 py-1.5 text-sm font-medium ${theme.button} ${selected ? 'ring-2 ring-current' : ''}`;
@@ -313,7 +345,7 @@ export function BookingInput({
             </p>
           )}
           <p className="text-sm font-medium">{t('booking_pick')}</p>
-          {state.status === 'error' ? (
+          {status === 'error' ? (
             <div className="space-y-2">
               <p role="alert" className="text-sm">
                 {t('booking_load_failed')}
@@ -328,56 +360,59 @@ export function BookingInput({
             </div>
           ) : (
             <>
-              {state.status === 'loading' && state.slots.length === 0 && (
+              <BookingCalendar
+                month={month}
+                today={today}
+                available={new Set(loaded?.slots.map(slot => slot.date))}
+                chosen={new Set(sessions.map(session => session.date))}
+                viewed={shown}
+                theme={theme}
+                onView={setViewed}
+                onMonth={goMonth}
+              />
+              {status === 'loading' && (
                 <p className="text-sm opacity-80">{t('booking_loading')}</p>
               )}
-              {state.status === 'ready' && byDay.size === 0 && (
+              {status === 'ready' && loaded.slots.length === 0 && (
                 <p className="text-sm opacity-80">{t('booking_none')}</p>
               )}
-              {[...byDay.entries()].map(([date, slots]) => (
-                <div key={date} className="flex flex-wrap items-center gap-2">
-                  <span className="w-24 shrink-0 text-sm font-medium">
-                    {dayLabel(date)}
-                  </span>
-                  {slots.map(slot => {
-                    const selected = sessions.some(
-                      session =>
-                        session.date === date && session.time === slot.time
-                    );
-                    return (
-                      <button
-                        key={slot.starts_at}
-                        type="button"
-                        aria-pressed={selected}
-                        className={chip(selected)}
-                        onClick={() => toggle(date, slot.time)}
-                      >
-                        {slot.time}
-                      </button>
-                    );
-                  })}
+              {preview && (
+                <p className="text-xs opacity-70">{t('booking_preview_note')}</p>
+              )}
+              {shown && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">{dayLabel(shown)}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {byDay.get(shown)!.map(slot => {
+                      const selected = sessions.some(
+                        session =>
+                          session.date === shown && session.time === slot.time
+                      );
+                      return (
+                        <button
+                          key={slot.starts_at}
+                          type="button"
+                          aria-pressed={selected}
+                          className={chip(selected)}
+                          onClick={() => toggle(shown, slot.time)}
+                        >
+                          {slot.time}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              ))}
-              {state.status === 'ready' && field.waitlist && joinWaitlist && serviceId && (
+              )}
+              {field.waitlist && joinWaitlist && serviceId && (
                 <WaitlistJoin
+                  key={serviceId}
                   serviceId={serviceId}
-                  full={state.full}
+                  full={Object.values(months).flatMap(data => data.full)}
                   theme={theme}
                   chip={chip}
                   dayLabel={dayLabel}
                   join={joinWaitlist}
                 />
-              )}
-              {days < MAX_DAYS && state.status === 'ready' && (
-                <button
-                  type="button"
-                  className={`text-sm underline ${theme.footer}`}
-                  onClick={() =>
-                    setDays(count => Math.min(MAX_DAYS, count + STEP_DAYS))
-                  }
-                >
-                  {t('booking_more_dates')}
-                </button>
               )}
             </>
           )}

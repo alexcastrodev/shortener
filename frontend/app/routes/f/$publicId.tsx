@@ -58,7 +58,7 @@ function failureFor(error: SubmitFormResponseError): SubmitFailure {
   }
   if (error.status === 403) return { message: t('err_captcha') };
   if (error.status === 429) return { message: t('err_rate_limited') };
-  if (error.status === 404) return { message: t('err_closed') };
+  if (error.status === 404 || error.status === 410 || error.error === 'closed') return { message: t('err_closed') };
   if (error.status === 413) return { message: t('err_too_long') };
   return { message: t('send_failed') };
 }
@@ -79,7 +79,10 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
     trackFormEvent(publicId, 'view');
   }, [publicId]);
 
-  const onSubmit = async (answers: Record<string, unknown>) => {
+  const onSubmit = async (
+    answers: Record<string, unknown>,
+    { confirmFieldId }: { confirmFieldId: string | null }
+  ) => {
     if (TURNSTILE_SITE_KEY && !token) {
       throw { message: i18n.t('respond:err_verifying') } satisfies SubmitFailure;
     }
@@ -93,6 +96,7 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
         referer: document.referrer,
         clientTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         clientLocale: i18n.language,
+        confirmFieldId,
       });
     } catch (error) {
       throw failureFor(error as SubmitFormResponseError);
@@ -100,6 +104,15 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
       turnstile.current?.reset();
     }
   };
+
+  if (form.accepting_responses === false) {
+    return (
+      <div className={`flex min-h-dvh flex-col px-[max(1.25rem,calc((100%-36rem)/2))] py-8 ${theme.page}`}>
+        <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
+        <p className={`mt-3 ${theme.bio}`}>{i18n.t('respond:err_closed')}</p>
+      </div>
+    );
+  }
 
   return (
     <FormRenderer

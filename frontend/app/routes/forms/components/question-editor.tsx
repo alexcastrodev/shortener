@@ -102,12 +102,14 @@ export function QuestionEditor({
   type,
   field,
   loading,
+  openService,
   onSubmit,
   onCancel,
 }: {
   type: FormFieldType;
   field?: FormField;
   loading: boolean;
+  openService?: { id: string } | null;
   onSubmit: (input: FormFieldInput) => void;
   onCancel: () => void;
 }) {
@@ -120,7 +122,15 @@ export function QuestionEditor({
   });
 
   if (type === 'booking') {
-    return <BookingEditor field={field} loading={loading} onSubmit={onSubmit} onCancel={onCancel} />;
+    return (
+      <BookingEditor
+        field={field}
+        loading={loading}
+        openService={openService}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+      />
+    );
   }
 
   return (

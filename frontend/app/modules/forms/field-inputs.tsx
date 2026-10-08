@@ -40,6 +40,7 @@ type Props = {
   loadSlots?: LoadSlots;
   joinWaitlist?: JoinWaitlist;
   invalid?: string;
+  confirm?: { checked: boolean; onChange: (checked: boolean) => void };
 };
 
 const inputBase =
@@ -55,14 +56,15 @@ export function FieldInput({
   loadSlots,
   joinWaitlist,
   invalid,
+  confirm,
 }: Props) {
   const { t } = useTranslation('respond');
   const common = { id: inputId, 'aria-describedby': `${inputId}-help` };
 
   switch (field.type) {
     case 'short_text':
-    case 'email':
-      return (
+    case 'email': {
+      const input = (
         <input
           {...common}
           type={field.type === 'email' ? 'email' : 'text'}
@@ -74,6 +76,25 @@ export function FieldInput({
           className={`${inputBase} ${theme.button}`}
         />
       );
+      if (field.type !== 'email') return input;
+      return (
+        <div className="space-y-2">
+          {input}
+          {confirm && (
+            <label
+              className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-3 py-2 ${theme.button}`}
+            >
+              <input
+                type="checkbox"
+                checked={confirm.checked}
+                onChange={event => confirm.onChange(event.target.checked)}
+              />
+              <span>{t('confirm_here')}</span>
+            </label>
+          )}
+        </div>
+      );
+    }
     case 'long_text':
       return (
         <textarea

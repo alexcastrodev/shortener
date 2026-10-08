@@ -58,16 +58,19 @@ type View = 'list' | 'grid';
 
 const questionsOf = (form: Form) => form.fields.filter(field => !isSection(field)).length;
 
-function StatusBadge({ published }: { published: boolean }) {
+function StatusBadge({ published, closed }: { published: boolean; closed: boolean }) {
   const { t } = useTranslation('forms');
+  const tone = !published
+    ? 'bg-muted text-muted-foreground'
+    : closed
+      ? 'bg-amber-500/15 text-amber-500'
+      : 'bg-teal-500/15 text-teal-400';
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-        published ? 'bg-teal-500/15 text-teal-400' : 'bg-muted text-muted-foreground'
-      }`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}
     >
       <span className="size-1.5 rounded-full bg-current" />
-      {published ? t('live') : t('draft')}
+      {!published ? t('draft') : closed ? t('closed') : t('live')}
     </span>
   );
 }
@@ -343,7 +346,7 @@ export default function FormsIndex() {
                 </span>
               </Link>
               <span className="hidden sm:block">
-                <StatusBadge published={item.published} />
+                <StatusBadge published={item.published} closed={item.accepting_responses === false} />
               </span>
               <span className="hidden text-right text-sm tabular-nums sm:block">
                 {formatNumber(item.responses_count)}
@@ -373,7 +376,7 @@ export default function FormsIndex() {
                     </span>
                   </span>
                 </Link>
-                <StatusBadge published={item.published} />
+                <StatusBadge published={item.published} closed={item.accepting_responses === false} />
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>

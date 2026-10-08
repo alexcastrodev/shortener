@@ -21,11 +21,19 @@ export function joinMinutes(amount: number | '', unit: Unit) {
   return amount === '' ? '' : Math.round(amount * UNIT_MINUTES[unit]);
 }
 
-export function timeoutInRange(minutes: number | '') {
+export function timeoutInRange(
+  minutes: number | '',
+  min = MIN_TIMEOUT,
+  max = MAX_TIMEOUT
+) {
   return (
     minutes !== '' &&
     Number.isInteger(minutes) &&
-    minutes >= MIN_TIMEOUT &&
-    minutes <= MAX_TIMEOUT
+    minutes >= min &&
+    minutes <= max
   );
+}
+
+export function amountBound(minutes: number, unit: Unit) {
+  return Math.round((minutes / UNIT_MINUTES[unit]) * 100) / 100;
 }

@@ -35,7 +35,7 @@ RSpec.describe("the owner's email when a client cancels", type: :request) do
   def book(name: "Ana", times: [["2026-11-03", "09:00"], ["2026-11-04", "10:00"]])
     sessions = times.map { |date, time| { "date" => date, "time" => time } }
     answers = { name_id => name, mail_id => "#{name.downcase}@example.com", booking_id => { "service" => service_id, "sessions" => sessions } }
-    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", client_locale: "en" }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
+    post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", confirm_field_id: mail_id, client_locale: "en" }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
   end
 
   def cancel(params = {})

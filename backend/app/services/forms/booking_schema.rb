@@ -100,22 +100,21 @@ module Forms
       services = booking["services"].to_a
       blocks << block("no_service", "add at least one service") if services.empty?
       services.each do |service|
-        blocks << block("service_incomplete", "#{service["name"]} needs at least one day and one time", name: service["name"]) if service["days"].blank? || service["times"].blank?
+        blocks << block("service_incomplete", "#{service["name"]} needs at least one day and one time", name: service["name"], service_id: service["id"]) if service["days"].blank? || service["times"].blank?
       end
       answerable = fields.select { |field| field["required"] }
       if booking.dig("rules", "waitlist") == true
         extra = answerable.reject { |field| ["booking"].include?(field["type"]) }.group_by { |field| field["type"] }
         blocks << block("waitlist_questions", "the waiting list works only with a name, an email and the booking as required questions") if (extra.keys - ["short_text", "email"]).any? || extra.values.any? { |list| list.size > 1 }
       end
-      blocks << block("no_email", "add a required email question to send the confirmation") unless answerable.any? { |field| field["type"] == "email" }
-      blocks << block("no_name", "add a required short text question for the name") unless answerable.any? { |field| field["type"] == "short_text" }
+      blocks << block("no_email", "add a required email question to send the verification code") if booking.dig("rules", "verify_email") == true && answerable.none? { |field| field["type"] == "email" }
       blocks
     end
 
     private
 
-    def block(code, message, name: nil)
-      { code: code, message: message, name: name }.compact
+    def block(code, message, name: nil, service_id: nil)
+      { code: code, message: message, name: name, service_id: service_id }.compact
     end
 
     def category_errors(list, ids)

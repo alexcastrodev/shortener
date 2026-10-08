@@ -1,10 +1,12 @@
 import type { ScheduleEventData } from '@mantine/schedule';
 import type { AgendaSession } from '@internal/core/actions/get-agenda/get-agenda.types';
+import type { MyBooking } from '@internal/core/actions/get-my-bookings/get-my-bookings.types';
 import {
   DEFAULT_DURATION,
   categoryOf,
   clock,
   minutesOfDay,
+  todayIn,
 } from './agenda-layout.ts';
 
 const DAY_END = 24 * 60 - 1;
@@ -40,6 +42,42 @@ export function toEvent(
     ),
     color: colors.get(categoryOf(session)) ?? 'var(--color-primary)',
     payload: { session },
+  };
+}
+
+export type MySlot = {
+  key: string;
+  booking: MyBooking;
+  starts_at: string;
+  status: string;
+  date: string;
+};
+
+const HOLDING = ['confirmed', 'pending', 'unverified'];
+
+export function mySlots(bookings: MyBooking[], zone: string): MySlot[] {
+  return bookings.flatMap(booking =>
+    booking.sessions
+      .filter(session => HOLDING.includes(session.status))
+      .map(session => ({
+        key: `mine:${booking.group_key}:${session.starts_at}`,
+        booking,
+        starts_at: session.starts_at,
+        status: session.status,
+        date: todayIn(zone, new Date(session.starts_at)),
+      }))
+  );
+}
+
+export function slotEvent(slot: MySlot, zone: string): ScheduleEventData {
+  const start = minutesOfDay(slot.starts_at, zone);
+  return {
+    id: slot.key,
+    title: slot.booking.service,
+    start: wallClock(slot.date, start),
+    end: wallClock(slot.date, start + DEFAULT_DURATION),
+    color: 'var(--color-foreground)',
+    payload: { slot },
   };
 }
 

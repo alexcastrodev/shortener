@@ -14,6 +14,8 @@ class Api::Public::FormsController < ApplicationController
     raise ActiveRecord::RecordNotFound unless params[:public_id].to_s.match?(PUBLIC_ID)
 
     form = Form.visible.find_by!(public_id: params[:public_id])
-    render(json: PublicFormSerializer.new(Forms::PublicDefinition.for(form)).serialize, status: :ok)
+    body = JSON.parse(PublicFormSerializer.new(Forms::PublicDefinition.for(form)).serialize)
+    body["form"]["accepting_responses"] = form.accepting_responses
+    render(json: body, status: :ok)
   end
 end

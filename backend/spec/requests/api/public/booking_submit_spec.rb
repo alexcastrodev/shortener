@@ -35,6 +35,7 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
     body = {
       answers: { name_id => "Ana", mail_id => "ana@example.com", booking_id => { "service" => service_id, "sessions" => list } }.merge(answers),
       turnstile_token: "t",
+      confirm_field_id: mail_id,
     }.merge(extra)
     post("/api/public/forms/#{form.public_id}/responses", params: body, headers: { "CF-Connecting-IP" => ip }, as: :json)
   end
@@ -258,6 +259,65 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
       expect { book(extra: { form_version: 1 }) }.not_to(change { [FormResponse.count, Appointment.count] })
       expect(response).to(have_http_status(:conflict))
       expect(json["error"]).to(eq("form_changed"))
+    end
+  end
+
+  describe "where the copy of the confirmation goes" do
+    let(:work_id) { form.reload.fields.select { |field| field["type"] == "email" }.last["id"] }
+
+    before do
+      Forms::Definition.add(form.reload, { "type" => "email", "label" => "Work email" })
+      Forms::Publish.call(form: form.reload)
+    end
+
+    let(:times) { [["2026-11-03", "09:00"], ["2026-11-03", "10:00"], ["2026-11-03", "11:00"], ["2026-11-04", "09:00"], ["2026-11-04", "10:00"]] }
+
+    def client_mails = Notification.where(channel: "email", recipient_kind: "client")
+
+    it "sends it to the email question the visitor chose" do
+      book(answers: { work_id => "ana@work.example" }, extra: { confirm_field_id: work_id })
+      expect(json["email_delivery"]).to(eq("queued"))
+      expect(Appointment.last.client_email).to(eq("ana@work.example"))
+      expect(client_mails.pluck(:kind, :recipient_email)).to(eq([["appointment_confirmed", "ana@work.example"]]))
+    end
+
+    it "sends nothing to the visitor when no email was chosen, or the chosen one was left empty" do
+      [nil, "", work_id].each_with_index do |choice, index|
+        book(sessions(times[index]), extra: { confirm_field_id: choice })
+        expect(response).to(have_http_status(:created))
+        expect(json["email_delivery"]).to(eq("none"), choice.inspect)
+      end
+      expect(Appointment.pluck(:client_email).uniq).to(eq([nil]))
+      expect(Appointment.pluck(:client_name).uniq).to(eq(["Ana"]))
+      expect(client_mails).to(be_empty)
+    end
+
+    it "ignores a choice that is not an email question of this form" do
+      ["nope0000", 7, ["x"], { "id" => mail_id }].each_with_index do |choice, index|
+        book(sessions(times[index]), extra: { confirm_field_id: choice })
+        expect(response).to(have_http_status(:created))
+      end
+      book(sessions(times[4]), extra: { confirm_field_id: name_id })
+      expect(response).to(have_http_status(:created))
+      expect(Appointment.pluck(:client_email).uniq).to(eq([nil]))
+      expect(client_mails).to(be_empty)
+    end
+
+    context "when the email must be verified" do
+      before do
+        Forms::Definition.update(form.reload, booking_id, { "rules" => { "verify_email" => true } })
+        Forms::Publish.call(form: form.reload)
+      end
+
+      it "always uses the first required email, whatever the visitor chose" do
+        book(answers: { work_id => "ana@work.example" }, extra: { confirm_field_id: work_id })
+        expect(response).to(have_http_status(:created))
+        expect(Appointment.last).to(have_attributes(status: "unverified", client_email: "ana@example.com"))
+        expect(client_mails.pluck(:kind, :recipient_email)).to(eq([["appointment_verify", "ana@example.com"]]))
+
+        book(sessions(["2026-11-04", "09:00"]), extra: { confirm_field_id: nil })
+        expect(Appointment.last).to(have_attributes(status: "unverified", client_email: "ana@example.com"))
+      end
     end
   end
 

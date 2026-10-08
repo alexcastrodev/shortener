@@ -1,13 +1,7 @@
-import {
-  ActionIcon,
-  Button,
-  Checkbox,
-  Group,
-  Stack,
-  TextInput,
-} from '@mantine/core';
+import { ActionIcon, Button, Group, Switch, TextInput } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { IconPlus, IconX } from '@tabler/icons-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   DAYS,
@@ -27,83 +21,130 @@ export function WeekdayTimes({
   const { t } = useTranslation('booking');
   const service = form.values.services[index];
   const days = DAYS.filter(day => service.days.includes(day));
-  if (days.length === 0) return null;
+  const hasOwn = days.some(day => service.byDay[day] !== undefined);
+  const [on, setOn] = useState(hasOwn);
 
   const path = (day: string) => `services.${index}.byDay.${day}` as const;
-  const setOwn = (day: string, own: boolean) => {
+  const setOwn = (
+    day: string,
+    own: { key: string; value: string }[] | null
+  ) => {
     const rest = { ...service.byDay };
-    if (own)
-      rest[day] = service.times.map(time => ({
-        key: newKey(),
-        value: time.value,
-      }));
+    if (own) rest[day] = own;
     else delete rest[day];
     form.setFieldValue(`services.${index}.byDay`, rest);
   };
+  const copyGeneral = () =>
+    service.times.map(time => ({ key: newKey(), value: time.value }));
 
   return (
     <div>
-      <p className="text-sm font-medium">{t('wd_title')}</p>
-      <p className="mb-2 text-xs text-muted-foreground">{t('wd_hint')}</p>
-      <Stack gap="xs">
-        {days.map(day => {
-          const own = service.byDay[day];
-          return (
-            <div key={day}>
-              <Checkbox
-                size="xs"
-                label={`${dayLabels[day]} · ${t('wd_own')}`}
-                checked={own !== undefined}
-                onChange={event => setOwn(day, event.currentTarget.checked)}
-              />
-              {own !== undefined && (
-                <Group gap="xs" mt={4} ml={24}>
-                  {own.map((time, timeIndex) => (
-                    <Group key={time.key} gap={2} wrap="nowrap">
-                      <TextInput
-                        type="time"
-                        size="xs"
-                        aria-label={t('wd_times', { day: dayLabels[day] })}
-                        {...form.getInputProps(
-                          `${path(day)}.${timeIndex}.value`
-                        )}
-                      />
-                      <ActionIcon
+      <Switch
+        size="sm"
+        label={t('wd_title')}
+        description={t('wd_hint')}
+        checked={on || hasOwn}
+        onChange={event => {
+          const checked = event.currentTarget.checked;
+          setOn(checked);
+          if (!checked) form.setFieldValue(`services.${index}.byDay`, {});
+        }}
+      />
+      {(on || hasOwn) && days.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {days.map(day => {
+            const own = service.byDay[day];
+            return (
+              <li
+                key={day}
+                role="group"
+                aria-label={dayLabels[day]}
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-border px-3 py-2"
+              >
+                <span className="w-10 shrink-0 text-sm font-medium">
+                  {dayLabels[day]}
+                </span>
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                  {own === undefined ? (
+                    <span className="text-xs text-muted-foreground">
+                      {t('wd_uses_general')}
+                    </span>
+                  ) : (
+                    <>
+                      {own.map((time, timeIndex) => (
+                        <Group key={time.key} gap={2} wrap="nowrap">
+                          <TextInput
+                            type="time"
+                            size="xs"
+                            aria-label={t('wd_times', { day: dayLabels[day] })}
+                            {...form.getInputProps(
+                              `${path(day)}.${timeIndex}.value`
+                            )}
+                          />
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            aria-label={t('wd_remove_time', {
+                              time: time.value,
+                            })}
+                            onClick={() =>
+                              form.removeListItem(path(day), timeIndex)
+                            }
+                          >
+                            <IconX size={14} />
+                          </ActionIcon>
+                        </Group>
+                      ))}
+                      <Button
                         variant="subtle"
-                        color="gray"
-                        aria-label={t('wd_remove_time', { time: time.value })}
+                        size="compact-xs"
+                        leftSection={<IconPlus size={12} />}
                         onClick={() =>
-                          form.removeListItem(path(day), timeIndex)
+                          form.insertListItem(path(day), {
+                            key: newKey(),
+                            value: '',
+                          })
                         }
                       >
-                        <IconX size={14} />
-                      </ActionIcon>
-                    </Group>
-                  ))}
+                        {t('wd_add_time')}
+                      </Button>
+                      {own.length === 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {t('wd_closed')}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+                <Group gap={4} wrap="nowrap">
                   <Button
-                    variant="subtle"
+                    variant={own === undefined ? 'light' : 'subtle'}
+                    color={own === undefined ? undefined : 'gray'}
                     size="compact-xs"
-                    leftSection={<IconPlus size={12} />}
                     onClick={() =>
-                      form.insertListItem(path(day), {
-                        key: newKey(),
-                        value: '',
-                      })
+                      setOwn(day, own === undefined ? copyGeneral() : null)
                     }
                   >
-                    {t('wd_add_time')}
+                    {own === undefined
+                      ? t('wd_customize')
+                      : t('wd_use_general')}
                   </Button>
-                  {own.length === 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {t('wd_closed')}
-                    </span>
+                  {own === undefined && (
+                    <Button
+                      variant="subtle"
+                      color="gray"
+                      size="compact-xs"
+                      onClick={() => setOwn(day, [])}
+                    >
+                      {t('wd_close')}
+                    </Button>
                   )}
                 </Group>
-              )}
-            </div>
-          );
-        })}
-      </Stack>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

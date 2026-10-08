@@ -80,5 +80,14 @@
   "has_sessions": "has sessions",
   "week_days": "Days of the week",
   "expand": "Expand",
-  "collapse": "Exit full screen"
+  "collapse": "Exit full screen",
+  "status_cancelled": "Cancelled",
+  "status_declined": "Declined",
+  "status_expired": "Expired",
+  "panel_status": "Status",
+  "show_mine": "Show my bookings",
+  "mine_label": "My booking",
+  "mine_sessions": "Sessions of this booking",
+  "mine_manage": "Manage booking",
+  "mine_zone_hint": "{{time}} in the booking's time zone ({{zone}})"
 }

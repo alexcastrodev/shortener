@@ -160,8 +160,10 @@ module Appointments
       fields = Forms::PublicDefinition.for(form).fields
       name_id = fields.find { |field| field["type"] == "short_text" && field["required"] }&.fetch("id")
       mail_id = fields.find { |field| field["type"] == "email" && field["required"] }&.fetch("id")
-      answers = { name_id => entry.name, mail_id => entry.email, booking["id"] => { "service" => entry.service_key, "sessions" => [{ "date" => local.to_date.iso8601, "time" => local.strftime("%H:%M") }] } }
-      Forms::SubmitResponse.call(form: form, answers: answers, client: { time_zone: entry.time_zone, locale: entry.locale }, claim_at: entry.starts_at)
+      answers = { booking["id"] => { "service" => entry.service_key, "sessions" => [{ "date" => local.to_date.iso8601, "time" => local.strftime("%H:%M") }] } }
+      answers[name_id] = entry.name if name_id
+      answers[mail_id] = entry.email if mail_id
+      Forms::SubmitResponse.call(form: form, answers: answers, client: { time_zone: entry.time_zone, locale: entry.locale }, claim_at: entry.starts_at, contact: { name: entry.name, email: entry.email })
     end
 
     module Mailing
@@ -174,9 +176,24 @@ module Appointments
       private
 
       def deliver(entry, kind)
+        notify_in_app(entry, kind)
         return unless MailBudget.reserve(new_address: false, share: 0.8).ok?
 
         WaitlistMailer.with(entry: entry).public_send(kind).deliver_later
+      end
+
+      def notify_in_app(entry, kind)
+        user = Notification.client_account(entry.email)
+        return unless user
+
+        service = Waitlist.booking_of(entry.form)&.fetch("services", [])&.find { |item| item["id"] == entry.service_key }&.fetch("name", nil)
+        payload = { waitlist_entry_id: entry.id, form_title: entry.form.title, service: service, starts_at: entry.starts_at.utc.iso8601 }
+        Notification.transaction(requires_new: true) do
+          Notification.create!(channel: "in_app", kind: "waitlist_#{kind}", recipient_kind: "client", user_id: user.id, recipient_email: entry.email, event_key: "waitlist:#{entry.id}:#{kind}", payload: payload, status: "sent", sent_at: Time.current)
+        end
+      rescue StandardError => e
+        Rails.logger.error("[waitlist] in-app notice failed entry=#{entry.id} kind=#{kind}: #{e.class}")
+        nil
       end
     end
   end

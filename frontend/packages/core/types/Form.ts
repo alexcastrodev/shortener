@@ -91,7 +91,10 @@ export type FormField = {
   exceptions?: BookingException[];
   time_zone?: string;
   waitlist?: boolean;
+  verify_email?: boolean;
 };
+
+export type PublishBlock = { code: string; name?: string; service_id?: string };
 
 export type Form = {
   id: number;
@@ -107,7 +110,9 @@ export type Form = {
   intro_enabled?: boolean;
   start_label?: string | null;
   published: boolean;
+  accepting_responses: boolean;
   fields: FormField[];
+  publish_blocks: PublishBlock[];
   responses_count: number;
   public_url: string;
   shortlink_id: number | null;
@@ -143,7 +148,7 @@ export type FormFieldInput = {
 export type PublicForm = Pick<
   Form,
   'title' | 'description' | 'thank_you_message' | 'theme' | 'custom_colors' | 'layout' | 'fields' | 'cover_token' | 'cover_position' | 'intro_enabled' | 'start_label'
->;
+> & { accepting_responses?: boolean };
 
 export type FormResponseAnswer = {
   id: string;

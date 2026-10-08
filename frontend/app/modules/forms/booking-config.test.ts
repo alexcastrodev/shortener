@@ -74,6 +74,7 @@ test('saving keeps service ids, orders days and times, and sends the rules', () 
     approval: 'manual',
     min_notice_minutes: 30,
     window_days: 90,
+    buffer_minutes: 0,
     approval_timeout_minutes: 60,
     approval_on_timeout: 'accept',
     approval_within_minutes: null,
@@ -97,12 +98,28 @@ test('creating sends the type; automatic approval sends no deadline', () => {
     approval: 'auto',
     min_notice_minutes: 0,
     window_days: 60,
+    buffer_minutes: 0,
     approval_within_minutes: null,
     reminder_minutes: [1440],
     verify_email: false,
     waitlist: false,
     waitlist_confirm_minutes: null,
   });
+});
+
+test('the break between sessions is loaded, sent, and defaults to none', () => {
+  assert.equal(initialValues().buffer_minutes, 0);
+  const loaded = initialValues({
+    ...field,
+    rules: { ...field.rules!, buffer_minutes: 15 },
+  });
+  assert.equal(loaded.buffer_minutes, 15);
+  assert.equal(toBookingInput(loaded, false).rules?.buffer_minutes, 15);
+  assert.equal(
+    toBookingInput({ ...loaded, buffer_minutes: '' }, false).rules
+      ?.buffer_minutes,
+    0
+  );
 });
 
 test('clearing the help text on an existing question sends null so the server clears it', () => {
@@ -114,6 +131,7 @@ test('clearing the help text on an existing question sends null so the server cl
 test('a service without price or capacity sends neither, so it is free and unlimited', () => {
   const values = initialValues();
   const service = blankService('New service');
+  service.capacity = '';
   service.times = [
     { key: 'a', value: '09:00' },
     { key: 'b', value: '09:00' },
@@ -125,6 +143,37 @@ test('a service without price or capacity sends neither, so it is free and unlim
   assert.equal('capacity' in sent, false);
   assert.equal('id' in sent, false);
   assert.deepEqual(sent.times, ['09:00']);
+});
+
+test('a new service lasts 30 minutes, has 1 place, euros, weekdays and times from 09:00 to 18:00', () => {
+  const service = blankService('Session');
+  assert.equal(service.duration, 30);
+  assert.equal(service.capacity, 1);
+  assert.equal(service.price, '');
+  assert.equal(service.currency, 'EUR');
+  assert.deepEqual(service.days, ['mon', 'tue', 'wed', 'thu', 'fri']);
+  assert.equal(service.times[0].value, '09:00');
+  assert.equal(service.times.at(-1)?.value, '17:30');
+  const values = initialValues();
+  values.services = [service];
+  const [sent] = toBookingInput(values, true).services!;
+  assert.equal(sent.capacity, 1);
+  assert.equal('currency' in sent, false);
+  assert.equal(sent.times.length, 18);
+});
+
+test('a saved service without a currency loads with euros, and a saved code is kept', () => {
+  const values = initialValues({
+    ...field,
+    services: [
+      { ...field.services![0], price: null, currency: null },
+      { ...field.services![0], id: 'svc00002', currency: 'BRL' },
+    ],
+  });
+  assert.deepEqual(
+    values.services.map(service => service.currency),
+    ['EUR', 'BRL']
+  );
 });
 
 test('a price is sent with an upper-case currency', () => {

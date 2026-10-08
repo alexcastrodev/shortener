@@ -32,12 +32,18 @@ export function MonthlyOffer({
           mt="xs"
           label={t('monthly_price')}
           description={
-            service.currency.trim().length === 3
-              ? t('monthly_price_hint')
-              : t('monthly_price_needs_currency')
+            service.price === ''
+              ? t('monthly_price_needs_price')
+              : t('monthly_price_hint')
           }
           min={0}
           decimalScale={2}
+          rightSection={
+            <span className="text-xs text-muted-foreground">
+              {service.currency}
+            </span>
+          }
+          rightSectionWidth={48}
           {...form.getInputProps(`services.${index}.monthlyPrice`)}
         />
       )}

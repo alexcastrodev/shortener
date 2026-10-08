@@ -26,7 +26,13 @@ import {
   todayIn,
   weekStart,
 } from './agenda-layout.ts';
-import { sameMoment, targetFor, toEvent } from './schedule-events.ts';
+import {
+  mySlots,
+  sameMoment,
+  slotEvent,
+  targetFor,
+  toEvent,
+} from './schedule-events.ts';
 
 const session = (
   startsAt: string,
@@ -282,4 +288,42 @@ test('the month view covers six weeks starting on a Monday and steps by month', 
   assert.equal(range.to, '2026-11-08');
   assert.equal(step('month', '2026-10-31', 1), '2026-11-30');
   assert.equal(step('month', '2026-03-31', -1), '2026-02-28');
+});
+
+test('my bookings become one slot per session that still holds time', () => {
+  const booking = {
+    group_key: 'g1',
+    form_title: 'Studio',
+    service: 'Yoga',
+    status: 'confirmed',
+    cancellable: true,
+    series: true,
+    time_zone: 'America/New_York',
+    sessions: [
+      { starts_at: '2026-10-07T23:30:00Z', status: 'confirmed' },
+      { starts_at: '2026-10-14T23:30:00Z', status: 'pending' },
+      { starts_at: '2026-10-21T23:30:00Z', status: 'cancelled' },
+      { starts_at: '2026-10-28T23:30:00Z', status: 'declined' },
+      { starts_at: '2026-11-04T23:30:00Z', status: 'expired' },
+      { starts_at: '2026-11-11T23:30:00Z', status: 'unverified' },
+    ],
+  };
+  const slots = mySlots([booking], 'Europe/Lisbon');
+  assert.deepEqual(
+    slots.map(slot => [slot.date, slot.status]),
+    [
+      ['2026-10-08', 'confirmed'],
+      ['2026-10-15', 'pending'],
+      ['2026-11-11', 'unverified'],
+    ]
+  );
+  const event = slotEvent(slots[0], 'Europe/Lisbon');
+  assert.equal(event.start, '2026-10-08 00:30:00');
+  assert.equal(event.end, '2026-10-08 01:30:00');
+  assert.equal(event.id, 'mine:g1:2026-10-07T23:30:00Z');
+  assert.equal(event.title, 'Yoga');
+  assert.notEqual(
+    event.id,
+    toEvent(session('2026-10-07T23:30:00Z'), 'Europe/Lisbon', new Map()).id
+  );
 });

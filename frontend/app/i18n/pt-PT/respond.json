@@ -42,10 +42,12 @@
   "booking_pick": "Escolha um dia e uma hora",
   "booking_loading": "A carregar os horários…",
   "booking_none": "Sem horários disponíveis neste período.",
-  "booking_more_dates": "Mostrar mais datas",
+  "booking_prev_month": "Mês anterior",
+  "booking_next_month": "Mês seguinte",
+  "booking_day_chosen": "{{date}}, hora escolhida",
   "booking_zone": "Os horários são em {{zone}}",
   "booking_summary": "A sua marcação",
-  "booking_preview": "Os horários disponíveis aparecem no formulário publicado.",
+  "booking_preview_note": "Horários de exemplo com base no seu calendário. O formulário publicado mostra a disponibilidade real.",
   "booking_taken": "Esse horário acabou de ser ocupado. Escolha outro.",
   "booking_load_failed": "Não conseguimos carregar os horários.",
   "booking_retry": "Tentar novamente",
@@ -82,5 +84,7 @@
   "waitlist_not_full": "Este horário já tem lugar: escolha-o acima.",
   "waitlist_list_full": "A lista de espera deste horário está cheia.",
   "waitlist_invalid": "Verifique o nome e o e-mail.",
-  "waitlist_failed": "Não foi possível adicioná-lo. Tente novamente."
+  "waitlist_failed": "Não foi possível adicioná-lo. Tente novamente.",
+  "confirm_here": "Quero receber a confirmação neste e-mail",
+  "receipt_account": "Tem conta Kurz com este e-mail? Entre para ver as suas marcações e receber avisos na app."
 }
