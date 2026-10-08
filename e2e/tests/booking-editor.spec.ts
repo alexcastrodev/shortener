@@ -138,3 +138,30 @@ test('a single category shows the hint that two are needed', async ({ page, sign
   await expect(editor.services.getByRole('textbox', { name: 'Nome da categoria' })).toHaveCount(2);
   await expect(editor.services.getByText(hint)).toBeHidden();
 });
+
+test('a service can offer unlimited places and go back to a number', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Aula', { capacity: 3 })] });
+  await signIn('owner');
+  const editor = new BookingEditor(page);
+  await editor.open(form.id);
+
+  const places = editor.serviceField('Vagas por horário');
+  const unlimited = editor.services.getByRole('checkbox', { name: 'Sem limite de vagas' });
+  await expect(places).toHaveValue('3');
+  await expect(unlimited).not.toBeChecked();
+
+  await unlimited.check();
+  await expect(places).toBeDisabled();
+  await expect(places).toHaveValue('');
+  await editor.save();
+  await expect(editor.saved).toBeVisible();
+  await expect.poll(async () => bookingOf(await ownerForm(form.id)).services[0].capacity ?? null).toBeNull();
+
+  await unlimited.uncheck();
+  await expect(places).toBeEnabled();
+  await expect(places).toHaveValue('1');
+  await places.fill('5');
+  await editor.save();
+  await expect(editor.saved).toBeVisible();
+  await expect.poll(async () => bookingOf(await ownerForm(form.id)).services[0].capacity).toBe(5);
+});

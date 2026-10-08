@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Button,
+  Checkbox,
   Chip,
   Group,
   NativeSelect,
@@ -219,14 +220,29 @@ function ServiceFields({
           }
           {...form.getInputProps(`services.${index}.duration`)}
         />
-        <NumberInput
-          label={t('service_capacity')}
-          placeholder={t('service_capacity_none')}
-          min={1}
-          max={1000}
-          allowDecimal={false}
-          {...form.getInputProps(`services.${index}.capacity`)}
-        />
+        <div>
+          <NumberInput
+            label={t('service_capacity')}
+            placeholder={t('service_capacity_none')}
+            min={1}
+            max={1000}
+            allowDecimal={false}
+            disabled={service.capacity === ''}
+            {...form.getInputProps(`services.${index}.capacity`)}
+          />
+          <Checkbox
+            mt={6}
+            size="xs"
+            label={t('summary_unlimited')}
+            checked={service.capacity === ''}
+            onChange={event =>
+              form.setFieldValue(
+                `services.${index}.capacity`,
+                event.currentTarget.checked ? '' : 1
+              )
+            }
+          />
+        </div>
         <NumberInput
           label={t('service_price')}
           placeholder={t('optional')}
