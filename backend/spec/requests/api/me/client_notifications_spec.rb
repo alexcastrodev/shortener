@@ -47,11 +47,11 @@ RSpec.describe("in-app notifications for a client with a Kurz account", type: :r
 
   it "never shows the client the owner's internal ids" do
     book("cli@example.com")
-    appointment = Appointment.last
-    Notification.queue_email(kind: "appointment_declined", event_key: "x", source: appointment, recipient_kind: "client", recipient_email: client.email, payload: { form_id: form.id, response_id: 9, cancelled_ids: [1], expires_at: "2026-11-03T09:00:00Z", group_key: "g" })
+    booking = Appointment.last
+    Notification.queue_email(kind: "appointment_declined", event_key: "x", source: booking, recipient_kind: "client", recipient_email: client.email, payload: { form_id: form.id, response_id: 9, cancelled_ids: [1], expires_at: "2026-11-03T09:00:00Z", group_key: "g" })
 
     get("/api/me/notifications", headers: client_headers)
-    expect(json["notifications"].map { |row| row["payload"] }).to(eq([{ "group_key" => "g" }, { "group_key" => appointment.group_key, "sessions" => 1 }]))
+    expect(json["notifications"].map { |row| row["payload"] }).to(eq([{ "group_key" => "g" }, { "group_key" => booking.group_key, "sessions" => 1 }]))
     expect(response.body).not_to(include("form_id", "response_id", "cancelled_ids", "expires_at"))
   end
 
@@ -77,10 +77,10 @@ RSpec.describe("in-app notifications for a client with a Kurz account", type: :r
 
   it "mirrors every client email but the verification, and never an owner email" do
     book("cli@example.com")
-    appointment = Appointment.last
+    booking = Appointment.last
     kinds = ["appointment_request_received", "appointment_declined", "appointment_cancelled", "appointment_reminder", "appointment_rescheduled", "appointment_verify"]
-    kinds.each { |kind| Notification.queue_email(kind: kind, event_key: "k-#{kind}", source: appointment, recipient_kind: "client", recipient_email: client.email, payload: { form_id: form.id }) }
-    Notification.queue_email(kind: "appointment_cancelled", event_key: "owner", source: appointment, recipient_kind: "owner", user_id: client.id, payload: {})
+    kinds.each { |kind| Notification.queue_email(kind: kind, event_key: "k-#{kind}", source: booking, recipient_kind: "client", recipient_email: client.email, payload: { form_id: form.id }) }
+    Notification.queue_email(kind: "appointment_cancelled", event_key: "owner", source: booking, recipient_kind: "owner", user_id: client.id, payload: {})
 
     expect(mirrored.pluck(:kind)).to(match_array(["appointment_confirmed"] + kinds - ["appointment_verify"]))
     expect(Notification.in_app.where(recipient_kind: "owner", user_id: client.id)).to(be_empty)
