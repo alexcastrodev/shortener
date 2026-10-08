@@ -195,10 +195,16 @@ function Builder({ form: current }: { form: Form }) {
     onError: showError,
   });
 
-  const { mutate: setPublished, isPending: isPublishing } = useSetFormPublished({
+  const {
+    mutate: setPublished,
+    isPending: isChangingPublished,
+    variables: publishing,
+  } = useSetFormPublished({
     onSuccess: () => refresh(),
     onError: showError,
   });
+  const isPublishing = isChangingPublished && publishing?.published === true;
+  const isUnpublishing = isChangingPublished && publishing?.published === false;
 
   const { mutate: remove } = useDeleteForm({
     onSuccess: () => {
@@ -344,6 +350,7 @@ function Builder({ form: current }: { form: Form }) {
             </Button>
           )}
           <span
+            role="status"
             className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium ${
               current.published ? 'border-primary/50 bg-primary/10' : 'border-border'
             }`}
@@ -352,7 +359,7 @@ function Builder({ form: current }: { form: Form }) {
               ? `${t('ed_published')} · ${t('ed_version', { version: current.published_version })}`
               : t('draft')}
             {current.published && current.has_unpublished_changes && (
-              <span className="text-amber-500">{t('ed_changes_pending')}</span>
+              <span className="text-amber-700 dark:text-amber-400">{t('ed_changes_pending')}</span>
             )}
           </span>
           {current.published && current.has_unpublished_changes && (
@@ -366,7 +373,7 @@ function Builder({ form: current }: { form: Form }) {
             </Button>
           )}
           {current.published && (
-            <Button size="sm" variant="default" loading={isPublishing} onClick={confirmUnpublish}>
+            <Button size="sm" variant="default" loading={isUnpublishing} onClick={confirmUnpublish}>
               {t('ed_unpublish')}
             </Button>
           )}
