@@ -110,6 +110,8 @@ export type Form = {
   intro_enabled?: boolean;
   start_label?: string | null;
   published: boolean;
+  published_version: number;
+  has_unpublished_changes: boolean;
   accepting_responses: boolean;
   fields: FormField[];
   publish_blocks: PublishBlock[];

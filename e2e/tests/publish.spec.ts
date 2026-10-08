@@ -1,3 +1,4 @@
+import { anonymous, owner } from '../support/api.ts';
 import { createForm, ownerForm, republish, service } from '../support/forms.ts';
 import { expect, test } from '../support/fixtures.ts';
 
@@ -9,7 +10,7 @@ test('a booking form without name or email question publishes with the Publicar 
   await page.getByRole('button', { name: 'Publicar', exact: true }).click();
 
   await expect(page.getByRole('button', { name: 'Publicar', exact: true })).toBeHidden();
-  await expect(page.getByRole('switch', { name: 'Publicado' })).toBeChecked();
+  await expect(page.getByText('Publicado · versão 1')).toBeVisible();
   expect((await ownerForm(form.id)).published).toBe(true);
 
   await page.goto(`/f/${form.publicId}`);
@@ -17,20 +18,65 @@ test('a booking form without name or email question publishes with the Publicar 
   await expect(page.getByRole('button', { name: 'Enviar' })).toBeVisible();
 });
 
-test('the Publicado switch publishes a draft too', async ({ page, signIn }) => {
-  const form = await createForm({ name: false, services: [service('Corte')] });
+test('editing a published form asks before publishing the new version and keeps the same link', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Corte')], publish: true });
+  const before = await ownerForm(form.id);
+  await owner.patch(`/api/me/forms/${form.id}`, { title: `${form.title} editado` });
   await signIn('owner');
   await page.goto(`/app/forms/${form.id}`);
-  await expect(page.getByRole('switch', { name: 'Publicado' })).not.toBeChecked();
 
-  await page.getByText('Rascunho', { exact: true }).click();
+  await expect(page.getByText('alterações por publicar')).toBeVisible();
+  const publicTitle = async () => {
+    await page.goto(`/f/${form.publicId}`);
+    return page.getByRole('heading', { level: 1 });
+  };
+  await expect(await publicTitle()).toHaveText(form.title);
+  await page.goto(`/app/forms/${form.id}`);
 
-  await expect(page.getByRole('switch', { name: 'Publicado' })).toBeChecked();
-  await expect(page.getByRole('button', { name: 'Publicar', exact: true })).toBeHidden();
+  await page.getByRole('button', { name: 'Publicar alterações' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('Publicar a versão 2?')).toBeVisible();
+  await expect(dialog.getByText('O link continua o mesmo')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancelar' }).click();
+  await expect(dialog).toBeHidden();
+  expect((await ownerForm(form.id)).published_version).toBe(1);
+
+  await page.getByRole('button', { name: 'Publicar alterações' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Publicar versão 2' }).click();
+
+  await expect(page.getByText('Publicado · versão 2')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Publicar alterações' })).toBeHidden();
+  const after = await ownerForm(form.id);
+  expect(after.published_version).toBe(2);
+  expect(after.public_url).toBe(before.public_url);
+  expect(after.short_url).toBe(before.short_url);
+  await expect(await publicTitle()).toHaveText(`${form.title} editado`);
+});
+
+test('unpublishing asks first, takes the form offline and publishing again gives the same link', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Corte')], publish: true });
+  const before = await ownerForm(form.id);
+  await signIn('owner');
+  await page.goto(`/app/forms/${form.id}`);
+
+  await page.getByRole('button', { name: 'Despublicar' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('Tirar o formulário do ar?')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancelar' }).click();
+  await expect(dialog).toBeHidden();
   expect((await ownerForm(form.id)).published).toBe(true);
 
-  await page.goto(`/f/${form.publicId}`);
-  await expect(page.getByText('Escolha um horário')).toBeVisible();
+  await page.getByRole('button', { name: 'Despublicar' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Despublicar' }).click();
+  await expect(page.getByText('Rascunho', { exact: true })).toBeVisible();
+  expect((await anonymous.get(`/api/public/forms/${form.publicId}`)).status).toBe(404);
+
+  await page.getByRole('button', { name: 'Publicar', exact: true }).click();
+  await expect(page.getByText('Publicado · versão 2')).toBeVisible();
+  const after = await ownerForm(form.id);
+  expect(after.public_url).toBe(before.public_url);
+  expect(after.short_url).toBe(before.short_url);
+  expect((await anonymous.get(`/api/public/forms/${form.publicId}`)).status).toBe(200);
 });
 
 test('the checklist lists every blocker and each action fixes its own', async ({ page, signIn }) => {
@@ -89,7 +135,7 @@ test('publishing succeeds once the incomplete service has times', async ({ page,
 
   await expect(page.getByRole('button', { name: 'Definir' })).toBeHidden();
   await page.getByRole('button', { name: 'Publicar', exact: true }).click();
-  await expect(page.getByRole('switch', { name: 'Publicado' })).toBeChecked();
+  await expect(page.getByText(/^Publicado · versão/)).toBeVisible();
   expect((await ownerForm(form.id)).published).toBe(true);
 });
 

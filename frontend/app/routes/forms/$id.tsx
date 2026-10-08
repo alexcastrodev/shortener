@@ -208,6 +208,28 @@ function Builder({ form: current }: { form: Form }) {
     onError: showError,
   });
 
+  const confirmRepublish = () => {
+    const version = current.published_version + 1;
+    modals.openConfirmModal({
+      title: t('ed_republish_title', { version }),
+      centered: true,
+      children: <p className="text-sm">{t('ed_republish_body', { url: shareUrl })}</p>,
+      labels: { confirm: t('ed_republish_confirm', { version }), cancel: t('ed_cancel') },
+      confirmProps: { color: 'brand' },
+      onConfirm: () => setPublished({ id: current.id, published: true }),
+    });
+  };
+
+  const confirmUnpublish = () => {
+    modals.openConfirmModal({
+      title: t('ed_unpublish_title'),
+      centered: true,
+      children: <p className="text-sm">{t('ed_unpublish_body', { url: shareUrl })}</p>,
+      labels: { confirm: t('ed_unpublish'), cancel: t('ed_cancel') },
+      onConfirm: () => setPublished({ id: current.id, published: false }),
+    });
+  };
+
   const confirmDelete = () => {
     modals.openConfirmModal({
       title: t('delete_confirm'),
@@ -321,22 +343,33 @@ function Builder({ form: current }: { form: Form }) {
               {t('ed_publish')}
             </Button>
           )}
-          <label
-            className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium ${
+          <span
+            className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium ${
               current.published ? 'border-primary/50 bg-primary/10' : 'border-border'
             }`}
           >
-            <Switch
+            {current.published
+              ? `${t('ed_published')} · ${t('ed_version', { version: current.published_version })}`
+              : t('draft')}
+            {current.published && current.has_unpublished_changes && (
+              <span className="text-amber-500">{t('ed_changes_pending')}</span>
+            )}
+          </span>
+          {current.published && current.has_unpublished_changes && (
+            <Button
               size="sm"
-              aria-label={t('ed_published')}
-              checked={current.published}
-              disabled={isPublishing}
-              onChange={event =>
-                setPublished({ id: current.id, published: event.currentTarget.checked })
-              }
-            />
-            {current.published ? t('ed_published') : t('draft')}
-          </label>
+              color="brand"
+              loading={isPublishing}
+              onClick={confirmRepublish}
+            >
+              {t('ed_publish_changes')}
+            </Button>
+          )}
+          {current.published && (
+            <Button size="sm" variant="default" loading={isPublishing} onClick={confirmUnpublish}>
+              {t('ed_unpublish')}
+            </Button>
+          )}
           <Tooltip label={t('ed_accepting_hint')} disabled={current.published}>
             <label
               className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium ${
