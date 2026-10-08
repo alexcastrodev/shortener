@@ -1,6 +1,6 @@
 import { Button } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
-import type { Form } from '@internal/core/types/Form';
+import type { Form, PublishBlock } from '@internal/core/types/Form';
 import { publishBlockMessage } from '../../../modules/forms/form-errors';
 
 export function PublishChecklist({
@@ -12,9 +12,10 @@ export function PublishChecklist({
   form: Form;
   adding: boolean;
   onAddEmail: (required: boolean) => void;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, serviceId?: string) => void;
 }) {
   const { t } = useTranslation('forms');
+  const { t: tb } = useTranslation('booking');
   const blocks = form.publish_blocks.filter(({ code }) => code !== 'no_questions');
   const booking = form.fields.find(field => field.type === 'booking');
   const tip =
@@ -24,9 +25,14 @@ export function PublishChecklist({
 
   if (blocks.length === 0 && !tip) return null;
 
-  const action = (code: string) => {
+  const action = ({ code, service_id: serviceId }: PublishBlock) => {
     if (code === 'no_email')
       return { label: t('ed_checklist_add_email'), run: () => onAddEmail(true) };
+    if (code === 'service_incomplete' && serviceId && booking)
+      return {
+        label: tb('checklist_set_up'),
+        run: () => onSelect(booking.id, serviceId),
+      };
     if ((code === 'no_service' || code === 'service_incomplete') && booking)
       return { label: t('ed_checklist_open_booking'), run: () => onSelect(booking.id) };
     return null;
@@ -39,10 +45,10 @@ export function PublishChecklist({
           <h3 className="text-sm font-semibold">{t('ed_checklist_title')}</h3>
           <ul className="mt-2 space-y-2">
             {blocks.map(block => {
-              const act = action(block.code);
+              const act = action(block);
               return (
                 <li
-                  key={`${block.code}-${block.name ?? ''}`}
+                  key={`${block.code}-${block.service_id ?? block.name ?? ''}`}
                   className="flex flex-wrap items-center justify-between gap-2 text-sm"
                 >
                   <span className="min-w-0 flex-1">{publishBlockMessage(block)}</span>

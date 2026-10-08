@@ -7,13 +7,14 @@ import {
   Switch,
   TextInput,
 } from '@mantine/core';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGenerateAppointmentTimes } from '@internal/core/actions/generate-appointment-times/generate-appointment-times.hook';
 import type { GenerateTimesError } from '@internal/core/actions/generate-appointment-times/generate-appointment-times.types';
 import {
   STEP_PRESETS,
-  defaultGenerator,
+  generatorFor,
+  stepFor,
   toGenerateParams,
   type GeneratorValues,
 } from '../../../modules/forms/time-generator.ts';
@@ -28,8 +29,11 @@ export function TimeGeneratorPanel({
   onApply: (times: string[]) => void;
 }) {
   const { t } = useTranslation('booking');
-  const [open, setOpen] = useState(false);
-  const [values, setValues] = useState<GeneratorValues>(defaultGenerator);
+  const [pinned, setPinned] = useState<boolean | null>(null);
+  const open = pinned ?? !hasTimes;
+  const [values, setValues] = useState<GeneratorValues>(() =>
+    generatorFor(duration)
+  );
   const [message, setMessage] = useState<{
     tone: 'ok' | 'error';
     text: string;
@@ -38,6 +42,12 @@ export function TimeGeneratorPanel({
 
   const set = (patch: Partial<GeneratorValues>) =>
     setValues(current => ({ ...current, ...patch }));
+
+  useEffect(() => {
+    if (Number.isInteger(duration) && duration >= 5 && duration <= 600) {
+      setValues(current => ({ ...current, ...stepFor(duration) }));
+    }
+  }, [duration]);
 
   const errorText = (code: GenerateTimesError) => {
     switch (code) {
@@ -68,6 +78,7 @@ export function TimeGeneratorPanel({
           setMessage({ tone: 'error', text: errorText(result.errors[0]) });
           return;
         }
+        setPinned(true);
         onApply(result.times);
         const overlap = result.warnings.includes('overlapping_sessions')
           ? ` ${t('gen_overlap')}`
@@ -83,7 +94,11 @@ export function TimeGeneratorPanel({
 
   if (!open) {
     return (
-      <Button variant="subtle" size="compact-xs" onClick={() => setOpen(true)}>
+      <Button
+        variant="subtle"
+        size="compact-xs"
+        onClick={() => setPinned(true)}
+      >
         {t('gen_open')}
       </Button>
     );
@@ -97,7 +112,7 @@ export function TimeGeneratorPanel({
           <Button
             variant="subtle"
             size="compact-xs"
-            onClick={() => setOpen(false)}
+            onClick={() => setPinned(false)}
           >
             {t('gen_close')}
           </Button>
@@ -118,20 +133,22 @@ export function TimeGeneratorPanel({
         </Group>
         <div>
           <p className="mb-1 text-sm">{t('gen_step')}</p>
-          <SegmentedControl
-            size="xs"
-            value={String(values.step)}
-            onChange={value =>
-              set({ step: value === 'custom' ? 'custom' : Number(value) })
-            }
-            data={[
-              ...STEP_PRESETS.map(step => ({
-                value: String(step),
-                label: t('gen_step_minutes', { count: step }),
-              })),
-              { value: 'custom', label: t('gen_step_custom') },
-            ]}
-          />
+          <div className="max-w-full overflow-x-auto">
+            <SegmentedControl
+              size="xs"
+              value={String(values.step)}
+              onChange={value =>
+                set({ step: value === 'custom' ? 'custom' : Number(value) })
+              }
+              data={[
+                ...STEP_PRESETS.map(step => ({
+                  value: String(step),
+                  label: t('gen_step_minutes', { count: step }),
+                })),
+                { value: 'custom', label: t('gen_step_custom') },
+              ]}
+            />
+          </div>
           {values.step === 'custom' && (
             <NumberInput
               mt="xs"

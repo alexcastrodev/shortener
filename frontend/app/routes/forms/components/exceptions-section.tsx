@@ -8,100 +8,220 @@ import {
   TextInput,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
-import { IconPlus, IconTrash, IconX } from '@tabler/icons-react';
+import { IconPlus, IconX } from '@tabler/icons-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  TIME,
   blankException,
   newKey,
+  type ExceptionValues,
   type Values,
 } from '../../../modules/forms/booking-config.ts';
+import { summarizeExceptions } from '../../../modules/forms/rules-summary.ts';
+import { SummarySection, useOpenOnErrors } from './summary-section';
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function shortDate(iso: string, locale: string) {
+  const date = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return iso;
+  const parts = new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).formatToParts(date);
+  const pick = (type: string) =>
+    (parts.find(part => part.type === type)?.value ?? '').replace(/\.$/, '');
+  const weekday = pick('weekday');
+  const year =
+    pick('year') === String(new Date().getFullYear()) ? '' : ` ${pick('year')}`;
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${pick('day')} ${pick('month')}${year}`;
+}
+
+type DraftErrors = { from?: string; to?: string; times?: string };
 
 export function ExceptionsSection({
   form,
 }: {
   form: UseFormReturnType<Values>;
 }) {
-  const { t } = useTranslation('booking');
+  const { t, i18n } = useTranslation('booking');
   const savedServices = form.values.services.filter(service => service.id);
+  const [open, setOpen] = useOpenOnErrors(form.errors, key =>
+    key.startsWith('exceptions')
+  );
+  const [draft, setDraft] = useState<ExceptionValues>(blankException);
+  const [draftErrors, setDraftErrors] = useState<DraftErrors>({});
+
+  const date = (iso: string) => shortDate(iso, i18n.language);
+  const patch = (changes: Partial<ExceptionValues>) =>
+    setDraft(current => ({ ...current, ...changes }));
+
+  const summary = summarizeExceptions(form.values.exceptions, {
+    none: t('exc_sum_none'),
+    closed: t('exc_sum_closed'),
+    special: times => t('exc_sum_special', { times }),
+    more: count => t('exc_sum_more', { count }),
+    date,
+  });
+
+  const add = () => {
+    const times = draft.times
+      .map(time => ({ ...time, value: time.value.trim() }))
+      .filter(time => TIME.test(time.value));
+    const errors: DraftErrors = {};
+    if (!DATE.test(draft.from)) errors.from = t('err_exc_from');
+    if (draft.to && draft.from && draft.to < draft.from) {
+      errors.to = t('err_exc_range');
+    }
+    if (draft.kind === 'special' && times.length === 0) {
+      errors.times = t('err_exc_times');
+    }
+    setDraftErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    form.insertListItem('exceptions', {
+      ...draft,
+      key: newKey(),
+      times,
+      note: draft.note.trim(),
+    });
+    setDraft(blankException());
+  };
 
   return (
-    <Stack gap="md" className="border-t border-border pt-6">
-      <div>
-        <p className="text-sm font-medium">{t('exc_title')}</p>
+    <SummarySection
+      title={t('exc_title')}
+      summary={summary}
+      open={open}
+      onToggle={() => setOpen(current => !current)}
+    >
+      <Stack gap="md">
         <p className="text-xs text-muted-foreground">{t('exc_hint')}</p>
-      </div>
-      {form.values.exceptions.length === 0 && (
-        <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-          {t('exc_empty')}
-        </p>
-      )}
-      {form.values.exceptions.map((item, index) => (
-        <div key={item.key} className="rounded-lg border border-border p-3">
-          <Stack gap="sm">
-            <Group justify="space-between" align="flex-end" wrap="nowrap">
-              <div>
-                <p className="mb-1 text-sm">{t('exc_kind')}</p>
-                <SegmentedControl
-                  size="xs"
-                  value={item.kind}
-                  onChange={value =>
-                    form.setFieldValue(
-                      `exceptions.${index}.kind`,
-                      value as 'closed' | 'special'
-                    )
-                  }
-                  data={[
-                    { value: 'closed', label: t('exc_kind_closed') },
-                    { value: 'special', label: t('exc_kind_special') },
-                  ]}
-                />
+        {form.values.exceptions.length === 0 && (
+          <p className="text-sm text-muted-foreground">{t('exc_empty')}</p>
+        )}
+        {form.values.exceptions.map((item, index) => {
+          const range =
+            item.to && item.to !== item.from
+              ? `${date(item.from)} – ${date(item.to)}`
+              : date(item.from);
+          const names = savedServices
+            .filter(service => item.serviceIds.includes(service.id!))
+            .map(service => service.name)
+            .join(', ');
+          const detail = [item.note.trim(), names].filter(Boolean).join(' · ');
+          const times = item.times
+            .map(time => time.value)
+            .filter(value => TIME.test(value))
+            .sort()
+            .join(', ');
+          return (
+            <div
+              key={item.key}
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-border px-3 py-2"
+            >
+              <div className="min-w-0">
+                <p className="break-words text-sm">{range}</p>
+                {detail && (
+                  <p className="break-words text-xs text-muted-foreground">
+                    {detail}
+                  </p>
+                )}
               </div>
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                size="lg"
-                aria-label={t('exc_remove')}
-                onClick={() => form.removeListItem('exceptions', index)}
-              >
-                <IconTrash size={16} />
-              </ActionIcon>
-            </Group>
-            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
+              <Group gap="xs" wrap="nowrap">
+                <span className="text-xs text-muted-foreground">
+                  {item.kind === 'closed' ? t('exc_kind_closed') : times}
+                </span>
+                <Button
+                  variant="subtle"
+                  color="red"
+                  size="compact-xs"
+                  aria-label={t('exc_remove_item', { date: range })}
+                  onClick={() => form.removeListItem('exceptions', index)}
+                >
+                  {t('exc_remove')}
+                </Button>
+              </Group>
+            </div>
+          );
+        })}
+        <div className="rounded-lg border border-dashed border-border p-3">
+          <Stack gap="sm">
+            <div>
+              <p className="mb-1 text-sm">{t('exc_kind')}</p>
+              <SegmentedControl
+                size="xs"
+                value={draft.kind}
+                onChange={value => {
+                  patch({ kind: value as 'closed' | 'special' });
+                  setDraftErrors(errors => ({ ...errors, times: undefined }));
+                }}
+                data={[
+                  { value: 'closed', label: t('exc_kind_closed') },
+                  { value: 'special', label: t('exc_kind_special') },
+                ]}
+              />
+            </div>
+            <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
               <TextInput
                 type="date"
                 label={t('exc_from')}
-                {...form.getInputProps(`exceptions.${index}.from`)}
+                value={draft.from}
+                error={draftErrors.from}
+                onChange={event => {
+                  patch({ from: event.currentTarget.value });
+                  setDraftErrors(errors => ({ ...errors, from: undefined }));
+                }}
               />
               <TextInput
                 type="date"
                 label={t('exc_to')}
                 description={t('exc_to_hint')}
-                {...form.getInputProps(`exceptions.${index}.to`)}
+                value={draft.to}
+                error={draftErrors.to}
+                onChange={event => {
+                  patch({ to: event.currentTarget.value });
+                  setDraftErrors(errors => ({ ...errors, to: undefined }));
+                }}
               />
             </div>
-            {item.kind === 'special' && (
+            {draft.kind === 'special' && (
               <div>
                 <p className="mb-1 text-sm font-medium">{t('exc_times')}</p>
                 <Group gap="xs">
-                  {item.times.map((time, timeIndex) => (
+                  {draft.times.map(time => (
                     <Group key={time.key} gap={2} wrap="nowrap">
                       <TextInput
                         type="time"
                         size="xs"
                         aria-label={t('exc_times')}
-                        {...form.getInputProps(
-                          `exceptions.${index}.times.${timeIndex}.value`
-                        )}
+                        value={time.value}
+                        onChange={event => {
+                          const value = event.currentTarget.value;
+                          patch({
+                            times: draft.times.map(item =>
+                              item.key === time.key ? { ...item, value } : item
+                            ),
+                          });
+                          setDraftErrors(errors => ({
+                            ...errors,
+                            times: undefined,
+                          }));
+                        }}
                       />
                       <ActionIcon
                         variant="subtle"
                         color="gray"
                         aria-label={t('exc_remove_time', { time: time.value })}
                         onClick={() =>
-                          form.removeListItem(
-                            `exceptions.${index}.times`,
-                            timeIndex
-                          )
+                          patch({
+                            times: draft.times.filter(
+                              item => item.key !== time.key
+                            ),
+                          })
                         }
                       >
                         <IconX size={14} />
@@ -113,19 +233,17 @@ export function ExceptionsSection({
                     size="compact-xs"
                     leftSection={<IconPlus size={12} />}
                     onClick={() =>
-                      form.insertListItem(`exceptions.${index}.times`, {
-                        key: newKey(),
-                        value: '',
+                      patch({
+                        times: [...draft.times, { key: newKey(), value: '' }],
                       })
                     }
                   >
                     {t('exc_add_time')}
                   </Button>
                 </Group>
-                {typeof form.errors[`exceptions.${index}.times`] ===
-                  'string' && (
+                {draftErrors.times && (
                   <p className="mt-1 text-xs text-red-500">
-                    {form.errors[`exceptions.${index}.times`]}
+                    {draftErrors.times}
                   </p>
                 )}
               </div>
@@ -140,13 +258,8 @@ export function ExceptionsSection({
                 <>
                   <Chip.Group
                     multiple
-                    value={item.serviceIds}
-                    onChange={value =>
-                      form.setFieldValue(
-                        `exceptions.${index}.serviceIds`,
-                        value
-                      )
-                    }
+                    value={draft.serviceIds}
+                    onChange={value => patch({ serviceIds: value })}
                   >
                     <Group gap={6}>
                       {savedServices.map(service => (
@@ -157,31 +270,28 @@ export function ExceptionsSection({
                     </Group>
                   </Chip.Group>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {item.serviceIds.length === 0
+                    {draft.serviceIds.length === 0
                       ? t('exc_all_services')
                       : t('exc_services_hint')}
                   </p>
                 </>
               )}
             </div>
-            <TextInput
-              label={t('exc_note')}
-              maxLength={200}
-              {...form.getInputProps(`exceptions.${index}.note`)}
-            />
+            <div className="flex flex-wrap items-end gap-3">
+              <TextInput
+                className="min-w-0 flex-1"
+                label={t('exc_note')}
+                maxLength={200}
+                value={draft.note}
+                onChange={event => patch({ note: event.currentTarget.value })}
+              />
+              <Button variant="light" color="brand" onClick={add}>
+                {t('exc_add')}
+              </Button>
+            </div>
           </Stack>
         </div>
-      ))}
-      <div>
-        <Button
-          variant="subtle"
-          size="xs"
-          leftSection={<IconPlus size={14} />}
-          onClick={() => form.insertListItem('exceptions', blankException())}
-        >
-          {t('exc_add')}
-        </Button>
-      </div>
-    </Stack>
+      </Stack>
+    </SummarySection>
   );
 }

@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { joinMinutes, splitMinutes, timeoutInRange } from './duration-units.ts';
+import {
+  amountBound,
+  joinMinutes,
+  splitMinutes,
+  timeoutInRange,
+} from './duration-units.ts';
 
 test('a deadline is shown in the largest unit that divides it evenly', () => {
   assert.deepEqual(splitMinutes(1440), { amount: 1, unit: 'days' });
@@ -25,4 +30,18 @@ test('the deadline must be from 5 minutes to 30 days', () => {
   assert.equal(timeoutInRange(4), false);
   assert.equal(timeoutInRange(43201), false);
   assert.equal(timeoutInRange(''), false);
+});
+
+test('a range can be widened or narrowed per field', () => {
+  assert.equal(timeoutInRange(0, 0, 43200), true);
+  assert.equal(timeoutInRange(14, 15, 4320), false);
+  assert.equal(timeoutInRange(4320, 15, 4320), true);
+  assert.equal(timeoutInRange(4321, 15, 4320), false);
+});
+
+test('a bound in minutes is shown in the picked unit', () => {
+  assert.equal(amountBound(4320, 'days'), 3);
+  assert.equal(amountBound(43200, 'hours'), 720);
+  assert.equal(amountBound(5, 'hours'), 0.08);
+  assert.equal(amountBound(0, 'days'), 0);
 });

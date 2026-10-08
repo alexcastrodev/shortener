@@ -15,6 +15,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../../i18n';
 import { Card } from '@internal/ui';
@@ -38,9 +39,20 @@ import {
   isChoiceType,
   isSection,
 } from '../../../modules/forms/field-types';
+import {
+  blankService,
+  initialValues,
+  toBookingInput,
+} from '../../../modules/forms/booking-config.ts';
 import { formErrorMessage } from '../../../modules/forms/form-errors';
 import { PublishChecklist } from './publish-checklist';
 import { QuestionEditor } from './question-editor';
+
+const bookingServices = () => {
+  const values = initialValues();
+  values.services = [blankService(i18n.t('booking:service_default'))];
+  return toBookingInput(values, true).services;
+};
 
 const defaultsFor = (type: FormFieldType): FormFieldInput => ({
   type,
@@ -54,6 +66,7 @@ const defaultsFor = (type: FormFieldType): FormFieldInput => ({
     ? { choices: [1, 2, 3].map(n => ({ label: i18n.t('forms:ed_new_option', { n }) })) }
     : {}),
   ...(type === 'rating' ? { scale: 5 as const } : {}),
+  ...(type === 'booking' ? { services: bookingServices() } : {}),
 });
 
 const copyOf = (field: FormField): FormFieldInput => ({
@@ -79,6 +92,11 @@ export function QuestionList({
 }) {
   const { t } = useTranslation('forms');
   const queryClient = useQueryClient();
+  const [openService, setOpenService] = useState<{ id: string } | null>(null);
+  const select = (id: string | null, serviceId?: string) => {
+    setOpenService(serviceId ? { id: serviceId } : null);
+    onSelect(id);
+  };
   const hasBooking = form.fields.some(field => field.type === 'booking');
   const groups = FIELD_GROUPS.map(group => ({
     ...group,
@@ -99,7 +117,7 @@ export function QuestionList({
   const { mutate: create, isPending: isCreating } = useCreateFormField({
     onSuccess: updated => {
       onSuccess(updated);
-      onSelect(updated.fields.at(-1)?.id ?? null);
+      select(updated.fields.at(-1)?.id ?? null);
     },
     onError,
   });
@@ -175,7 +193,7 @@ export function QuestionList({
         form={form}
         adding={isCreating}
         onAddEmail={addEmail}
-        onSelect={onSelect}
+        onSelect={select}
       />
       {form.fields.length === 0 && (
         <p className="mb-4 rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
@@ -219,7 +237,7 @@ export function QuestionList({
                           <button
                             type="button"
                             aria-expanded={open}
-                            onClick={() => onSelect(open ? null : field.id)}
+                            onClick={() => select(open ? null : field.id)}
                             className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
                           >
                             <span
@@ -279,7 +297,8 @@ export function QuestionList({
                               type={field.type}
                               field={field}
                               loading={isUpdating}
-                              onCancel={() => onSelect(null)}
+                              openService={openService}
+                              onCancel={() => select(null)}
                               onSubmit={data =>
                                 update({ formId: form.id, fieldId: field.id, data })
                               }
