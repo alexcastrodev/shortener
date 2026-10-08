@@ -173,6 +173,7 @@ RSpec.describe("the booking question", type: :request) do
       publish
       expect(response).to(have_http_status(:unprocessable_content))
       expect(json["errors"]["fields"]).to(include("add at least one service"))
+      expect(json["blocks"]).to(include({ "code" => "no_service" }))
       expect(form.reload.published).to(be(false))
     end
 
@@ -180,6 +181,7 @@ RSpec.describe("the booking question", type: :request) do
       complete_form(booking: { services: [service.merge(times: [])] })
       publish
       expect(json["errors"]["fields"]).to(include("Haircut needs at least one day and one time"))
+      expect(json["blocks"]).to(include({ "code" => "service_incomplete", "name" => "Haircut" }))
 
       patch("/api/me/forms/#{form.id}/fields/#{form.reload.fields.find { |field| field["type"] == "booking" }["id"]}", params: { services: [service.merge(days: [])] }, headers: auth_headers, as: :json)
       publish
@@ -190,12 +192,14 @@ RSpec.describe("the booking question", type: :request) do
       complete_form(extra: [name, email.merge("required" => false)])
       publish
       expect(json["errors"]["fields"]).to(include("add a required email question to send the confirmation"))
+      expect(json["blocks"]).to(include({ "code" => "no_email" }))
     end
 
     it "is blocked without a required short text question for the name" do
       complete_form(extra: [email])
       publish
       expect(json["errors"]["fields"]).to(include("add a required short text question for the name"))
+      expect(json["blocks"]).to(include({ "code" => "no_name" }))
     end
 
     it "does not block forms without a booking question" do

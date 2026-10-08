@@ -57,6 +57,7 @@
   "ed_load_failed_body": "Não foi possível carregar este formulário. Tente novamente mais tarde.",
   "ed_title_required": "Dê um título ao formulário",
   "ed_saved": "Formulário guardado",
+  "ed_changes_saved": "Alterações guardadas",
   "ed_cancel": "Cancelar",
   "ed_back": "Voltar aos formulários",
   "ed_responses": "Respostas",
@@ -168,5 +169,11 @@
   "ed_q_save_question": "Guardar pergunta",
   "ed_q_save_section": "Guardar secção",
   "ed_daily_limit": "Atingiu o limite de 20 novos formulários por dia. Tente novamente amanhã.",
+  "err_publish_no_questions": "Adicione pelo menos uma pergunta antes de publicar.",
+  "err_publish_no_service": "Adicione pelo menos um serviço à marcação.",
+  "err_publish_service_incomplete": "O serviço “{{name}}” precisa de pelo menos um dia e um horário.",
+  "err_publish_waitlist": "A lista de espera só funciona com nome, e-mail e a marcação como únicas perguntas obrigatórias.",
+  "err_publish_no_email": "Adicione uma pergunta de e-mail obrigatória para poder enviar a confirmação da marcação.",
+  "err_publish_no_name": "Adicione uma pergunta de resposta curta obrigatória para o nome.",
   "ed_generic_error": "Algo correu mal, tente novamente mais tarde."
 }

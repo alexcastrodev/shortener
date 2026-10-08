@@ -235,6 +235,7 @@ RSpec.describe("/api/me/forms", type: :request) do
 
       post "/api/me/forms/#{form.id}/publish", headers: auth_headers
       expect(response).to(have_http_status(:unprocessable_content))
+      expect(response.parsed_body["blocks"]).to(eq([{ "code" => "no_questions" }]))
     end
 
     it "does not let update change published, fields, owner or counters" do

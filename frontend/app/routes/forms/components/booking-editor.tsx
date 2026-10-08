@@ -12,6 +12,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { modals } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
 import { IconPlus, IconTrash, IconX } from '@tabler/icons-react';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useMemo } from 'react';
@@ -430,8 +431,9 @@ export function BookingEditor({
 
   return (
     <form
-      onSubmit={form.onSubmit(values =>
-        onSubmit(toBookingInput(values, creating))
+      onSubmit={form.onSubmit(
+        values => onSubmit(toBookingInput(values, creating)),
+        () => notifications.show({ message: t('fix_errors'), color: 'red' })
       )}
     >
       <Stack gap="xl">

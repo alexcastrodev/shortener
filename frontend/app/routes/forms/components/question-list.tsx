@@ -103,7 +103,10 @@ export function QuestionList({
     onError,
   });
   const { mutate: update, isPending: isUpdating } = useUpdateFormField({
-    onSuccess,
+    onSuccess: updated => {
+      onSuccess(updated);
+      notifications.show({ message: t('ed_changes_saved'), color: 'green' });
+    },
     onError,
   });
   const { mutate: remove } = useDeleteFormField({ onSuccess, onError });
