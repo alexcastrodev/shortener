@@ -184,5 +184,14 @@
   "ed_generic_error": "Something went wrong, please try again later.",
   "ed_accepting": "Accepting responses",
   "ed_accepting_hint": "Only applies once the form is published",
+  "ed_version": "version {{version}}",
+  "ed_changes_pending": "unpublished changes",
+  "ed_publish_changes": "Publish changes",
+  "ed_republish_title": "Publish version {{version}}?",
+  "ed_republish_body": "The changes apply to anyone who opens the form from now on. The link stays the same: {{url}}",
+  "ed_republish_confirm": "Publish version {{version}}",
+  "ed_unpublish": "Unpublish",
+  "ed_unpublish_title": "Take the form offline?",
+  "ed_unpublish_body": "The link {{url}} stops working until you publish again, and it will be the same. Answers and bookings already made are kept.",
   "closed": "Closed"
 }

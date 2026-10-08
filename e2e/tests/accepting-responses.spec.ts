@@ -19,7 +19,7 @@ test('the Aceitar respostas switch is disabled while the form is a draft', async
   await signIn('owner');
   await page.goto(`/app/forms/${form.id}`);
 
-  await expect(page.getByRole('switch', { name: 'Publicado' })).not.toBeChecked();
+  await expect(page.getByText('Rascunho', { exact: true })).toBeVisible();
   await expect(page.getByRole('switch', { name: 'Aceitar respostas' })).toBeDisabled();
 });
 
