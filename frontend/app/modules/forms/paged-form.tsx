@@ -1,12 +1,14 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { FormField } from '@internal/core/types/Form';
+import type { BookingAnswer, FormField } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
 import { FieldInput, focusFirstInput, isBlank, type Answer } from './field-inputs';
 import { useConfirmEmail } from './confirm-email';
 import { isSection } from './field-types';
 import type { Props, SubmitFailure, SubmitFormReceipt } from './form-renderer';
+import { BookingBar } from './booking-bar';
 import { BookingReceipt } from './booking-receipt';
+import { summarize } from './booking-summary';
 import { FormCover } from './form-cover';
 
 const alertClass =
@@ -54,6 +56,20 @@ export function PagedForm({
   const current = Math.min(page, pages.length - 1);
   const last = current === pages.length - 1;
   const primary = `min-h-11 rounded-lg px-5 py-2 font-medium ${theme.button}`;
+  const bookingField = pages[current].find(item => item.type === 'booking');
+  const bookingAnswer = bookingField
+    ? (answers[bookingField.id] as BookingAnswer | undefined)
+    : undefined;
+  const bookingSummary = bookingField
+    ? summarize(
+        bookingField.services?.find(item => item.id === bookingAnswer?.service),
+        bookingAnswer,
+        new Date()
+      )
+    : null;
+  const pricedService = bookingField?.services?.find(
+    item => item.price && item.currency
+  );
   const shell = `flex flex-col px-[max(1.25rem,calc((100%-36rem)/2))] py-8 ${theme.page} ${
     mode === 'live' ? 'min-h-dvh' : 'min-h-full'
   }`;
@@ -79,7 +95,10 @@ export function PagedForm({
     Object.fromEntries(
       fields
         .filter(item => item.required && !isSection(item) && isBlank(answers[item.id]))
-        .map(item => [item.id, t('required')])
+        .map(item => [
+          item.id,
+          t(item.type === 'booking' ? 'booking_required' : 'required'),
+        ])
     );
 
   const next = async () => {
@@ -133,7 +152,12 @@ export function PagedForm({
         <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>
           {form.thank_you_message || t('answers_sent')}
         </p>
-        <BookingReceipt receipt={receipt} linkClass={theme.footer} textClass={theme.bio} />
+        <BookingReceipt
+          receipt={receipt}
+          linkClass={theme.footer}
+          textClass={theme.bio}
+          timeZone={form.fields.find(item => item.type === 'booking')?.time_zone}
+        />
         {mode === 'preview' && (
           <div className="mt-8">
             <button
@@ -272,6 +296,7 @@ export function PagedForm({
                 joinWaitlist={mode === 'live' ? joinWaitlist : undefined}
                 invalid={errors[field.id]}
                 confirm={confirmFor(field)}
+                hideBookingSummary
               />
               {errors[field.id] && (
                 <p role="alert" className={`mt-3 inline-block ${alertClass}`}>
@@ -306,17 +331,29 @@ export function PagedForm({
               {t('step_of', { current: current + 1, total: pages.length })}
             </span>
           )}
-          <button
-            type="button"
-            className={primary}
-            disabled={submitting}
-            onClick={() => void next()}
-          >
-            {last ? (submitting ? t('sending') : t('submit')) : t('next')}
-          </button>
+          {!bookingField && (
+            <button
+              type="button"
+              className={primary}
+              disabled={submitting}
+              onClick={() => void next()}
+            >
+              {last ? (submitting ? t('sending') : t('submit')) : t('next')}
+            </button>
+          )}
         </div>
       </div>
       {footer}
+      {bookingField && (
+        <BookingBar
+          summary={bookingSummary}
+          currency={pricedService?.currency ?? null}
+          theme={theme}
+          label={last ? (submitting ? t('sending') : t('submit')) : t('next')}
+          ready={!bookingField.required || bookingSummary !== null}
+          onSubmit={() => void next()}
+        />
+      )}
     </div>
   );
 }

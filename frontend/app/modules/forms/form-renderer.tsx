@@ -188,7 +188,12 @@ function SequentialForm({
         <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>
           {form.thank_you_message || t('answers_sent')}
         </p>
-        <BookingReceipt receipt={receipt} linkClass={theme.footer} textClass={theme.bio} />
+        <BookingReceipt
+          receipt={receipt}
+          linkClass={theme.footer}
+          textClass={theme.bio}
+          timeZone={form.fields.find(item => item.type === 'booking')?.time_zone}
+        />
         {mode === 'preview' && (
           <div className="mt-8">
             <button

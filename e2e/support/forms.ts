@@ -9,6 +9,7 @@ export type ServiceInput = {
   price?: number;
   currency?: string;
   monthly?: { price?: number };
+  bundle?: { take: number; pay: number };
 };
 
 export type FormOptions = {
@@ -20,6 +21,7 @@ export type FormOptions = {
   rules?: Record<string, unknown>;
   publish?: boolean;
   accepting?: boolean;
+  bookingRequired?: boolean;
 };
 
 export type CreatedForm = {
@@ -73,6 +75,7 @@ export async function createForm(options: FormOptions = {}): Promise<CreatedForm
       type: 'booking',
       label: 'Escolha um horário',
       services: options.services,
+      ...(options.bookingRequired ? { required: true } : {}),
       ...(options.rules ? { rules: options.rules } : {}),
     });
     if (booked.status !== 201) throw new Error(`booking field failed: ${booked.status}`);

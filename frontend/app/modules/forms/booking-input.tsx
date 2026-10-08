@@ -60,6 +60,7 @@ export function BookingInput({
   loadSlots,
   joinWaitlist,
   reloadKey,
+  hideSummary,
 }: {
   field: FormField;
   value: BookingAnswer | undefined;
@@ -69,6 +70,7 @@ export function BookingInput({
   loadSlots?: LoadSlots;
   joinWaitlist?: JoinWaitlist;
   reloadKey?: string;
+  hideSummary?: boolean;
 }) {
   const { t } = useTranslation('respond');
   const allServices = field.services ?? [];
@@ -486,7 +488,7 @@ export function BookingInput({
         </div>
       )}
 
-      {mode === 'days' && sessions.length > 0 && (
+      {!hideSummary && mode === 'days' && sessions.length > 0 && (
         <div
           className="rounded-lg border border-current/20 px-3 py-2 text-sm"
           aria-live="polite"
