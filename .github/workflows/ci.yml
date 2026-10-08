@@ -93,15 +93,24 @@ jobs:
         ports: ["6379:6379"]
         options: >-
           --health-cmd "valkey-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+      mailpit:
+        image: axllent/mailpit:v1.31.4
+        ports: ["1025:1025", "8025:8025"]
+        options: >-
+          --health-cmd "/mailpit readyz" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      RAILS_ENV: test
+      RAILS_ENV: e2e
       POSTGRES_HOST: localhost
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       REDIS_URL: redis://localhost:6379/0
       E2E_START_SERVERS: "1"
+      E2E_SMTP_HOST: localhost
+      MAILPIT_URL: http://localhost:8025
     steps:
       - uses: actions/checkout@v7
+      - name: Generate the e2e secret
+        run: echo "SECRET_KEY_BASE=$(openssl rand -hex 64)" >> "$GITHUB_ENV"
       - name: Install libvips
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libvips libheif-plugin-libde265
       - uses: ruby/setup-ruby@v1

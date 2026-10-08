@@ -29,8 +29,9 @@ export default defineConfig({
           reuseExistingServer: false,
           timeout: 120_000,
           env: {
-            RAILS_ENV: 'test',
+            RAILS_ENV: 'e2e',
             FRONTEND_URL: APP_URL,
+            E2E_SMTP_HOST: process.env.E2E_SMTP_HOST ?? 'localhost',
           },
         },
         {
