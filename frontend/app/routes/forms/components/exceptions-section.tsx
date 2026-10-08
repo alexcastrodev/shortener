@@ -26,19 +26,14 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 function shortDate(iso: string, locale: string) {
   const date = new Date(`${iso}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return iso;
-  const parts = new Intl.DateTimeFormat(locale, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).formatToParts(date);
-  const pick = (type: string) =>
-    (parts.find(part => part.type === type)?.value ?? '').replace(/\.$/, '');
-  const weekday = pick('weekday');
-  const year =
-    pick('year') === String(new Date().getFullYear()) ? '' : ` ${pick('year')}`;
-  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${pick('day')} ${pick('month')}${year}`;
+  const piece = (options: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' })
+      .format(date)
+      .replace(/\.$/, '');
+  const weekday = piece({ weekday: 'short' }).slice(0, 3);
+  const year = piece({ year: 'numeric' });
+  const suffix = year === String(new Date().getFullYear()) ? '' : ` ${year}`;
+  return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${piece({ day: 'numeric' })} ${piece({ month: 'short' })}${suffix}`;
 }
 
 type DraftErrors = { from?: string; to?: string; times?: string };
@@ -51,14 +46,14 @@ export function ExceptionsSection({
   const { t, i18n } = useTranslation('booking');
   const savedServices = form.values.services.filter(service => service.id);
   const [open, setOpen] = useOpenOnErrors(form.errors, key =>
-    key.startsWith('exceptions')
+    key.startsWith('exception')
   );
-  const [draft, setDraft] = useState<ExceptionValues>(blankException);
+  const draft = form.values.exceptionDraft;
   const [draftErrors, setDraftErrors] = useState<DraftErrors>({});
 
   const date = (iso: string) => shortDate(iso, i18n.language);
   const patch = (changes: Partial<ExceptionValues>) =>
-    setDraft(current => ({ ...current, ...changes }));
+    form.setFieldValue('exceptionDraft', { ...draft, ...changes });
 
   const summary = summarizeExceptions(form.values.exceptions, {
     none: t('exc_sum_none'),
@@ -88,7 +83,7 @@ export function ExceptionsSection({
       times,
       note: draft.note.trim(),
     });
-    setDraft(blankException());
+    form.setFieldValue('exceptionDraft', blankException());
   };
 
   return (
@@ -170,7 +165,7 @@ export function ExceptionsSection({
                 type="date"
                 label={t('exc_from')}
                 value={draft.from}
-                error={draftErrors.from}
+                error={draftErrors.from ?? form.errors['exceptionDraft.from']}
                 onChange={event => {
                   patch({ from: event.currentTarget.value });
                   setDraftErrors(errors => ({ ...errors, from: undefined }));
@@ -272,7 +267,9 @@ export function ExceptionsSection({
                   <p className="mt-1 text-xs text-muted-foreground">
                     {draft.serviceIds.length === 0
                       ? t('exc_all_services')
-                      : t('exc_services_hint')}
+                      : t('exc_chosen_services')}
+                    {form.values.services.length > savedServices.length &&
+                      ` ${t('exc_services_hint')}`}
                   </p>
                 </>
               )}
