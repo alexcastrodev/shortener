@@ -111,7 +111,7 @@ RSpec.describe("MCP notification tools", type: :request) do
       expect(reply).to(include("id" => row.id, "unread_count" => 0))
       first = row.reload.read_at
       expect(first).to(be_present)
-      travel_to(1.hour.from_now) { tool("mark_notification_read", { id: row.id }) }
+      travel_to(30.minutes.from_now) { tool("mark_notification_read", { id: row.id }) }
       expect(row.reload.read_at).to(eq(first))
     end
 
