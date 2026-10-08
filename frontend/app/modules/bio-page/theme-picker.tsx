@@ -85,7 +85,7 @@ export function ThemePicker({
   return (
     <div role="radiogroup" aria-label={t('theme_label')}>
       <p className="mb-2 text-sm font-medium">{t('theme_label')}</p>
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-2">
         {PAGE_THEMES.map(theme => {
           const preset = BIO_THEMES[theme];
           return (
