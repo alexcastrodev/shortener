@@ -4,6 +4,7 @@ import { formatDate } from '../../i18n/format';
 import {
   canGoNext,
   canGoPrev,
+  dayCell,
   isoDay,
   monthGrid,
   shiftMonth,
@@ -31,7 +32,7 @@ export function BookingCalendar({
   month: string;
   today: Date;
   available: Set<string>;
-  chosen: Set<string>;
+  chosen: Map<string, string>;
   viewed: string | undefined;
   theme: BioTheme;
   onView: (iso: string) => void;
@@ -98,36 +99,54 @@ export function BookingCalendar({
             <tr key={week.find(Boolean)}>
               {week.map((iso, index) => {
                 if (!iso) return <td key={index} />;
-                const enabled = available.has(iso);
-                const selected = iso === viewed;
+                const cell = dayCell(iso, {
+                  available,
+                  chosen,
+                  viewed,
+                  todayIso,
+                });
                 const label = fullDay(iso);
                 return (
                   <td key={iso} className="p-0">
                     <button
                       type="button"
-                      disabled={!enabled}
-                      aria-pressed={selected}
-                      aria-current={iso === todayIso ? 'date' : undefined}
+                      disabled={!cell.enabled}
+                      aria-pressed={cell.viewed}
+                      aria-current={cell.today ? 'date' : undefined}
                       aria-label={
-                        chosen.has(iso)
-                          ? t('booking_day_chosen', { date: label })
+                        cell.time
+                          ? t('booking_day_chosen', {
+                              date: label,
+                              time: cell.time,
+                            })
                           : label
                       }
                       onClick={() => onView(iso)}
-                      className={`relative h-10 w-full rounded-lg text-sm ${
-                        enabled
-                          ? `font-medium ${theme.button}`
-                          : 'cursor-default opacity-40'
-                      } ${selected ? 'ring-2 ring-current' : ''} ${
-                        iso === todayIso ? 'underline' : ''
+                      className={`flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-lg text-sm ${
+                        cell.time
+                          ? 'border border-current bg-current/25 font-semibold'
+                          : cell.enabled
+                            ? `font-semibold ${theme.button}`
+                            : 'cursor-default opacity-40'
+                      } ${cell.viewed ? 'ring-2 ring-current' : ''} ${
+                        cell.today ? 'underline' : ''
                       }`}
                     >
                       {Number(iso.slice(8))}
-                      {chosen.has(iso) && (
+                      {cell.time ? (
                         <span
                           aria-hidden="true"
-                          className="absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-current"
-                        />
+                          className="font-mono text-[10px] leading-none font-semibold no-underline"
+                        >
+                          {cell.time}
+                        </span>
+                      ) : (
+                        cell.enabled && (
+                          <span
+                            aria-hidden="true"
+                            className="h-1 w-1 rounded-full bg-current"
+                          />
+                        )
                       )}
                     </button>
                   </td>
@@ -137,6 +156,34 @@ export function BookingCalendar({
           ))}
         </tbody>
       </table>
+      <ul
+        aria-label={t('booking_legend')}
+        className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-xs opacity-80"
+      >
+        <li className="flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="h-3.5 w-3.5 rounded border border-current bg-current/25"
+          />
+          {t('booking_legend_chosen')}
+        </li>
+        <li className="flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="h-3.5 w-3.5 rounded ring-2 ring-inset ring-current"
+          />
+          {t('booking_legend_viewed')}
+        </li>
+        <li className="flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="flex h-3.5 w-3.5 items-center justify-center rounded border border-current/40"
+          >
+            <span className="h-1 w-1 rounded-full bg-current" />
+          </span>
+          {t('booking_legend_free')}
+        </li>
+      </ul>
     </div>
   );
 }

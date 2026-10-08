@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import {
   canGoNext,
   canGoPrev,
-  firstFreeDay,
+  dayCell,
   keepFree,
   lastBookable,
   monthGrid,
@@ -52,12 +52,16 @@ test('navigation stops at the current month and the window end', () => {
   assert.equal(canGoNext('2026-11', new Date(2026, 9, 5)), false);
 });
 
-test('the first free day is the earliest with a slot', () => {
-  assert.equal(firstFreeDay([]), undefined);
-  assert.equal(
-    firstFreeDay([{ date: '2026-10-12' }, { date: '2026-10-09' }, { date: '2026-10-12' }]),
-    '2026-10-09'
-  );
+test('a day cell tells free, chosen, viewed and today apart', () => {
+  const state = {
+    available: new Set(['2026-10-12', '2026-10-13']),
+    chosen: new Map([['2026-10-13', '16:30']]),
+    viewed: '2026-10-12',
+    todayIso: '2026-10-09',
+  };
+  assert.deepEqual(dayCell('2026-10-12', state), { enabled: true, time: undefined, viewed: true, today: false });
+  assert.deepEqual(dayCell('2026-10-13', state), { enabled: true, time: '16:30', viewed: false, today: false });
+  assert.deepEqual(dayCell('2026-10-09', state), { enabled: false, time: undefined, viewed: false, today: true });
 });
 
 test('only sessions inside the loaded range can be dropped', () => {
