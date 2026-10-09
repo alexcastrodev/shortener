@@ -63,7 +63,7 @@ export function BookingCalendar({
         >
           <span aria-hidden="true">‹</span>
         </button>
-        <p aria-live="polite" className="text-sm font-semibold first-letter:uppercase">
+        <p aria-live="polite" className="text-[15px] font-semibold first-letter:uppercase">
           {formatDate(`${month}-01T00:00:00Z`, {
             month: 'long',
             year: 'numeric',
@@ -87,7 +87,7 @@ export function BookingCalendar({
               <th
                 key={name}
                 scope="col"
-                className="pb-1 text-xs font-medium opacity-70"
+                className="pb-1 text-xs font-normal opacity-70"
               >
                 {name}
               </th>
@@ -122,12 +122,12 @@ export function BookingCalendar({
                           : label
                       }
                       onClick={() => onView(iso)}
-                      className={`flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-lg text-sm ${
+                      className={`flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-lg text-sm! ${
                         cell.time
-                          ? 'border border-current bg-current/25 font-semibold'
+                          ? 'border border-current bg-current/25 font-semibold!'
                           : cell.enabled
-                            ? `font-semibold ${theme.button}`
-                            : 'cursor-default opacity-40'
+                            ? `font-semibold! ${theme.button}`
+                            : 'cursor-default font-normal! opacity-40'
                       } ${cell.viewed ? 'ring-2 ring-current' : ''} ${
                         cell.today ? 'underline' : ''
                       }`}

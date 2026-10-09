@@ -81,6 +81,7 @@
   "booking_required": "Pick at least one day and a time.",
   "bar_none": "No time chosen",
   "bar_hint": "Choose a time to continue",
+  "bar_hint_days": "Pick a day and a time to continue",
   "bar_sessions_one": "Session · {{count}} session",
   "bar_sessions_other": "Session · {{count}} sessions",
   "bar_monthly_one": "Monthly booking · {{count}} session",

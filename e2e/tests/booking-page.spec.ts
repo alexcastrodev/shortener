@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { dayLabel, pickDay } from '../support/calendar.ts';
 import { nextWeekdays } from '../support/dates.ts';
 import { expect, test } from '../support/fixtures.ts';
@@ -71,4 +71,30 @@ test('two days keep their own hour while a third is being looked at', async ({ p
   await expect(page.getByRole('button', { name: `${dayLabel(first)}, hora escolhida 09:00`, exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: `${dayLabel(second)}, hora escolhida 10:00`, exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: dayLabel(third), exact: true })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('the type scale follows the design', async ({ page }) => {
+  const form = await createForm({
+    title: 'Marcações',
+    name: false,
+    emails: [{ label: 'O seu e-mail' }],
+    services: [service('Sessão', { price: 120, currency: 'EUR', monthly: { price: 200 } })],
+    publish: true,
+  });
+  await page.setViewportSize({ width: 1000, height: 900 });
+  await new PublicForm(page, form).open();
+  await pickDay(page, nextWeekdays(1, 3)[0]);
+
+  const size = (locator: Locator) => locator.evaluate(element => {
+    const style = getComputedStyle(element);
+    return `${style.fontSize}/${style.fontWeight}`;
+  });
+
+  expect(await size(page.getByRole('heading', { name: 'Marcações', level: 1 }))).toBe('32px/600');
+  expect(await size(page.getByText('Como quer marcar?', { exact: true }))).toBe('20px/600');
+  expect(await size(page.getByText('Escolha dia e hora', { exact: true }))).toBe('20px/600');
+  expect(await size(page.getByText('Sessões avulsas', { exact: true }))).toBe('15px/600');
+  expect(await size(page.getByText(/^120,00/).first())).toBe('22px/600');
+  expect(await size(page.getByRole('button', { name: '09:00', exact: true }))).toBe('15px/500');
+  expect(await size(page.getByRole('button', { name: 'Enviar', exact: true }))).toBe('15px/600');
 });

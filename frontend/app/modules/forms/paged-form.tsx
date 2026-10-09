@@ -138,7 +138,7 @@ export function PagedForm({
   if (form.fields.every(isSection)) {
     return (
       <div className={shell} style={theme.style}>
-        <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
+        <h1 className={`text-[32px] leading-tight font-semibold ${theme.title}`}>{form.title}</h1>
         <p className={`mt-3 ${theme.bio}`}>{t('no_questions')}</p>
         {footer}
       </div>
@@ -148,7 +148,7 @@ export function PagedForm({
   if (done) {
     return (
       <div className={`${shell} justify-center`} style={theme.style} role="status">
-        <h1 className={`text-2xl font-semibold ${theme.title}`}>{t('thank_you')}</h1>
+        <h1 className={`text-[32px] leading-tight font-semibold ${theme.title}`}>{t('thank_you')}</h1>
         <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>
           {form.thank_you_message || t('answers_sent')}
         </p>
@@ -184,9 +184,9 @@ export function PagedForm({
     return (
       <div className={`${shell} justify-center`} style={theme.style}>
         <FormCover url={coverUrl} position={form.cover_position} />
-        <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
+        <h1 className={`text-[32px] leading-tight font-semibold ${theme.title}`}>{form.title}</h1>
         {form.description && (
-          <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>{form.description}</p>
+          <p className={`mt-3 text-[15px] whitespace-pre-line ${theme.bio}`}>{form.description}</p>
         )}
         <div className="mt-8">
           <button
@@ -231,9 +231,9 @@ export function PagedForm({
       {current === 0 && (
         <header className="mb-8">
           {!form.intro_enabled && <FormCover url={coverUrl} position={form.cover_position} />}
-          <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
+          <h1 className={`text-[32px] leading-tight font-semibold ${theme.title}`}>{form.title}</h1>
           {form.description && (
-            <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>{form.description}</p>
+            <p className={`mt-3 text-[15px] whitespace-pre-line ${theme.bio}`}>{form.description}</p>
           )}
         </header>
       )}
@@ -268,7 +268,7 @@ export function PagedForm({
               className={outline}
               onClick={mode === 'preview' ? () => onSelectField?.(field.id) : undefined}
             >
-              <label htmlFor={inputId} className={`text-lg font-semibold ${theme.title}`}>
+              <label htmlFor={inputId} className={`text-xl font-semibold ${theme.title}`}>
                 <span className={`mr-2 font-mono text-xs ${theme.bio}`}>
                   {String(number).padStart(2, '0')}
                 </span>
@@ -348,6 +348,7 @@ export function PagedForm({
         <BookingBar
           summary={bookingSummary}
           currency={pricedService?.currency ?? null}
+          monthly={Boolean(bookingField.services?.some(item => item.monthly))}
           theme={theme}
           label={last ? (submitting ? t('sending') : t('submit')) : t('next')}
           ready={!bookingField.required || bookingSummary !== null}

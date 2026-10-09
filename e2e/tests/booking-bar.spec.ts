@@ -21,7 +21,7 @@ test('the bar starts empty and a priced service starts the total at zero', async
   await open(page, { services: [service('Sessão', { price: 10, currency: 'EUR' })] });
 
   await expect(page.getByText('Nenhum horário escolhido')).toBeVisible();
-  await expect(page.getByText('Escolha o horário para continuar')).toBeVisible();
+  await expect(page.getByText('Escolha um dia e uma hora para continuar')).toBeVisible();
   await expect(page.getByText('Total', { exact: true })).toBeVisible();
   await expect(page.getByText(/^0,00\s*€$/)).toBeVisible();
 });
@@ -58,6 +58,7 @@ test('the bar lists the chosen days and the total follows a take 2 pay 1 bundle'
 test('a monthly booking shows the month, the number of sessions and the monthly price', async ({ page }) => {
   await open(page, { services: [service('Sessão', { price: 120, currency: 'EUR', monthly: { price: 200 } })] });
 
+  await expect(page.getByText('Escolha o horário para continuar')).toBeVisible();
   await page.getByRole('radio', { name: /Reserva fixa mensal/ }).click();
   await page.getByRole('button', { name: monthLabel(firstWeekdayOfNextMonth()), exact: true }).click();
   await page.getByRole('button', { name: 'Seg', exact: true }).click();
