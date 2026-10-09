@@ -10,7 +10,7 @@ export function FormCover({
     <img
       src={url}
       alt=""
-      className="mb-6 h-40 w-full rounded-lg object-cover sm:h-52"
+      className="mb-6 h-40 w-full rounded-lg object-cover @min-[640px]:h-52"
       style={{ objectPosition: `50% ${position ?? 50}%` }}
     />
   );

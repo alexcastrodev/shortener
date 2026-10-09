@@ -185,3 +185,18 @@ test('the no-limit label stays on one small line', async ({ page, signIn }) => {
   expect(label.lines).toBe(1);
   expect(label.size).toBeLessThanOrEqual(12);
 });
+
+test('the preview lays the form out at the width of a real phone and of a laptop', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Sessão')] });
+  await signIn('owner');
+  await page.goto(`/app/forms/${form.id}`);
+
+  const screen = page.getByTestId('preview-screen');
+  await expect(screen.getByRole('heading', { name: form.title })).toBeVisible();
+  const size = () => screen.evaluate(element => ({ width: element.clientWidth, overflow: element.scrollWidth - element.clientWidth }));
+  expect(await size()).toEqual({ width: 390, overflow: 0 });
+
+  await page.getByText('Computador', { exact: true }).click();
+  await expect(screen.getByRole('heading', { name: form.title })).toBeVisible();
+  expect(await size()).toEqual({ width: 1024, overflow: 0 });
+});
