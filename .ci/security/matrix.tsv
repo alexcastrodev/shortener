@@ -54,6 +54,8 @@ owner	GET	/api/me/community_templates
 owner	POST	/api/me/community_templates/:id/report
 owner	GET	/api/me/form_templates
 owner	GET	/api/me/agenda
+owner	GET	/api/me/bookings
+owner	POST	/api/me/bookings/:group_key/manage_link
 owner	DELETE	/api/me/calendar_feed
 owner	GET	/api/me/calendar_feed
 owner	POST	/api/me/calendar_feed
