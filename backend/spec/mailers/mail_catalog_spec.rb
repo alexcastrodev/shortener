@@ -108,7 +108,7 @@ RSpec.describe("Every email, in both languages") do
     text = catalog_mails("pt-PT").fetch("appointment_mailer/confirmed").call.text_part.body.decoded
 
     expect(text).to(include("3 sessões:\n- segunda-feira, 12 de outubro · 09:00–09:30\n- quarta-feira, 14 de outubro · 15:00–15:30\n- sexta-feira, 16 de outubro · 09:00–09:30\n  Fuso horário: Europe/Lisbon"))
-    expect(text).to(include("Total: 80,00 EUR · 1 sessão grátis"))
+    expect(text).to(include("Total: 80,00\u00a0€ · 1 sessão grátis"))
   end
 
   it "puts a short localized date in the subject" do

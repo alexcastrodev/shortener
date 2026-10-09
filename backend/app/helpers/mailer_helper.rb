@@ -1,4 +1,6 @@
 module MailerHelper
+  CURRENCY_SYMBOLS = { "EUR" => "€", "USD" => "$", "GBP" => "£", "BRL" => "R$" }.freeze
+
   TONES = {
     teal: ["#dff3ef", "#0b5c53"],
     amber: ["#fcefd4", "#7a4900"],
@@ -36,8 +38,15 @@ module MailerHelper
 
   def mail_moment(time, zone) = I18n.l(time.in_time_zone(zone), format: :mail_moment)
 
+  def mail_money(amount, currency)
+    symbol = CURRENCY_SYMBOLS[currency]
+    options = { unit: symbol || currency, precision: 2 }
+    options[:format] = "%n\u00a0%u" unless symbol
+    ActiveSupport::NumberHelper.number_to_currency(amount, **options)
+  end
+
   def mail_total(amount, currency, free = 0)
-    price = "#{ActiveSupport::NumberHelper.number_to_rounded(amount, precision: 2)} #{currency}"
+    price = mail_money(amount, currency)
     free.to_i.positive? ? "#{price} · #{I18n.t("mailer.free", count: free.to_i)}" : price
   end
 

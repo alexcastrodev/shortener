@@ -16,6 +16,11 @@ pt-PT:
   number:
     format:
       separator: ","
+    currency:
+      format:
+        format: "%n\u00a0%u"
+        separator: ","
+        delimiter: "\u00a0"
   mailer:
     status:
       confirmed: "Confirmada"
