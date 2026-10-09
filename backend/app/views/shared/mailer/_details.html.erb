@@ -1,0 +1,16 @@
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="box" style="margin:24px 0 0;border:1px solid #dfe4ea;border-radius:10px;border-collapse:separate;">
+  <% rows.each_with_index do |(label, value, hint, quiet), index| %>
+    <tr>
+      <td class="rule" style="padding:12px 16px;<%= "border-top:1px solid #dfe4ea;" if index.positive? %>">
+        <p class="muted" style="margin:0 0 3px;font-size:12px;line-height:16px;color:#6b7280;"><%= label %></p>
+        <% Array(value).each do |line| %>
+          <% head, separator, tail = line.to_s.rpartition(" · ") %>
+          <p class="fg" style="margin:0;font-size:15px;line-height:22px;font-weight:<%= quiet ? 400 : 600 %>;color:#111827;"><% if separator.empty? %><%= line %><% else %><%= head %> · <span style="white-space:nowrap;"><%= tail %></span><% end %></p>
+        <% end %>
+        <% if hint %>
+          <p class="muted" style="margin:3px 0 0;font-size:13px;line-height:18px;color:#6b7280;"><%= hint %></p>
+        <% end %>
+      </td>
+    </tr>
+  <% end %>
+</table>

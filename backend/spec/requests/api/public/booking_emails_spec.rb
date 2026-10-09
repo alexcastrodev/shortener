@@ -73,11 +73,11 @@ RSpec.describe("emails for a booking", type: :request) do
       expect(deliveries.size).to(eq(2))
       client = deliveries.find { |mail| mail.to == ["ana@example.com"] }
       owner = deliveries.find { |mail| mail.to == [current_user.email] }
-      expect(client.subject).to(eq("Confirmed: Haircut, 2026-11-03 09:00 (UTC)"))
+      expect(client.subject).to(eq("Confirmed: Haircut · Tue 3 Nov, 09:00"))
       expect(client.reply_to).to(eq([current_user.email]))
-      expect(client.text_part.body.decoded).to(include("Haircut is booked for:", "2026-11-03 09:00 (UTC)"))
-      expect(owner.subject).to(eq("New booking: Haircut, Ana"))
-      expect(owner.text_part.body.decoded).to(include("Ana booked Haircut", "Email: ana@example.com"))
+      expect(client.text_part.body.decoded).to(include("Service: Haircut\nWith: Salon\nWhen:\n- Tuesday 3 November · 09:00–10:00\n  Time zone: UTC\nTotal: 25.00 EUR"))
+      expect(owner.subject).to(eq("New booking: Haircut · Ana · Tue 3 Nov, 09:00"))
+      expect(owner.text_part.body.decoded).to(include("Ana booked Haircut.", "Client: Ana · ana@example.com"))
       expect(emails.pluck(:status)).to(eq(["sent", "sent"]))
       expect(emails.map(&:attempts)).to(eq([1, 1]))
     end
@@ -86,10 +86,10 @@ RSpec.describe("emails for a booking", type: :request) do
       current_user.update!(locale: "pt-PT", time_zone: "America/Sao_Paulo")
       perform_enqueued_jobs { book(extra: { client_locale: "pt-PT", client_time_zone: "Europe/Lisbon" }) }
 
-      expect(deliveries.find { |mail| mail.to == ["ana@example.com"] }.subject).to(eq("Confirmada: Haircut, 2026-11-03 09:00 (Europe/Lisbon)"))
+      expect(deliveries.find { |mail| mail.to == ["ana@example.com"] }.subject).to(eq("Confirmada: Haircut · ter, 3 nov, 09:00"))
       owner = deliveries.find { |mail| mail.to == [current_user.email] }
-      expect(owner.subject).to(eq("Nova marcação: Haircut, Ana"))
-      expect(owner.text_part.body.decoded).to(include("2026-11-03 06:00 (America/Sao_Paulo)"))
+      expect(owner.subject).to(eq("Nova marcação: Haircut · Ana · ter, 3 nov, 06:00"))
+      expect(owner.text_part.body.decoded).to(include("- terça-feira, 3 de novembro · 06:00–07:00\n  Fuso horário: America/Sao Paulo"))
     end
 
     it "sends each notification once, however many times it is picked up" do
@@ -106,7 +106,7 @@ RSpec.describe("emails for a booking", type: :request) do
       deliver_all
 
       owner = deliveries.find { |mail| mail.to == [current_user.email] }
-      expect(owner.subject).to(eq("New booking: Haircut, Ana Bcc: evil@example.com"))
+      expect(owner.subject).to(eq("New booking: Haircut · Ana Bcc: evil@example.com · Tue 3 Nov, 09:00"))
       expect(owner.bcc).to(be_nil)
     end
 
@@ -203,7 +203,7 @@ RSpec.describe("emails for a booking", type: :request) do
       owner_mail = deliveries.find { |mail| mail.to == [current_user.email] }
       client_mail = deliveries.find { |mail| mail.to == ["ana@example.com"] }
       expect(owner_mail.subject).to(start_with("Booking to approve: Haircut"))
-      expect(owner_mail.text_part.body.to_s).to(include("2026-11-02 09:00"))
+      expect(owner_mail.text_part.body.to_s).to(include("Without an answer by Monday 2 November at 09:00, the request is declined", "Approve or decline:\nhttps://kurz.fyi/a/"))
       expect(client_mail.subject).to(start_with("Pedido recebido: Haircut"))
       expect(client_mail.text_part.body.to_s).to(include("/m/"))
     end

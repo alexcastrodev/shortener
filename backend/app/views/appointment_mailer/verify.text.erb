@@ -1,12 +1,4 @@
-<%= t(".title") %>
-
-<%= t(".intro", service: @service, minutes: @minutes) %>
-<% @sessions.each do |session| %>
-- <%= session %>
-<% end %>
-
-<%= t(".confirm", url: @verify_url) %>
-
-<%= t(".ignore") %>
-
-Kurz · https://kurz.fyi
+<%= render "shared/mailer/intro", title: t(".title"), lead: t(".lead") %>
+<%= render "shared/mailer/details", rows: booking_rows(**@booking) %>
+<%= render "shared/mailer/action", url: @verify_url, label: t(".confirm_link"), note: t(".hold", minutes: @minutes) %>
+<%= render "shared/mailer/note", text: t(".ignore") %>

@@ -3,21 +3,77 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="x-apple-disable-message-reformatting">
     <meta name="color-scheme" content="light dark">
     <meta name="supported-color-schemes" content="light dark">
     <title><%= message.subject %></title>
     <style>
+      a { text-decoration: none; }
+      @media (max-width: 480px) {
+        .outer { padding: 20px 12px !important; }
+        .card { padding: 24px 20px !important; }
+        .headline { font-size: 20px !important; }
+      }
       @media (prefers-color-scheme: dark) {
-        .bg { background: #101418 !important; }
-        .card { background: #151b20 !important; border-color: #29333c !important; }
+        .bg { background: #0f1418 !important; }
+        .card { background: #161c21 !important; border-color: #29333c !important; }
+        .box, .rule { border-color: #29333c !important; }
         .fg { color: #eef2f5 !important; }
         .muted { color: #a7b0bc !important; }
         .code { background: #183436 !important; color: #eef2f5 !important; }
-        .dot { color: #4fb5b3 !important; }
+        .dot, .link { color: #5cc4c1 !important; }
+        .button { background: #1a8f8f !important; }
+        .tone-teal { background: #12332f !important; color: #7fd8cb !important; }
+        .tone-amber { background: #3a2c10 !important; color: #f3c873 !important; }
+        .tone-blue { background: #172a45 !important; color: #9cc0f5 !important; }
+        .tone-red { background: #3d1c1a !important; color: #f2a39c !important; }
       }
     </style>
   </head>
-  <body class="bg" style="margin:0;padding:0;background:#f7f8fa;">
-    <%= yield %>
+  <body class="bg" style="margin:0;padding:0;background:#f4f6f8;-webkit-text-size-adjust:100%;">
+    <div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;font-size:1px;line-height:1px;">
+      <%= yield(:preheader) %><%= "&#847;&zwnj;&nbsp;".html_safe * 40 %>
+    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="bg" style="background:#f4f6f8;">
+      <tr>
+        <td align="center" class="outer" style="padding:32px 16px;">
+          <!--[if mso]><table role="presentation" width="560" cellspacing="0" cellpadding="0" border="0"><tr><td><![endif]-->
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+            <tr>
+              <td style="padding:0 4px 16px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td style="font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.5px;"><span class="fg" style="color:#111827;">kurz</span><span class="dot" style="color:#116d6e;">.</span></td>
+                    <% if @status %>
+                      <% background, color = status_colors(@status) %>
+                      <td align="right" style="font-size:12px;line-height:16px;">
+                        <span class="tone-<%= status_tone(@status) %>" style="display:inline-block;padding:5px 12px;border-radius:999px;background:<%= background %>;color:<%= color %>;font-weight:600;white-space:nowrap;"><%= t("mailer.status.#{@status}") %></span>
+                      </td>
+                    <% end %>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="card" style="background:#ffffff;border:1px solid #dfe4ea;border-radius:14px;padding:32px 28px;color:#111827;">
+                <%= yield %>
+              </td>
+            </tr>
+            <tr>
+              <td class="muted" style="padding:20px 8px 0;font-size:12px;line-height:18px;color:#6b7280;">
+                <% Array(@footer_lines).each do |line| %>
+                  <p style="margin:0 0 6px;"><%= line %></p>
+                <% end %>
+                <% if @footer_link %>
+                  <p style="margin:0 0 6px;"><a class="link" href="<%= @footer_link.last %>" style="color:#116d6e;text-decoration:underline;"><%= @footer_link.first %></a></p>
+                <% end %>
+                <p style="margin:10px 0 0;"><a class="link" href="https://kurz.fyi" style="color:#116d6e;font-weight:600;">kurz.fyi</a></p>
+              </td>
+            </tr>
+          </table>
+          <!--[if mso]></td></tr></table><![endif]-->
+        </td>
+      </tr>
+    </table>
   </body>
 </html>

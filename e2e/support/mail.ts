@@ -35,7 +35,7 @@ export async function mailsTo(address: string): Promise<Mail[]> {
       from: full.From?.Address ?? '',
       to: (full.To ?? []).map((entry: { Address: string }) => entry.Address),
       subject: full.Subject ?? '',
-      text: full.Text ?? '',
+      text: (full.Text ?? '').replace(/\r\n/g, '\n'),
       html: full.HTML ?? '',
     });
   }

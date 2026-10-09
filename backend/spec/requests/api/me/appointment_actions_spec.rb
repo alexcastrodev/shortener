@@ -92,8 +92,8 @@ RSpec.describe("owner actions on an appointment: reschedule and remind", type: :
       expect(deliveries.map(&:to)).to(eq([["ana@example.com"]]))
       body = deliveries.last.text_part.body.to_s
       expect(deliveries.last.subject).to(start_with("Time changed: Haircut"))
-      expect(body).to(include("Was: 2026-11-09 09:00 (Europe/Lisbon)", "Now: 2026-11-11 11:00 (Europe/Lisbon)", "Sorry, I am out"))
-      expect(body).not_to(include("2026-11-09 09:00\n"))
+      expect(body).to(include("When:\n- Wednesday 11 November · 11:00–12:00\n  Time zone: Europe/Lisbon", "Before: Monday 9 November · 09:00–10:00", "Sorry, I am out"))
+      expect(body.scan(/^- /).size).to(eq(1))
     end
 
     it "uses the client's language" do
@@ -148,7 +148,7 @@ RSpec.describe("owner actions on an appointment: reschedule and remind", type: :
       expect(moved.slot.starts_at).to(eq(Time.utc(2026, 11, 14, 9, 30)))
       expect(row.reload.status).to(eq("rescheduled"))
       expect(deliveries.map(&:to)).to(eq([["ana@example.com"]]))
-      expect(deliveries.last.text_part.body.to_s).to(include("Now: 2026-11-14 09:30 (Europe/Lisbon)"))
+      expect(deliveries.last.text_part.body.to_s).to(include("- Saturday 14 November · 09:30–10:30"))
     end
 
     it "keeps force from moving a session into the past, onto a full time or with a bad time" do

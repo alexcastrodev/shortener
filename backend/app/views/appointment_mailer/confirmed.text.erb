@@ -1,18 +1,3 @@
-<%= t(".title") %>
-
-<%= t(".intro", service: @service) %>
-<% @sessions.each do |session| %>
-- <%= session %>
-<% end %>
-<% if @total %>
-<%= t(".total", amount: number_with_precision(@total, precision: 2), currency: @currency) %>
-<% if @free.positive? %>
-<%= t(".free", count: @free) %>
-<% end %>
-<% end %>
-
-<%= t(".reply") %>
-
-<%= t(".manage", url: @manage_url) %>
-
-Kurz · https://kurz.fyi
+<%= render "shared/mailer/intro", title: t(".title"), lead: t(".lead") %>
+<%= render "shared/mailer/details", rows: booking_rows(**@booking) %>
+<%= render "shared/mailer/action", url: @manage_url, label: t(".manage_link") %>

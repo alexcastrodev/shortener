@@ -1,0 +1,15 @@
+<% if local_assigns[:note] %>
+  <p class="muted" style="margin:24px 0 0;font-size:14px;line-height:1.6;color:#4b5563;"><%= note %></p>
+<% end %>
+<% if local_assigns[:url] %>
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:<%= local_assigns[:note] ? 12 : 24 %>px 0 0;">
+    <tr>
+      <td class="button" bgcolor="#116d6e" style="border-radius:8px;background:#116d6e;">
+        <a href="<%= url %>" target="_blank" style="display:inline-block;padding:13px 22px;font-size:15px;line-height:20px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;"><%= label %></a>
+      </td>
+    </tr>
+  </table>
+<% end %>
+<% Array(local_assigns[:links]).each do |text, href| %>
+  <p style="margin:16px 0 0;font-size:14px;line-height:20px;"><a class="link" href="<%= href %>" style="color:#116d6e;text-decoration:underline;"><%= text %></a></p>
+<% end %>

@@ -71,7 +71,7 @@ RSpec.describe("take X, pay Y", type: :request) do
     it "tells the client the total and the free sessions in the confirmation email" do
       perform_enqueued_jobs { book(10) }
       client = deliveries.find { |mail| mail.to == ["ana@example.com"] }
-      expect(client.text_part.body.to_s).to(include("Total: 100.00 EUR", "2 of the sessions are free."))
+      expect(client.text_part.body.to_s).to(include("Total: 100.00 EUR · 2 free sessions"))
     end
 
     it "leaves out the free line when nothing is free" do

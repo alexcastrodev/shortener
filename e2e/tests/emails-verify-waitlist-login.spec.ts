@@ -13,6 +13,7 @@ import {
   waitlistForm,
 } from '../support/mail-flows.ts';
 import { bookViaApi, PublicForm, uniqueEmail } from '../support/public-form.ts';
+import { stamp } from '../support/mail-booking.ts';
 
 const [day] = nextWeekdays(1);
 
@@ -33,7 +34,10 @@ test('e-mail verification: the visitor confirms from the mail, then gets the con
   const verification = await waitForMail(address, 'Confirme a sua marcação');
   expect(verification.subject).toContain(serviceName);
   expect(verification.text).toContain('Confirme o seu e-mail para manter a marcação');
+  expect(verification.text).toContain(stamp(day, '09:00'));
   const link = linkTo(verification, 'v');
+  expect(verification.html).toContain(`<a href="${link}"`);
+  expect(verification.html).toMatch(/class="tone-amber"[^>]*>Por confirmar<\/span>/);
   expect(pathOf(link)).toMatch(/^\/v\/.+/);
   expect(await subjectsTo(address)).toEqual([verification.subject]);
 
@@ -109,7 +113,9 @@ test('a visitor whose booking is in English gets the verification and confirmati
 
   const verification = await waitForMail(address, 'Confirm your booking');
   expect(verification.subject).toContain(serviceName);
-  expect(verification.text).toContain('Confirm my booking');
+  expect(verification.text).toContain(`Confirm my email address:\n${linkTo(verification, 'v')}\n`);
+  expect(verification.text).toContain('The place is held for 15 minutes.');
+  expect(verification.text).toContain(stamp(day, '09:00', 'en'));
   expect(verification.text).not.toContain('Confirme');
 
   await page.goto(linkTo(verification, 'v'));
@@ -147,7 +153,9 @@ test('the waiting list mails: joined, a place opened, claimed, and the cancelled
   const offered = await waitForMail(waiting, 'Abriu um lugar');
   expect(offered.subject).toContain(serviceName);
   expect(offered.text).toContain('Abriu um lugar para si');
+  expect(offered.text).toContain(stamp(day, '09:00'));
   const offerLink = linkTo(offered, 'w');
+  expect(offered.text).toContain(`Confirmar o meu lugar:\n${offerLink}\n`);
   expect(pathOf(offerLink)).toBe(pathOf(joinedLink));
 
   await page.goto(offerLink);

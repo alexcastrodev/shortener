@@ -21,7 +21,7 @@ export const meta: MetaFunction = () => {
 const CODE_LENGTH = 7;
 
 export default function LoginConfirmation() {
-  const { t } = useTranslation('auth');
+  const { t, i18n } = useTranslation('auth');
   const navigate = useNavigate();
   const { setUser } = useUserState();
   const location = useLocation();
@@ -63,7 +63,7 @@ export default function LoginConfirmation() {
 
   function submit(value: string) {
     if (!email || value.length !== CODE_LENGTH || verify.isPending) return;
-    verify.mutate({ email, code: value, purpose });
+    verify.mutate({ email, code: value, purpose, locale: i18n.language });
   }
 
   return (

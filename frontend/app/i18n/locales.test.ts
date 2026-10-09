@@ -1,6 +1,19 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { resolveLocale, readCookie } from './locales.ts';
+import { localeToSave, resolveLocale, readCookie } from './locales.ts';
+
+test('an account without a saved language gets the one the app is showing', () => {
+  assert.equal(localeToSave(null, 'pt-PT'), 'pt-PT');
+  assert.equal(localeToSave(undefined, 'en'), 'en');
+  assert.equal(localeToSave('fr', 'pt-PT'), 'pt-PT');
+});
+
+test('a saved language is never overwritten, and only supported languages are saved', () => {
+  assert.equal(localeToSave('en', 'pt-PT'), null);
+  assert.equal(localeToSave('pt-PT', 'en'), null);
+  assert.equal(localeToSave(null, 'pt'), null);
+  assert.equal(localeToSave(null, 'de'), null);
+});
 
 test('cookie wins over preference and Accept-Language', () => {
   assert.equal(

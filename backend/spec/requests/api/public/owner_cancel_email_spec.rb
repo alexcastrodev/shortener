@@ -51,9 +51,9 @@ RSpec.describe("the owner's email when a client cancels", type: :request) do
     perform_enqueued_jobs { cancel(reason: "Sick today") }
     mail = owner_mail
     expect(mail).to(be_present)
-    expect(mail.subject).to(eq("Booking cancelled: Haircut, Ana"))
+    expect(mail.subject).to(eq("Booking cancelled: Haircut · Ana · Tue 3 Nov, 09:00"))
     text = mail.text_part.body.to_s
-    expect(text).to(include("Ana cancelled Haircut", "Reason: Sick today", "ana@example.com"))
+    expect(text).to(include("Ana cancelled Haircut", "Reason: Sick today", "Client: Ana · ana@example.com", "/app/forms/#{form.id}/responses"))
     expect(text.scan(/^- /).size).to(eq(2))
     expect(deliveries.find { |item| item.to == ["ana@example.com"] }).to(be_present)
   end

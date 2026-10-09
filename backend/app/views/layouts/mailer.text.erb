@@ -1,1 +1,11 @@
-<%= yield %>
+<%= yield.rstrip %>
+
+--
+<% Array(@footer_lines).each do |line| %>
+<%= line %>
+<% end %>
+<% if @footer_link %>
+<%= @footer_link.first %>:
+<%= @footer_link.last %>
+<% end %>
+https://kurz.fyi

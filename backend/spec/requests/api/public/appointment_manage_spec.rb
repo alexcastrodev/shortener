@@ -153,7 +153,7 @@ RSpec.describe("managing a booking from its link", type: :request) do
       deliveries.clear
       perform_enqueued_jobs { cancel(link) }
       mail = deliveries.last
-      expect([mail.to, mail.reply_to, mail.subject]).to(eq([["ana@example.com"], [current_user.email], "Cancelled: Haircut, 2026-11-03 09:00 (Europe/Lisbon)"]))
+      expect([mail.to, mail.reply_to, mail.subject]).to(eq([["ana@example.com"], [current_user.email], "Cancelled: Haircut · Tue 3 Nov, 09:00"]))
     end
   end
 end
