@@ -46,7 +46,7 @@ class LoginCodeRequest
     return result(:budget_exhausted, budget.reason) unless budget.ok?
 
     unless user
-      user = User.create_or_find_by!(email: email)
+      user = User.create_or_find_by!(email: email) { |created| created.locale = locale if User::LOCALES.include?(locale.to_s) }
       user.stage_pending_password!(password) if STAGES_PASSWORD.include?(mail_purpose)
     end
     user.send_magic_link(purpose: mail_purpose, locale: locale)

@@ -28,6 +28,7 @@ module CodeRequestResponse
   def start_session(user)
     restored = user.pending_deletion?
     user.cancel_deletion! if restored
+    user.update_column(:locale, params[:locale].to_s) if user.locale.nil? && User::LOCALES.include?(params[:locale].to_s)
     token = SessionToken.issue(user)
     set_session_cookie(token, SessionToken::TTL.from_now)
     # The token only travels in the httpOnly cookie, never in the body.

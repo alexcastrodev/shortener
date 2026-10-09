@@ -35,6 +35,9 @@ test('a booking with the confirmation address sends the client a Portuguese conf
   expect(confirmation.text).toContain(stamp(date, '09:00'));
   const manage = linkTo(confirmation, 'm');
   expect(manage.startsWith(`${APP_URL}/m/`)).toBe(true);
+  expect(confirmation.text).toContain(`Ver ou cancelar a sua marcação:\n${manage}\n`);
+  expect(confirmation.html).toMatch(/class="tone-teal"[^>]*>Confirmada<\/span>/);
+  expect(confirmation.html).toContain(`<a href="${manage}"`);
 
   const newBooking = await waitForMail(OWNER, 'Nova marcação');
   expect(newBooking.subject).toContain(serviceName);
@@ -61,7 +64,7 @@ test('without a confirmation address only the owner is e-mailed', async () => {
   expect(await mailsTo(visitor)).toEqual([]);
 });
 
-test('the client confirmation follows the booking language', async () => {
+test('a visitor who booked from the English page gets English, while the owner keeps Portuguese', async () => {
   const serviceName = uniqueTitle('Haircut');
   const form = await mailForm(serviceName);
   const [date] = nextWeekdays(1);
@@ -69,12 +72,59 @@ test('the client confirmation follows the booking language', async () => {
 
   expect((await bookForMail(form, { email: visitor, locale: 'en', sessions: [{ date, time: '10:00' }] })).status).toBe(201);
 
-  const confirmation = await waitForMail(visitor, 'Confirmed');
+  const confirmation = await waitForMail(visitor, 'Confirmed: ');
   expect(confirmation.text).toContain('Your booking is confirmed');
   expect(confirmation.text).toContain(serviceName);
-  expect(confirmation.text).toContain(stamp(date, '10:00'));
+  expect(confirmation.text).toContain(stamp(date, '10:00', 'en'));
+  expect(confirmation.html).toMatch(/<html lang="en">/);
   expect(confirmation.text).not.toContain('A sua marcação');
   expect(pathOf(linkTo(confirmation, 'm'))).toMatch(/^\/m\//);
+
+  const ownerMail = await waitForMail(OWNER, serviceName);
+  expect(ownerMail.subject).toMatch(/^Nova marcação: /);
+  expect(ownerMail.text).toContain(stamp(date, '10:00'));
+});
+
+test('a booking that names no language (API, MCP) is written in the language of the form owner', async () => {
+  const serviceName = uniqueTitle('Sem idioma');
+  const form = await mailForm(serviceName);
+  const [date] = nextWeekdays(1);
+  const visitor = uniqueEmail();
+
+  expect((await bookForMail(form, { email: visitor, locale: null, sessions: [{ date, time: '09:00' }] })).status).toBe(201);
+
+  const confirmation = await waitForMail(visitor, serviceName);
+  expect(confirmation.subject).toMatch(/^Confirmada: /);
+  expect(confirmation.text).toContain('A sua marcação está confirmada');
+  expect(confirmation.text).toContain(stamp(date, '09:00'));
+});
+
+test('an owner who never chose a language gets English, until the app saves the language it shows', async ({ page, signIn }) => {
+  const restore = () => owner.patch('/api/me', { locale: 'pt-PT' });
+  try {
+    expect((await owner.patch('/api/me', { locale: null })).status).toBe(200);
+    expect((await owner.get('/api/me')).body.user.locale).toBeNull();
+    const [first, second] = nextWeekdays(2);
+
+    const before = uniqueTitle('Antes');
+    expect((await bookForMail(await mailForm(before), { email: uniqueEmail(), sessions: [{ date: first, time: '09:00' }] })).status).toBe(201);
+    const english = await waitForMail(OWNER, before);
+    expect(english.subject).toMatch(/^New booking: /);
+    expect(english.text).toContain(stamp(first, '09:00', 'en'));
+
+    await signIn('owner');
+    await page.goto('/app');
+    await expect(page.getByRole('link', { name: 'Formulários' }).first()).toBeVisible();
+    await expect.poll(async () => (await owner.get('/api/me')).body.user.locale).toBe('pt-PT');
+
+    const after = uniqueTitle('Depois');
+    expect((await bookForMail(await mailForm(after), { email: uniqueEmail(), locale: 'en', sessions: [{ date: second, time: '09:00' }] })).status).toBe(201);
+    const portuguese = await waitForMail(OWNER, after);
+    expect(portuguese.subject).toMatch(/^Nova marcação: /);
+    expect(portuguese.text).toContain(stamp(second, '09:00'));
+  } finally {
+    await restore();
+  }
 });
 
 test('a manual approval request e-mails both sides and the owner decision e-mails the client', async ({ page, signIn }) => {
@@ -133,11 +183,19 @@ test('cancelling from the manage page e-mails the client and the owner', async (
   expect(cancelled.subject).toContain(serviceName);
   expect(cancelled.text).toContain('A sua marcação foi cancelada');
   expect(cancelled.text).toContain(stamp(date, '09:00'));
+  const again = `${APP_URL}/f/${form.publicId}`;
+  expect(cancelled.text).toContain(`Marcar novamente:\n${again}\n`);
+  expect(cancelled.html).toContain(`<a href="${again}"`);
+  expect(cancelled.html).toMatch(/class="tone-red"[^>]*>Cancelada<\/span>/);
   const ownerMail = await waitForMail(OWNER, 'Marcação cancelada');
   expect(ownerMail.subject).toContain(serviceName);
   expect(ownerMail.subject).toContain('Rita Cancela');
   expect(ownerMail.text).toContain('Uma marcação foi cancelada');
   expect(ownerMail.text).toContain(visitor);
+
+  await page.goto(again);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(form.title);
+  await expect(page.getByText('Escolha um horário')).toBeVisible();
 });
 
 test('two sessions in one booking produce one confirmation listing both', async () => {
@@ -177,6 +235,8 @@ test('a confirmed booking can still be cancelled by e-mail link once the form is
   await page.getByRole('button', { name: 'Cancelar marcação' }).click();
   await page.getByRole('button', { name: 'Sim, cancelar' }).click();
 
-  expect((await waitForMail(visitor, 'Cancelada')).subject).toContain(serviceName);
+  const cancelled = await waitForMail(visitor, 'Cancelada');
+  expect(cancelled.subject).toContain(serviceName);
+  expect(linksIn(cancelled).some(link => link.includes('/f/'))).toBe(false);
   expect((await waitForMail(OWNER, 'Marcação cancelada')).subject).toContain(serviceName);
 });

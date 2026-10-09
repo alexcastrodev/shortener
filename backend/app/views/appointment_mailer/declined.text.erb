@@ -1,14 +1,3 @@
-<%= t(".title") %>
-
-<%= t(".intro", service: @service) %>
-<% @sessions.each do |session| %>
-- <%= session %>
-<% end %>
-<% if @message %>
-
-<%= t(".message", message: @message) %>
-<% end %>
-
-<%= t(".reply") %>
-
-Kurz · https://kurz.fyi
+<%= render "shared/mailer/intro", title: t(".title"), lead: t(".lead", form: @form_title) %>
+<%= render "shared/mailer/details", rows: booking_rows(**@booking, total: nil, extra: [[t(".message", form: @form_title), @message]]) %>
+<%= render "shared/mailer/action", url: @book_again_url, label: t(".book_again") %>

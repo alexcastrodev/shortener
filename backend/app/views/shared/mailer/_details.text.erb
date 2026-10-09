@@ -1,0 +1,13 @@
+<% rows.each do |label, value, hint| %>
+<% if value.is_a?(Array) %>
+<%= label %>:
+<% value.each do |line| %>
+- <%= line %>
+<% end %>
+<% if hint %>
+  <%= hint %>
+<% end %>
+<% else %>
+<%= label %>: <%= value %>
+<% end %>
+<% end %>

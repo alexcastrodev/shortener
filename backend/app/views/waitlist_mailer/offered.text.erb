@@ -1,9 +1,3 @@
-<%= t(".title") %>
-
-<%= t(".intro", service: @service, time: @when) %>
-
-<%= t(".until", time: @until) %>
-
-<%= t(".confirm", url: @url) %>
-
-Kurz · https://kurz.fyi
+<%= render "shared/mailer/intro", title: t(".title"), lead: t(".lead", service: @service) %>
+<%= render "shared/mailer/details", rows: booking_rows(**@booking) %>
+<%= render "shared/mailer/action", url: @url, label: t(".confirm_link"), note: t(".until", time: mail_moment(@until, @zone)) %>

@@ -41,6 +41,10 @@ export function readCookie(cookieHeader: string | null | undefined, name = LOCAL
   return null;
 }
 
+export function localeToSave(saved: string | null | undefined, showing: string): Locale | null {
+  return !isLocale(saved) && isLocale(showing) ? showing : null;
+}
+
 export function resolveLocale(input: {
   cookie?: string | null;
   preference?: string | null;

@@ -1,8 +1,4 @@
-<%= @title %>: <%= @code %>
+<%= render "shared/mailer/intro", title: @title, lead: @body %>
+<%= @code %>
 
-<%= @body %>
-<%= t(".expires", minutes: @valid_minutes) %>
-
-<%= t(".footer", reason: @reason) %>
-
-Kurz · https://kurz.fyi
+<%= render "shared/mailer/note", text: t(".expires", minutes: @valid_minutes) %>

@@ -7,11 +7,13 @@ import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router';
 import { useGetLoggedUser } from '@internal/core/actions/get-logged-user/get-logged-user.hook';
 import { useUserState } from '@internal/core/states/use-user-state';
+import { useSaveMissingLocale } from '../i18n/use-locale-sync';
 
 export default function LayoutComponent() {
   const navigate = useNavigate();
   const { isLoading, isError, data } = useGetLoggedUser();
   const setUser = useUserState(state => state.setUser);
+  useSaveMissingLocale(data?.user);
 
   // The cookie is the source of truth for the session; keep the cached
   // profile (used by the header) in sync with it.

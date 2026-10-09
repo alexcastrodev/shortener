@@ -1,0 +1,1 @@
+<%= [local_assigns[:note], ("#{label}:\n#{url}" if local_assigns[:url]), *Array(local_assigns[:links]).map { |text, href| "#{text}:\n#{href}" }].compact.join("\n\n") %>

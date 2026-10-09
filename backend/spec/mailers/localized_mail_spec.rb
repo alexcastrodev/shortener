@@ -65,7 +65,7 @@ RSpec.describe("Localized email") do
       mail = described_class.with(user: user).deletion_scheduled
 
       expect(mail.subject).to(eq("A sua conta Kurz está marcada para eliminação"))
-      expect(mail.body.decoded).to(include("Pediu para eliminar a conta Kurz reader@example.com", user.deletion_due_at.to_date.iso8601))
+      expect(mail.text_part.body.decoded).to(include("Pediu para eliminar a conta Kurz reader@example.com", I18n.l(user.deletion_due_at.to_date, format: :mail_date, locale: :"pt-PT")))
     end
 
     it "stays in English without a preference" do
@@ -86,7 +86,7 @@ RSpec.describe("Localized email") do
     let(:english) { flatten(YAML.load_file(Rails.root.join("config/locales/en.yml"))["en"]) }
     let(:portuguese) { flatten(YAML.load_file(Rails.root.join("config/locales/pt-PT.yml"))["pt-PT"]) }
 
-    def variables(text) = text.scan(/%\{(\w+)\}/).flatten.sort
+    def variables(text) = Array(text).join(" ").scan(/%\{(\w+)\}/).flatten.sort
 
     it "declares only languages the User model accepts" do
       expect(I18n.available_locales.map(&:to_s)).to(eq(User::LOCALES))

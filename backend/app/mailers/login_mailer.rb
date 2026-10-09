@@ -10,11 +10,11 @@ class LoginMailer < ApplicationMailer
     @valid_minutes = User::LOGIN_TOKEN_TTL.in_minutes.to_i
     purpose = PURPOSES.include?(params[:purpose].to_s) ? params[:purpose].to_s : "sign_in"
 
-    with_recipient_locale(@user, params[:locale]) do
+    with_recipient_locale(params[:locale], @user) do
       scope = "login_mailer.copy.#{purpose}"
       @title = I18n.t("#{scope}.title")
       @body = I18n.t("#{scope}.body")
-      @reason = I18n.t("#{scope}.reason", email: @user.email)
+      @footer_lines = [I18n.t("login_mailer.magic_link.footer", reason: I18n.t("#{scope}.reason", email: @user.email))]
 
       mail(to: @user.email, subject: I18n.t("#{scope}.subject", code: @code))
     end
