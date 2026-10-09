@@ -27,7 +27,7 @@ test('e-mail verification: the visitor confirms from the mail, then gets the con
   await view.emailBox('O seu e-mail').fill(address);
   await view.pickSlot(day, '09:00');
   await view.submit();
-  await expect(page.getByRole('heading', { name: 'Obrigado' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Falta confirmar o e.mail/ })).toBeVisible();
   await expect(view.receipt().getByText(/ainda não está confirmada/)).toBeVisible();
 
   const verification = await waitForMail(address, 'Confirme a sua marcação');

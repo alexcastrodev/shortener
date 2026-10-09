@@ -7,7 +7,7 @@ import type { JoinWaitlist, LoadSlots } from './booking-input';
 import { isSection, sectionOf } from './field-types';
 import { useConfirmEmail } from './confirm-email';
 import { PagedForm } from './paged-form';
-import { BookingReceipt } from './booking-receipt';
+import { SubmissionResult } from './submission-result';
 import { FormCover } from './form-cover';
 import type { SubmitFormReceipt } from '@internal/core/actions/submit-form-response/submit-form-response.types';
 
@@ -184,14 +184,10 @@ function SequentialForm({
   if (done) {
     return (
       <div className={`${shell} justify-center`} style={theme.style} role="status">
-        <h1 className={`text-2xl font-semibold ${theme.title}`}>{t('thank_you')}</h1>
-        <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>
-          {form.thank_you_message || t('answers_sent')}
-        </p>
-        <BookingReceipt
+        <SubmissionResult
           receipt={receipt}
-          linkClass={theme.footer}
-          textClass={theme.bio}
+          message={form.thank_you_message}
+          theme={theme}
           timeZone={form.fields.find(item => item.type === 'booking')?.time_zone}
         />
         {mode === 'preview' && (

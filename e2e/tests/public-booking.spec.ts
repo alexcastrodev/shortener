@@ -49,7 +49,7 @@ test('page layout: the confirmation checkbox follows the e-mail values and ticks
   await expect(page.getByText('Sessão · 1 sessão')).toBeVisible();
   await view.submit();
 
-  await expect(page.getByRole('heading', { name: 'Obrigado' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toBeVisible();
   await expect(view.receipt().getByText(/Também lha enviamos por e-mail/)).toBeVisible();
   await view.manageToken();
 
@@ -98,7 +98,7 @@ test('one at a time: the address ticked on the second e-mail step wins and the t
   await view.pickSlot(nextWeekdays(1)[0], '09:00');
   await view.submit();
 
-  await expect(page.getByRole('heading', { name: 'Obrigado' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toBeVisible();
   const appointments = await appointmentsOf(form.id);
   expect(appointments).toHaveLength(1);
   expect(appointments[0].client_email).toBe(second);
@@ -121,7 +121,7 @@ test('steps layout without sections: one page, the ticked address is stored', as
   await view.pickSlot(nextWeekdays(1)[0], '09:00');
   await view.submit();
 
-  await expect(page.getByRole('heading', { name: 'Obrigado' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toBeVisible();
   const [appointment] = await appointmentsOf(form.id);
   expect(appointment.client_email).toBe(second);
 });
@@ -139,7 +139,7 @@ test('no address ticked: the receipt does not promise an e-mail and client_email
   await view.pickSlot(nextWeekdays(1)[0], '09:00');
   await view.submit();
 
-  await expect(page.getByRole('heading', { name: 'Obrigado' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toBeVisible();
   await view.manageToken();
   await expect(view.receipt().getByText(/Também lha enviamos por e-mail/)).toBeHidden();
   await expect(view.receipt().getByText('Não será enviado nenhum e-mail, por isso guarde esta ligação.')).toBeVisible();
@@ -175,7 +175,7 @@ test('calendar: month navigation keeps the chosen time in the summary', async ({
   await expect(page.getByRole('button', { name: `${dayLabel(target)}, hora escolhida 10:00`, exact: true })).toBeVisible();
 
   await view.submit();
-  await expect(page.getByRole('heading', { name: 'Obrigado' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toBeVisible();
   const [appointment] = await appointmentsOf(form.id);
   expect(appointment.client_email).toBeNull();
 });
@@ -212,7 +212,7 @@ test('manual approval: the receipt asks for patience and the appointment is pend
   await view.pickSlot(nextWeekdays(1)[0], '09:00');
   await view.submit();
 
-  await expect(page.getByRole('heading', { name: 'Obrigado' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pedido enviado' })).toBeVisible();
   await expect(view.receipt().getByText('O seu pedido de marcação aguarda aprovação. Avisamos quando houver resposta.')).toBeVisible();
   await view.manageToken();
 
@@ -239,7 +239,7 @@ test('e-mail verification: no confirmation checkbox and the appointment is unver
   await expect(view.confirmBoxes()).toHaveCount(0);
   await view.submit();
 
-  await expect(page.getByRole('heading', { name: 'Obrigado' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Falta confirmar o e.mail/ })).toBeVisible();
   await view.manageToken();
   await expect(view.receipt().getByText(/ainda não está confirmada/)).toBeVisible();
   await expect(view.receipt().getByText(/ligação para confirmar o endereço/)).toBeVisible();
