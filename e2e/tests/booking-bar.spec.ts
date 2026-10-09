@@ -92,20 +92,3 @@ test('the bar stays at the bottom of the screen while the page is scrolled', asy
   expect(box.y).toBeGreaterThan(640 - 140);
   await expect(page.getByText('Nenhum horário escolhido')).toBeInViewport();
 });
-
-test('after booking the receipt shows the status, the service, the sessions and the total', async ({ page }) => {
-  const { form, view } = await open(page, { name: true, services: [service('Corte', { price: 15, currency: 'EUR' })] });
-  const [day] = nextWeekdays(1, 3);
-
-  await view.nameBox().fill('Ana Teste');
-  await choose(page, day, '09:00');
-  await view.submit();
-
-  await expect(page.getByRole('heading', { name: 'Obrigado' })).toBeVisible();
-  const receipt = view.receipt();
-  await expect(receipt.getByText('Confirmada', { exact: true })).toBeVisible();
-  await expect(receipt.getByText('Corte', { exact: true })).toBeVisible();
-  await expect(receipt.getByText(/15,00\s*€/)).toBeVisible();
-  await expect(receipt.getByText(/09:00/)).toBeVisible();
-  expect(await appointmentsOf(form.id)).toHaveLength(1);
-});

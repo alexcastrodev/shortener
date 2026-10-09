@@ -7,7 +7,7 @@ import { useConfirmEmail } from './confirm-email';
 import { isSection } from './field-types';
 import type { Props, SubmitFailure, SubmitFormReceipt } from './form-renderer';
 import { BookingBar } from './booking-bar';
-import { BookingReceipt } from './booking-receipt';
+import { SubmissionResult } from './submission-result';
 import { summarize } from './booking-summary';
 import { FormCover } from './form-cover';
 
@@ -148,14 +148,10 @@ export function PagedForm({
   if (done) {
     return (
       <div className={`${shell} justify-center`} style={theme.style} role="status">
-        <h1 className={`text-[32px] leading-tight font-semibold ${theme.title}`}>{t('thank_you')}</h1>
-        <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>
-          {form.thank_you_message || t('answers_sent')}
-        </p>
-        <BookingReceipt
+        <SubmissionResult
           receipt={receipt}
-          linkClass={theme.footer}
-          textClass={theme.bio}
+          message={form.thank_you_message}
+          theme={theme}
           timeZone={form.fields.find(item => item.type === 'booking')?.time_zone}
         />
         {mode === 'preview' && (
