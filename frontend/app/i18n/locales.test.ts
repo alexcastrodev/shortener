@@ -15,6 +15,15 @@ test('a saved language is never overwritten, and only supported languages are sa
   assert.equal(localeToSave(null, 'de'), null);
 });
 
+test('the language chosen on this device is what the account keeps, so e-mails follow the screen', () => {
+  assert.equal(localeToSave('en', 'pt-PT', 'pt-PT'), 'pt-PT');
+  assert.equal(localeToSave('pt-PT', 'pt-PT', 'en'), 'en');
+  assert.equal(localeToSave(null, 'en', 'pt-PT'), 'pt-PT');
+  assert.equal(localeToSave('pt-PT', 'pt-PT', 'pt-PT'), null);
+  assert.equal(localeToSave('en', 'pt-PT', 'de'), null);
+  assert.equal(localeToSave('en', 'pt-PT', null), null);
+});
+
 test('cookie wins over preference and Accept-Language', () => {
   assert.equal(
     resolveLocale({ cookie: 'pt-PT', preference: 'en', acceptLanguage: 'en' }),
