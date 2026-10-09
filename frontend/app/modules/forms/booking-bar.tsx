@@ -35,6 +35,7 @@ function monthlyText(summary: BookingSummary) {
 export function BookingBar({
   summary,
   currency,
+  monthly,
   theme,
   label,
   ready,
@@ -42,6 +43,7 @@ export function BookingBar({
 }: {
   summary: BookingSummary | null;
   currency: string | null;
+  monthly: boolean;
   theme: BioTheme;
   label: string;
   ready: boolean;
@@ -68,7 +70,7 @@ export function BookingBar({
           </p>
           <p className="truncate text-xs opacity-70">
             {!summary
-              ? t('bar_hint')
+              ? t(monthly ? 'bar_hint' : 'bar_hint_days')
               : summary.kind === 'monthly'
                 ? t('bar_monthly', { count: summary.count })
                 : t('bar_sessions', { count: summary.count })}
@@ -85,7 +87,7 @@ export function BookingBar({
         <button
           type="button"
           aria-disabled={!ready}
-          className={`min-h-12 rounded-lg px-6 py-2 font-semibold ${theme.button} ${ready ? '' : 'cursor-not-allowed opacity-60'}`}
+          className={`min-h-12 rounded-lg px-6 py-2 text-[15px]! font-semibold! ${theme.button} ${ready ? '' : 'cursor-not-allowed opacity-60'}`}
           onClick={onSubmit}
         >
           {label}

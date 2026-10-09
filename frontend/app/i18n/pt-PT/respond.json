@@ -81,6 +81,7 @@
   "booking_required": "Escolha pelo menos um dia e uma hora.",
   "bar_none": "Nenhum horário escolhido",
   "bar_hint": "Escolha o horário para continuar",
+  "bar_hint_days": "Escolha um dia e uma hora para continuar",
   "bar_sessions_one": "Sessão · {{count}} sessão",
   "bar_sessions_other": "Sessão · {{count}} sessões",
   "bar_monthly_one": "Reserva mensal · {{count}} sessão",

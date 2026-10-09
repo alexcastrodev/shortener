@@ -226,8 +226,8 @@ export function BookingInput({
     viewed && viewed.startsWith(month) && byDay.has(viewed) ? viewed : undefined;
   const today = new Date();
   const service = services.find(item => item.id === serviceId);
-  const chip = (selected: boolean) =>
-    `min-h-11 rounded-lg px-3 py-1.5 text-sm font-medium ${theme.button} ${selected ? 'ring-2 ring-current' : ''}`;
+  const chip = (selected: boolean, size = 'text-sm!') =>
+    `min-h-11 rounded-lg px-3 py-1.5 ${size} font-medium! ${theme.button} ${selected ? 'ring-2 ring-current' : ''}`;
   const picked = new Map(sessions.map(session => [session.date, session.time]));
   const modeCard = (selected: boolean) =>
     `flex min-w-0 flex-col gap-1 rounded-xl p-4 text-left ${theme.button} ${selected ? 'ring-2 ring-current' : ''}`;
@@ -305,7 +305,7 @@ export function BookingInput({
 
       {serviceId && service?.monthly && (
         <div className="space-y-2">
-          <p id={`${inputId}-mode`} className="text-sm font-medium">
+          <p id={`${inputId}-mode`} className="text-xl font-semibold">
             {t('booking_mode')}
           </p>
           <fieldset
@@ -320,11 +320,11 @@ export function BookingInput({
               className={modeCard(mode === 'days')}
               onClick={() => chooseMode('days')}
             >
-              <span className="text-sm font-semibold">
+              <span className="text-[15px] font-semibold">
                 {t('booking_mode_days')}
               </span>
               {service.price ? (
-                <span className="text-xl font-semibold">
+                <span className="text-[22px] font-semibold">
                   {formatCurrency(service.price, service.currency ?? 'EUR')}
                   <span className="text-xs font-normal opacity-80">
                     {` ${t('booking_unit_session')}`}
@@ -342,11 +342,11 @@ export function BookingInput({
               className={modeCard(mode === 'monthly')}
               onClick={() => chooseMode('monthly')}
             >
-              <span className="text-sm font-semibold">
+              <span className="text-[15px] font-semibold">
                 {t('booking_mode_monthly')}
               </span>
               {service.monthly.price ? (
-                <span className="text-xl font-semibold">
+                <span className="text-[22px] font-semibold">
                   {formatCurrency(
                     service.monthly.price,
                     service.currency ?? 'EUR'
@@ -388,7 +388,7 @@ export function BookingInput({
             </p>
           )}
           <div className="flex items-baseline justify-between gap-3">
-            <p className="text-sm font-medium">{t('booking_pick')}</p>
+            <p className="text-xl font-semibold">{t('booking_pick')}</p>
             {field.time_zone && (
               <p className="text-xs opacity-70">
                 {t('booking_zone', { zone: field.time_zone })}
@@ -432,7 +432,7 @@ export function BookingInput({
               {shown ? (
                 <div className="space-y-2">
                   <div className="flex items-baseline justify-between gap-3">
-                    <p className="min-w-0 text-sm font-medium">
+                    <p className="min-w-0 text-[15px] font-semibold">
                       <span className="font-normal opacity-80">
                         {t('booking_times_on')}
                       </span>{' '}
@@ -454,7 +454,7 @@ export function BookingInput({
                           key={slot.starts_at}
                           type="button"
                           aria-pressed={selected}
-                          className={`${chip(selected)} min-h-12`}
+                          className={`${chip(selected, 'text-[15px]!')} min-h-12`}
                           onClick={() => toggle(shown, slot.time)}
                         >
                           {slot.time}
@@ -467,7 +467,7 @@ export function BookingInput({
               ) : (
                 status === 'ready' &&
                 loaded.slots.length > 0 && (
-                  <p className="rounded-lg border border-dashed border-current/30 p-4 text-center text-sm opacity-80">
+                  <p className="rounded-lg border border-dashed border-current/30 p-4 text-center text-[13px] opacity-80">
                     {t('booking_choose_day')}
                   </p>
                 )
