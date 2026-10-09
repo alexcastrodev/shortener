@@ -127,6 +127,30 @@ test('an owner who never chose a language gets English, until the app saves the 
   }
 });
 
+test('an owner whose account says English but whose screen is Portuguese gets Portuguese e-mails once the app saves the screen language', async ({ page, signIn }) => {
+  const restore = () => owner.patch('/api/me', { locale: 'pt-PT' });
+  try {
+    expect((await owner.patch('/api/me', { locale: 'en' })).status).toBe(200);
+    const [first, second] = nextWeekdays(2);
+
+    const before = uniqueTitle('Antes');
+    expect((await bookForMail(await mailForm(before), { email: uniqueEmail(), sessions: [{ date: first, time: '09:00' }] })).status).toBe(201);
+    expect((await waitForMail(OWNER, before)).subject).toMatch(/^New booking: /);
+
+    await signIn('owner');
+    await page.context().addCookies([{ name: 'kurz_locale', value: 'pt-PT', url: APP_URL }]);
+    await page.goto('/app');
+    await expect(page.getByRole('link', { name: 'Formulários' }).first()).toBeVisible();
+    await expect.poll(async () => (await owner.get('/api/me')).body.user.locale).toBe('pt-PT');
+
+    const after = uniqueTitle('Depois');
+    expect((await bookForMail(await mailForm(after), { email: uniqueEmail(), locale: 'en', sessions: [{ date: second, time: '09:00' }] })).status).toBe(201);
+    expect((await waitForMail(OWNER, after)).subject).toMatch(/^Nova marcação: /);
+  } finally {
+    await restore();
+  }
+});
+
 test('a manual approval request e-mails both sides and the owner decision e-mails the client', async ({ page, signIn }) => {
   const serviceName = uniqueTitle('Consulta');
   const form = await mailForm(serviceName, { rules: { approval: 'manual' } });

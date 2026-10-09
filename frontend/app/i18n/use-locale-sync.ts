@@ -33,7 +33,7 @@ export function useSaveMissingLocale(user: User | undefined) {
   const { mutate } = useUpdateProfile({ onSuccess: setUser });
 
   useEffect(() => {
-    const locale = user && localeToSave(user.locale, i18n.language);
+    const locale = user && localeToSave(user.locale, i18n.language, readCookie(document.cookie));
     if (!user || !locale || saving.has(user.id)) return;
     saving.add(user.id);
     mutate({ locale });
