@@ -90,7 +90,7 @@ function SequentialForm({
 
   const field = step >= 0 && step < total ? questions[step] : null;
   const done = step >= total && total > 0;
-  const shell = `flex flex-col px-[max(1.25rem,calc((100%-36rem)/2))] py-8 ${theme.page} ${
+  const shell = `@container flex flex-col px-[max(1.25rem,calc((100%-36rem)/2))] py-8 ${theme.page} ${
     mode === 'live' ? 'min-h-dvh' : 'min-h-full'
   }`;
   const primary = `min-h-11 rounded-lg px-5 py-2 font-medium ${theme.button}`;
@@ -171,7 +171,7 @@ function SequentialForm({
           >
             {form.start_label || t('start')}
           </button>
-          <span className={`ml-4 hidden text-xs sm:inline ${theme.bio}`}>{t('press_enter')}</span>
+          <span className={`ml-4 hidden text-xs @min-[640px]:inline ${theme.bio}`}>{t('press_enter')}</span>
           <span className={`ml-4 text-sm ${theme.bio}`}>
             {t('minutes', { n: Math.max(1, Math.ceil(total / 4)) })}
           </span>
@@ -291,7 +291,7 @@ function SequentialForm({
         <button type="button" className={primary} disabled={submitting} onClick={() => void next()}>
           {step === total - 1 ? (submitting ? t('sending') : t('submit')) : t('next')}
         </button>
-        <span className={`hidden text-xs sm:inline ${theme.bio}`}>{t('press_enter')}</span>
+        <span className={`hidden text-xs @min-[640px]:inline ${theme.bio}`}>{t('press_enter')}</span>
         <span className={`ml-auto font-mono text-xs ${theme.bio}`}>
           {step + 1} / {total}
         </span>

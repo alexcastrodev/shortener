@@ -49,6 +49,7 @@ import { FORM_LAYOUTS, type Form, type FormLayout } from '@internal/core/types/F
 import { PhoneFrame, ThemePicker } from '../../modules/bio-page';
 import { openQrCodeModal } from '../../modules/qr-code';
 import { FormRenderer } from '../../modules/forms/form-renderer';
+import { ScaledScreen } from '../../modules/forms/scaled-screen';
 import i18n from '../../i18n';
 import { formErrorMessage } from '../../modules/forms/form-errors';
 import { isSection } from '../../modules/forms/field-types';
@@ -604,7 +605,15 @@ function Builder({ form: current }: { form: Form }) {
                 />
               );
               return device === 'mobile' ? (
-                <PhoneFrame label={t('ed_form_preview')}>{preview}</PhoneFrame>
+                <PhoneFrame
+                  label={t('ed_form_preview')}
+                  className="max-w-[410px]"
+                  screenClassName=""
+                >
+                  <ScaledScreen width={390} height={700}>
+                    {preview}
+                  </ScaledScreen>
+                </PhoneFrame>
               ) : (
                 <div className="overflow-hidden rounded-xl border border-border">
                   <div className="flex items-center gap-2 border-b border-border bg-muted/40 px-3 py-2">
@@ -618,7 +627,9 @@ function Builder({ form: current }: { form: Form }) {
                     </span>
                     <span className="w-9" />
                   </div>
-                  <div className="h-[520px] overflow-y-auto">{preview}</div>
+                  <ScaledScreen width={1024} height={768}>
+                    {preview}
+                  </ScaledScreen>
                 </div>
               );
             })()}

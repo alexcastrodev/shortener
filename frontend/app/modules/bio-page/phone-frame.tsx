@@ -11,14 +11,14 @@ interface PhoneFrameProps {
 export function PhoneFrame({
   children,
   label,
-  className = '',
+  className = 'max-w-[300px]',
   screenClassName = 'h-[560px]',
 }: PropsWithChildren<PhoneFrameProps>) {
   return (
     <div
       role={label ? 'img' : undefined}
       aria-label={label}
-      className={`relative mx-auto w-full max-w-[300px] rounded-[2.75rem] bg-neutral-900 p-[10px] shadow-[0_30px_60px_-15px_rgb(0_0_0/0.45)] ring-1 ring-white/10 ${className}`}
+      className={`relative mx-auto w-full rounded-[2.75rem] bg-neutral-900 p-[10px] shadow-[0_30px_60px_-15px_rgb(0_0_0/0.45)] ring-1 ring-white/10 ${className}`}
     >
       <div
         aria-hidden="true"

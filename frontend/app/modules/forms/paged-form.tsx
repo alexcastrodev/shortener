@@ -70,7 +70,7 @@ export function PagedForm({
   const pricedService = bookingField?.services?.find(
     item => item.price && item.currency
   );
-  const shell = `flex flex-col px-[max(1.25rem,calc((100%-36rem)/2))] py-8 ${theme.page} ${
+  const shell = `@container flex flex-col px-[max(1.25rem,calc((100%-36rem)/2))] py-8 ${theme.page} ${
     mode === 'live' ? 'min-h-dvh' : 'min-h-full'
   }`;
 
