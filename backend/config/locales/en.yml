@@ -48,6 +48,11 @@ en:
   number:
     format:
       separator: "."
+    currency:
+      format:
+        format: "%u%n"
+        separator: "."
+        delimiter: ","
   mailer:
     status:
       confirmed: "Confirmed"

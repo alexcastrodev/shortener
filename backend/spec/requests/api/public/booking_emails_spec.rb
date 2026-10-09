@@ -75,7 +75,7 @@ RSpec.describe("emails for a booking", type: :request) do
       owner = deliveries.find { |mail| mail.to == [current_user.email] }
       expect(client.subject).to(eq("Confirmed: Haircut · Tue 3 Nov, 09:00"))
       expect(client.reply_to).to(eq([current_user.email]))
-      expect(client.text_part.body.decoded).to(include("Service: Haircut\nWith: Salon\nWhen:\n- Tuesday 3 November · 09:00–10:00\n  Time zone: UTC\nTotal: 25.00 EUR"))
+      expect(client.text_part.body.decoded).to(include("Service: Haircut\nWith: Salon\nWhen:\n- Tuesday 3 November · 09:00–10:00\n  Time zone: UTC\nTotal: €25.00"))
       expect(owner.subject).to(eq("New booking: Haircut · Ana · Tue 3 Nov, 09:00"))
       expect(owner.text_part.body.decoded).to(include("Ana booked Haircut.", "Client: Ana · ana@example.com"))
       expect(emails.pluck(:status)).to(eq(["sent", "sent"]))
