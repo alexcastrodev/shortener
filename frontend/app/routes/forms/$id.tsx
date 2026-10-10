@@ -42,6 +42,12 @@ import {
 } from '@internal/core/actions/get-form/get-form.hook';
 import { getFormsKey } from '@internal/core/actions/get-forms/get-forms.hook';
 import { useUpdateForm } from '@internal/core/actions/update-form/update-form.hook';
+import { useDiscardFormDraft } from '@internal/core/actions/discard-form-draft/discard-form-draft.hook';
+import {
+  BookingDraftContext,
+  applyBookingDraft,
+  type BookingDraft,
+} from '../../modules/forms/booking-draft.tsx';
 import { useSetFormPublished } from '@internal/core/actions/set-form-published/set-form-published.hook';
 import { useDeleteForm } from '@internal/core/actions/delete-form/delete-form.hook';
 import { PAGE_THEMES } from '@internal/core/types/Page';
@@ -128,6 +134,7 @@ function Builder({ form: current }: { form: Form }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [bookingDraft, setBookingDraft] = useState<BookingDraft | null>(null);
   const [device, setDevice] = useState<'mobile' | 'desktop'>('mobile');
   const [restarts, setRestarts] = useState(0);
   const [tab, setTab] = useState<'questions' | 'settings'>('questions');
@@ -207,6 +214,11 @@ function Builder({ form: current }: { form: Form }) {
   const isPublishing = isChangingPublished && publishing?.published === true;
   const isUnpublishing = isChangingPublished && publishing?.published === false;
 
+  const { mutate: discardDraft, isPending: isDiscardingDraft } = useDiscardFormDraft({
+    onSuccess: () => refresh(),
+    onError: showError,
+  });
+
   const { mutate: remove } = useDeleteForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: getFormsKey });
@@ -224,6 +236,21 @@ function Builder({ form: current }: { form: Form }) {
       labels: { confirm: t('ed_republish_confirm', { version }), cancel: t('ed_cancel') },
       confirmProps: { color: 'brand' },
       onConfirm: () => setPublished({ id: current.id, published: true }),
+    });
+  };
+
+  const confirmDiscardDraft = () => {
+    modals.openConfirmModal({
+      title: t('ed_discard_draft_title', { version: current.published_version + 1 }),
+      centered: true,
+      children: (
+        <p className="text-sm">
+          {t('ed_discard_draft_body', { version: current.published_version })}
+        </p>
+      ),
+      labels: { confirm: t('ed_discard_draft'), cancel: t('ed_cancel') },
+      confirmProps: { color: 'red' },
+      onConfirm: () => discardDraft({ id: current.id }),
     });
   };
 
@@ -251,6 +278,8 @@ function Builder({ form: current }: { form: Form }) {
       onConfirm: () => remove(current.id),
     });
   };
+
+  const previewDraft = applyBookingDraft(current.fields, bookingDraft);
 
   return (
     <PageContainer className="pb-24 sm:pb-10">
@@ -362,7 +391,9 @@ function Builder({ form: current }: { form: Form }) {
               ? `${t('ed_published')} · ${t('ed_version', { version: current.published_version })}`
               : t('draft')}
             {current.published && current.has_unpublished_changes && (
-              <span className="text-amber-700 dark:text-amber-400">{t('ed_changes_pending')}</span>
+              <span className="text-amber-700 dark:text-amber-400">
+                {t('ed_changes_pending', { version: current.published_version + 1 })}
+              </span>
             )}
           </span>
           {current.published && current.has_unpublished_changes && (
@@ -374,6 +405,18 @@ function Builder({ form: current }: { form: Form }) {
               onClick={confirmRepublish}
             >
               {t('ed_publish_changes')}
+            </Button>
+          )}
+          {current.published && current.has_unpublished_changes && (
+            <Button
+              className="order-8 col-span-2 w-full sm:order-none sm:col-span-1 sm:w-auto"
+              size="sm"
+              variant="default"
+              color="red"
+              loading={isDiscardingDraft}
+              onClick={confirmDiscardDraft}
+            >
+              {t('ed_discard_draft')}
             </Button>
           )}
           {current.published && (
@@ -478,7 +521,9 @@ function Builder({ form: current }: { form: Form }) {
           </div>
 
           {tab === 'questions' ? (
-            <QuestionList form={current} selectedId={selectedId} onSelect={setSelectedId} />
+            <BookingDraftContext.Provider value={setBookingDraft}>
+              <QuestionList form={current} selectedId={selectedId} onSelect={setSelectedId} />
+            </BookingDraftContext.Provider>
           ) : (
           <Card className="p-5 sm:p-6">
             <Stack gap="md">
@@ -597,6 +642,7 @@ function Builder({ form: current }: { form: Form }) {
                   key={`${restarts}-${form.values.layout}-${form.values.intro_enabled}-${current.fields.map(field => field.id).join('-')}`}
                   mode="preview"
                   activeFieldId={selectedId}
+                  previewServiceId={previewDraft.serviceId}
                   onSelectField={setSelectedId}
                   form={{
                     title: form.values.title || t('untitled_form'),
@@ -608,7 +654,7 @@ function Builder({ form: current }: { form: Form }) {
                     cover_position: form.values.cover_position,
                     intro_enabled: form.values.intro_enabled,
                     start_label: form.values.start_label || null,
-                    fields: current.fields,
+                    fields: previewDraft.fields,
                   }}
                   coverUrl={coverUrl}
                 />

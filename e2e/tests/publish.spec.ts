@@ -166,3 +166,26 @@ test('on a phone, the optional email hint keeps its text readable above the butt
   expect((await hint.boundingBox())!.width).toBeGreaterThan(250);
   expect((await button.boundingBox())!.y).toBeGreaterThan((await hint.boundingBox())!.y);
 });
+
+test('a draft of the next version can be discarded, going back to the published one', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Corte')], publish: true });
+  await owner.patch(`/api/me/forms/${form.id}`, { title: `${form.title} editado` });
+  await signIn('owner');
+  await page.goto(`/app/forms/${form.id}`);
+
+  await expect(page.getByText('rascunho da versão 2')).toBeVisible();
+  await page.getByRole('button', { name: 'Descartar rascunho' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('Descartar o rascunho da versão 2?')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancelar' }).click();
+  await expect(dialog).toBeHidden();
+  expect((await ownerForm(form.id)).title).toBe(`${form.title} editado`);
+
+  await page.getByRole('button', { name: 'Descartar rascunho' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Descartar rascunho' }).click();
+
+  await expect(page.getByText('alterações por publicar')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Descartar rascunho' })).toBeHidden();
+  await expect.poll(async () => (await ownerForm(form.id)).title).toBe(form.title);
+  expect((await ownerForm(form.id)).published_version).toBe(1);
+});

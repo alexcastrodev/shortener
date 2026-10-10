@@ -72,15 +72,17 @@ export function BookingInput({
   joinWaitlist?: JoinWaitlist;
   reloadKey?: string;
   hideSummary?: boolean;
-  preselect?: boolean;
+  preselect?: boolean | string;
 }) {
   const { t } = useTranslation('respond');
   const allServices = field.services ?? [];
   const categories = field.categories ?? [];
   const grouped = categories.length >= 2;
+  const preselected =
+    allServices.find(item => item.id === preselect) ?? allServices[0];
   const [categoryId, setCategoryId] = useState<string | undefined>(
     allServices.find(item => item.id === value?.service)?.category_id ??
-      (preselect && grouped ? allServices[0]?.category_id : undefined) ??
+      (preselect && grouped ? preselected?.category_id : undefined) ??
       undefined
   );
   const services = grouped
@@ -89,8 +91,17 @@ export function BookingInput({
   const [serviceId, setServiceId] = useState<string | undefined>(
     value?.service ??
       (!grouped && services.length === 1 ? services[0].id : undefined) ??
-      (preselect ? services[0]?.id : undefined)
+      (preselect ? preselected?.id : undefined)
   );
+
+  useEffect(() => {
+    if (typeof preselect !== 'string') return;
+    const wanted = allServices.find(item => item.id === preselect);
+    if (!wanted) return;
+    setCategoryId(wanted.category_id ?? undefined);
+    setServiceId(wanted.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preselect]);
   const [mode, setMode] = useState<'days' | 'monthly'>(
     value?.monthly ? 'monthly' : 'days'
   );

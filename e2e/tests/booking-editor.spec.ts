@@ -256,3 +256,21 @@ test('on a phone, the top actions stack in full-width rows without overflowing',
   expect(b.x + b.width).toBeLessThanOrEqual(390);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
 });
+
+test('the preview follows the booking editor before saving and shows the service that is open', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Nível 1'), service('Nível 2')] });
+  await signIn('owner');
+  await page.goto(`/app/forms/${form.id}`);
+  await page.getByRole('button', { name: /Marcação de serviço$/ }).click();
+
+  const editor = new BookingEditor(page);
+  const screen = page.getByTestId('preview-screen');
+  await expect(screen.getByRole('radio', { name: /Nível 1/ })).toBeChecked();
+
+  await editor.services.getByRole('button', { name: 'Editar', exact: true }).nth(1).click();
+  await expect(screen.getByRole('radio', { name: /Nível 2/ })).toBeChecked();
+
+  await editor.serviceField('Nome do serviço').fill('Nível 2 avançado');
+  await expect(screen.getByRole('radio', { name: /Nível 2 avançado/ })).toBeChecked();
+  expect(bookingOf(await ownerForm(form.id)).services[1].name).toBe('Nível 2');
+});
