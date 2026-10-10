@@ -231,3 +231,28 @@ test('on a phone, a long service name wraps instead of overflowing the page', as
   expect(box.x + box.width).toBeLessThanOrEqual(390);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
 });
+
+test('with several services, the preview already shows the calendar of the first one', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Nível 1'), service('Nível 2')] });
+  await signIn('owner');
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto(`/app/forms/${form.id}`);
+
+  const screen = page.getByTestId('preview-screen');
+  await expect(screen.getByRole('button', { name: 'Mês seguinte' })).toBeAttached();
+});
+
+test('on a phone, the top actions stack in full-width rows without overflowing', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Sessão')], publish: true });
+  await signIn('owner');
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto(`/app/forms/${form.id}`);
+
+  const responses = page.getByRole('button', { name: /Respostas/ });
+  const unpublish = page.getByRole('button', { name: 'Despublicar' });
+  await expect(unpublish).toBeVisible();
+  const [a, b] = [(await responses.boundingBox())!, (await unpublish.boundingBox())!];
+  expect(a.y).toBeCloseTo(b.y, 0);
+  expect(b.x + b.width).toBeLessThanOrEqual(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+});

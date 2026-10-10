@@ -297,6 +297,7 @@ export function PagedForm({
                 invalid={errors[field.id]}
                 confirm={confirmFor(field)}
                 hideBookingSummary
+                preselectBooking={mode === 'preview'}
               />
               {errors[field.id] && (
                 <p role="alert" className={`mt-3 inline-block ${alertClass}`}>

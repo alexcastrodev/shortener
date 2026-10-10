@@ -269,8 +269,9 @@ function Builder({ form: current }: { form: Form }) {
             <p className="text-sm font-semibold">{form.values.title || t('untitled_form')}</p>
           </div>
         </div>
-        <Group gap="xs">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
           <Button
+            className="order-6 w-full sm:order-none sm:w-auto"
             variant="default"
             leftSection={<IconChartBar size={16} />}
             onClick={() => navigate(`/app/forms/${current.id}/responses`)}
@@ -279,12 +280,12 @@ function Builder({ form: current }: { form: Form }) {
             <span className="ml-2 text-muted-foreground">{current.responses_count}</span>
           </Button>
           <div
-            className={`flex items-center gap-1 rounded-md border py-1 pr-1 pl-3 ${
+            className={`order-1 col-span-2 flex items-center gap-1 rounded-md border py-1 pr-1 pl-3 sm:order-none sm:col-span-1 ${
               current.published ? 'border-border' : 'border-dashed border-border opacity-80'
             }`}
           >
             <span
-              className="max-w-[200px] truncate font-mono text-xs text-muted-foreground"
+              className="min-w-0 max-w-[200px] flex-1 truncate font-mono text-xs text-muted-foreground sm:flex-none"
               title={
                 current.published ? shareUrl : t('ed_goes_live', { url: shareUrl })
               }
@@ -342,6 +343,7 @@ function Builder({ form: current }: { form: Form }) {
           </div>
           {!current.published && (
             <Button
+              className="order-5 w-full sm:order-none sm:w-auto"
               size="sm"
               color="brand"
               loading={isPublishing}
@@ -352,7 +354,7 @@ function Builder({ form: current }: { form: Form }) {
           )}
           <span
             role="status"
-            className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium ${
+            className={`order-2 col-span-2 flex flex-wrap items-center gap-x-2 rounded-md border px-3 py-1.5 text-sm font-medium sm:order-none sm:col-span-1 ${
               current.published ? 'border-primary/50 bg-primary/10' : 'border-border'
             }`}
           >
@@ -365,6 +367,7 @@ function Builder({ form: current }: { form: Form }) {
           </span>
           {current.published && current.has_unpublished_changes && (
             <Button
+              className="order-4 col-span-2 w-full sm:order-none sm:col-span-1 sm:w-auto"
               size="sm"
               color="brand"
               loading={isPublishing}
@@ -374,13 +377,19 @@ function Builder({ form: current }: { form: Form }) {
             </Button>
           )}
           {current.published && (
-            <Button size="sm" variant="default" loading={isUnpublishing} onClick={confirmUnpublish}>
+            <Button
+              className="order-7 w-full sm:order-none sm:w-auto"
+              size="sm"
+              variant="default"
+              loading={isUnpublishing}
+              onClick={confirmUnpublish}
+            >
               {t('ed_unpublish')}
             </Button>
           )}
           <Tooltip label={t('ed_accepting_hint')} disabled={current.published}>
             <label
-              className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium ${
+              className={`order-3 col-span-2 flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium sm:order-none sm:col-span-1 ${
                 current.published ? 'cursor-pointer border-border' : 'cursor-not-allowed opacity-60'
               }`}
             >
@@ -399,7 +408,7 @@ function Builder({ form: current }: { form: Form }) {
               {t('ed_accepting')}
             </label>
           </Tooltip>
-        </Group>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

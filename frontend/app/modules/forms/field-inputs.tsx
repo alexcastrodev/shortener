@@ -42,6 +42,7 @@ type Props = {
   invalid?: string;
   confirm?: { checked: boolean; onChange: (checked: boolean) => void };
   hideBookingSummary?: boolean;
+  preselectBooking?: boolean;
 };
 
 const inputBase =
@@ -59,6 +60,7 @@ export function FieldInput({
   invalid,
   confirm,
   hideBookingSummary,
+  preselectBooking,
 }: Props) {
   const { t } = useTranslation('respond');
   const common = { id: inputId, 'aria-describedby': `${inputId}-help` };
@@ -250,6 +252,7 @@ export function FieldInput({
           joinWaitlist={joinWaitlist}
           reloadKey={invalid}
           hideSummary={hideBookingSummary}
+          preselect={preselectBooking}
         />
       );
     case 'image':

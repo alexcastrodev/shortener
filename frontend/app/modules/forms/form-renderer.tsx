@@ -262,6 +262,7 @@ function SequentialForm({
         upload={mode === 'live' ? onUploadImage : undefined}
         loadSlots={mode === 'live' ? loadSlots : undefined}
         joinWaitlist={mode === 'live' ? joinWaitlist : undefined}
+        preselectBooking={mode === 'preview'}
         invalid={error ?? undefined}
         confirm={confirmFor(field!)}
       />
