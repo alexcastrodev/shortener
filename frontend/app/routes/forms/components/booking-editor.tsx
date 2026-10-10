@@ -12,6 +12,7 @@ import { CategoriesSection } from './categories-section';
 import { ExceptionsSection } from './exceptions-section';
 import { RulesSection } from './rules-section';
 import { ServiceCard } from './service-card';
+import { useBookingDraft } from '../../../modules/forms/booking-draft.tsx';
 import { timeoutInRange } from '../../../modules/forms/duration-units.ts';
 import {
   DAYS,
@@ -240,6 +241,21 @@ export function BookingEditor({
       [wanted?.key, only?.key].filter((key): key is string => Boolean(key))
     );
   });
+
+  const publishDraft = useBookingDraft();
+
+  useEffect(() => {
+    if (!field) return;
+    const openIndex = form.values.services.findIndex(item => expanded.has(item.key));
+    publishDraft({
+      fieldId: field.id,
+      input: toBookingInput(form.values, false),
+      openIndex,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.values, expanded]);
+
+  useEffect(() => () => publishDraft(null), []);
 
   const expand = (keys: string[]) =>
     setExpanded(current => new Set([...current, ...keys]));

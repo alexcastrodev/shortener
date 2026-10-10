@@ -39,6 +39,7 @@ export type Props = {
   footer?: ReactNode;
   activeFieldId?: string | null;
   onSelectField?: (id: string) => void;
+  previewServiceId?: string;
 };
 
 export function FormRenderer(props: Props) {
@@ -62,6 +63,7 @@ function SequentialForm({
   footer,
   activeFieldId,
   onSelectField,
+  previewServiceId,
 }: Props) {
   const { t } = useTranslation('respond');
   const theme = getBioTheme(form.theme, form.custom_colors);
@@ -262,7 +264,7 @@ function SequentialForm({
         upload={mode === 'live' ? onUploadImage : undefined}
         loadSlots={mode === 'live' ? loadSlots : undefined}
         joinWaitlist={mode === 'live' ? joinWaitlist : undefined}
-        preselectBooking={mode === 'preview'}
+        preselectBooking={mode === 'preview' ? (previewServiceId ?? true) : undefined}
         invalid={error ?? undefined}
         confirm={confirmFor(field!)}
       />

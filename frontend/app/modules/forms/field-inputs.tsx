@@ -42,7 +42,7 @@ type Props = {
   invalid?: string;
   confirm?: { checked: boolean; onChange: (checked: boolean) => void };
   hideBookingSummary?: boolean;
-  preselectBooking?: boolean;
+  preselectBooking?: boolean | string;
 };
 
 const inputBase =

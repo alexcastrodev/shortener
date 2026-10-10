@@ -37,6 +37,7 @@ export function PagedForm({
   footer,
   activeFieldId,
   onSelectField,
+  previewServiceId,
 }: Props) {
   const { t } = useTranslation('respond');
   const theme = getBioTheme(form.theme, form.custom_colors);
@@ -297,7 +298,7 @@ export function PagedForm({
                 invalid={errors[field.id]}
                 confirm={confirmFor(field)}
                 hideBookingSummary
-                preselectBooking={mode === 'preview'}
+                preselectBooking={mode === 'preview' ? (previewServiceId ?? true) : undefined}
               />
               {errors[field.id] && (
                 <p role="alert" className={`mt-3 inline-block ${alertClass}`}>
