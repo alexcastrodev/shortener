@@ -70,7 +70,7 @@ export function PublishChecklist({
       )}
       {tip && (
         <section className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border p-4 text-sm">
-          <span className="min-w-0 flex-1 text-muted-foreground">{t('ed_checklist_tip')}</span>
+          <span className="min-w-0 basis-full text-muted-foreground sm:flex-1 sm:basis-0">{t('ed_checklist_tip')}</span>
           <Button size="xs" variant="default" disabled={adding} onClick={() => onAddEmail(false)}>
             {t('ed_checklist_add_optional')}
           </Button>

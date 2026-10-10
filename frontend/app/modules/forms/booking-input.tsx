@@ -61,6 +61,7 @@ export function BookingInput({
   joinWaitlist,
   reloadKey,
   hideSummary,
+  preselect,
 }: {
   field: FormField;
   value: BookingAnswer | undefined;
@@ -71,6 +72,7 @@ export function BookingInput({
   joinWaitlist?: JoinWaitlist;
   reloadKey?: string;
   hideSummary?: boolean;
+  preselect?: boolean;
 }) {
   const { t } = useTranslation('respond');
   const allServices = field.services ?? [];
@@ -78,6 +80,7 @@ export function BookingInput({
   const grouped = categories.length >= 2;
   const [categoryId, setCategoryId] = useState<string | undefined>(
     allServices.find(item => item.id === value?.service)?.category_id ??
+      (preselect && grouped ? allServices[0]?.category_id : undefined) ??
       undefined
   );
   const services = grouped
@@ -85,7 +88,8 @@ export function BookingInput({
     : allServices;
   const [serviceId, setServiceId] = useState<string | undefined>(
     value?.service ??
-      (!grouped && services.length === 1 ? services[0].id : undefined)
+      (!grouped && services.length === 1 ? services[0].id : undefined) ??
+      (preselect ? services[0]?.id : undefined)
   );
   const [mode, setMode] = useState<'days' | 'monthly'>(
     value?.monthly ? 'monthly' : 'days'

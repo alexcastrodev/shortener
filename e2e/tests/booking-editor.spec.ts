@@ -200,3 +200,59 @@ test('the preview lays the form out at the width of a real phone and of a laptop
   await expect(screen.getByRole('heading', { name: form.title })).toBeVisible();
   expect(await size()).toEqual({ width: 1024, overflow: 0 });
 });
+
+test('on a phone, adding a question does not scroll the screen to the preview', async ({ page, signIn }) => {
+  const form = await createForm();
+  await signIn('owner');
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto(`/app/forms/${form.id}`);
+
+  const add = page.getByRole('button', { name: 'Marcação de serviço' });
+  const preview = page.getByText('Pré-visualização', { exact: true });
+  await add.scrollIntoViewIfNeeded();
+  const before = (await preview.boundingBox())!.y;
+  await add.click();
+  await expect(page.getByRole('region', { name: 'Serviços' })).toBeAttached();
+  await page.waitForTimeout(800);
+  expect(Math.abs((await preview.boundingBox())!.y - before)).toBeLessThan(80);
+});
+
+test('on a phone, a long service name wraps instead of overflowing the page', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Corte de cabelo com barba e tratamento completo premium Alexandre')] });
+  await signIn('owner');
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto(`/app/forms/${form.id}`);
+  await page.getByRole('button', { name: /Marcação de serviço$/ }).click();
+  await page.getByRole('button', { name: 'Editar', exact: true }).first().click();
+
+  const remove = page.getByRole('button', { name: /Remover o serviço/ });
+  await expect(remove).toBeVisible();
+  const box = (await remove.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+});
+
+test('with several services, the preview already shows the calendar of the first one', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Nível 1'), service('Nível 2')] });
+  await signIn('owner');
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto(`/app/forms/${form.id}`);
+
+  const screen = page.getByTestId('preview-screen');
+  await expect(screen.getByRole('button', { name: 'Mês seguinte' })).toBeAttached();
+});
+
+test('on a phone, the top actions stack in full-width rows without overflowing', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Sessão')], publish: true });
+  await signIn('owner');
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto(`/app/forms/${form.id}`);
+
+  const responses = page.getByRole('button', { name: /Respostas/ });
+  const unpublish = page.getByRole('button', { name: 'Despublicar' });
+  await expect(unpublish).toBeVisible();
+  const [a, b] = [(await responses.boundingBox())!, (await unpublish.boundingBox())!];
+  expect(a.y).toBeCloseTo(b.y, 0);
+  expect(b.x + b.width).toBeLessThanOrEqual(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+});

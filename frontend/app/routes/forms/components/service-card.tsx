@@ -143,6 +143,10 @@ export function ServiceCard({
               variant="subtle"
               color="red"
               size="compact-sm"
+              maw="100%"
+              h="auto"
+              py={4}
+              styles={{ label: { whiteSpace: 'normal', overflowWrap: 'anywhere', textAlign: 'left' } }}
               onClick={onRemove}
             >
               {t('service_remove', {
@@ -194,7 +198,23 @@ function ServiceFields({
           >
             <Group gap={6}>
               {categories.map(item => (
-                <Chip key={item.id} value={item.id} size="xs">
+                <Chip
+                  key={item.id}
+                  value={item.id}
+                  size="xs"
+                  styles={{
+                  root: { maxWidth: '100%' },
+                  label: {
+                    maxWidth: '100%',
+                    height: 'auto',
+                    minHeight: 'var(--chip-size)',
+                    whiteSpace: 'normal',
+                    overflowWrap: 'anywhere',
+                    textAlign: 'left',
+                    paddingBlock: 4,
+                  },
+                  }}
+                >
                   {item.name || t('category_new')}
                 </Chip>
               ))}

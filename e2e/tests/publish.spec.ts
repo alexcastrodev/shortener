@@ -153,3 +153,16 @@ test('the optional email hint adds an optional email question', async ({ page, s
     { required: false },
   ]);
 });
+
+test('on a phone, the optional email hint keeps its text readable above the button', async ({ page, signIn }) => {
+  const form = await createForm({ name: false, services: [service('Corte')] });
+  await signIn('owner');
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto(`/app/forms/${form.id}`);
+
+  const hint = page.getByText(/Sem uma pergunta de e-mail, ninguém recebe a confirmação/);
+  const button = page.getByRole('button', { name: 'Adicionar pergunta de e-mail opcional' });
+  await expect(hint).toBeVisible();
+  expect((await hint.boundingBox())!.width).toBeGreaterThan(250);
+  expect((await button.boundingBox())!.y).toBeGreaterThan((await hint.boundingBox())!.y);
+});
