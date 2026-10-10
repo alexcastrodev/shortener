@@ -1,3 +1,4 @@
 .env
 tmp
 .claude
+.DS_Store

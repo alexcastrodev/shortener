@@ -4,6 +4,7 @@ module Oauth
 
     LOOPBACK_HOSTS = ["127.0.0.1", "[::1]", "localhost"].freeze
     MAX_LENGTH = 2048
+    APP_REDIRECTS = ["fyi.kurz.app://oauth/callback"].freeze
 
     def allowed_hosts
       ENV.fetch("MCP_REDIRECT_HOSTS", "claude.ai,claude.com,chatgpt.com").split(",").map(&:strip).reject(&:empty?)
@@ -27,6 +28,7 @@ module Oauth
     def parse(value)
       return unless value.is_a?(String) && value.length <= MAX_LENGTH && value == value.strip && value.ascii_only?
       return if value.match?(/[\u0000-\u001f\\]/)
+      return URI.parse(value) if APP_REDIRECTS.include?(value)
 
       uri = URI.parse(value)
       return unless uri.is_a?(URI::HTTP) && uri.host.present? && uri.fragment.nil? && uri.userinfo.nil?

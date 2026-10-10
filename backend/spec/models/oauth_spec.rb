@@ -19,6 +19,15 @@ RSpec.describe("OAuth models") do
       expect(client.redirect_uri?("https://claude.ai/api/mcp/auth_callback")).to(be(true))
       expect(client.redirect_uri?("https://claude.ai/api/mcp/auth_callback/")).to(be(false))
     end
+
+    it "accepts the Kurz app callback and no other custom scheme" do
+      app = OauthClient.new(client_name: "App", redirect_uris: ["fyi.kurz.app://oauth/callback"])
+      expect(app).to(be_valid)
+      expect(app.redirect_uri?("fyi.kurz.app://oauth/callback")).to(be(true))
+      expect(app.redirect_uri?("fyi.kurz.app://oauth/other")).to(be(false))
+      expect(OauthClient.new(client_name: "x", redirect_uris: ["fyi.kurz.app://oauth/callback/"])).not_to(be_valid)
+      expect(OauthClient.new(client_name: "x", redirect_uris: ["evil.app://oauth/callback"])).not_to(be_valid)
+    end
   end
 
   describe OauthGrant do

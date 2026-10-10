@@ -42,7 +42,7 @@ const KEYS = [
 function safeRedirect(url: string) {
   try {
     const target = new URL(url);
-    return target.protocol === 'https:' || target.protocol === 'http:' ? target.toString() : null;
+    return ['https:', 'http:', 'fyi.kurz.app:'].includes(target.protocol) ? target.toString() : null;
   } catch {
     return null;
   }
