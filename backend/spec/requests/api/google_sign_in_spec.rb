@@ -8,6 +8,7 @@ RSpec.describe("Sign in with Google", type: :request) do
     example.run
   ensure
     ENV.delete("GOOGLE_CLIENT_ID")
+    ENV.delete("GOOGLE_NATIVE_CLIENT_IDS")
   end
 
   before do
@@ -15,7 +16,7 @@ RSpec.describe("Sign in with Google", type: :request) do
   end
 
   def google_says(sub: "google-123", email: "marina@gmail.com", email_verified: true)
-    allow(Google::Auth::IDTokens).to(receive(:verify_oidc).with("id-token", aud: client_id)
+    allow(Google::Auth::IDTokens).to(receive(:verify_oidc).with("id-token", aud: [client_id])
       .and_return("sub" => sub, "email" => email, "email_verified" => email_verified))
   end
 
@@ -100,7 +101,7 @@ RSpec.describe("Sign in with Google", type: :request) do
       stub_request(:post, token_url).to_return(status: 200, body: { id_token: "id-token" }.to_json)
       google_says
 
-      post "/api/login/google", params: { code: "one-time-code" }, as: :json
+      post("/api/login/google", params: { code: "one-time-code" }, as: :json)
 
       expect(response).to(have_http_status(:ok))
       expect(a_request(:post, token_url).with(body: hash_including(
@@ -129,5 +130,59 @@ RSpec.describe("Sign in with Google", type: :request) do
     sign_in
 
     expect(response).to(have_http_status(:not_found))
+  end
+
+  describe "native client ids" do
+    let(:native_id) { "ios-app.apps.googleusercontent.com" }
+
+    it "verifies against the web and native audiences together" do
+      ENV["GOOGLE_NATIVE_CLIENT_IDS"] = " #{native_id} , ,#{native_id},"
+      expect(Google::Auth::IDTokens).to(receive(:verify_oidc).with("id-token", aud: [client_id, native_id])
+        .and_return("sub" => "google-123", "email" => "marina@gmail.com", "email_verified" => true))
+
+      sign_in
+
+      expect(response).to(have_http_status(:ok))
+    end
+
+    it "rejects a token whose audience is not accepted" do
+      ENV["GOOGLE_NATIVE_CLIENT_IDS"] = native_id
+      allow(Google::Auth::IDTokens).to(receive(:verify_oidc).and_raise(Google::Auth::IDTokens::AudienceMismatchError))
+
+      sign_in
+
+      expect(response).to(have_http_status(:unauthorized))
+      expect(json["error"]).to(eq("google_invalid_token"))
+      expect(User.count).to(eq(0))
+    end
+
+    it "works with only native ids, and still exchanges codes only with the web client" do
+      ENV.delete("GOOGLE_CLIENT_ID")
+      ENV["GOOGLE_NATIVE_CLIENT_IDS"] = native_id
+      expect(GoogleSignIn.enabled?).to(be(true))
+      allow(Google::Auth::IDTokens).to(receive(:verify_oidc).with("id-token", aud: [native_id])
+        .and_return("sub" => "google-123", "email" => "marina@gmail.com", "email_verified" => true))
+
+      sign_in
+      expect(response).to(have_http_status(:ok))
+
+      ENV["GOOGLE_CLIENT_SECRET"] = "secret"
+      post("/api/login/google", params: { code: "one-time-code" }, as: :json)
+      expect(response).to(have_http_status(:unauthorized))
+      expect(a_request(:post, "https://oauth2.googleapis.com/token")).not_to(have_been_made)
+    ensure
+      ENV.delete("GOOGLE_CLIENT_SECRET")
+    end
+
+    it "treats blank values as no audience" do
+      ENV.delete("GOOGLE_CLIENT_ID")
+      ["", "  ", " , ,"].each do |value|
+        ENV["GOOGLE_NATIVE_CLIENT_IDS"] = value
+        expect(GoogleSignIn.audiences).to(eq([]))
+        expect(GoogleSignIn.enabled?).to(be(false))
+      end
+      ENV["GOOGLE_CLIENT_ID"] = "  "
+      expect(GoogleSignIn.enabled?).to(be(false))
+    end
   end
 end

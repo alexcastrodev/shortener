@@ -21,8 +21,12 @@ class GoogleSignIn
 
   Result = Data.define(:user, :error)
 
+  def self.audiences
+    [ENV["GOOGLE_CLIENT_ID"].to_s, *ENV["GOOGLE_NATIVE_CLIENT_IDS"].to_s.split(",")].map(&:strip).reject(&:empty?).uniq
+  end
+
   def self.enabled?
-    ENV["GOOGLE_CLIENT_ID"].present?
+    audiences.any?
   end
 
   def initialize(credential: nil, code: nil)
@@ -36,7 +40,7 @@ class GoogleSignIn
     id_token = code.present? ? exchange_code : credential
     return failure(:invalid_token) if id_token.blank?
 
-    payload = Google::Auth::IDTokens.verify_oidc(id_token, aud: ENV["GOOGLE_CLIENT_ID"])
+    payload = Google::Auth::IDTokens.verify_oidc(id_token, aud: self.class.audiences)
     return failure(:email_not_verified) unless payload["email_verified"] == true
 
     user = link(payload["sub"].to_s, payload["email"].to_s.strip.downcase)
@@ -57,7 +61,7 @@ class GoogleSignIn
   # nil when Google refuses the code (expired, reused, wrong client).
   def exchange_code
     secret = ENV["GOOGLE_CLIENT_SECRET"]
-    return if secret.blank?
+    return if secret.blank? || ENV["GOOGLE_CLIENT_ID"].blank?
 
     http = Net::HTTP.new(TOKEN_URL.host, TOKEN_URL.port)
     http.use_ssl = true
