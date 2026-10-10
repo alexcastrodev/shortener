@@ -83,11 +83,15 @@ export function PagedForm({
     setIntroduced(true);
     const at = pages.findIndex(fields => fields.some(item => item.id === activeFieldId));
     if (at >= 0) setPage(at);
-    requestAnimationFrame(() =>
-      document
-        .getElementById(`${uid}-wrap-${activeFieldId}`)
-        ?.scrollIntoView({ block: 'center' })
-    );
+    requestAnimationFrame(() => {
+      const target = document.getElementById(`${uid}-wrap-${activeFieldId}`);
+      const screen = target?.closest<HTMLElement>('[data-testid="preview-screen"]');
+      if (!target || !screen) return;
+      const scale = screen.getBoundingClientRect().height / screen.clientHeight || 1;
+      const offset =
+        (target.getBoundingClientRect().top - screen.getBoundingClientRect().top) / scale;
+      screen.scrollTop += offset - (screen.clientHeight - target.offsetHeight) / 2;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFieldId]);
 

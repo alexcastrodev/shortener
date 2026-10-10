@@ -200,3 +200,19 @@ test('the preview lays the form out at the width of a real phone and of a laptop
   await expect(screen.getByRole('heading', { name: form.title })).toBeVisible();
   expect(await size()).toEqual({ width: 1024, overflow: 0 });
 });
+
+test('on a phone, adding a question does not scroll the screen to the preview', async ({ page, signIn }) => {
+  const form = await createForm();
+  await signIn('owner');
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto(`/app/forms/${form.id}`);
+
+  const add = page.getByRole('button', { name: 'Marcação de serviço' });
+  const preview = page.getByText('Pré-visualização', { exact: true });
+  await add.scrollIntoViewIfNeeded();
+  const before = (await preview.boundingBox())!.y;
+  await add.click();
+  await expect(page.getByRole('region', { name: 'Serviços' })).toBeAttached();
+  await page.waitForTimeout(800);
+  expect(Math.abs((await preview.boundingBox())!.y - before)).toBeLessThan(80);
+});
