@@ -101,7 +101,7 @@ RSpec.describe("Sign in with Google", type: :request) do
       stub_request(:post, token_url).to_return(status: 200, body: { id_token: "id-token" }.to_json)
       google_says
 
-      post "/api/login/google", params: { code: "one-time-code" }, as: :json
+      post("/api/login/google", params: { code: "one-time-code" }, as: :json)
 
       expect(response).to(have_http_status(:ok))
       expect(a_request(:post, token_url).with(body: hash_including(
@@ -167,7 +167,7 @@ RSpec.describe("Sign in with Google", type: :request) do
       expect(response).to(have_http_status(:ok))
 
       ENV["GOOGLE_CLIENT_SECRET"] = "secret"
-      post "/api/login/google", params: { code: "one-time-code" }, as: :json
+      post("/api/login/google", params: { code: "one-time-code" }, as: :json)
       expect(response).to(have_http_status(:unauthorized))
       expect(a_request(:post, "https://oauth2.googleapis.com/token")).not_to(have_been_made)
     ensure
