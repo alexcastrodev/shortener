@@ -258,7 +258,23 @@ export function ExceptionsSection({
                   >
                     <Group gap={6}>
                       {savedServices.map(service => (
-                        <Chip key={service.key} value={service.id!} size="xs">
+                        <Chip
+                          key={service.key}
+                          value={service.id!}
+                          size="xs"
+                          styles={{
+                            root: { maxWidth: '100%' },
+                            label: {
+                              maxWidth: '100%',
+                              height: 'auto',
+                              minHeight: 'var(--chip-size)',
+                              whiteSpace: 'normal',
+                              overflowWrap: 'anywhere',
+                              textAlign: 'left',
+                              paddingBlock: 4,
+                            },
+                          }}
+                        >
                           {service.name}
                         </Chip>
                       ))}

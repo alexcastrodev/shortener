@@ -216,3 +216,18 @@ test('on a phone, adding a question does not scroll the screen to the preview', 
   await page.waitForTimeout(800);
   expect(Math.abs((await preview.boundingBox())!.y - before)).toBeLessThan(80);
 });
+
+test('on a phone, a long service name wraps instead of overflowing the page', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Corte de cabelo com barba e tratamento completo premium Alexandre')] });
+  await signIn('owner');
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto(`/app/forms/${form.id}`);
+  await page.getByRole('button', { name: /Marcação de serviço$/ }).click();
+  await page.getByRole('button', { name: 'Editar', exact: true }).first().click();
+
+  const remove = page.getByRole('button', { name: /Remover o serviço/ });
+  await expect(remove).toBeVisible();
+  const box = (await remove.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+});
