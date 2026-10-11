@@ -67,7 +67,7 @@ In the editor the number sits under the monthly price ("Included sessions (optio
 
 In the public form a monthly offer with an allowance shows the month chips (this month, next month) and the same calendar and time grid as single sessions, locked to that month and with a counter ("3 of 5 sessions included"). `toggleSession` takes the allowance as a cap and answers `limit` when a pick would go over it, with the message of the period; tapping a chosen time removes it and frees its place, and changing the month clears the picks. The sessions of a plan count for the overlap check against the other services of the booking like any other session, and the waiting list is not offered inside a plan. The review and the bar list the picked days and show the plan price once.
 
-The slots endpoint knows nothing about the monthly duration: a time is offered when it is free for the durations of the service, and the server has the last word (a time that is too short for a longer monthly duration is refused as `unavailable`, the whole plan).
+The slots endpoint answers for the monthly duration when asked with `monthly=1` (`only: [Durations.monthly_minutes(service)]`, the same query `Book.cast_plan` makes): a time is offered only if the monthly duration fits, with that duration alone in `durations`, and the waiting list's `full` is left out. Any other value of `monthly`, or a service without a monthly offer, is a 422 `invalid_monthly`. The public form's plan picker asks with it, so the visitor sees only times the server accepts; the server still has the last word.
 
 ## Several services in one booking
 
