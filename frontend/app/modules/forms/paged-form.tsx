@@ -226,11 +226,6 @@ export function PagedForm({
     );
   }
 
-  let number = pages
-    .slice(0, current)
-    .flat()
-    .filter(item => !isSection(item)).length;
-
   return (
     <div ref={root} className={shell} style={theme.style}>
       {pages.length > 1 && (
@@ -279,7 +274,6 @@ export function PagedForm({
               </div>
             );
           }
-          number += 1;
           const inputId = `${uid}-${field.id}`;
           return (
             <div
@@ -289,9 +283,6 @@ export function PagedForm({
               onClick={mode === 'preview' ? () => onSelectField?.(field.id) : undefined}
             >
               <label htmlFor={inputId} className={`text-xl font-semibold ${theme.title}`}>
-                <span className={`mr-2 font-mono text-xs ${theme.bio}`}>
-                  {String(number).padStart(2, '0')}
-                </span>
                 {field.label}
                 {field.required && <span aria-hidden="true"> *</span>}
               </label>

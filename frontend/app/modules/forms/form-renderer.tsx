@@ -242,9 +242,6 @@ function SequentialForm({
         </span>
       </p>
       <label htmlFor={inputId} className={`text-xl font-semibold ${theme.title}`}>
-        <span aria-hidden="true" className={`mr-3 font-mono text-xs ${theme.bio}`}>
-          {String(step + 1).padStart(2, '0')} →
-        </span>
         {field!.label}
         {field!.required && <span aria-hidden="true"> *</span>}
       </label>
