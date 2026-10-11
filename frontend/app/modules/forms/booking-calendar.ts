@@ -83,17 +83,30 @@ export function dayCell(
   };
 }
 
-export function keepFree<T extends { date: string; time: string }>(
+export function keepFree<
+  T extends { date: string; time: string; duration?: number },
+>(
   sessions: T[],
-  slots: { date: string; time: string }[],
+  slots: { date: string; time: string; durations?: number[] }[],
   range: { from: string; to: string }
 ): T[] {
-  const free = new Set(slots.map(slot => `${slot.date}|${slot.time}`));
+  const free = new Set(
+    slots.flatMap(slot => [
+      `${slot.date}|${slot.time}`,
+      ...(slot.durations ?? []).map(
+        duration => `${slot.date}|${slot.time}|${duration}`
+      ),
+    ])
+  );
   return sessions.filter(
     session =>
       session.date < range.from ||
       session.date > range.to ||
-      free.has(`${session.date}|${session.time}`)
+      free.has(
+        session.duration === undefined
+          ? `${session.date}|${session.time}`
+          : `${session.date}|${session.time}|${session.duration}`
+      )
   );
 }
 

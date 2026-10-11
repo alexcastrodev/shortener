@@ -18,7 +18,7 @@ export type MonthlyChoice = { month: string; weekdays: string[]; time: string };
 
 export type BookingAnswer = {
   service: string;
-  sessions: { date: string; time: string }[];
+  sessions: { date: string; time: string; duration?: number }[];
   monthly?: MonthlyChoice;
 };
 

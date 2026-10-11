@@ -3,7 +3,7 @@ import { pickDay } from '../support/calendar.ts';
 import { nextWeekdays } from '../support/dates.ts';
 import { expect, test } from '../support/fixtures.ts';
 import { appointmentsOf, createForm, service, type FormOptions } from '../support/forms.ts';
-import { firstWeekdayOfNextMonth, monthLabel, PublicForm, shortDate } from '../support/public-form.ts';
+import { bookingBar, firstWeekdayOfNextMonth, monthLabel, PublicForm, shortDate } from '../support/public-form.ts';
 
 async function open(page: Page, options: FormOptions) {
   const form = await createForm({ name: false, publish: true, ...options });
@@ -38,7 +38,7 @@ test('the bar lists the chosen days and the total follows the number of sessions
   const [first, second, third] = nextWeekdays(3, 3);
 
   await choose(page, first, '09:00');
-  await expect(page.getByText(`${shortDate(first)} · 09:00`)).toBeVisible();
+  await expect(bookingBar(page).getByText(`${shortDate(first)} · 09:00`)).toBeVisible();
   await expect(page.getByText('Sessão · 1 sessão')).toBeVisible();
   await expect(page.getByText(/^10,00\s*€$/)).toBeVisible();
 

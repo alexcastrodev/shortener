@@ -274,3 +274,48 @@ test('the preview follows the booking editor before saving and shows the service
   await expect(screen.getByRole('radio', { name: /Nível 2 avançado/ })).toBeChecked();
   expect(bookingOf(await ownerForm(form.id)).services[1].name).toBe('Nível 2');
 });
+
+test('other durations and a monthly duration are saved with the service and the preview offers them', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Piano', { duration: 60, price: 40, currency: 'EUR', times: ['09:00'] })] });
+  await signIn('owner');
+  const editor = new BookingEditor(page);
+  await editor.open(form.id);
+
+  await editor.services.getByRole('button', { name: 'Adicionar duração' }).click();
+  await editor.serviceField('Duração', 1).fill('90');
+  await editor.serviceField('Preço', 1).fill('55');
+  await editor.services.getByLabel('Oferecer reserva fixa mensal').check();
+  await editor.services.getByRole('textbox', { name: 'Duração da sessão mensal' }).fill('45');
+  await editor.services.getByRole('textbox', { name: /^Preço mensal/ }).fill('120');
+  await expect(editor.services.getByText(/Também 90 min/)).toBeVisible();
+
+  await pickDay(page, nextWeekdays(1, 3)[0]);
+  await expect(page.getByRole('button', { name: /^09:00\s*1 h · 40/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^09:00\s*1 h 30 min · 55/ })).toBeVisible();
+
+  await editor.save();
+  await expect(editor.saved).toBeVisible();
+  const [saved] = bookingOf(await ownerForm(form.id)).services;
+  expect(saved.extra_durations).toEqual([{ duration: 90, price: 55 }]);
+  expect(saved.monthly).toEqual({ price: 120, duration: 45 });
+});
+
+test('a repeated duration or an other duration without a price blocks the save', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Piano', { duration: 60, price: 40, currency: 'EUR', times: ['09:00'] })] });
+  await signIn('owner');
+  const editor = new BookingEditor(page);
+  await editor.open(form.id);
+
+  await editor.services.getByRole('button', { name: 'Adicionar duração' }).click();
+  await editor.serviceField('Duração', 1).fill('60');
+  await editor.save();
+  await expect(editor.invalid).toBeVisible();
+  await expect(editor.services.getByText('Cada duração só pode ser usada uma vez')).toBeVisible();
+  await expect(editor.services.getByText('Indique um preço para esta duração')).toBeVisible();
+
+  await editor.serviceField('Duração', 1).fill('90');
+  await editor.serviceField('Preço', 1).fill('55');
+  await editor.save();
+  await expect(editor.saved).toBeVisible();
+  expect(bookingOf(await ownerForm(form.id)).services[0].extra_durations).toEqual([{ duration: 90, price: 55 }]);
+});

@@ -8,7 +8,8 @@ export type ServiceInput = {
   times?: string[];
   price?: number;
   currency?: string;
-  monthly?: { price?: number };
+  extra_durations?: { duration: number; price?: number }[];
+  monthly?: { price?: number; duration?: number };
 };
 
 export type FormOptions = {

@@ -7,6 +7,8 @@ import { useConfirmEmail } from './confirm-email';
 import { isSection } from './field-types';
 import type { Props, SubmitFailure, SubmitFormReceipt } from './form-renderer';
 import { BookingBar } from './booking-bar';
+import { hasSeveralDurations } from './booking-options';
+import { BookingReview } from './booking-review';
 import { SubmissionResult } from './submission-result';
 import { summarize } from './booking-summary';
 import { FormCover } from './form-cover';
@@ -58,16 +60,19 @@ export function PagedForm({
   const last = current === pages.length - 1;
   const primary = `min-h-11 rounded-lg px-5 py-2 font-medium ${theme.button}`;
   const bookingField = pages[current].find(item => item.type === 'booking');
-  const bookingAnswer = bookingField
-    ? (answers[bookingField.id] as BookingAnswer | undefined)
-    : undefined;
-  const bookingSummary = bookingField
-    ? summarize(
-        bookingField.services?.find(item => item.id === bookingAnswer?.service),
-        bookingAnswer,
-        new Date()
-      )
-    : null;
+  const summaryOf = (field: FormField | undefined) => {
+    const answer = field
+      ? (answers[field.id] as BookingAnswer | undefined)
+      : undefined;
+    const service = field?.services?.find(item => item.id === answer?.service);
+    return {
+      service,
+      summary: field ? summarize(service, answer, new Date()) : null,
+    };
+  };
+  const bookingSummary = summaryOf(bookingField).summary;
+  const reviewField = form.fields.find(item => item.type === 'booking');
+  const review = summaryOf(reviewField);
   const pricedService = bookingField?.services?.find(
     item => item.price && item.currency
   );
@@ -79,20 +84,34 @@ export function PagedForm({
     if (mode === 'live' && page > 0) focusFirstInput(root.current);
   }, [mode, page]);
 
-  useEffect(() => {
-    if (!activeFieldId) return;
-    setIntroduced(true);
-    const at = pages.findIndex(fields => fields.some(item => item.id === activeFieldId));
-    if (at >= 0) setPage(at);
+  const reveal = (fieldId: string, scrollPage: boolean) => {
     requestAnimationFrame(() => {
-      const target = document.getElementById(`${uid}-wrap-${activeFieldId}`);
+      const target = document.getElementById(`${uid}-wrap-${fieldId}`);
       const screen = target?.closest<HTMLElement>('[data-testid="preview-screen"]');
-      if (!target || !screen) return;
+      if (!target) return;
+      if (!screen) {
+        if (scrollPage) target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        return;
+      }
       const scale = screen.getBoundingClientRect().height / screen.clientHeight || 1;
       const offset =
         (target.getBoundingClientRect().top - screen.getBoundingClientRect().top) / scale;
       screen.scrollTop += offset - (screen.clientHeight - target.offsetHeight) / 2;
     });
+  };
+
+  const changeBooking = (fieldId: string) => {
+    const at = pages.findIndex(fields => fields.some(item => item.id === fieldId));
+    if (at >= 0) setPage(at);
+    reveal(fieldId, true);
+  };
+
+  useEffect(() => {
+    if (!activeFieldId) return;
+    setIntroduced(true);
+    const at = pages.findIndex(fields => fields.some(item => item.id === activeFieldId));
+    if (at >= 0) setPage(at);
+    reveal(activeFieldId, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFieldId]);
 
@@ -309,6 +328,15 @@ export function PagedForm({
           );
         })}
       </div>
+      {last && reviewField && review.service && review.summary && review.summary.count > 0 && (
+        <BookingReview
+          summary={review.summary}
+          serviceName={review.service.name}
+          showPrices={hasSeveralDurations(review.service)}
+          theme={theme}
+          onChange={() => changeBooking(reviewField.id)}
+        />
+      )}
       {last && lastStepSlot}
       {formError && (
         <p role="alert" className={`mt-3 self-start ${alertClass}`}>
