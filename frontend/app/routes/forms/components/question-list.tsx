@@ -194,14 +194,14 @@ export function QuestionList({
   const chooseBookingMode = () => {
     const modes = [
       {
-        mode: undefined,
-        label: t('ed_booking_mode_services'),
-        hint: t('ed_booking_mode_services_hint'),
-      },
-      {
         mode: 'individual' as const,
         label: t('ed_booking_mode_individual'),
         hint: t('ed_booking_mode_individual_hint'),
+      },
+      {
+        mode: undefined,
+        label: t('ed_booking_mode_services'),
+        hint: t('ed_booking_mode_services_hint'),
       },
     ];
     const id = modals.open({
@@ -209,10 +209,11 @@ export function QuestionList({
       centered: true,
       children: (
         <Stack gap="sm">
-          {modes.map(item => (
+          {modes.map((item, index) => (
             <button
               key={item.label}
               type="button"
+              data-autofocus={index === 0 ? true : undefined}
               onClick={() => {
                 modals.close(id);
                 create({ formId: form.id, data: defaultsFor('booking', item.mode) });
