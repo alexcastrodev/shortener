@@ -17,18 +17,22 @@ This page records the decisions the implementation follows. It is open to every 
 |---|---|
 | `forms` | Gains a published snapshot, its version and digest. Visitors read the snapshot, not the draft. |
 | `form_responses` | Gains the published version the visitor answered. |
-| `appointment_slots` | One row per form, service and start time, with `capacity` (NULL means unlimited) and a `booked` counter. |
+| `appointment_slots` | One row per form, resource and start time, with `capacity` (NULL means unlimited) and a `booked` counter. `service_key` is the service that holds the row; `resource_key` says whose time it is. |
 | `appointments` | One row per booked session, tied to its response and its slot. |
 | `appointment_tokens` | Single-purpose links (`manage`, `approve`, `decline`). Only a SHA-256 digest is stored. |
 | `notifications` | One row per event, recipient and channel (`in_app`, `email`, `push`), written in the same transaction as the event. |
 
-Integrity is enforced by the database: `booked` stays between 0 and `capacity`, a slot is unique per form, service and start, appointments and tokens are deleted with their response, and a slot that still has appointments cannot be deleted.
+Integrity is enforced by the database: `booked` stays between 0 and `capacity`, a slot is unique per form, resource and start (and per form, service and start), appointments and tokens are deleted with their response, and a slot that still has appointments cannot be deleted.
 
 ## Durations and prices
 
 A service has a main `duration` and `price` and up to four `extra_durations`, each with its own price (a priced service needs a price on every one, a free service none). The monthly offer may set its own `duration` and `price`; without a duration it uses the service's.
 
 The visitor picks a duration together with the time. Each session is stored with its own duration and price in the appointment snapshot, and the total is the sum of the prices of the chosen durations. `appointment_slots.duration` remembers how long the booking on that time lasts: a full time blocks the times its length covers (plus the buffer), a time with a long booking stops offering the durations that would run into it, and a partly booked time only offers the duration it was opened with.
+
+## Resources
+
+The time belongs to a **resource**, not to a service. A service is its own resource unless its definition (compiled by a mode, never typed by the owner) names another one with `resource_key`, so today `resource_key == service_key` everywhere and nothing is shared. Services that name the same resource share its hours: the first booking takes the row, no other service can book that hour while it holds a place (a service with capacity can keep adding places of its own class), and the row goes to another service once it is free again. The hours and durations around a booking of another service are blocked too, with the buffer: `FreeSlots` turns the rows held by other services of the resource into the time `Slots` must stay out of.
 
 ## Booking
 

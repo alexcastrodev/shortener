@@ -23,7 +23,7 @@ module Appointments
         old = Appointment.lock.find(row.id)
         next unless Appointment::HOLDING.include?(old.status)
 
-        slot_id = Reserve.call(form: form, service_key: service["id"], capacity: service["capacity"], times: [target[:starts_at]], durations: { target[:starts_at].to_i => minutes }).first
+        slot_id = Reserve.call(form: form, service_key: service["id"], resource_key: Resource.key(service), capacity: service["capacity"], times: [target[:starts_at]], durations: { target[:starts_at].to_i => minutes }).first
         Release.call([old.slot_id])
         attributes = copy(old).merge(slot_id: slot_id, rescheduled_from_id: old.id, decision_message: message.to_s.strip.first(MESSAGE_MAX).presence)
         old.update!(status: "rescheduled", decided_at: now)

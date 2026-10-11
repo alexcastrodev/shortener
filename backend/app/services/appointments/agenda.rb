@@ -22,7 +22,7 @@ module Appointments
       AppointmentSlot.where(form_id: forms.keys, starts_at: range).where("booked > 0 OR held > 0").includes(:appointments).to_h do |slot|
         appointments = slot.appointments.sort_by(&:id)
         snapshot = appointments.first&.snapshot || {}
-        [key(slot.form_id, slot.service_key, slot.starts_at), session(forms[slot.form_id], zone, { service_id: slot.service_key, name: snapshot["name"], duration: slot.duration || snapshot["duration"], starts_at: slot.starts_at, capacity: slot.capacity, booked: slot.booked, appointments: appointments })]
+        [key(slot.form_id, slot.resource_key || slot.service_key, slot.starts_at), session(forms[slot.form_id], zone, { service_id: slot.service_key, name: snapshot["name"], duration: slot.duration || snapshot["duration"], starts_at: slot.starts_at, capacity: slot.capacity, booked: slot.booked, appointments: appointments })]
       end
     end
 
@@ -38,7 +38,7 @@ module Appointments
         rules = booking["rules"].merge(OPEN_RULES)
         booking["services"].each do |service|
           Slots.call(service: service, rules: rules, from: start, to: [to, start + (MAX_RANGE_DAYS - 1)].min, now: now, exceptions: booking["exceptions"].to_a).each do |slot|
-            result[key(form.id, service["id"], slot[:starts_at])] = session(form, zone, { service_id: service["id"], name: service["name"], duration: service["duration"], starts_at: slot[:starts_at], capacity: service["capacity"], booked: 0, appointments: [] })
+            result[key(form.id, Resource.key(service), slot[:starts_at])] ||= session(form, zone, { service_id: service["id"], name: service["name"], duration: service["duration"], starts_at: slot[:starts_at], capacity: service["capacity"], booked: 0, appointments: [] })
           end
         end
       end

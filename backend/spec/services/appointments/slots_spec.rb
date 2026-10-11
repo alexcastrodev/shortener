@@ -87,4 +87,38 @@ RSpec.describe(Appointments::Slots) do
       expect(day(only: [90]).map { |slot| slot[:durations] }.uniq).to(eq([[90]]))
     end
   end
+
+  describe "time taken by another service of the same resource" do
+    let(:service) { { "id" => "physics", "duration" => 60, "extra_durations" => [{ "duration" => 90, "price" => 5 }], "capacity" => 1, "days" => ["mon"], "times" => ["09:00", "10:00", "11:00", "12:00"] } }
+    let(:monday) { Date.new(2026, 11, 2) }
+    let(:now) { Time.utc(2026, 11, 1) }
+
+    def day(occupied:, **options) = slots(from: monday, to: monday, now: now, occupied: occupied, **options)
+
+    def at(time) = Time.utc(2026, 11, 2, *time.split(":").map(&:to_i))
+
+    it "removes the hour itself" do
+      result = day(occupied: [{ starts_at: at("10:00"), minutes: 60 }])
+      expect(result.map { |slot| slot[:time] }).to(eq(["09:00", "11:00", "12:00"]))
+    end
+
+    it "keeps only the durations that end before it starts and start after it ends" do
+      result = day(occupied: [{ starts_at: at("11:00"), minutes: 60 }])
+      expect(result.map { |slot| [slot[:time], slot[:durations]] }).to(eq([["09:00", [60, 90]], ["10:00", [60]], ["12:00", [60, 90]]]))
+    end
+
+    it "blocks the start that falls inside a long booking" do
+      result = day(occupied: [{ starts_at: at("09:00"), minutes: 90 }])
+      expect(result.map { |slot| slot[:time] }).to(eq(["11:00", "12:00"]))
+    end
+
+    it "adds the buffer around it" do
+      result = day(rules: { "buffer_minutes" => 60 }, occupied: [{ starts_at: at("11:00"), minutes: 60 }])
+      expect(result.map { |slot| [slot[:time], slot[:durations]] }).to(eq([["09:00", [60]]]))
+    end
+
+    it "changes nothing when nothing is taken" do
+      expect(day(occupied: []).map { |slot| slot[:time] }).to(eq(["09:00", "10:00", "11:00", "12:00"]))
+    end
+  end
 end
