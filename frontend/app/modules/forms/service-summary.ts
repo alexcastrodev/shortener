@@ -7,7 +7,8 @@ export type SummaryWords = {
   price: (amount: number, currency: string) => string;
   unlimited: string;
   places: (count: number) => string;
-  monthly: (price: string | null) => string;
+  also: (list: string) => string;
+  monthly: (detail: string | null) => string;
   times: (count: number) => string;
   ownTimes: (days: string) => string;
   day: (day: Day) => string;
@@ -44,16 +45,32 @@ const joined = (parts: (string | null)[]) =>
   parts.filter((part): part is string => Boolean(part)).join(' · ');
 
 export function serviceSummary(service: ServiceValues, words: SummaryWords) {
-  const { price, currency, monthlyPrice } = service;
+  const { price, currency, monthlyPrice, monthlyDuration } = service;
+  const extras = service.extraDurations
+    .filter(item => item.duration !== '')
+    .map(item =>
+      joined([
+        words.minutes(Number(item.duration)),
+        price === '' || item.price === ''
+          ? null
+          : words.price(item.price, currency),
+      ]).replace(' · ', ' ')
+    );
   const details = joined([
     service.duration === '' ? null : words.minutes(service.duration),
     price === '' ? null : words.price(price, currency),
+    extras.length ? words.also(extras.join(', ')) : null,
     service.capacity === '' ? words.unlimited : words.places(service.capacity),
     service.monthly
       ? words.monthly(
-          price !== '' && monthlyPrice !== ''
-            ? words.price(monthlyPrice, currency)
-            : null
+          [
+            monthlyDuration === '' ? null : words.minutes(monthlyDuration),
+            price !== '' && monthlyPrice !== ''
+              ? words.price(monthlyPrice, currency)
+              : null,
+          ]
+            .filter(Boolean)
+            .join(' ') || null
         )
       : null,
   ]);

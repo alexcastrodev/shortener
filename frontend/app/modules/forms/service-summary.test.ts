@@ -15,7 +15,8 @@ const words: SummaryWords = {
   price: (amount, currency) => `${amount} ${currency}`,
   unlimited: 'No limit',
   places: count => `${count} places`,
-  monthly: price => (price ? `Monthly ${price}` : 'Monthly'),
+  also: list => `Also ${list}`,
+  monthly: detail => (detail ? `Monthly ${detail}` : 'Monthly'),
   times: count => `${count} times`,
   ownTimes: days => `${days} own times`,
   day: label,
@@ -77,5 +78,46 @@ test('a service without days or without a valid time is incomplete', () => {
   assert.equal(
     serviceProblem({ ...service, times: [{ key: 'a', value: '' }] }),
     'times'
+  );
+});
+
+test('other durations are listed with their prices after the main one', () => {
+  const service = {
+    ...blankService('Piano'),
+    duration: 60 as const,
+    price: 40,
+    extraDurations: [
+      { key: 'a', duration: 90 as const, price: 55 as const },
+      { key: 'b', duration: '' as const, price: '' as const },
+    ],
+  };
+  assert.equal(
+    serviceSummary(service, words).details,
+    '60 min · 40 EUR · Also 90 min 55 EUR · 1 places'
+  );
+});
+
+test('other durations of a service without a price show only their length', () => {
+  const service = {
+    ...blankService('Piano'),
+    extraDurations: [{ key: 'a', duration: 90 as const, price: '' as const }],
+  };
+  assert.equal(
+    serviceSummary(service, words).details,
+    '30 min · Also 90 min · 1 places'
+  );
+});
+
+test('the monthly offer shows its own duration and price', () => {
+  const service = {
+    ...blankService('Piano'),
+    price: 40,
+    monthly: true,
+    monthlyPrice: 120,
+    monthlyDuration: 45 as const,
+  };
+  assert.equal(
+    serviceSummary(service, words).details,
+    '30 min · 40 EUR · 1 places · Monthly 45 min 120 EUR'
   );
 });

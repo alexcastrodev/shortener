@@ -1,4 +1,6 @@
+import type { FormSlot } from '@internal/core/actions/get-form-slots/get-form-slots.types';
 import type { BookingService } from '@internal/core/types/Form';
+import { bookingOptions } from './booking-options.ts';
 import { pad } from './monthly-booking.ts';
 
 export const MAX_DAYS = 56;
@@ -98,13 +100,16 @@ export function keepFree<T extends { date: string; time: string }>(
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
 export function previewSlots(
-  service: Pick<BookingService, 'days' | 'times'> &
-    Partial<Pick<BookingService, 'times_by_day' | 'capacity'>>,
+  service: Pick<BookingService, 'days' | 'times' | 'duration'> &
+    Partial<
+      Pick<BookingService, 'times_by_day' | 'capacity' | 'extra_durations'>
+    >,
   from: string,
   to: string,
   today: Date
-): { starts_at: string; date: string; time: string; remaining: number }[] {
-  const slots = [];
+): FormSlot[] {
+  const durations = bookingOptions(service).map(item => item.duration);
+  const slots: FormSlot[] = [];
   const first = isoDay(today);
   const [year, month, day] = from.split('-').map(Number);
   for (let cursor = new Date(year, month - 1, day); isoDay(cursor) <= to; ) {
@@ -118,6 +123,7 @@ export function previewSlots(
           date,
           time,
           remaining: service.capacity ?? 1,
+          durations,
         });
     }
     cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + 1);

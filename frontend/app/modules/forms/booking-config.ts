@@ -26,8 +26,10 @@ export type ServiceValues = {
   days: string[];
   times: { key: string; value: string }[];
   byDay: Record<string, { key: string; value: string }[]>;
+  extraDurations: { key: string; duration: number | ''; price: number | '' }[];
   monthly: boolean;
   monthlyPrice: number | '';
+  monthlyDuration: number | '';
 };
 
 export type ExceptionValues = {
@@ -123,6 +125,7 @@ export const blankException = (): ExceptionValues => ({
 });
 
 export const DEFAULT_CURRENCY = 'EUR';
+export const EXTRA_DURATIONS_MAX = 4;
 const DEFAULT_DURATION = 30;
 
 export const blankService = (name: string, categoryId = ''): ServiceValues => ({
@@ -139,8 +142,10 @@ export const blankService = (name: string, categoryId = ''): ServiceValues => ({
     value,
   })),
   byDay: {},
+  extraDurations: [],
   monthly: false,
   monthlyPrice: '',
+  monthlyDuration: '',
 });
 
 export function initialValues(field?: FormField): Values {
@@ -163,8 +168,14 @@ export function initialValues(field?: FormField): Values {
       capacity: service.capacity ?? '',
       days: service.days,
       times: service.times.map(value => ({ key: newKey(), value })),
+      extraDurations: (service.extra_durations ?? []).map(item => ({
+        key: newKey(),
+        duration: item.duration,
+        price: item.price ?? '',
+      })),
       monthly: Boolean(service.monthly),
       monthlyPrice: service.monthly?.price ?? '',
+      monthlyDuration: service.monthly?.duration ?? '',
       byDay: Object.fromEntries(
         Object.entries(service.times_by_day ?? {}).map(([day, list]) => [
           day,
@@ -252,6 +263,12 @@ export function toBookingInput(
     services: values.services.map(service => {
       const price = orNull(service.price);
       const capacity = orNull(service.capacity);
+      const extras = service.extraDurations
+        .filter(item => item.duration !== '')
+        .map(item => ({
+          duration: Number(item.duration),
+          ...(price !== null && item.price !== '' ? { price: item.price } : {}),
+        }));
       const ownDays = DAYS.filter(
         day => service.days.includes(day) && service.byDay[day]
       );
@@ -275,11 +292,15 @@ export function toBookingInput(
         days: DAYS.filter(day => service.days.includes(day)),
         times: [...new Set(service.times.map(time => time.value))].sort(),
         ...(byDay ? { times_by_day: byDay } : {}),
+        ...(extras.length ? { extra_durations: extras } : {}),
         ...(service.monthly
           ? {
               monthly: {
                 ...(price !== null && service.monthlyPrice !== ''
                   ? { price: service.monthlyPrice }
+                  : {}),
+                ...(service.monthlyDuration !== ''
+                  ? { duration: service.monthlyDuration }
                   : {}),
               },
             }

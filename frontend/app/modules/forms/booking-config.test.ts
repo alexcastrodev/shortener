@@ -458,3 +458,54 @@ test('a day off that was typed but not added starts blank and is never sent', ()
   };
   assert.deepEqual(toBookingInput(typed, true).exceptions, []);
 });
+
+const piano: FormField = {
+  ...field,
+  services: [
+    {
+      ...field.services![0],
+      duration: 60,
+      price: 40,
+      currency: 'EUR',
+      extra_durations: [{ duration: 90, price: 55 }],
+      monthly: { price: 120, duration: 45 },
+    },
+  ],
+};
+
+test('other durations and the monthly duration load and are sent back', () => {
+  const values = initialValues(piano);
+  assert.deepEqual(
+    values.services[0].extraDurations.map(({ duration, price }) => ({ duration, price })),
+    [{ duration: 90, price: 55 }]
+  );
+  assert.equal(values.services[0].monthlyDuration, 45);
+
+  const [sent] = toBookingInput(values, false).services!;
+  assert.deepEqual(sent.extra_durations, [{ duration: 90, price: 55 }]);
+  assert.deepEqual(sent.monthly, { price: 120, duration: 45 });
+});
+
+test('a service with no other durations sends none, and a new one starts without', () => {
+  const values = initialValues(field);
+  assert.equal('extra_durations' in toBookingInput(values, false).services![0], false);
+  assert.deepEqual(blankService('Class').extraDurations, []);
+  assert.equal(blankService('Class').monthlyDuration, '');
+});
+
+test('an unfinished other duration is not sent, and without a service price no extra price goes out', () => {
+  const values = initialValues(piano);
+  values.services[0].extraDurations.push({ key: 'x', duration: '', price: '' });
+  assert.equal(toBookingInput(values, false).services![0].extra_durations!.length, 1);
+
+  values.services[0].price = '';
+  assert.deepEqual(toBookingInput(values, false).services![0].extra_durations, [
+    { duration: 90 },
+  ]);
+});
+
+test('an empty monthly duration is left out so the service duration applies', () => {
+  const values = initialValues(piano);
+  values.services[0].monthlyDuration = '';
+  assert.deepEqual(toBookingInput(values, false).services![0].monthly, { price: 120 });
+});
