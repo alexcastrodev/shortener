@@ -87,7 +87,7 @@ Publishing stores one snapshot of the form. The public form and the validation o
 
 ## Time
 
-Each owner has a time zone (`users.time_zone`, IANA). A copy is kept inside the published configuration, so changing the account time zone never moves existing availability. Slots are stored in UTC. The past is fact (slots and appointments); the future is a projection of the published configuration, expanded by one pure service.
+Each owner has a time zone (`users.time_zone`, IANA), Europe/Lisbon until the owner chooses another one in the account page. It decides how times are shown to the owner (agenda, e-mails) and the zone a new booking question starts with; whatever is stored is UTC. A copy is kept inside the published configuration, so changing the account time zone never moves existing availability: the zone of a form is what its wall-clock times ("19:30") mean. Slots are stored in UTC. The past is fact (slots and appointments); the future is a projection of the published configuration, expanded by one pure service.
 
 ## Notifications and email
 

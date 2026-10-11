@@ -1,3 +1,7 @@
 {
-  "language": "Language"
+  "language": "Language",
+  "time_zone": "Time zone",
+  "time_zone_hint": "Used to show times in your agenda and in the e-mails you receive. Forms you already created keep the time zone they were created with.",
+  "time_zone_saved": "Time zone saved",
+  "time_zone_failed": "Could not save the time zone"
 }
