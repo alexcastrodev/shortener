@@ -46,7 +46,7 @@
     "@react-router/dev": "^8.4.0",
     "@tailwindcss/vite": "^4.1.13",
     "@types/axios": "^0.14.4",
-    "@types/node": "^22",
+    "@types/node": "^26",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "postcss": "^8.5.28",
