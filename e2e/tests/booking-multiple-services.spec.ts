@@ -168,3 +168,40 @@ test('a ticked service with no time chosen blocks the send and names the service
   await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toBeVisible();
   expect(await appointmentsOf(form.id)).toHaveLength(1);
 });
+
+test('a time chosen for one service is kept when another service is ticked afterwards', async ({ page }) => {
+  const form = await createForm({ rules: { multiple_services: true }, services: [guitar(), drums()], publish: true });
+  const view = new PublicForm(page, form);
+  const [day] = nextWeekdays(1, 3);
+  const bar = bookingBar(page);
+  await view.open();
+
+  await view.tickService('Bateria');
+  await view.pickSlotIn('Bateria', day, '10:00');
+  const chosen = view.block('Bateria').getByRole('button', { name: '10:00', exact: true });
+  await expect(chosen).toHaveAttribute('aria-pressed', 'true');
+  await expect(bar.getByText(money(50))).toBeVisible();
+
+  await view.tickService('Guitarra');
+  await expect(chosen).toHaveAttribute('aria-pressed', 'true');
+  await expect(bar.getByText(money(50))).toBeVisible();
+  await expect(bar.getByText('Falta escolher: Guitarra')).toBeVisible();
+  await expect(bar.getByText('Nenhum horário escolhido')).toHaveCount(0);
+
+  await view.pickSlotIn('Guitarra', day, '11:00');
+  await expect(bar.getByText(money(90))).toBeVisible();
+});
+
+test('the radio list of a form without the rule still keeps only one service', async ({ page }) => {
+  const form = await createForm({ services: [guitar(), drums()], publish: true });
+  const view = new PublicForm(page, form);
+  const [day] = nextWeekdays(1, 3);
+  await view.open();
+
+  await view.chooseService('Bateria');
+  await view.pickSlot(day, '10:00');
+  await expect(bookingBar(page).getByText(money(50))).toBeVisible();
+
+  await view.chooseService('Guitarra');
+  await expect(bookingBar(page).getByText('Nenhum horário escolhido')).toBeVisible();
+});
