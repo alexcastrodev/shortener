@@ -21,6 +21,7 @@ import {
   hasSeveralDurations,
   monthlyMinutes,
 } from './booking-options.ts';
+import { helpIdFor } from './field-title.ts';
 import { questionTitle } from './field-types';
 import { PickHeading } from './pick-heading.tsx';
 import { ServiceBlock, type LoadSlots } from './service-block.tsx';
@@ -152,6 +153,7 @@ export function BookingInput({
       id={inputId}
       role="group"
       aria-label={questionTitle(field)}
+      aria-describedby={helpIdFor(field, inputId)}
       className="space-y-4"
     >
       {grouped && (
