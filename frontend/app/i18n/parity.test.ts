@@ -6,7 +6,7 @@ import { DEFAULT_LOCALE, LOCALES } from './locales.ts';
 
 const here = import.meta.dirname;
 const appDir = resolve(here, '..');
-const packagesDir = resolve(here, '../../../packages');
+const packagesDir = resolve(here, '../../packages');
 const PLURAL = /_(zero|one|two|few|many|other)$/;
 
 type Tree = { [key: string]: string | Tree };

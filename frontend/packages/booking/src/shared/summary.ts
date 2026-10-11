@@ -3,7 +3,7 @@ import {
   TIME,
   type ScheduleValues,
   type ServiceValues,
-} from './config.ts';
+} from './values.ts';
 
 export type Day = (typeof DAYS)[number];
 

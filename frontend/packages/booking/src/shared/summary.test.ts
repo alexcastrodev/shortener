@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { blankSchedule, blankService } from './config.ts';
+import { blankSchedule } from './schedule.ts';
+import { blankService } from './service.ts';
 import {
   dayList,
   scheduleSummary,

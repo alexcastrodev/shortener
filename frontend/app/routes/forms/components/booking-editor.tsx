@@ -1,13 +1,11 @@
 import { Button, Group, Stack, TextInput } from '@mantine/core';
 import { useForm, type FormErrors } from '@mantine/form';
-import type { TFunction } from 'i18next';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { IconPlus } from '@tabler/icons-react';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
 import type { FormField, FormFieldInput } from '@internal/core/types/Form';
 import { CategoriesSection } from './categories-section';
 import { ExceptionsSection } from './exceptions-section';
@@ -16,35 +14,18 @@ import { ScheduleFields } from './schedule-fields';
 import { ServiceCard } from './service-card';
 import {
   DAYS,
-  TIME,
   blankLesson,
   blankService,
+  bookingSchema,
   initialValues,
+  modeFor,
   scheduleSummary,
-  timeoutInRange,
   toBookingInput,
   type Values,
 } from '@internal/booking';
 import { useBookingDraft } from '../../../modules/forms/booking-draft.ts';
 
 const SERVICE_ERROR = /^services\.(\d+)\./;
-
-const scheduleShape = (t: TFunction<'booking'>) => ({
-  days: z.array(z.string()).min(1, t('error_days')),
-  times: z
-    .array(z.object({ value: z.string().regex(TIME, t('error_time')) }))
-    .min(1, t('error_times')),
-  byDay: z.record(
-    z.string(),
-    z.array(z.object({ value: z.string().regex(TIME, t('error_time')) }))
-  ),
-});
-
-const looseSchedule = {
-  days: z.array(z.string()),
-  times: z.array(z.object({ value: z.string() })),
-  byDay: z.record(z.string(), z.array(z.object({ value: z.string() }))),
-};
 
 export function BookingEditor({
   field,
@@ -64,203 +45,8 @@ export function BookingEditor({
   const individual = field?.mode === 'individual';
 
   const schema = useMemo(
-    () =>
-      z
-        .object({
-          ...(individual ? { availability: z.object(scheduleShape(t)) } : {}),
-          label: z.string().trim().min(1).max(300),
-          help: z.string().max(500),
-          approval: z.enum(['auto', 'manual']),
-          approval_timeout_minutes: z.union([z.number(), z.literal('')]),
-          waitlist: z.boolean(),
-          waitlist_confirm_minutes: z.union([z.number(), z.literal('')]),
-          approval_soon_only: z.boolean(),
-          approval_within_minutes: z.union([z.number(), z.literal('')]),
-          categories: z.array(
-            z.object({
-              name: z.string().trim().min(1, t('category_name_error')).max(60),
-            })
-          ),
-          exceptionDraft: z.object({ from: z.string() }).loose(),
-          exceptions: z.array(
-            z
-              .object({
-                kind: z.enum(['closed', 'special']),
-                from: z
-                  .string()
-                  .regex(/^\d{4}-\d{2}-\d{2}$/, t('err_exc_from')),
-                to: z.string(),
-                times: z.array(z.object({ value: z.string() })),
-              })
-              .check(ctx => {
-                const { kind, from, to, times } = ctx.value;
-                if (to && from && to < from) {
-                  ctx.issues.push({
-                    code: 'custom',
-                    message: t('err_exc_range'),
-                    path: ['to'],
-                    input: to,
-                  });
-                }
-                if (
-                  kind === 'special' &&
-                  !times.some(time => TIME.test(time.value))
-                ) {
-                  ctx.issues.push({
-                    code: 'custom',
-                    message: t('err_exc_times'),
-                    path: ['times'],
-                    input: times,
-                  });
-                }
-              })
-          ),
-          services: z.array(
-            z
-              .object({
-                name: z.string().trim().min(1, t('error_name')).max(100),
-                duration: z
-                  .number(t('error_duration'))
-                  .int()
-                  .min(5, t('error_duration'))
-                  .max(600, t('error_duration')),
-                price: z.union([z.number().min(0), z.literal('')]),
-                currency: z.string(),
-                ownSchedule: z.boolean(),
-                ...(individual ? looseSchedule : scheduleShape(t)),
-                extraDurations: z.array(
-                  z.object({
-                    duration: z
-                      .number(t('error_duration'))
-                      .int()
-                      .min(5, t('error_duration'))
-                      .max(600, t('error_duration')),
-                    price: z.union([z.number().min(0), z.literal('')]),
-                  })
-                ),
-                monthly: z.boolean(),
-                monthlyPrice: z.union([z.number().min(0), z.literal('')]),
-                monthlyDuration: z.union([
-                  z
-                    .number()
-                    .int()
-                    .min(5, t('error_duration'))
-                    .max(600, t('error_duration')),
-                  z.literal(''),
-                ]),
-              })
-              .check(ctx => {
-                const {
-                  duration,
-                  price,
-                  currency,
-                  monthly,
-                  monthlyPrice,
-                  extraDurations,
-                  ownSchedule,
-                  days,
-                  times,
-                  byDay,
-                } = ctx.value;
-                if (individual && ownSchedule) {
-                  z.object(scheduleShape(t))
-                    .safeParse({ days, times, byDay })
-                    .error?.issues.forEach(issue =>
-                      ctx.issues.push({
-                        code: 'custom',
-                        message: issue.message,
-                        path: issue.path,
-                        input: ctx.value,
-                      })
-                    );
-                }
-                const seen = new Set([duration]);
-                extraDurations.forEach((extra, at) => {
-                  if (seen.has(extra.duration)) {
-                    ctx.issues.push({
-                      code: 'custom',
-                      message: t('error_extra_duration_repeated'),
-                      path: ['extraDurations', at, 'duration'],
-                      input: extra.duration,
-                    });
-                  }
-                  seen.add(extra.duration);
-                  if (price !== '' && extra.price === '') {
-                    ctx.issues.push({
-                      code: 'custom',
-                      message: t('error_extra_price'),
-                      path: ['extraDurations', at, 'price'],
-                      input: extra.price,
-                    });
-                  }
-                });
-                if (
-                  monthly &&
-                  monthlyPrice !== '' &&
-                  !/^[A-Za-z]{3}$/.test(currency.trim())
-                ) {
-                  ctx.issues.push({
-                    code: 'custom',
-                    message: t('error_price_currency'),
-                    path: ['currency'],
-                    input: currency,
-                  });
-                }
-                if (price !== '' && !/^[A-Za-z]{3}$/.test(currency.trim())) {
-                  ctx.issues.push({
-                    code: 'custom',
-                    message: t('error_price_currency'),
-                    path: ['currency'],
-                    input: currency,
-                  });
-                }
-              })
-          ),
-        })
-        .check(ctx => {
-          const {
-            approval,
-            approval_soon_only: soonOnly,
-            approval_within_minutes: within,
-            approval_timeout_minutes: minutes,
-            waitlist,
-            waitlist_confirm_minutes: confirm,
-            exceptionDraft,
-          } = ctx.value;
-          if (exceptionDraft.from) {
-            ctx.issues.push({
-              code: 'custom',
-              message: t('err_exc_pending'),
-              path: ['exceptionDraft', 'from'],
-              input: exceptionDraft.from,
-            });
-          }
-          if (approval === 'manual' && soonOnly && !timeoutInRange(within)) {
-            ctx.issues.push({
-              code: 'custom',
-              message: t('error_timeout'),
-              path: ['approval_within_minutes'],
-              input: within,
-            });
-          }
-          if (waitlist && !timeoutInRange(confirm, 15, 4320)) {
-            ctx.issues.push({
-              code: 'custom',
-              message: t('error_waitlist_timeout'),
-              path: ['waitlist_confirm_minutes'],
-              input: confirm,
-            });
-          }
-          if (approval === 'manual' && !timeoutInRange(minutes)) {
-            ctx.issues.push({
-              code: 'custom',
-              message: t('error_timeout'),
-              path: ['approval_timeout_minutes'],
-              input: minutes,
-            });
-          }
-        }),
-    [t, individual]
+    () => bookingSchema(modeFor(field?.mode).validation, t),
+    [t, field?.mode]
   );
 
   const form = useForm<Values>({
