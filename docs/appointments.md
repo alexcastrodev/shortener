@@ -30,6 +30,13 @@ A service has a main `duration` and `price` and up to four `extra_durations`, ea
 
 The visitor picks a duration together with the time. Each session is stored with its own duration and price in the appointment snapshot, and the total is the sum of the prices of the chosen durations. `appointment_slots.duration` remembers how long the booking on that time lasts: a full time blocks the times its length covers (plus the buffer), a time with a long booking stops offering the durations that would run into it, and a partly booked time only offers the duration it was opened with.
 
+## Modes
+
+A booking question has a **mode**, chosen when it is created and never changed (`mode` on the field; absent means `services`). `Booking::Modes` has one module per mode. A mode validates the question, says what blocks publishing and compiles the stored definition into the services the engine reads. The compiled definition is what `Forms::PublicDefinition` serves to visitors and what `Appointments::Impact` compares against, so the engine, the slots endpoint and the public form never know which mode a question has.
+
+- `services`: the behaviour described on this page. Every service has its own days and times.
+- `individual`: one teacher with one availability (`availability`: `days`, `times`, `times_by_day`) and any number of lessons that share it. Lessons (`services`) have a name, duration, price, capacity, other durations and a monthly offer, and no schedule. Compiling gives every lesson the availability of the teacher and the resource `main`, so lessons share the hours (see Resources). No categories and no waiting list. Days off and special hours apply to the teacher, or to chosen lessons with `service_ids`. Publishing needs a lesson and at least one day and one time (`availability_incomplete`). The MCP setup tools do not edit this mode yet (`unsupported_mode`); the impact tool works.
+
 ## Resources
 
 The time belongs to a **resource**, not to a service. A service is its own resource unless its definition (compiled by a mode, never typed by the owner) names another one with `resource_key`, so today `resource_key == service_key` everywhere and nothing is shared. Services that name the same resource share its hours: the first booking takes the row, no other service can book that hour while it holds a place (a service with capacity can keep adding places of its own class), and the row goes to another service once it is free again. The hours and durations around a booking of another service are blocked too, with the buffer: `FreeSlots` turns the rows held by other services of the resource into the time `Slots` must stay out of.

@@ -16,6 +16,14 @@ class FormFieldContract < ApplicationContract
       optional(:id).filled(:string)
       required(:name).filled(:string)
     end
+    optional(:mode).filled(:string)
+    optional(:availability).hash do
+      optional(:days).array(:string)
+      optional(:times).array(:string)
+      optional(:times_by_day).hash do
+        ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].each { |day| optional(day.to_sym).array(:string) }
+      end
+    end
     optional(:services).array(:hash) do
       optional(:id).filled(:string)
       optional(:category_id).maybe(:string)
@@ -24,8 +32,8 @@ class FormFieldContract < ApplicationContract
       optional(:price).maybe(:float)
       optional(:currency).maybe(:string)
       optional(:capacity).maybe(:integer)
-      required(:days).array(:string)
-      required(:times).array(:string)
+      optional(:days).array(:string)
+      optional(:times).array(:string)
       optional(:extra_durations).array(:hash) do
         required(:duration).filled(:integer)
         optional(:price).maybe(:float)

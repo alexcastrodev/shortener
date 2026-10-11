@@ -19,6 +19,7 @@ module Forms
     CATEGORY_KEYS = ["id", "name"].freeze
     CATEGORY_NAME_MAX = 60
     TIMES_MAX = 96
+    SCHEDULE_KEYS = ["category_id", "days", "times", "times_by_day"].freeze
     EXTRA_DURATIONS_MAX = 4
     NAME_MAX = 100
     DURATION = (5..600)
@@ -33,6 +34,11 @@ module Forms
     DATE = /\A\d{4}-\d{2}-\d{2}\z/
 
     def errors(field)
+      mode = Booking::Modes.fetch(field["mode"])
+      mode ? mode.errors(field) : ["mode must be one of #{Booking::Modes::NAMES.join(", ")}"]
+    end
+
+    def services_errors(field)
       services = field["services"]
       rules = field["rules"]
       return ["services must be a list"] unless services.is_a?(Array)
@@ -40,6 +46,7 @@ module Forms
 
       result = []
       result << "can have at most #{SERVICES_MAX} services" if services.size > SERVICES_MAX
+      result << "availability belongs to the individual mode" if field.key?("availability")
       category_ids = []
       result.concat(category_errors(field["categories"], category_ids))
       ids = []
@@ -96,12 +103,22 @@ module Forms
       booking = Array(fields).find { |field| field["type"] == "booking" }
       return [] unless booking
 
+      Booking::Modes.fetch(booking["mode"])&.publish_blocks(fields) || []
+    end
+
+    def services_publish_blocks(fields)
+      booking = Array(fields).find { |field| field["type"] == "booking" }
       blocks = []
       services = booking["services"].to_a
       blocks << block("no_service", "add at least one service") if services.empty?
       services.each do |service|
         blocks << block("service_incomplete", "#{service["name"]} needs at least one day and one time", name: service["name"], service_id: service["id"]) if service["days"].blank? || service["times"].blank?
       end
+      blocks.concat(common_blocks(fields, booking))
+    end
+
+    def common_blocks(fields, booking)
+      blocks = []
       answerable = fields.select { |field| field["required"] }
       if booking.dig("rules", "waitlist") == true
         extra = answerable.reject { |field| ["booking"].include?(field["type"]) }.group_by { |field| field["type"] }
@@ -197,22 +214,27 @@ module Forms
       nil
     end
 
-    def service_errors(service)
+    def service_errors(service, schedule: true)
       result = []
-      result << "has unknown keys" unless (service.keys - SERVICE_KEYS).empty?
+      result << "has unknown keys" unless (service.keys - (schedule ? SERVICE_KEYS : SERVICE_KEYS - SCHEDULE_KEYS)).empty?
       name = service["name"]
       result << "name is required (max #{NAME_MAX})" unless name.is_a?(String) && name.strip.present? && name.length <= NAME_MAX && !name.include?("\u0000")
       result << "duration must be between #{DURATION.min} and #{DURATION.max} minutes" unless service["duration"].is_a?(Integer) && DURATION.cover?(service["duration"])
       result.concat(price_errors(service))
       capacity = service["capacity"]
       result << "capacity must be between #{CAPACITY.min} and #{CAPACITY.max} or empty for unlimited" unless capacity.nil? || (capacity.is_a?(Integer) && CAPACITY.cover?(capacity))
-      result << "days must be a list of #{DAYS.join(", ")}" unless service["days"].is_a?(Array) && (service["days"] - DAYS).empty? && service["days"].uniq.size == service["days"].size
-      times = service["times"]
-      result << "times must be unique HH:MM values (max #{TIMES_MAX})" unless times.is_a?(Array) && times.size <= TIMES_MAX && times.all? { |time| time.is_a?(String) && time.match?(TIME) } && times.uniq.size == times.size
-      result.concat(by_day_errors(service))
+      result.concat(schedule_errors(service)) if schedule
       result.concat(extra_duration_errors(service))
       result.concat(monthly_errors(service))
       result
+    end
+
+    def schedule_errors(schedule)
+      result = []
+      result << "days must be a list of #{DAYS.join(", ")}" unless schedule["days"].is_a?(Array) && (schedule["days"] - DAYS).empty? && schedule["days"].uniq.size == schedule["days"].size
+      times = schedule["times"]
+      result << "times must be unique HH:MM values (max #{TIMES_MAX})" unless times.is_a?(Array) && times.size <= TIMES_MAX && times.all? { |time| time.is_a?(String) && time.match?(TIME) } && times.uniq.size == times.size
+      result.concat(by_day_errors(schedule))
     end
 
     def monthly_errors(service)
@@ -297,5 +319,7 @@ module Forms
     def valid_reminders?(list)
       list.nil? || (list.is_a?(Array) && list.size <= REMINDERS_MAX && list.uniq.size == list.size && list.all? { |value| value.is_a?(Integer) && REMINDER_RANGE.cover?(value) })
     end
+
+    public(:block, :rule_errors, :exception_errors, :service_errors, :schedule_errors)
   end
 end

@@ -22,7 +22,7 @@ module Mcp
 
       def self.perform(user:, form_id:, service_id:, from:, to:, step:, lunch: nil, blocks: [])
         form = Mcp::Guards.draft_form(user, form_id)
-        booking = BookingConfigHelpers.draft_booking(form)
+        booking = BookingConfigHelpers.editable_booking(form)
         service = booking["services"].find { |item| item["id"] == service_id } || raise(Mcp::ToolError.new("not_found", "Not found"))
         result = Appointments::GenerateTimes.call(from: from, to: to, step: step, duration: service["duration"], lunch: lunch&.symbolize_keys, blocks: blocks.map(&:symbolize_keys))
         raise Mcp::ToolError.new("invalid_input", result.errors.to_sentence) if result.errors.any?

@@ -16,6 +16,7 @@ module Forms
         field = find_field(form, id)
         attributes = attributes.stringify_keys
         reject(form, :fields, "type cannot be changed") if attributes["type"] && attributes["type"] != field["type"]
+        reject(form, :fields, "mode cannot be changed") if attributes.key?("mode") && attributes["mode"] != field["mode"]
 
         attributes = attributes.merge("rules" => field["rules"].merge(attributes["rules"].stringify_keys)) if field["rules"].is_a?(Hash) && attributes["rules"].is_a?(Hash)
         changed = field.merge(attributes.except("type", "id")).compact
