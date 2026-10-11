@@ -109,7 +109,7 @@ RSpec.describe("MCP appointment tools", type: :request) do
       book(form, name: "Ana")
       book(form, name: "Bo")
       reply = data(tool("preview_availability", { form_id: form.id, service_id: service_id, from: "2026-11-03", to: "2026-11-03" }))
-      expect(reply["slots"]).to(eq([{ "starts_at" => "2026-11-03T10:00:00Z", "remaining" => 2 }]))
+      expect(reply["slots"]).to(eq([{ "starts_at" => "2026-11-03T10:00:00Z", "remaining" => 2, "durations" => [60] }]))
     end
 
     it "refuses a bad range, an unknown service and someone else's form" do

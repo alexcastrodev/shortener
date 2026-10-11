@@ -2,8 +2,8 @@ module Forms
   module BookingSchema
     extend self
 
-    SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day", "monthly"].freeze
-    PUBLIC_SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "days", "times", "monthly"].freeze
+    SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day", "extra_durations", "monthly"].freeze
+    PUBLIC_SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "days", "times", "extra_durations", "monthly"].freeze
     RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "approval_within_minutes", "verify_email", "waitlist", "waitlist_confirm_minutes", "reminder_minutes", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
     RULE_RANGES = { "min_notice_minutes" => (0..43_200), "window_days" => (1..365), "buffer_minutes" => (0..600), "max_per_day" => (1..1000), "approval_timeout_minutes" => (5..43_200), "approval_within_minutes" => (1..43_200), "waitlist_confirm_minutes" => (15..4_320) }.freeze
     APPROVALS = ["auto", "manual"].freeze
@@ -19,6 +19,7 @@ module Forms
     CATEGORY_KEYS = ["id", "name"].freeze
     CATEGORY_NAME_MAX = 60
     TIMES_MAX = 96
+    EXTRA_DURATIONS_MAX = 4
     NAME_MAX = 100
     DURATION = (5..600)
     CAPACITY = (1..1000)
@@ -209,6 +210,7 @@ module Forms
       times = service["times"]
       result << "times must be unique HH:MM values (max #{TIMES_MAX})" unless times.is_a?(Array) && times.size <= TIMES_MAX && times.all? { |time| time.is_a?(String) && time.match?(TIME) } && times.uniq.size == times.size
       result.concat(by_day_errors(service))
+      result.concat(extra_duration_errors(service))
       result.concat(monthly_errors(service))
       result
     end
@@ -216,16 +218,40 @@ module Forms
     def monthly_errors(service)
       monthly = service["monthly"]
       return [] if monthly.nil?
-      return ["monthly must be an object"] unless monthly.is_a?(Hash) && (monthly.keys - ["price"]).empty?
-
-      price = monthly["price"]
-      return [] if price.nil?
+      return ["monthly must be an object"] unless monthly.is_a?(Hash) && (monthly.keys - ["price", "duration"]).empty?
 
       result = []
-      result << "monthly price must be between 0 and #{PRICE_MAX}" unless price.is_a?(Numeric) && price.to_f.finite? && price >= 0 && price <= PRICE_MAX
+      duration = monthly["duration"]
+      result << "monthly duration must be between #{DURATION.min} and #{DURATION.max} minutes" unless duration.nil? || (duration.is_a?(Integer) && DURATION.cover?(duration))
+      price = monthly["price"]
+      return result if price.nil?
+
+      result << "monthly price must be between 0 and #{PRICE_MAX}" unless valid_price?(price)
       result << "monthly price needs a currency" unless service["currency"].is_a?(String) && service["currency"].match?(CURRENCY)
       result
     end
+
+    def extra_duration_errors(service)
+      extras = service["extra_durations"]
+      return [] if extras.nil?
+      return ["extra durations must be a list of at most #{EXTRA_DURATIONS_MAX}"] unless extras.is_a?(Array) && extras.size <= EXTRA_DURATIONS_MAX
+
+      seen = [service["duration"]]
+      extras.flat_map do |extra|
+        next ["extra durations must each have a duration and a price"] unless extra.is_a?(Hash) && (extra.keys - ["duration", "price"]).empty?
+
+        minutes = extra["duration"]
+        result = []
+        result << "extra duration must be between #{DURATION.min} and #{DURATION.max} minutes" unless minutes.is_a?(Integer) && DURATION.cover?(minutes)
+        result << "extra durations must differ from each other and from the service duration" if seen.include?(minutes)
+        seen << minutes
+        result << "extra duration price must be between 0 and #{PRICE_MAX}" unless extra["price"].nil? || valid_price?(extra["price"])
+        result << "extra durations need a price exactly when the service has one" if extra["price"].nil? != service["price"].nil?
+        result
+      end.uniq
+    end
+
+    def valid_price?(price) = price.is_a?(Numeric) && price.to_f.finite? && price >= 0 && price <= PRICE_MAX
 
     def by_day_errors(service)
       by_day = service["times_by_day"]
@@ -247,7 +273,7 @@ module Forms
       return [] if price.nil? && currency.nil?
 
       result = []
-      result << "price must be between 0 and #{PRICE_MAX}" unless price.is_a?(Numeric) && price.to_f.finite? && price >= 0 && price <= PRICE_MAX
+      result << "price must be between 0 and #{PRICE_MAX}" unless valid_price?(price)
       result << "currency must be a 3-letter code" unless currency.is_a?(String) && currency.match?(CURRENCY)
       result
     end

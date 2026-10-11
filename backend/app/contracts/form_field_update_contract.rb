@@ -26,8 +26,13 @@ class FormFieldUpdateContract < ApplicationContract
       optional(:capacity).maybe(:integer)
       required(:days).array(:string)
       required(:times).array(:string)
+      optional(:extra_durations).array(:hash) do
+        required(:duration).filled(:integer)
+        optional(:price).maybe(:float)
+      end
       optional(:monthly).maybe(:hash) do
         optional(:price).maybe(:float)
+        optional(:duration).maybe(:integer)
       end
       optional(:times_by_day).hash do
         ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].each { |day| optional(day.to_sym).array(:string) }

@@ -14,7 +14,8 @@ module Appointments
       context = { form: form, booking: booking, service: service, now: now }
       return Result.new(:same_time, nil) if same_time?(context, row, date, time)
 
-      target = force ? any_slot(context, date, time, now) : free_slot(context, date, time)
+      minutes = row.snapshot["duration"] || service["duration"]
+      target = force ? any_slot(context, date, time, now) : free_slot(context, date, time, minutes)
       return Result.new(:unavailable, nil) unless target
 
       moved = nil
@@ -22,7 +23,7 @@ module Appointments
         old = Appointment.lock.find(row.id)
         next unless Appointment::HOLDING.include?(old.status)
 
-        slot_id = Reserve.call(form: form, service_key: service["id"], capacity: service["capacity"], times: [target[:starts_at]]).first
+        slot_id = Reserve.call(form: form, service_key: service["id"], capacity: service["capacity"], times: [target[:starts_at]], durations: { target[:starts_at].to_i => minutes }).first
         Release.call([old.slot_id])
         attributes = copy(old).merge(slot_id: slot_id, rescheduled_from_id: old.id, decision_message: message.to_s.strip.first(MESSAGE_MAX).presence)
         old.update!(status: "rescheduled", decided_at: now)
@@ -36,11 +37,11 @@ module Appointments
 
     private
 
-    def free_slot(context, date, time)
+    def free_slot(context, date, time, minutes)
       day = Date.iso8601(date.to_s)
       booking = context[:booking]
       open_rules = booking.merge("rules" => booking["rules"].merge("min_notice_minutes" => 0))
-      FreeSlots.call(form: context[:form], booking: open_rules, service: context[:service], from: day, to: day, now: context[:now]).find { |slot| slot[:time] == time.to_s }
+      FreeSlots.call(form: context[:form], booking: open_rules, service: context[:service], from: day, to: day, now: context[:now], only: [minutes]).find { |slot| slot[:time] == time.to_s }
     rescue Date::Error
       nil
     end

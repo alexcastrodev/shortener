@@ -337,6 +337,28 @@ RSpec.describe("the waiting list", type: :request) do
     end
   end
 
+  describe "with several durations" do
+    let(:service) { { "name" => "Class", "duration" => 60, "price" => 40, "currency" => "EUR", "extra_durations" => [{ "duration" => 90, "price" => 55 }], "capacity" => 2, "days" => ["mon", "tue", "wed", "thu", "fri"], "times" => ["09:00", "11:00"] } }
+
+    def book_long(name)
+      answers = { name_id => name, mail_id => "#{name.downcase}@example.com", booking_id => { "service" => service_id, "sessions" => [{ "date" => "2026-11-03", "time" => "09:00", "duration" => 90 }] } }
+      post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t" }, headers: { "CF-Connecting-IP" => "198.51.100.#{rand(1..250)}" }, as: :json)
+    end
+
+    it "gives a freed place in an open class the length of the class" do
+      book_long("Ana")
+      book_long("Di")
+      join(name: "Bo")
+      cancel_booking(Appointment.find_by(client_name: "Ana"))
+
+      post("/api/public/waitlist/#{token_of}/claim", as: :json)
+
+      expect(json["result"]).to(eq("claimed"))
+      expect(Appointment.find_by(client_name: "Bo").snapshot).to(include("duration" => 90, "price" => 55))
+      expect(slot).to(have_attributes(booked: 2, held: 0, duration: 90))
+    end
+  end
+
   describe "the owner's view" do
     before do
       book

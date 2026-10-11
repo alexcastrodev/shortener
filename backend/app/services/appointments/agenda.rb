@@ -22,7 +22,7 @@ module Appointments
       AppointmentSlot.where(form_id: forms.keys, starts_at: range).where("booked > 0 OR held > 0").includes(:appointments).to_h do |slot|
         appointments = slot.appointments.sort_by(&:id)
         snapshot = appointments.first&.snapshot || {}
-        [key(slot.form_id, slot.service_key, slot.starts_at), session(forms[slot.form_id], zone, { service_id: slot.service_key, name: snapshot["name"], duration: snapshot["duration"], starts_at: slot.starts_at, capacity: slot.capacity, booked: slot.booked, appointments: appointments })]
+        [key(slot.form_id, slot.service_key, slot.starts_at), session(forms[slot.form_id], zone, { service_id: slot.service_key, name: snapshot["name"], duration: slot.duration || snapshot["duration"], starts_at: slot.starts_at, capacity: slot.capacity, booked: slot.booked, appointments: appointments })]
       end
     end
 

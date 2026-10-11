@@ -102,6 +102,41 @@ RSpec.describe("the booking question", type: :request) do
       end
     end
 
+    it "stores other durations with their prices and a monthly offer with its own duration" do
+      add_booking({ services: [service.merge(extra_durations: [{ duration: 90, price: 40 }], monthly: { price: 100, duration: 30 })] })
+      expect(response).to(have_http_status(:created))
+      stored = booking_field["services"].first
+      expect(stored).to(include("extra_durations" => [{ "duration" => 90, "price" => 40.0 }], "monthly" => { "price" => 100.0, "duration" => 30 }))
+    end
+
+    it "takes other durations without prices when the service has no price" do
+      add_booking({ services: [service.merge(price: nil, currency: nil, extra_durations: [{ duration: 90 }])] })
+      expect(response).to(have_http_status(:created))
+    end
+
+    {
+      "an extra duration without a price on a priced service" => { extra_durations: [{ duration: 90 }] },
+      "an extra duration with a price on a free service" => { price: nil, currency: nil, extra_durations: [{ duration: 90, price: 5 }] },
+      "an extra duration equal to the service duration" => { extra_durations: [{ duration: 45, price: 5 }] },
+      "two equal extra durations" => { extra_durations: [{ duration: 90, price: 5 }, { duration: 90, price: 6 }] },
+      "an extra duration under 5 minutes" => { extra_durations: [{ duration: 4, price: 5 }] },
+      "more than four extra durations" => { extra_durations: [60, 75, 90, 105, 120].map { |minutes| { duration: minutes, price: 5 } } },
+      "a negative extra price" => { extra_durations: [{ duration: 90, price: -1 }] },
+      "a monthly duration over 600 minutes" => { monthly: { duration: 601 } },
+      "a monthly duration under 5 minutes" => { monthly: { duration: 4 } },
+    }.each do |label, change|
+      it "rejects #{label}" do
+        add_booking({ services: [service.merge(change)] })
+        expect(response).to(have_http_status(:unprocessable_content))
+        expect(form.reload.fields).to(eq([]))
+      end
+    end
+
+    it "drops a package, which no longer exists" do
+      add_booking({ services: [service.merge(bundle: { take: 5, pay: 4 })] })
+      expect(form.reload.fields.first["services"].first).not_to(have_key("bundle"))
+    end
+
     it "rejects more than 20 services" do
       add_booking({ services: Array.new(21) { |index| service.merge(name: "S#{index}") } })
       expect(response).to(have_http_status(:unprocessable_content))

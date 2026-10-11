@@ -39,7 +39,7 @@ RSpec.describe("GET /api/public/forms/:public_id/slots", type: :request) do
       expect(json["time_zone"]).to(eq("UTC"))
       expected = ["02", "03", "04"].product(["09", "10", "11"]).map { |day, hour| "2026-11-#{day}T#{hour}:00:00Z" }
       expect(times).to(eq(expected))
-      expect(json["slots"].first).to(eq("starts_at" => "2026-11-02T09:00:00Z", "date" => "2026-11-02", "time" => "09:00", "remaining" => 1))
+      expect(json["slots"].first).to(eq("starts_at" => "2026-11-02T09:00:00Z", "date" => "2026-11-02", "time" => "09:00", "remaining" => 1, "durations" => [60]))
     end
 
     it "skips the days the service does not run" do
@@ -132,7 +132,7 @@ RSpec.describe("GET /api/public/forms/:public_id/slots", type: :request) do
     it "exposes only the slot keys" do
       slots
       expect(json.keys).to(match_array(["time_zone", "slots"]))
-      expect(json["slots"].first.keys).to(match_array(["starts_at", "date", "time", "remaining"]))
+      expect(json["slots"].first.keys).to(match_array(["starts_at", "date", "time", "remaining", "durations"]))
       expect(response.headers["Set-Cookie"]).to(be_nil)
     end
   end

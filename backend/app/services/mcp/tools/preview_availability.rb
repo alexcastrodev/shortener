@@ -18,7 +18,7 @@ module Mcp
         booking = AppointmentToolHelpers.booking(form)
         service = booking["services"].find { |item| item["id"] == service_id } || raise(Mcp::ToolError.new("not_found", "Not found"))
         slots = Appointments::FreeSlots.call(form: form, booking: booking, service: service, from: first, to: last)
-        { form_id: form.id, service_id: service_id, time_zone: booking["rules"]["time_zone"], slots: slots.map { |slot| { starts_at: slot[:starts_at].iso8601, remaining: slot[:remaining] } } }
+        { form_id: form.id, service_id: service_id, time_zone: booking["rules"]["time_zone"], slots: slots.map { |slot| { starts_at: slot[:starts_at].iso8601, remaining: slot[:remaining], durations: slot[:durations] } } }
       end
     end
   end

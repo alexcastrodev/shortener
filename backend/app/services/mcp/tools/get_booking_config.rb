@@ -17,7 +17,7 @@ module Mcp
           question: Content.clean(booking["label"], max: Forms::FieldSchema::LABEL_MAX),
           rules: booking["rules"],
           services: booking["services"].map do |service|
-            service.slice("id", "duration", "price", "currency", "capacity", "days", "times").merge("name" => Content.clean(service["name"], max: 100))
+            service.slice("id", "duration", "price", "currency", "capacity", "days", "times", "extra_durations").merge("name" => Content.clean(service["name"], max: 100))
           end,
         }
       end
