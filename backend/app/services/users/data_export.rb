@@ -98,7 +98,7 @@ module Users
     def response_json(response, questions)
       {
         submitted_at: response.created_at.iso8601,
-        answers: questions.filter_map { |field| response.answers.key?(field["id"]) ? [field["label"], value(field, response.answers[field["id"]])] : nil }.to_h,
+        answers: questions.filter_map { |field| response.answers.key?(field["id"]) ? [Forms::FieldSchema.title(field), value(field, response.answers[field["id"]])] : nil }.to_h,
         country: response.country,
         platform: response.platform,
         browser: response.browser,

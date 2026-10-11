@@ -7,7 +7,7 @@ module Mcp
         answers = form.fields.filter_map do |field|
           next unless response.answers.key?(field["id"])
 
-          { question: Content.clean(field["label"], max: 300), type: field["type"], value: value_for(field, response.answers[field["id"]], budget) }
+          { question: Content.clean(Forms::FieldSchema.title(field), max: 300), type: field["type"], value: value_for(field, response.answers[field["id"]], budget) }
         end
         { id: response.id, submitted_at: response.created_at.iso8601, answers: answers }
       end

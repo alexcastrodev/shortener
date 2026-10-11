@@ -34,7 +34,7 @@ module Forms
     end
 
     def header
-      @header ||= ["Submitted", *questions.map { |field| field["label"].to_s }, "Source", "Platform", "Browser", "Country"]
+      @header ||= ["Submitted", *questions.map { |field| FieldSchema.title(field) }, "Source", "Platform", "Browser", "Country"]
     end
 
     def sheet_name
