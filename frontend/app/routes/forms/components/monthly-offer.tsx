@@ -30,6 +30,21 @@ export function MonthlyOffer({
       {service.monthly && (
         <NumberInput
           mt="xs"
+          label={t('monthly_duration')}
+          description={t('monthly_duration_hint')}
+          placeholder={service.duration === '' ? undefined : String(service.duration)}
+          min={5}
+          max={600}
+          allowDecimal={false}
+          rightSection={
+            <span className="text-xs text-muted-foreground">{t('unit_min')}</span>
+          }
+          {...form.getInputProps(`services.${index}.monthlyDuration`)}
+        />
+      )}
+      {service.monthly && (
+        <NumberInput
+          mt="xs"
           label={t('monthly_price')}
           description={
             service.price === ''

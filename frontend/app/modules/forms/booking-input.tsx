@@ -124,6 +124,7 @@ export function BookingInput({
         allServices.find(item => item.id === id) ?? {
           days: [],
           times: [],
+          duration: 0,
         },
         from,
         to,

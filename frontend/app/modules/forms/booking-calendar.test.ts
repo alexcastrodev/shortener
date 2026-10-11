@@ -78,6 +78,7 @@ test('only sessions inside the loaded range can be dropped', () => {
 test('preview slots follow weekdays, per-day times and start tomorrow', () => {
   const today = new Date(2026, 9, 8);
   const service = {
+    duration: 60,
     days: ['mon', 'fri'],
     times: ['10:00', '09:00'],
     times_by_day: { fri: ['15:00'] },
@@ -94,9 +95,20 @@ test('preview slots follow weekdays, per-day times and start tomorrow', () => {
 test('preview slots are empty without days or times and clip to the range', () => {
   const today = new Date(2026, 9, 8);
   const all = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-  assert.deepEqual(previewSlots({ days: [], times: ['09:00'] }, '2026-10-08', '2026-10-31', today), []);
-  assert.deepEqual(previewSlots({ days: all, times: [] }, '2026-10-08', '2026-10-31', today), []);
-  const clipped = previewSlots({ days: all, times: ['09:00'] }, '2026-10-10', '2026-10-11', today);
+  assert.deepEqual(previewSlots({ duration: 60, days: [], times: ['09:00'] }, '2026-10-08', '2026-10-31', today), []);
+  assert.deepEqual(previewSlots({ duration: 60, days: all, times: [] }, '2026-10-08', '2026-10-31', today), []);
+  const clipped = previewSlots({ duration: 60, days: all, times: ['09:00'] }, '2026-10-10', '2026-10-11', today);
   assert.deepEqual(clipped.map(slot => slot.date), ['2026-10-10', '2026-10-11']);
   assert.equal(clipped[0].remaining, 1);
+});
+
+test('preview slots offer every duration of the service', () => {
+  const today = new Date(2026, 9, 8);
+  const [slot] = previewSlots(
+    { duration: 60, extra_durations: [{ duration: 90, price: 55 }], days: ['mon'], times: ['09:00'] },
+    '2026-10-12',
+    '2026-10-12',
+    today
+  );
+  assert.deepEqual(slot.durations, [60, 90]);
 });

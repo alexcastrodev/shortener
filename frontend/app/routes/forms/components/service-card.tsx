@@ -24,6 +24,7 @@ import {
   serviceSummary,
   type SummaryWords,
 } from '../../../modules/forms/service-summary.ts';
+import { ExtraDurations } from './extra-durations';
 import { MonthlyOffer } from './monthly-offer';
 import { TimeGeneratorPanel } from './time-generator-panel';
 import { WeekdayTimes } from './weekday-times';
@@ -74,8 +75,9 @@ export function ServiceCard({
     price: money,
     unlimited: t('summary_unlimited'),
     places: count => t('summary_places', { count }),
-    monthly: price =>
-      price ? t('summary_monthly_price', { price }) : t('summary_monthly'),
+    also: list => t('summary_also', { list }),
+    monthly: detail =>
+      detail ? t('summary_monthly_price', { detail }) : t('summary_monthly'),
     times: count => t('summary_times', { count }),
     ownTimes: days => t('summary_own_times', { days }),
     day: day => dayLabels[day],
@@ -371,6 +373,7 @@ function ServiceFields({
           />
         </div>
       </div>
+      <ExtraDurations form={form} index={index} />
       <WeekdayTimes form={form} index={index} dayLabels={dayLabels} />
       <MonthlyOffer form={form} index={index} />
     </>

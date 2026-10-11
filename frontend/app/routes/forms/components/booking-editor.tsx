@@ -109,8 +109,26 @@ export function BookingEditor({
                     z.object({ value: z.string().regex(TIME, t('error_time')) })
                   )
                   .min(1, t('error_times')),
+                extraDurations: z.array(
+                  z.object({
+                    duration: z
+                      .number(t('error_duration'))
+                      .int()
+                      .min(5, t('error_duration'))
+                      .max(600, t('error_duration')),
+                    price: z.union([z.number().min(0), z.literal('')]),
+                  })
+                ),
                 monthly: z.boolean(),
                 monthlyPrice: z.union([z.number().min(0), z.literal('')]),
+                monthlyDuration: z.union([
+                  z
+                    .number()
+                    .int()
+                    .min(5, t('error_duration'))
+                    .max(600, t('error_duration')),
+                  z.literal(''),
+                ]),
                 byDay: z.record(
                   z.string(),
                   z.array(
@@ -120,11 +138,33 @@ export function BookingEditor({
               })
               .check(ctx => {
                 const {
+                  duration,
                   price,
                   currency,
                   monthly,
                   monthlyPrice,
+                  extraDurations,
                 } = ctx.value;
+                const seen = new Set([duration]);
+                extraDurations.forEach((extra, at) => {
+                  if (seen.has(extra.duration)) {
+                    ctx.issues.push({
+                      code: 'custom',
+                      message: t('error_extra_duration_repeated'),
+                      path: ['extraDurations', at, 'duration'],
+                      input: extra.duration,
+                    });
+                  }
+                  seen.add(extra.duration);
+                  if (price !== '' && extra.price === '') {
+                    ctx.issues.push({
+                      code: 'custom',
+                      message: t('error_extra_price'),
+                      path: ['extraDurations', at, 'price'],
+                      input: extra.price,
+                    });
+                  }
+                });
                 if (
                   monthly &&
                   monthlyPrice !== '' &&

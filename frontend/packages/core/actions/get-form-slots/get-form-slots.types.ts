@@ -3,6 +3,7 @@ export interface FormSlot {
   date: string;
   time: string;
   remaining: number;
+  durations: number[];
 }
 
 export interface FullSlot {
