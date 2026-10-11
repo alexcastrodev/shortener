@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 export const dayLabel = (iso: string) =>
   new Intl.DateTimeFormat('pt-PT', {
@@ -11,11 +11,11 @@ export const dayLabel = (iso: string) =>
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-export async function pickDay(page: Page, iso: string) {
-  await page.getByRole('button', { name: 'Mês seguinte' }).waitFor();
-  const target = page.getByRole('button', { name: new RegExp(`^${escape(dayLabel(iso))}`) });
+export async function pickDay(scope: Page | Locator, iso: string) {
+  await scope.getByRole('button', { name: 'Mês seguinte' }).waitFor();
+  const target = scope.getByRole('button', { name: new RegExp(`^${escape(dayLabel(iso))}`) });
   for (let step = 0; step < 3 && (await target.count()) === 0; step++) {
-    await page.getByRole('button', { name: 'Mês seguinte' }).click();
+    await scope.getByRole('button', { name: 'Mês seguinte' }).click();
   }
   await target.click();
 }

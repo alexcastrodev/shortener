@@ -50,6 +50,20 @@ export class PublicForm {
     await this.page.getByRole('radio', { name: new RegExp(`^${name}`) }).click();
   }
 
+  block(name: string): Locator {
+    return this.page.getByRole('region', { name, exact: true });
+  }
+
+  async tickService(name: string) {
+    await this.page.getByRole('checkbox', { name: new RegExp(`^${name}`) }).click();
+  }
+
+  async pickSlotIn(name: string, iso: string, time: string) {
+    const block = this.block(name);
+    await pickDay(block, iso);
+    await block.getByRole('button', { name: time, exact: true }).click();
+  }
+
   async pickSlot(iso: string, time: string) {
     await pickDay(this.page, iso);
     await this.page.getByRole('button', { name: time, exact: true }).click();
