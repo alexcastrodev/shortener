@@ -86,3 +86,84 @@ test('a teacher without an availability yet previews no hours instead of breakin
   assert.deepEqual(fields[0].services?.[0].days, []);
   assert.deepEqual(fields[0].services?.[0].times, []);
 });
+
+test('a lesson that carries its own days and times keeps them in the preview', () => {
+  const { fields } = applyBookingDraft([teacher], {
+    fieldId: 'teach001',
+    openIndex: 0,
+    input: {
+      label: 'Lessons',
+      availability: { days: ['mon'], times: ['09:00'] },
+      services: [
+        { id: 'lesson01', name: 'Maths', duration: 60 },
+        {
+          id: 'lesson02',
+          name: 'Physics',
+          duration: 90,
+          days: ['thu'],
+          times: ['14:00'],
+        },
+      ],
+    },
+  });
+  assert.deepEqual(
+    fields[0].services?.map(item => [item.days, item.times]),
+    [
+      [['mon'], ['09:00']],
+      [['thu'], ['14:00']],
+    ]
+  );
+});
+
+test('without a draft a stored lesson with its own hours keeps them', () => {
+  const own = {
+    id: 'lesson03',
+    name: 'Chemistry',
+    duration: 90,
+    days: ['fri'],
+    times: ['15:00'],
+  } as BookingService;
+  const { fields } = applyBookingDraft(
+    [{ ...teacher, services: [...(teacher.services ?? []), own] }],
+    null
+  );
+  assert.deepEqual(fields[0].services?.[0].days, ['mon']);
+  assert.deepEqual(fields[0].services?.[2].days, ['fri']);
+  assert.deepEqual(fields[0].services?.[2].times, ['15:00']);
+});
+
+test('the preview of a lesson lists each duration of a time once even when the draft repeats one', () => {
+  const { fields } = applyBookingDraft([teacher], {
+    fieldId: 'teach001',
+    openIndex: 0,
+    input: {
+      label: 'Lessons',
+      availability: { days: ['mon'], times: ['09:00', '10:00'] },
+      services: [
+        {
+          id: 'lesson01',
+          name: 'Maths',
+          duration: 60,
+          price: 60,
+          extra_durations: [
+            { duration: 30, price: 20 },
+            { duration: 60, price: 60 },
+          ],
+        },
+      ],
+    },
+  });
+  const slots = previewSlots(
+    fields[0].services![0],
+    '2030-01-01',
+    '2030-01-08',
+    new Date(2029, 11, 1)
+  );
+  assert.deepEqual(
+    slots.map(slot => [slot.time, slot.durations]),
+    [
+      ['09:00', [60, 30]],
+      ['10:00', [60, 30]],
+    ]
+  );
+});

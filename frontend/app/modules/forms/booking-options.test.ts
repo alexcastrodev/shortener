@@ -34,6 +34,26 @@ test('the main duration comes first, then the others with their prices', () => {
   ]);
 });
 
+test('a duration repeated while the owner is still editing is offered once, with the price of the first', () => {
+  const draft = {
+    duration: 60,
+    price: 60,
+    extra_durations: [
+      { duration: 30, price: 20 },
+      { duration: 60, price: 60 },
+      { duration: 30, price: 25 },
+    ],
+  };
+  assert.deepEqual(bookingOptions(draft), [
+    { duration: 60, price: 60 },
+    { duration: 30, price: 20 },
+  ]);
+  assert.equal(
+    hasSeveralDurations({ duration: 60, extra_durations: [{ duration: 60 }] }),
+    false
+  );
+});
+
 test('a service with no other duration reads as one option', () => {
   assert.equal(hasSeveralDurations(piano), true);
   assert.equal(hasSeveralDurations({ duration: 30, extra_durations: [] }), false);
