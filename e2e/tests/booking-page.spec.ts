@@ -148,3 +148,24 @@ test('the type scale follows the design', async ({ page }) => {
   expect(await size(page.getByRole('button', { name: '09:00', exact: true }))).toBe('15px/500');
   expect(await size(page.getByRole('button', { name: 'Enviar', exact: true }))).toBe('15px/600');
 });
+
+test('the help text of the booking question describes the group of its controls', async ({ page }) => {
+  const form = await createForm({
+    services: [service('Sessão'), service('Aula')],
+    bookingHelp: 'Escolha com calma, pode mudar depois.',
+    publish: true,
+  });
+  await new PublicForm(page, form).open();
+
+  const group = page.getByRole('group', { name: 'Escolha um horário', exact: true });
+  await expect(group).toHaveAccessibleDescription('Escolha com calma, pode mudar depois.');
+});
+
+test('a booking question without help text points at nothing', async ({ page }) => {
+  const form = await createForm({ services: [service('Sessão')], publish: true });
+  await new PublicForm(page, form).open();
+
+  const group = page.getByRole('group', { name: 'Escolha um horário', exact: true });
+  await expect(group).toBeVisible();
+  await expect(group).not.toHaveAttribute('aria-describedby', /.+/);
+});
