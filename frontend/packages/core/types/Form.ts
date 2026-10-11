@@ -16,11 +16,13 @@ export type FormFieldType =
 
 export type MonthlyChoice = { month: string; weekdays: string[]; time: string };
 
-export type BookingAnswer = {
+export type BookingItem = {
   service: string;
   sessions: { date: string; time: string; duration?: number }[];
   monthly?: MonthlyChoice;
 };
+
+export type BookingAnswer = BookingItem | { items: BookingItem[] };
 
 export const FORM_LAYOUTS = ['page', 'one_at_a_time', 'steps'] as const;
 export type FormLayout = (typeof FORM_LAYOUTS)[number];
@@ -107,6 +109,7 @@ export type FormField = {
   time_zone?: string;
   waitlist?: boolean;
   multiple_services?: boolean;
+  buffer_minutes?: number;
   verify_email?: boolean;
 };
 

@@ -61,6 +61,8 @@ export default function DecideBooking({ loaderData }: Route.ComponentProps) {
   };
 
   const zone = appointment.time_zone;
+  const several =
+    new Set(appointment.sessions.map(session => session.service)).size > 1;
   const resultText =
     result === 'approve'
       ? t('result_approve')
@@ -103,6 +105,7 @@ export default function DecideBooking({ loaderData }: Route.ComponentProps) {
             <ul className="mt-1 space-y-1">
               {appointment.sessions.map(session => (
                 <li key={session.starts_at}>
+                  {several && session.service ? `${session.service} · ` : ''}
                   {formatDateTime(session.starts_at, { dateStyle: 'full', timeStyle: 'short', timeZone: zone })}
                 </li>
               ))}

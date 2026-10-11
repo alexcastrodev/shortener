@@ -1,6 +1,8 @@
 export interface MyBookingSession {
   starts_at: string;
   status: string;
+  service?: string;
+  duration?: number;
 }
 
 export interface MyBooking {

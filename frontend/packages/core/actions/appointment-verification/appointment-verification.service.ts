@@ -8,7 +8,7 @@ export interface VerificationResponse {
     status: string;
     expires_at: string | null;
     time_zone: string;
-    sessions: { starts_at: string }[];
+    sessions: { starts_at: string; service?: string; duration?: number }[];
   };
   result?: 'verified' | 'already_done' | 'expired';
 }

@@ -83,7 +83,12 @@ export function dayCell(
   };
 }
 
-export type PickedSession = { date: string; time: string; duration: number };
+export type PickedSession = {
+  date: string;
+  time: string;
+  duration: number;
+  service?: string;
+};
 
 const minutesOf = (time: string) => {
   const [hours, minutes] = time.split(':').map(Number);
@@ -96,7 +101,8 @@ const startsFirst = (a: PickedSession, b: PickedSession) =>
 export function toggleSession(
   sessions: PickedSession[],
   pick: PickedSession,
-  buffer = 0
+  buffer = 0,
+  others: PickedSession[] = []
 ):
   | { kind: 'saved' | 'removed'; sessions: PickedSession[] }
   | { kind: 'overlap'; sessions: PickedSession[]; clash: PickedSession } {
@@ -107,7 +113,7 @@ export function toggleSession(
 
   const rest = sessions.filter(item => !sameTime(item));
   const start = minutesOf(pick.time);
-  const clash = rest.find(
+  const clash = [...rest, ...others].find(
     item =>
       item.date === pick.date &&
       start < minutesOf(item.time) + item.duration + buffer &&

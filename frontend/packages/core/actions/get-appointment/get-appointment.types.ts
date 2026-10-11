@@ -1,6 +1,8 @@
 export interface AppointmentSession {
   starts_at: string;
   status: string;
+  service?: string;
+  duration?: number;
 }
 
 export interface ManagedAppointment {

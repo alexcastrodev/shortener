@@ -2,15 +2,15 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { BookingAnswer, FormField } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
+import { incompleteServices } from './booking-answer.ts';
 import { FieldInput, focusFirstInput, isBlank, type Answer } from './field-inputs';
 import { useConfirmEmail } from './confirm-email';
 import { isSection } from './field-types';
 import type { Props, SubmitFailure, SubmitFormReceipt } from './form-renderer';
 import { BookingBar } from './booking-bar';
-import { hasSeveralDurations } from './booking-options';
 import { BookingReview } from './booking-review';
 import { SubmissionResult } from './submission-result';
-import { summarize } from './booking-summary';
+import { summarizeAll } from './booking-summary';
 import { FormCover } from './form-cover';
 
 const alertClass =
@@ -60,17 +60,15 @@ export function PagedForm({
   const last = current === pages.length - 1;
   const primary = `min-h-11 rounded-lg px-5 py-2 font-medium ${theme.button}`;
   const bookingField = pages[current].find(item => item.type === 'booking');
-  const summaryOf = (field: FormField | undefined) => {
-    const answer = field
-      ? (answers[field.id] as BookingAnswer | undefined)
-      : undefined;
-    const service = field?.services?.find(item => item.id === answer?.service);
-    return {
-      service,
-      summary: field ? summarize(service, answer, new Date()) : null,
-    };
-  };
-  const bookingSummary = summaryOf(bookingField).summary;
+  const summaryOf = (field: FormField | undefined) =>
+    field
+      ? summarizeAll(
+          field.services,
+          answers[field.id] as BookingAnswer | undefined,
+          new Date()
+        )
+      : null;
+  const bookingSummary = summaryOf(bookingField);
   const reviewField = form.fields.find(item => item.type === 'booking');
   const review = summaryOf(reviewField);
   const pricedService = bookingField?.services?.find(
@@ -115,14 +113,22 @@ export function PagedForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFieldId]);
 
+  const unfinished = (item: FormField) =>
+    item.type === 'booking'
+      ? incompleteServices(item.services, answers[item.id] as BookingAnswer | undefined)
+      : [];
+
   const missing = (fields: FormField[]) =>
     Object.fromEntries(
-      fields
-        .filter(item => item.required && !isSection(item) && isBlank(answers[item.id]))
-        .map(item => [
-          item.id,
-          t(item.type === 'booking' ? 'booking_required' : 'required'),
-        ])
+      fields.flatMap(item => {
+        if (isSection(item)) return [];
+        if (item.required && isBlank(answers[item.id]))
+          return [[item.id, t(item.type === 'booking' ? 'booking_required' : 'required')]];
+        const names = unfinished(item);
+        return names.length
+          ? [[item.id, t('booking_incomplete', { count: names.length, names: names.join(', ') })]]
+          : [];
+      })
     );
 
   const next = async () => {
@@ -319,11 +325,9 @@ export function PagedForm({
           );
         })}
       </div>
-      {last && reviewField && review.service && review.summary && review.summary.count > 0 && (
+      {last && reviewField && review && review.count > 0 && (
         <BookingReview
-          summary={review.summary}
-          serviceName={review.service.name}
-          showPrices={hasSeveralDurations(review.service)}
+          summary={review}
           theme={theme}
           onChange={() => changeBooking(reviewField.id)}
         />
@@ -372,7 +376,11 @@ export function PagedForm({
           monthly={Boolean(bookingField.services?.some(item => item.monthly))}
           theme={theme}
           label={last ? (submitting ? t('sending') : t('submit')) : t('next')}
-          ready={!bookingField.required || bookingSummary !== null}
+          ready={
+            (!bookingField.required || bookingSummary !== null) &&
+            unfinished(bookingField).length === 0
+          }
+          unfinished={unfinished(bookingField)}
           onSubmit={() => void next()}
         />
       )}
