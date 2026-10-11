@@ -204,6 +204,7 @@ export function ServiceBlock({
           loadSlots={loadSlots}
           reloadKey={reloadKey}
           hideSummary={hideSummary}
+          named={multiple}
         />
       )}
 
@@ -224,6 +225,7 @@ export function ServiceBlock({
           joinWaitlist={joinWaitlist}
           reloadKey={reloadKey}
           hideSummary={hideSummary}
+          named={multiple}
         />
       )}
     </>
@@ -287,6 +289,7 @@ function PlanPicker({
   loadSlots,
   reloadKey,
   hideSummary,
+  named,
 }: {
   field: FormField;
   service: Service;
@@ -300,6 +303,7 @@ function PlanPicker({
   loadSlots?: LoadSlots;
   reloadKey?: string;
   hideSummary?: boolean;
+  named: boolean;
 }) {
   const plan = usePlanWords();
   const [month, setMonth] = useState(
@@ -345,6 +349,7 @@ function PlanPicker({
         month={month}
         duration={monthlyMinutes(service)}
         cap={allowance}
+        named={named}
       />
     </div>
   );

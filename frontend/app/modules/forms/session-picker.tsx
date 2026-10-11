@@ -80,6 +80,7 @@ export function SessionPicker({
   month: fixedMonth,
   duration: fixedDuration,
   cap,
+  named,
 }: {
   field: FormField;
   service: Service;
@@ -95,6 +96,7 @@ export function SessionPicker({
   month?: string;
   duration?: number;
   cap?: Allowance;
+  named?: boolean;
 }) {
   const { t } = useTranslation('respond');
   const durationWords = useDurationWords();
@@ -288,7 +290,9 @@ export function SessionPicker({
       <div className="space-y-3">
         {dropped && (
           <p role="alert" className="text-sm font-medium">
-            {t('booking_taken')}
+            {named
+              ? t('booking_taken_service', { service: service.name })
+              : t('booking_taken')}
           </p>
         )}
         <div className="flex items-baseline justify-between gap-3">
