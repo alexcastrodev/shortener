@@ -3,6 +3,7 @@ import { nextWeekdays } from '../support/dates.ts';
 import { dayLabel } from '../support/calendar.ts';
 import { expect, test } from '../support/fixtures.ts';
 import {
+  bookingBar,
   firstWeekdayOfNextMonth,
   monthLabel,
   PublicForm,
@@ -165,11 +166,11 @@ test('calendar: month navigation keeps the chosen time in the summary', async ({
 
   await page.getByRole('button', { name: dayLabel(target), exact: true }).click();
   await page.getByRole('button', { name: '10:00', exact: true }).click();
-  await expect(page.getByText(`${shortDate(target)} · 10:00`)).toBeVisible();
+  await expect(bookingBar(page).getByText(`${shortDate(target)} · 10:00`)).toBeVisible();
 
   await page.getByRole('button', { name: 'Mês anterior' }).click();
   await expect(page.getByText(monthLabel(today), { exact: true })).toBeVisible();
-  await expect(page.getByText(`${shortDate(target)} · 10:00`)).toBeVisible();
+  await expect(bookingBar(page).getByText(`${shortDate(target)} · 10:00`)).toBeVisible();
 
   await page.getByRole('button', { name: 'Mês seguinte' }).click();
   await expect(page.getByRole('button', { name: `${dayLabel(target)}, hora escolhida 10:00`, exact: true })).toBeVisible();

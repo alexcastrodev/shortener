@@ -18,6 +18,14 @@ import {
   shiftMonth,
 } from './booking-calendar.ts';
 import {
+  bookingOptions,
+  cheapestPrice,
+  durationText,
+  hasSeveralDurations,
+  monthlyMinutes,
+} from './booking-options.ts';
+import { useDurationWords } from './use-duration-words.ts';
+import {
   WEEKDAYS,
   monthOptions,
   monthlyComplete,
@@ -51,6 +59,13 @@ const dayHeading = (iso: string) =>
 
 type Cache = { key: string; months: Record<string, LoadedSlots> };
 
+type Note = {
+  kind: 'saved' | 'removed';
+  date: string;
+  time: string;
+  duration: number;
+};
+
 export function BookingInput({
   field,
   value,
@@ -75,6 +90,7 @@ export function BookingInput({
   preselect?: boolean | string;
 }) {
   const { t } = useTranslation('respond');
+  const durationWords = useDurationWords();
   const allServices = field.services ?? [];
   const categories = field.categories ?? [];
   const grouped = categories.length >= 2;
@@ -109,6 +125,7 @@ export function BookingInput({
   const [viewed, setViewed] = useState<string>();
   const [attempt, setAttempt] = useState(0);
   const [dropped, setDropped] = useState(false);
+  const [note, setNote] = useState<Note>();
   const [cache, setCache] = useState<Cache>({ key: '', months: {} });
   const [failed, setFailed] = useState<string | null>(null);
   const seeking = useRef(true);
@@ -194,6 +211,7 @@ export function BookingInput({
     setServiceId(inside.length === 1 ? inside[0].id : undefined);
     setDropped(false);
     restartView();
+    setNote(undefined);
     onChange(undefined);
   };
 
@@ -202,6 +220,7 @@ export function BookingInput({
     setServiceId(id);
     setMode('days');
     setDropped(false);
+    setNote(undefined);
     restartView();
     onChange(undefined);
   };
@@ -209,21 +228,26 @@ export function BookingInput({
   const chooseMode = (next: 'days' | 'monthly') => {
     if (next === mode) return;
     setMode(next);
+    setNote(undefined);
     onChange(undefined);
   };
 
-  const toggle = (date: string, time: string) => {
+  const toggle = (date: string, time: string, duration: number) => {
     if (!serviceId) return;
     setDropped(false);
     const others = sessions.filter(session => session.date !== date);
     const same = sessions.some(
-      session => session.date === date && session.time === time
+      session =>
+        session.date === date &&
+        session.time === time &&
+        (session.duration ?? service?.duration) === duration
     );
     const next = same
       ? others
-      : [...others, { date, time }].sort((a, b) =>
+      : [...others, { date, time, duration }].sort((a, b) =>
           `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)
         );
+    setNote({ kind: same ? 'removed' : 'saved', date, time, duration });
     onChange(next.length ? { service: serviceId, sessions: next } : undefined);
   };
 
@@ -242,9 +266,54 @@ export function BookingInput({
     viewed && viewed.startsWith(month) && byDay.has(viewed) ? viewed : undefined;
   const today = new Date();
   const service = services.find(item => item.id === serviceId);
+  const several = service ? hasSeveralDurations(service) : false;
+  const priceText = (price: number | null | undefined, currency?: string | null) =>
+    price ? formatCurrency(price, currency ?? 'EUR') : null;
+  const optionText = (duration: number, price: number | null | undefined) =>
+    [
+      durationText(duration, durationWords),
+      priceText(price, service?.currency),
+    ]
+      .filter(Boolean)
+      .join(' · ');
   const chip = (selected: boolean, size = 'text-sm!') =>
     `min-h-11 rounded-lg px-3 py-1.5 ${size} font-medium! ${theme.button} ${selected ? 'ring-2 ring-current' : ''}`;
   const picked = new Map(sessions.map(session => [session.date, session.time]));
+  const pickedDuration = new Map(
+    sessions.map(session => [session.date, session.duration ?? service?.duration])
+  );
+  const offeredDurations = (slot: FormSlot) =>
+    preview && service
+      ? bookingOptions(service).map(item => item.duration)
+      : slot.durations?.length
+        ? slot.durations
+        : [service?.duration ?? 0];
+  const priceOf = (duration: number) =>
+    duration === service?.duration
+      ? service.price
+      : service?.extra_durations?.find(item => item.duration === duration)?.price;
+  const noteWhen = (item: Note) =>
+    t('booking_when', { date: dayLabel(item.date), time: item.time });
+  let message: string | undefined;
+  if (shown) {
+    if (note && note.date === shown) {
+      message =
+        note.kind === 'saved'
+          ? t('booking_note_saved', {
+              what: several
+                ? `${noteWhen(note)} · ${optionText(note.duration, priceOf(note.duration))}`
+                : noteWhen(note),
+            })
+          : t('booking_note_removed', { what: noteWhen(note) });
+    } else if (picked.has(shown)) {
+      const duration = pickedDuration.get(shown) ?? service?.duration ?? 0;
+      message = t('booking_note_kept', {
+        what: several
+          ? `${picked.get(shown)} · ${durationText(duration, durationWords)}`
+          : picked.get(shown),
+      });
+    }
+  }
   const modeCard = (selected: boolean) =>
     `flex min-w-0 flex-col gap-1 rounded-xl p-4 text-left ${theme.button} ${selected ? 'ring-2 ring-current' : ''}`;
 
@@ -295,8 +364,15 @@ export function BookingInput({
             >
               <span className="font-medium">{item.name}</span>
               <span className="text-sm opacity-80">
-                {t('booking_minutes', { count: item.duration })}
-                {item.price
+                {hasSeveralDurations(item)
+                  ? [
+                      t('booking_from'),
+                      priceText(cheapestPrice(item), item.currency),
+                    ]
+                      .filter(Boolean)
+                      .join(' ')
+                  : t('booking_minutes', { count: item.duration })}
+                {!hasSeveralDurations(item) && item.price
                   ? ` · ${formatCurrency(item.price, item.currency ?? 'EUR')}`
                   : ''}
               </span>
@@ -307,7 +383,7 @@ export function BookingInput({
         service && (
           <p className="text-sm font-medium">
             {service.name}
-            {!service.monthly && (
+            {!service.monthly && !several && (
               <span className="font-normal opacity-80">
                 {` · ${t('booking_minutes', { count: service.duration })}`}
                 {service.price
@@ -339,16 +415,26 @@ export function BookingInput({
               <span className="text-[15px] font-semibold">
                 {t('booking_mode_days')}
               </span>
-              {service.price ? (
+              {cheapestPrice(service) ? (
                 <span className="text-[22px] font-semibold">
-                  {formatCurrency(service.price, service.currency ?? 'EUR')}
+                  {several && (
+                    <span className="mr-1 text-xs font-normal opacity-80">
+                      {t('booking_from')}
+                    </span>
+                  )}
+                  {formatCurrency(
+                    cheapestPrice(service)!,
+                    service.currency ?? 'EUR'
+                  )}
                   <span className="text-xs font-normal opacity-80">
                     {` ${t('booking_unit_session')}`}
                   </span>
                 </span>
               ) : null}
               <span className="text-xs opacity-80">
-                {t('booking_mode_days_desc', { count: service.duration })}
+                {several
+                  ? t('booking_mode_days_desc_each')
+                  : t('booking_mode_days_desc', { count: service.duration })}
               </span>
             </button>
             <button
@@ -373,7 +459,12 @@ export function BookingInput({
                 </span>
               ) : null}
               <span className="text-xs opacity-80">
-                {t('booking_mode_monthly_desc')}
+                {t('booking_mode_monthly_desc', {
+                  duration: durationText(
+                    monthlyMinutes(service),
+                    durationWords
+                  ),
+                })}
               </span>
             </button>
           </fieldset>
@@ -433,7 +524,10 @@ export function BookingInput({
                 chosen={picked}
                 viewed={shown}
                 theme={theme}
-                onView={setViewed}
+                onView={iso => {
+                  setViewed(iso);
+                  setNote(undefined);
+                }}
                 onMonth={goMonth}
               />
               {status === 'loading' && (
@@ -462,22 +556,44 @@ export function BookingInput({
                       })}
                     </p>
                   </div>
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-2">
-                    {byDay.get(shown)!.map(slot => {
-                      const selected = picked.get(shown) === slot.time;
-                      return (
-                        <button
-                          key={slot.starts_at}
-                          type="button"
-                          aria-pressed={selected}
-                          className={`${chip(selected, 'text-[15px]!')} min-h-12`}
-                          onClick={() => toggle(shown, slot.time)}
-                        >
-                          {slot.time}
-                        </button>
-                      );
-                    })}
+                  <div
+                    className={`grid gap-2 ${
+                      several
+                        ? 'grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))]'
+                        : 'grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))]'
+                    }`}
+                  >
+                    {byDay.get(shown)!.flatMap(slot =>
+                      offeredDurations(slot).map(duration => {
+                        const selected =
+                          picked.get(shown) === slot.time &&
+                          pickedDuration.get(shown) === duration;
+                        return (
+                          <button
+                            key={`${slot.starts_at}-${duration}`}
+                            type="button"
+                            aria-pressed={selected}
+                            className={`${chip(selected, 'text-[15px]!')} min-h-12`}
+                            onClick={() => toggle(shown, slot.time, duration)}
+                          >
+                            {several ? (
+                              <span className="flex flex-col items-center leading-tight">
+                                <span>{slot.time}</span>
+                                <span className="text-xs font-normal opacity-80">
+                                  {optionText(duration, priceOf(duration))}
+                                </span>
+                              </span>
+                            ) : (
+                              slot.time
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
+                  <p aria-live="polite" className="text-sm font-medium">
+                    {message}
+                  </p>
                   <p className="text-xs opacity-70">{t('booking_pick_hint')}</p>
                 </div>
               ) : (
@@ -514,6 +630,9 @@ export function BookingInput({
             {sessions.map(session => (
               <li key={session.date}>
                 {dayLabel(session.date)} · {session.time}
+                {several && session.duration
+                  ? ` · ${optionText(session.duration, priceOf(session.duration))}`
+                  : ''}
               </li>
             ))}
           </ul>
@@ -539,6 +658,7 @@ function MonthlyPicker({
   onChange: (choice: MonthlyChoiceValue | undefined) => void;
 }) {
   const { t } = useTranslation('respond');
+  const durationWords = useDurationWords();
   const months = monthOptions(new Date());
   const times = [...service.times].sort();
   const [draft, setDraft] = useState<MonthlyChoiceValue>(
@@ -616,7 +736,10 @@ function MonthlyPicker({
           aria-live="polite"
         >
           <p className="font-medium">
-            {t('monthly_summary', { count: dates.length })}
+            {t('monthly_summary', {
+              count: dates.length,
+              duration: durationText(monthlyMinutes(service), durationWords),
+            })}
           </p>
           <p className={`mt-1 text-xs ${theme.bio}`}>{t('monthly_note')}</p>
         </div>

@@ -2,6 +2,8 @@ import { IconCalendarEvent, IconCircleCheck, IconClock, IconMailExclamation } fr
 import { useTranslation } from 'react-i18next';
 import { formatCurrency, formatDate } from '../../i18n/format';
 import type { BioTheme } from '../bio-page/themes';
+import { durationText } from './booking-options.ts';
+import { useDurationWords } from './use-duration-words.ts';
 import type { SubmitFormReceipt } from '@internal/core/actions/submit-form-response/submit-form-response.types';
 
 type Props = {
@@ -13,6 +15,7 @@ type Props = {
 
 export function SubmissionResult({ receipt, message, theme, timeZone }: Props) {
   const { t } = useTranslation('respond');
+  const durationWords = useDurationWords();
   const sessions = receipt?.appointments ?? [];
   const booked = Boolean(receipt?.manage_url) && sessions.length > 0;
   const unverified = sessions.some(item => item.status === 'unverified');
@@ -74,6 +77,9 @@ export function SubmissionResult({ receipt, message, theme, timeZone }: Props) {
                     minute: '2-digit',
                     timeZone,
                   })}
+                  {item.duration
+                    ? ` · ${durationText(item.duration, durationWords)}`
+                    : ''}
                 </li>
               ))}
             </ul>

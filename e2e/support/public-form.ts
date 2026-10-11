@@ -20,6 +20,8 @@ export function firstWeekdayOfNextMonth(): string {
 export const monthLabel = (iso: string) =>
   new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${iso}T12:00:00Z`));
 
+export const bookingBar = (page: Page) => page.locator('div.sticky.bottom-0');
+
 export const CONFIRM_LABEL = 'Quero receber a confirmação neste e-mail';
 
 export class PublicForm {

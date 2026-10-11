@@ -112,3 +112,13 @@ test('preview slots offer every duration of the service', () => {
   );
   assert.deepEqual(slot.durations, [60, 90]);
 });
+
+test('a chosen session is kept only while its duration is still offered', () => {
+  const range = { from: '2026-10-01', to: '2026-10-31' };
+  const slots = [{ date: '2026-10-12', time: '09:00', durations: [60] }];
+  const sessions = [
+    { date: '2026-10-12', time: '09:00', duration: 60 },
+    { date: '2026-10-12', time: '09:00', duration: 90 },
+  ];
+  assert.deepEqual(keepFree(sessions, slots, range), [sessions[0]]);
+});

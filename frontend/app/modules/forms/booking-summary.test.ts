@@ -55,5 +55,65 @@ test('a monthly booking counts the dates of the month and charges the monthly pr
   assert.equal(summary?.kind, 'monthly');
   assert.equal(summary?.count, 9);
   assert.equal(summary?.total, 200);
-  assert.deepEqual(summary?.sessions[0], { date: '2026-11-02', time: '16:00' });
+  assert.deepEqual(summary?.sessions[0], {
+    date: '2026-11-02',
+    time: '16:00',
+    duration: 30,
+    price: null,
+  });
+});
+
+test('each session is priced by the duration it was picked with', () => {
+  const today = new Date(2026, 9, 9);
+  const piano = service({
+    duration: 60,
+    price: 40,
+    extra_durations: [{ duration: 90, price: 55 }],
+  });
+  const summary = summarize(
+    piano,
+    {
+      service: 's1',
+      sessions: [
+        { date: '2026-10-13', time: '11:00', duration: 60 },
+        { date: '2026-10-15', time: '11:00', duration: 90 },
+      ],
+    },
+    today
+  );
+  assert.equal(summary?.total, 95);
+  assert.deepEqual(
+    summary?.sessions.map(session => [session.duration, session.price]),
+    [
+      [60, 40],
+      [90, 55],
+    ]
+  );
+});
+
+test('a session with no duration is priced as the main one', () => {
+  const today = new Date(2026, 9, 9);
+  const piano = service({
+    duration: 60,
+    price: 40,
+    extra_durations: [{ duration: 90, price: 55 }],
+  });
+  const summary = summarize(piano, days(2), today);
+  assert.equal(summary?.total, 80);
+  assert.equal(summary?.sessions[0].duration, 60);
+});
+
+test('a monthly booking is made of sessions of the monthly duration', () => {
+  const today = new Date(2026, 9, 9);
+  const summary = summarize(
+    service({ monthly: { price: 120, duration: 45 } }),
+    {
+      service: 's1',
+      sessions: [],
+      monthly: { month: '2026-11', weekdays: ['mon'], time: '09:00' },
+    },
+    today
+  );
+  assert.equal(summary?.sessions[0].duration, 45);
+  assert.equal(summary?.total, 120);
 });

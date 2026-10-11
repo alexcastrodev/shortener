@@ -3,7 +3,7 @@ import type { BioTheme } from '../bio-page/themes';
 import { formatCurrency, formatDate } from '../../i18n/format';
 import type { BookingSummary } from './booking-summary.ts';
 
-const dayText = (iso: string) =>
+export const dayText = (iso: string) =>
   formatDate(`${iso}T00:00:00Z`, {
     weekday: 'short',
     day: 'numeric',
@@ -17,7 +17,7 @@ const weekdayText = (iso: string) =>
 const mondayFirst = (iso: string) =>
   (new Date(`${iso}T00:00:00Z`).getUTCDay() + 6) % 7;
 
-function monthlyText(summary: BookingSummary) {
+export function monthlyText(summary: BookingSummary) {
   const first = summary.sessions[0];
   if (!first) return '';
   const weekdays = [
