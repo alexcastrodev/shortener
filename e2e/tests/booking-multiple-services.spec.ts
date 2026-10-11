@@ -147,3 +147,24 @@ test('a time that overlaps a session of another service is refused with its name
   await expect(view.block('Bateria')).toHaveCount(0);
   await expect(bar.getByText(money(40))).toBeVisible();
 });
+
+test('a ticked service with no time chosen blocks the send and names the service, until it is unticked', async ({ page }) => {
+  const form = await createForm({ rules: { multiple_services: true }, services: [guitar(), drums()], publish: true });
+  const view = new PublicForm(page, form);
+  const [day] = nextWeekdays(1, 3);
+  await view.open();
+  await view.tickService('Guitarra');
+  await view.tickService('Bateria');
+  await view.pickSlotIn('Guitarra', day, '09:00');
+  await view.nameBox().fill('Ana Teste');
+
+  await expect(bookingBar(page).getByText('Falta escolher: Bateria')).toBeVisible();
+  await page.getByRole('button', { name: 'Enviar', exact: true }).click({ force: true });
+  await expect(page.getByText('Escolha dia e hora para Bateria, ou desmarque-o.')).toBeVisible();
+  expect(await appointmentsOf(form.id)).toHaveLength(0);
+
+  await page.getByRole('checkbox', { name: /^Bateria/ }).click();
+  await view.submit();
+  await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toBeVisible();
+  expect(await appointmentsOf(form.id)).toHaveLength(1);
+});

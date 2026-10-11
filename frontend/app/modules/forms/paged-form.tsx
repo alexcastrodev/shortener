@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { BookingAnswer, FormField } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
+import { incompleteServices } from './booking-answer.ts';
 import { FieldInput, focusFirstInput, isBlank, type Answer } from './field-inputs';
 import { useConfirmEmail } from './confirm-email';
 import { isSection } from './field-types';
@@ -112,14 +113,22 @@ export function PagedForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFieldId]);
 
+  const unfinished = (item: FormField) =>
+    item.type === 'booking'
+      ? incompleteServices(item.services, answers[item.id] as BookingAnswer | undefined)
+      : [];
+
   const missing = (fields: FormField[]) =>
     Object.fromEntries(
-      fields
-        .filter(item => item.required && !isSection(item) && isBlank(answers[item.id]))
-        .map(item => [
-          item.id,
-          t(item.type === 'booking' ? 'booking_required' : 'required'),
-        ])
+      fields.flatMap(item => {
+        if (isSection(item)) return [];
+        if (item.required && isBlank(answers[item.id]))
+          return [[item.id, t(item.type === 'booking' ? 'booking_required' : 'required')]];
+        const names = unfinished(item);
+        return names.length
+          ? [[item.id, t('booking_incomplete', { count: names.length, names: names.join(', ') })]]
+          : [];
+      })
     );
 
   const next = async () => {
@@ -367,7 +376,11 @@ export function PagedForm({
           monthly={Boolean(bookingField.services?.some(item => item.monthly))}
           theme={theme}
           label={last ? (submitting ? t('sending') : t('submit')) : t('next')}
-          ready={!bookingField.required || bookingSummary !== null}
+          ready={
+            (!bookingField.required || bookingSummary !== null) &&
+            unfinished(bookingField).length === 0
+          }
+          unfinished={unfinished(bookingField)}
           onSubmit={() => void next()}
         />
       )}

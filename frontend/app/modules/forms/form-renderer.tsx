@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Form } from '@internal/core/types/Form';
+import type { BookingAnswer, Form } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
+import { incompleteServices } from './booking-answer.ts';
 import { FieldInput, focusFirstInput, isBlank, type Answer, type UploadImage } from './field-inputs';
 import type { JoinWaitlist, LoadSlots } from './booking-input';
 import { isSection, sectionOf } from './field-types';
@@ -101,6 +102,14 @@ function SequentialForm({
     if (!field) return;
     if (field.required && isBlank(answers[field.id])) {
       setError(t('required'));
+      return;
+    }
+    const names =
+      field.type === 'booking'
+        ? incompleteServices(field.services, answers[field.id] as BookingAnswer | undefined)
+        : [];
+    if (names.length) {
+      setError(t('booking_incomplete', { count: names.length, names: names.join(', ') }));
       return;
     }
     setError(null);

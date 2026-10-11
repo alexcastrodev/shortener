@@ -5,6 +5,7 @@ import {
   answerFrom,
   answerText,
   dropItem,
+  incompleteServices,
   isEmptyItem,
   itemsOf,
   setItem,
@@ -74,4 +75,21 @@ test('an answer reads as text with the dates and times, by service when there ar
     answerText({ items: [guitar] }, new Map()),
     'guitar01: 2026-11-03 09:00, 2026-11-04 09:00'
   );
+});
+
+test('a ticked service with nothing chosen is named, a finished one is not', () => {
+  const services = [
+    { id: 'guit0001', name: 'Guitar', duration: 60, days: [], times: [] },
+    { id: 'drum0001', name: 'Drums', duration: 60, days: [], times: [] },
+  ];
+  const answer = {
+    items: [
+      { service: 'guit0001', sessions: [{ date: '2026-11-03', time: '09:00' }] },
+      { service: 'drum0001', sessions: [] },
+    ],
+  };
+  assert.deepEqual(incompleteServices(services, answer), ['Drums']);
+  assert.deepEqual(incompleteServices(services, { items: [answer.items[0]] }), []);
+  assert.deepEqual(incompleteServices(services, undefined), []);
+  assert.deepEqual(incompleteServices(services, { service: 'guit0001', sessions: [] }), ['Guitar']);
 });

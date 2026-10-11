@@ -48,6 +48,7 @@ export function BookingBar({
   theme,
   label,
   ready,
+  unfinished = [],
   onSubmit,
 }: {
   summary: AllSummary | null;
@@ -56,6 +57,7 @@ export function BookingBar({
   theme: BioTheme;
   label: string;
   ready: boolean;
+  unfinished?: string[];
   onSubmit: () => void;
 }) {
   const { t } = useTranslation('respond');
@@ -80,7 +82,9 @@ export function BookingBar({
                   : daysText(only)}
           </p>
           <p className="truncate text-xs opacity-70">
-            {!summary
+            {unfinished.length > 0
+              ? t('bar_unfinished', { names: unfinished.join(', ') })
+              : !summary
               ? t(monthly ? 'bar_hint' : 'bar_hint_days')
               : !only
                 ? t('bar_services', {

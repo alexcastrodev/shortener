@@ -1,4 +1,8 @@
-import type { BookingAnswer, BookingItem } from '@internal/core/types/Form';
+import type {
+  BookingAnswer,
+  BookingItem,
+  BookingService,
+} from '@internal/core/types/Form';
 
 export const itemsOf = (answer: BookingAnswer | undefined): BookingItem[] =>
   !answer ? [] : 'items' in answer ? answer.items : [answer];
@@ -19,6 +23,14 @@ export const dropItem = (items: BookingItem[], service: string) =>
 
 export const isEmptyItem = (item: BookingItem) =>
   item.sessions.length === 0 && !item.monthly;
+
+export const incompleteServices = (
+  services: BookingService[] | undefined,
+  answer: BookingAnswer | undefined
+): string[] =>
+  itemsOf(answer)
+    .filter(isEmptyItem)
+    .map(item => services?.find(entry => entry.id === item.service)?.name ?? item.service);
 
 const times = (item: BookingItem) =>
   item.sessions.map(session => `${session.date} ${session.time}`).join(', ');

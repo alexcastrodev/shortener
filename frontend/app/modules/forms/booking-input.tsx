@@ -79,12 +79,16 @@ export function BookingInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preselect]);
 
-  const current = useRef({ items, onChange });
-  current.current = { items, onChange };
+  const several = multiple && services.length > 1;
+  const current = useRef({ items, onChange, selected, several });
+  current.current = { items, onChange, selected, several };
 
   const setServiceItem = (service: string, item: BookingItem | undefined) => {
-    const next = item
-      ? setItem(current.current.items, item)
+    const { several: tracked, selected: ticked } = current.current;
+    const kept =
+      item ?? (tracked && ticked.includes(service) ? { service, sessions: [] } : undefined);
+    const next = kept
+      ? setItem(current.current.items, kept)
       : dropItem(current.current.items, service);
     current.current.items = next;
     current.current.onChange(answerFrom(next, multiple));
@@ -101,8 +105,11 @@ export function BookingInput({
   const chooseService = (id: string) => {
     if (multiple) {
       const ticked = selected.includes(id);
-      setSelected(ticked ? selected.filter(entry => entry !== id) : [...selected, id]);
+      const after = ticked ? selected.filter(entry => entry !== id) : [...selected, id];
+      setSelected(after);
+      current.current.selected = after;
       if (ticked) setServiceItem(id, undefined);
+      else setServiceItem(id, { service: id, sessions: [] });
       return;
     }
     if (selected[0] === id) return;
@@ -230,7 +237,7 @@ export function BookingInput({
           joinWaitlist={joinWaitlist}
           reloadKey={reloadKey}
           hideSummary={hideSummary}
-          multiple={multiple && services.length > 1}
+          multiple={several}
         />
       ))}
     </div>
