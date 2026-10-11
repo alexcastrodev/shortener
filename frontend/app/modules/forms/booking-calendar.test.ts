@@ -10,6 +10,7 @@ import {
   monthRange,
   previewSlots,
   shiftMonth,
+  toggleSession,
 } from './booking-calendar.ts';
 
 test('the grid starts on Monday and pads whole weeks', () => {
@@ -55,13 +56,54 @@ test('navigation stops at the current month and the window end', () => {
 test('a day cell tells free, chosen, viewed and today apart', () => {
   const state = {
     available: new Set(['2026-10-12', '2026-10-13']),
-    chosen: new Map([['2026-10-13', '16:30']]),
+    chosen: new Map([['2026-10-13', ['11:00', '16:30']]]),
     viewed: '2026-10-12',
     todayIso: '2026-10-09',
   };
-  assert.deepEqual(dayCell('2026-10-12', state), { enabled: true, time: undefined, viewed: true, today: false });
-  assert.deepEqual(dayCell('2026-10-13', state), { enabled: true, time: '16:30', viewed: false, today: false });
-  assert.deepEqual(dayCell('2026-10-09', state), { enabled: false, time: undefined, viewed: false, today: true });
+  assert.deepEqual(dayCell('2026-10-12', state), { enabled: true, times: [], viewed: true, today: false });
+  assert.deepEqual(dayCell('2026-10-13', state), { enabled: true, times: ['11:00', '16:30'], viewed: false, today: false });
+  assert.deepEqual(dayCell('2026-10-09', state), { enabled: false, times: [], viewed: false, today: true });
+});
+
+const at = (date: string, time: string, duration = 60) => ({ date, time, duration });
+
+test('picking two times on the same day keeps both, in order', () => {
+  const first = toggleSession([], at('2026-10-13', '14:00'));
+  assert.equal(first.kind, 'saved');
+  const second = toggleSession(first.sessions, at('2026-10-13', '11:00'));
+  assert.equal(second.kind, 'saved');
+  assert.deepEqual(second.sessions, [at('2026-10-13', '11:00'), at('2026-10-13', '14:00')]);
+});
+
+test('picking a time again removes only that session', () => {
+  const sessions = [at('2026-10-13', '11:00'), at('2026-10-13', '14:00'), at('2026-10-14', '09:00')];
+  const result = toggleSession(sessions, at('2026-10-13', '11:00'));
+  assert.equal(result.kind, 'removed');
+  assert.deepEqual(result.sessions, [at('2026-10-13', '14:00'), at('2026-10-14', '09:00')]);
+});
+
+test('the same time with another duration replaces the session instead of adding a second one', () => {
+  const result = toggleSession([at('2026-10-13', '11:00', 60)], at('2026-10-13', '11:00', 90));
+  assert.equal(result.kind, 'saved');
+  assert.deepEqual(result.sessions, [at('2026-10-13', '11:00', 90)]);
+});
+
+test('a time that overlaps a session of the same day is refused and says which one', () => {
+  const sessions = [at('2026-10-13', '11:00', 60)];
+  const inside = toggleSession(sessions, at('2026-10-13', '11:30', 30));
+  assert.equal(inside.kind, 'overlap');
+  assert.deepEqual(inside.sessions, sessions);
+  assert.deepEqual(inside.clash, sessions[0]);
+  assert.equal(toggleSession(sessions, at('2026-10-13', '10:30', 60)).kind, 'overlap');
+  assert.equal(toggleSession(sessions, at('2026-10-14', '11:30', 60)).kind, 'saved');
+});
+
+test('back to back is fine, and the buffer between sessions counts', () => {
+  const sessions = [at('2026-10-13', '11:00', 60)];
+  assert.equal(toggleSession(sessions, at('2026-10-13', '12:00', 60), 0).kind, 'saved');
+  assert.equal(toggleSession(sessions, at('2026-10-13', '10:00', 60), 0).kind, 'saved');
+  assert.equal(toggleSession(sessions, at('2026-10-13', '12:00', 60), 15).kind, 'overlap');
+  assert.equal(toggleSession(sessions, at('2026-10-13', '12:15', 60), 15).kind, 'saved');
 });
 
 test('only sessions inside the loaded range can be dropped', () => {

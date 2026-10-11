@@ -32,6 +32,7 @@ module Appointments
       lengths = sessions.map { |session| session["duration"] || service["duration"] }
       times = sessions.zip(lengths).map { |session, minutes| free.find { |slot| slot[:date].iso8601 == session["date"] && slot[:time] == session["time"] && slot[:durations].include?(minutes) } }
       return [nil, :unavailable] if times.any?(&:nil?)
+      return [nil, :unavailable] if overlapping?(times.map { |slot| slot[:starts_at] }, lengths, booking["rules"].fetch("buffer_minutes", 0)) || over_daily_limit?(form, booking["rules"], sessions)
 
       [{ "service" => service["id"], "sessions" => sessions.zip(lengths).map { |session, minutes| session.slice("date", "time").merge("duration" => minutes) }, "starts_at" => times.map { |slot| slot[:starts_at] }, "durations" => lengths, "capacity" => service["capacity"] }, nil]
     rescue Date::Error
@@ -186,6 +187,25 @@ module Appointments
       end
       ids = queued.compact.map(&:id)
       ActiveRecord.after_all_transactions_commit { ids.each { |id| NotificationDeliveryJob.perform_later(id) } }
+    end
+
+    def overlapping?(starts, lengths, buffer)
+      spans = starts.zip(lengths).map { |at, minutes| [at, at + (minutes + buffer).minutes] }
+      spans.combination(2).any? { |(from, to), (other_from, other_to)| from < other_to && other_from < to }
+    end
+
+    def over_daily_limit?(form, rules, sessions)
+      limit = rules["max_per_day"]
+      return false unless limit
+
+      zone = Time.find_zone!(rules["time_zone"])
+      sessions.group_by { |session| session["date"] }.any? do |date, group|
+        next false if group.size == 1
+
+        day = Date.iso8601(date)
+        start = zone.local(day.year, day.month, day.day)
+        AppointmentSlot.where(form_id: form.id, starts_at: start.utc..start.end_of_day.utc).sum(:booked) + group.size > limit
+      end
     end
 
     def valid_sessions?(sessions, service)

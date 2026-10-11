@@ -61,7 +61,7 @@ export function monthGrid(month: string): (string | null)[][] {
 
 export type DayCell = {
   enabled: boolean;
-  time: string | undefined;
+  times: string[];
   viewed: boolean;
   today: boolean;
 };
@@ -70,17 +70,51 @@ export function dayCell(
   iso: string,
   state: {
     available: Set<string>;
-    chosen: Map<string, string>;
+    chosen: Map<string, string[]>;
     viewed: string | undefined;
     todayIso: string;
   }
 ): DayCell {
   return {
     enabled: state.available.has(iso),
-    time: state.chosen.get(iso),
+    times: state.chosen.get(iso) ?? [],
     viewed: iso === state.viewed,
     today: iso === state.todayIso,
   };
+}
+
+export type PickedSession = { date: string; time: string; duration: number };
+
+const minutesOf = (time: string) => {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+const startsFirst = (a: PickedSession, b: PickedSession) =>
+  `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`);
+
+export function toggleSession(
+  sessions: PickedSession[],
+  pick: PickedSession,
+  buffer = 0
+):
+  | { kind: 'saved' | 'removed'; sessions: PickedSession[] }
+  | { kind: 'overlap'; sessions: PickedSession[]; clash: PickedSession } {
+  const sameTime = (item: PickedSession) =>
+    item.date === pick.date && item.time === pick.time;
+  if (sessions.some(item => sameTime(item) && item.duration === pick.duration))
+    return { kind: 'removed', sessions: sessions.filter(item => !sameTime(item)) };
+
+  const rest = sessions.filter(item => !sameTime(item));
+  const start = minutesOf(pick.time);
+  const clash = rest.find(
+    item =>
+      item.date === pick.date &&
+      start < minutesOf(item.time) + item.duration + buffer &&
+      minutesOf(item.time) < start + pick.duration + buffer
+  );
+  if (clash) return { kind: 'overlap', sessions, clash };
+  return { kind: 'saved', sessions: [...rest, pick].sort(startsFirst) };
 }
 
 export function keepFree<

@@ -1,4 +1,4 @@
-import { ActionIcon, Button, NumberInput } from '@mantine/core';
+import { ActionIcon, Button, NumberInput, Tooltip } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { IconPlus, IconX } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -43,23 +43,29 @@ export function ExtraDurations({
                 `services.${index}.extraDurations.${at}.duration`
               )}
             />
-            {priced && (
-              <NumberInput
-                className="flex-1"
-                aria-label={t('service_price')}
-                min={0}
-                decimalScale={2}
-                rightSectionWidth={48}
-                rightSection={
-                  <span className="text-xs text-muted-foreground">
-                    {service.currency}
-                  </span>
-                }
-                {...form.getInputProps(
-                  `services.${index}.extraDurations.${at}.price`
-                )}
-              />
-            )}
+            <Tooltip
+              label={t('extra_price_needs_main')}
+              disabled={priced}
+              events={{ hover: true, focus: true, touch: true }}
+            >
+              <div className="flex-1">
+                <NumberInput
+                  aria-label={t('service_price')}
+                  min={0}
+                  decimalScale={2}
+                  disabled={!priced}
+                  rightSectionWidth={48}
+                  rightSection={
+                    <span className="text-xs text-muted-foreground">
+                      {service.currency}
+                    </span>
+                  }
+                  {...form.getInputProps(
+                    `services.${index}.extraDurations.${at}.price`
+                  )}
+                />
+              </div>
+            </Tooltip>
             <ActionIcon
               mt={4}
               variant="subtle"

@@ -37,6 +37,7 @@
   "extra_durations": "Other durations",
   "extra_durations_hint": "Offer the same service with other lengths. The client picks the duration together with the time.",
   "extra_durations_add": "Add a duration",
+  "extra_price_needs_main": "Fill in the price above first",
   "extra_duration_remove": "Remove this duration",
   "error_extra_duration_repeated": "Each duration can only be used once",
   "error_extra_price": "Add a price for this duration",
