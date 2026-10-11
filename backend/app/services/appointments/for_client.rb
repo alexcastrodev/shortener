@@ -29,12 +29,12 @@ module Appointments
     def summary(rows, time_zone: nil)
       first = rows.first
       {
-        service: first.snapshot["name"],
+        service: rows.map { |row| row.snapshot["name"] }.uniq.join(", "),
         status: (Appointment::HOLDING & rows.map(&:status)).min_by { |status| status == "confirmed" ? 0 : 1 } || "cancelled",
         cancellable: rows.any? { |row| Appointment::HOLDING.include?(row.status) && row.slot.starts_at > Time.current },
         time_zone: Book.valid_zone(first.client_time_zone) || Book.valid_zone(time_zone) || "UTC",
-        series: first.snapshot["monthly"].present?,
-        sessions: rows.map { |row| { starts_at: row.slot.starts_at.iso8601, status: row.status } },
+        series: rows.any? { |row| row.snapshot["monthly"].present? },
+        sessions: rows.map { |row| { starts_at: row.slot.starts_at.iso8601, status: row.status, service: row.snapshot["name"], duration: row.snapshot["duration"] } },
       }
     end
 

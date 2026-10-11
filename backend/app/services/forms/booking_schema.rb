@@ -4,7 +4,7 @@ module Forms
 
     SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day", "extra_durations", "monthly"].freeze
     PUBLIC_SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "days", "times", "extra_durations", "monthly"].freeze
-    RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "approval_within_minutes", "verify_email", "waitlist", "waitlist_confirm_minutes", "reminder_minutes", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
+    RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "approval_within_minutes", "verify_email", "waitlist", "waitlist_confirm_minutes", "multiple_services", "reminder_minutes", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
     RULE_RANGES = { "min_notice_minutes" => (0..43_200), "window_days" => (1..365), "buffer_minutes" => (0..600), "max_per_day" => (1..1000), "approval_timeout_minutes" => (5..43_200), "approval_within_minutes" => (1..43_200), "waitlist_confirm_minutes" => (15..4_320) }.freeze
     APPROVALS = ["auto", "manual"].freeze
     ON_TIMEOUT = ["decline", "accept"].freeze
@@ -64,7 +64,18 @@ module Forms
         result.concat(category_link_errors(service, category_ids).map { |message| "#{label} #{message}" })
       end
       result.concat(rule_errors(rules.stringify_keys))
+      result.concat(multiple_rule_errors(field))
       result.concat(exception_errors(field["exceptions"], ids))
+    end
+
+    def multiple_rule_errors(field)
+      return [] unless field.dig("rules", "multiple_services") == true
+
+      result = []
+      result << "several services in one booking is not available with categories" if field["categories"].to_a.size >= 2
+      currencies = field["services"].to_a.grep(Hash).filter_map { |service| service["currency"] if service["price"] }.uniq
+      result << "several services in one booking need every price in the same currency" if currencies.size > 1
+      result
     end
 
     def defaults(attributes, user)
@@ -311,6 +322,7 @@ module Forms
         result << "#{key.tr("_", " ")} must be a whole number from #{range.min} to #{range.max}" unless value.nil? || (value.is_a?(Integer) && range.cover?(value))
       end
       result << "waitlist must be true or false" unless [nil, true, false].include?(rules["waitlist"])
+      result << "multiple services must be true or false" unless [nil, true, false].include?(rules["multiple_services"])
       result << "verify email must be true or false" unless [nil, true, false].include?(rules["verify_email"])
       result << "reminder minutes must be up to #{REMINDERS_MAX} different whole numbers from #{REMINDER_RANGE.min} to #{REMINDER_RANGE.max}" unless valid_reminders?(rules["reminder_minutes"])
       result
@@ -320,6 +332,6 @@ module Forms
       list.nil? || (list.is_a?(Array) && list.size <= REMINDERS_MAX && list.uniq.size == list.size && list.all? { |value| value.is_a?(Integer) && REMINDER_RANGE.cover?(value) })
     end
 
-    public(:block, :rule_errors, :exception_errors, :service_errors, :schedule_errors)
+    public(:block, :rule_errors, :exception_errors, :service_errors, :schedule_errors, :multiple_rule_errors)
   end
 end

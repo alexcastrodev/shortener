@@ -32,7 +32,7 @@ module Appointments
     def within(rows, target, scope)
       case scope
       when "one" then rows.select { |row| row.id == target.id }
-      when "remaining" then rows.select { |row| row.slot.starts_at >= target.slot.starts_at }
+      when "remaining" then rows.select { |row| row.slot.service_key == target.slot.service_key && row.slot.starts_at >= target.slot.starts_at }
       else rows
       end
     end

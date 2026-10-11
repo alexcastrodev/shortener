@@ -54,6 +54,14 @@ A booking is created **inside** `Forms::SubmitResponse`, in the same transaction
 4. The appointment starts as `confirmed` (automatic approval) or `pending` (manual approval, with an expiry). Pending appointments hold their slot.
 5. Cancelling or expiring releases the slot with `booked = GREATEST(booked - 1, 0)`.
 
+## Several services in one booking
+
+An owner can switch on the rule `multiple_services` (off by default, both modes). The answer is then `{items: [{service, sessions | monthly}, ...]}`, one item per service (at most 5); the legacy `{service, sessions, monthly?}` stays valid, with the rule on or off, and is the only shape accepted while the rule is off or for a waiting list claim. A request is still one response, one `group_key`, one approval, verification or expiry decision, one reminder and one e-mail; cancelling a booking cancels every session, and `scope=remaining` only the sessions of the same service.
+
+Every item is cast on its own with the rules of its service, then the whole request is checked as one person's time: sessions of different services may not overlap (the buffer counts) and every session of a day counts towards `max_per_day`. The group total is the sum of the items (each priced as before, a monthly item at its monthly price), written on every row next to that row's own price and duration. The receipt, the e-mails and the manage page show each service and the length of each session.
+
+Limits: with the rule on every priced service must use one currency and the question cannot have categories; the waiting list stays per service.
+
 ## Approval and deadlines
 
 The owner chooses automatic or manual approval per form. With manual approval, an unanswered request is accepted or declined automatically after a configurable time (default: declined). A recurring job resolves expired requests every minute and sends reminders every five minutes; there is no job per appointment and no lazy evaluation on read.

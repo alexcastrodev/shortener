@@ -39,11 +39,11 @@ class Api::Public::AppointmentVerificationsController < ApplicationController
     {
       appointment: {
         form_title: @appointment.form.title,
-        service: rows.first.snapshot["name"],
+        service: rows.map { |row| row.snapshot["name"] }.uniq.join(", "),
         status: rows.first.status,
         expires_at: rows.first.expires_at&.iso8601,
         time_zone: zone,
-        sessions: rows.map { |row| { starts_at: row.slot.starts_at.iso8601 } },
+        sessions: rows.map { |row| { starts_at: row.slot.starts_at.iso8601, service: row.snapshot["name"], duration: row.snapshot["duration"] } },
       },
     }
   end

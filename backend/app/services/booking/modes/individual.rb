@@ -33,6 +33,7 @@ module Booking
         end
         result.concat(schema.rule_errors(rules.stringify_keys))
         result << "the waiting list is not available in this mode" if rules["waitlist"] == true
+        result.concat(schema.multiple_rule_errors(field))
         result.concat(schema.exception_errors(field["exceptions"], ids))
       end
 

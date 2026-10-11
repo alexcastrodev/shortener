@@ -84,7 +84,7 @@ module Forms
 
       value, error = Appointments::Book.cast(form: form, booking: field, raw: raw, claim_at: claim_at)
       @booking = value
-      [value&.slice("service", "sessions"), error]
+      [value&.fetch("stored"), error]
     end
 
     def contact(values)
