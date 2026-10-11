@@ -30,6 +30,8 @@ test('a new service lasts 30 minutes, has 1 place, euros and no price', () => {
   assert.equal(service.currency, 'EUR');
   assert.deepEqual(service.extraDurations, []);
   assert.equal(service.monthlyDuration, '');
+  assert.equal(service.monthlySessions, '');
+  assert.equal(service.monthlyPer, 'month');
   assert.equal(service.ownSchedule, false);
 });
 
@@ -128,4 +130,47 @@ test('an empty monthly duration is left out so the service duration applies', ()
   const values = serviceValues(piano, '');
   values.monthlyDuration = '';
   assert.deepEqual(serviceInput(values).monthly, { price: 120 });
+});
+
+test('the allowance of the monthly offer loads and is sent, with the period only when it is per week', () => {
+  const loaded = serviceValues(
+    { ...piano, monthly: { price: 120, sessions: 5 } },
+    ''
+  );
+  assert.equal(loaded.monthlySessions, 5);
+  assert.equal(loaded.monthlyPer, 'month');
+  assert.deepEqual(serviceInput(loaded).monthly, { price: 120, sessions: 5 });
+
+  const weekly = serviceValues(
+    { ...piano, monthly: { price: 120, sessions: 1, per: 'week' } },
+    ''
+  );
+  assert.equal(weekly.monthlyPer, 'week');
+  assert.deepEqual(serviceInput(weekly).monthly, {
+    price: 120,
+    sessions: 1,
+    per: 'week',
+  });
+});
+
+test('clearing the number removes the allowance, whatever the period was', () => {
+  const values = serviceValues(
+    { ...piano, monthly: { price: 120, sessions: 1, per: 'week' } },
+    ''
+  );
+  values.monthlySessions = '';
+  assert.deepEqual(serviceInput(values).monthly, { price: 120 });
+
+  const none = serviceValues({ ...piano, monthly: { price: 120 } }, '');
+  assert.equal(none.monthlySessions, '');
+  assert.deepEqual(serviceInput(none).monthly, { price: 120 });
+});
+
+test('a monthly offer switched off sends no allowance', () => {
+  const values = serviceValues(
+    { ...piano, monthly: { price: 120, sessions: 5 } },
+    ''
+  );
+  values.monthly = false;
+  assert.equal('monthly' in serviceInput(values), false);
 });

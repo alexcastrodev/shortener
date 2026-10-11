@@ -1,6 +1,6 @@
 import { z } from 'zod/v4';
 import { timeoutInRange } from './duration-units.ts';
-import { TIME } from './values.ts';
+import { ALLOWANCE_MAX, TIME } from './values.ts';
 
 export type ValidationKey =
   | 'category_name_error'
@@ -12,6 +12,8 @@ export type ValidationKey =
   | 'error_duration'
   | 'error_extra_duration_repeated'
   | 'error_extra_price'
+  | 'error_monthly_sessions'
+  | 'error_monthly_sessions_week'
   | 'error_multiple_categories'
   | 'error_multiple_currency'
   | 'error_name'
@@ -99,10 +101,20 @@ const serviceSchema = (validation: ModeValidation, t: Translate) =>
           .max(600, t('error_duration')),
         z.literal(''),
       ]),
+      monthlySessions: z.union([z.number(), z.literal('')]),
+      monthlyPer: z.enum(['month', 'week']),
     })
     .check(ctx => {
-      const { duration, price, currency, monthly, monthlyPrice, extraDurations } =
-        ctx.value;
+      const {
+        duration,
+        price,
+        currency,
+        monthly,
+        monthlyPrice,
+        monthlySessions,
+        monthlyPer,
+        extraDurations,
+      } = ctx.value;
       validation.itemIssues(ctx.value, t).forEach(issue =>
         ctx.issues.push({
           code: 'custom',
@@ -141,6 +153,26 @@ const serviceSchema = (validation: ModeValidation, t: Translate) =>
           message: t('error_price_currency'),
           path: ['monthlyPrice'],
           input: monthlyPrice,
+        });
+      }
+      if (
+        monthly &&
+        monthlySessions !== '' &&
+        !(
+          Number.isInteger(monthlySessions) &&
+          monthlySessions >= 1 &&
+          monthlySessions <= ALLOWANCE_MAX[monthlyPer]
+        )
+      ) {
+        ctx.issues.push({
+          code: 'custom',
+          message: t(
+            monthlyPer === 'week'
+              ? 'error_monthly_sessions_week'
+              : 'error_monthly_sessions'
+          ),
+          path: ['monthlySessions'],
+          input: monthlySessions,
         });
       }
       if (price !== '' && !/^[A-Za-z]{3}$/.test(currency.trim())) {

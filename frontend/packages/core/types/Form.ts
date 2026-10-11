@@ -43,7 +43,12 @@ export type BookingService = {
   times: string[];
   times_by_day?: Record<string, string[]>;
   extra_durations?: { duration: number; price?: number | null }[] | null;
-  monthly?: { price?: number | null; duration?: number | null } | null;
+  monthly?: {
+    price?: number | null;
+    duration?: number | null;
+    sessions?: number | null;
+    per?: 'month' | 'week' | null;
+  } | null;
 };
 
 export type BookingRules = {

@@ -6,6 +6,7 @@ export const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export const DEFAULT_CURRENCY = 'EUR';
 export const EXTRA_DURATIONS_MAX = 4;
+export const ALLOWANCE_MAX = { month: 31, week: 7 } as const;
 
 export type CategoryValues = { id: string; name: string };
 
@@ -31,6 +32,8 @@ export type ServiceValues = ScheduleValues & {
   monthly: boolean;
   monthlyPrice: number | '';
   monthlyDuration: number | '';
+  monthlySessions: number | '';
+  monthlyPer: 'month' | 'week';
 };
 
 export type ExceptionValues = {
