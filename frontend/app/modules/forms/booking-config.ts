@@ -28,9 +28,6 @@ export type ServiceValues = {
   byDay: Record<string, { key: string; value: string }[]>;
   monthly: boolean;
   monthlyPrice: number | '';
-  bundle: boolean;
-  bundleTake: number | '';
-  bundlePay: number | '';
 };
 
 export type ExceptionValues = {
@@ -144,9 +141,6 @@ export const blankService = (name: string, categoryId = ''): ServiceValues => ({
   byDay: {},
   monthly: false,
   monthlyPrice: '',
-  bundle: false,
-  bundleTake: 5,
-  bundlePay: 4,
 });
 
 export function initialValues(field?: FormField): Values {
@@ -171,9 +165,6 @@ export function initialValues(field?: FormField): Values {
       times: service.times.map(value => ({ key: newKey(), value })),
       monthly: Boolean(service.monthly),
       monthlyPrice: service.monthly?.price ?? '',
-      bundle: Boolean(service.bundle),
-      bundleTake: service.bundle?.take ?? 5,
-      bundlePay: service.bundle?.pay ?? 4,
       byDay: Object.fromEntries(
         Object.entries(service.times_by_day ?? {}).map(([day, list]) => [
           day,
@@ -292,12 +283,6 @@ export function toBookingInput(
                   : {}),
               },
             }
-          : {}),
-        ...(price !== null &&
-        service.bundle &&
-        service.bundleTake !== '' &&
-        service.bundlePay !== ''
-          ? { bundle: { take: service.bundleTake, pay: service.bundlePay } }
           : {}),
       };
     }),

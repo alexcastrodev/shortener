@@ -23,9 +23,4 @@ RSpec.describe(MailerHelper) do
     I18n.with_locale("en") { expect(helper.mail_money(80, "CHF")).to(eq("80.00#{nbsp}CHF")) }
     I18n.with_locale("pt-PT") { expect(helper.mail_money(80, "CHF")).to(eq("80,00#{nbsp}CHF")) }
   end
-
-  it "adds the free sessions after the price" do
-    I18n.with_locale("pt-PT") { expect(helper.mail_total(80, "EUR", 1)).to(eq("80,00#{nbsp}€ · 1 sessão grátis")) }
-    I18n.with_locale("en") { expect(helper.mail_total(100, "EUR", 2)).to(eq("€100.00 · 2 free sessions")) }
-  end
 end

@@ -42,9 +42,6 @@ pt-PT:
     with: "Com"
     client: "Cliente"
     total: "Total"
-    free:
-      one: "%{count} sessão grátis"
-      other: "%{count} sessões grátis"
     zone: "Fuso horário: %{zone}"
     someone: "Alguém"
     see_responses: "Ver nas suas respostas"

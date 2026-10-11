@@ -29,10 +29,6 @@ class FormFieldContract < ApplicationContract
       optional(:monthly).maybe(:hash) do
         optional(:price).maybe(:float)
       end
-      optional(:bundle).hash do
-        required(:take).filled(:integer)
-        required(:pay).filled(:integer)
-      end
       optional(:times_by_day).hash do
         ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].each { |day| optional(day.to_sym).array(:string) }
       end

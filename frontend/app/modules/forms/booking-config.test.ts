@@ -279,34 +279,6 @@ test('a service without weekday times sends none, so the general times apply', (
   assert.equal('times_by_day' in sent, false);
 });
 
-test('a package loads, and is sent only while it is on and the service has a price', () => {
-  const withBundle: FormField = {
-    ...field,
-    services: [{ ...field.services![0], bundle: { take: 10, pay: 8 } }],
-  };
-  const values = initialValues(withBundle);
-  assert.equal(values.services[0].bundle, true);
-  assert.deepEqual(toBookingInput(values, false).services![0].bundle, {
-    take: 10,
-    pay: 8,
-  });
-
-  values.services[0].price = '';
-  assert.equal('bundle' in toBookingInput(values, false).services![0], false);
-
-  values.services[0].price = 25;
-  values.services[0].bundle = false;
-  assert.equal('bundle' in toBookingInput(values, false).services![0], false);
-});
-
-test('a new service starts without a package, with 5 for 4 ready if it is turned on', () => {
-  const service = blankService('Class');
-  assert.deepEqual(
-    [service.bundle, service.bundleTake, service.bundlePay],
-    [false, 5, 4]
-  );
-});
-
 test('a form with one category or none saves no categories and no category ids', () => {
   const values = initialValues(field);
   const input = toBookingInput(values, false);

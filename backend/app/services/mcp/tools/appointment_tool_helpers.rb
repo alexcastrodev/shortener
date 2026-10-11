@@ -65,7 +65,7 @@ module Mcp
 
       def self.price(appointment)
         snapshot = appointment.snapshot
-        { total: snapshot["total"], currency: snapshot["currency"], free_sessions: snapshot["free_sessions"] } if snapshot["total"]
+        { total: snapshot["total"], currency: snapshot["currency"] } if snapshot["total"]
       end
 
       def self.page(rows)
