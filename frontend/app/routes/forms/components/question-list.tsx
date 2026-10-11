@@ -4,7 +4,7 @@ import {
   Droppable,
   type DropResult,
 } from '@hello-pangea/dnd';
-import { ActionIcon, Group } from '@mantine/core';
+import { ActionIcon, Group, Stack } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import {
@@ -40,6 +40,9 @@ import {
   isSection,
 } from '../../../modules/forms/field-types';
 import {
+  LESSON_DURATION,
+  blankLesson,
+  blankSchedule,
   blankService,
   initialValues,
   toBookingInput,
@@ -54,7 +57,19 @@ const bookingServices = () => {
   return toBookingInput(values, true).services;
 };
 
-const defaultsFor = (type: FormFieldType): FormFieldInput => ({
+const teacherBooking = (): FormFieldInput => {
+  const values = initialValues();
+  values.mode = 'individual';
+  values.availability = blankSchedule(LESSON_DURATION);
+  values.services = [blankLesson(i18n.t('booking:lesson_default'))];
+  const { mode, availability, services } = toBookingInput(values, true);
+  return { mode, availability, services };
+};
+
+const defaultsFor = (
+  type: FormFieldType,
+  mode?: 'individual'
+): FormFieldInput => ({
   type,
   label:
     type === 'section'
@@ -66,7 +81,11 @@ const defaultsFor = (type: FormFieldType): FormFieldInput => ({
     ? { choices: [1, 2, 3].map(n => ({ label: i18n.t('forms:ed_new_option', { n }) })) }
     : {}),
   ...(type === 'rating' ? { scale: 5 as const } : {}),
-  ...(type === 'booking' ? { services: bookingServices() } : {}),
+  ...(type === 'booking'
+    ? mode === 'individual'
+      ? teacherBooking()
+      : { services: bookingServices() }
+    : {}),
 });
 
 const copyOf = (field: FormField): FormFieldInput => ({
@@ -169,6 +188,43 @@ export function QuestionList({
       labels: { confirm: t('ed_remove_confirm'), cancel: t('ed_keep') },
       confirmProps: { color: 'red' },
       onConfirm: () => remove({ formId: form.id, fieldId: field.id }),
+    });
+  };
+
+  const chooseBookingMode = () => {
+    const modes = [
+      {
+        mode: undefined,
+        label: t('ed_booking_mode_services'),
+        hint: t('ed_booking_mode_services_hint'),
+      },
+      {
+        mode: 'individual' as const,
+        label: t('ed_booking_mode_individual'),
+        hint: t('ed_booking_mode_individual_hint'),
+      },
+    ];
+    const id = modals.open({
+      title: t('ed_booking_mode_title'),
+      centered: true,
+      children: (
+        <Stack gap="sm">
+          {modes.map(item => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => {
+                modals.close(id);
+                create({ formId: form.id, data: defaultsFor('booking', item.mode) });
+              }}
+              className="rounded-lg border border-border bg-card px-3 py-2.5 text-left hover:border-primary focus-visible:border-primary focus-visible:outline-none"
+            >
+              <span className="block text-sm font-medium">{item.label}</span>
+              <span className="block text-xs text-muted-foreground">{item.hint}</span>
+            </button>
+          ))}
+        </Stack>
+      ),
     });
   };
 
@@ -335,7 +391,11 @@ export function QuestionList({
                     type="button"
                     disabled={isCreating}
                     title={fieldTypeHint(type)}
-                    onClick={() => create({ formId: form.id, data: defaultsFor(type) })}
+                    onClick={() =>
+                      type === 'booking'
+                        ? chooseBookingMode()
+                        : create({ formId: form.id, data: defaultsFor(type) })
+                    }
                     className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-2 text-left text-[13px] hover:border-primary focus-visible:border-primary focus-visible:outline-none disabled:opacity-50"
                   >
                     <Icon size={16} className="shrink-0 text-primary" />

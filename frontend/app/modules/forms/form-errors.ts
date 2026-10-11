@@ -5,6 +5,7 @@ const PUBLISH_BLOCKS = {
   no_questions: 'forms:err_publish_no_questions',
   no_service: 'forms:err_publish_no_service',
   service_incomplete: 'forms:err_publish_service_incomplete',
+  availability_incomplete: 'forms:err_publish_availability_incomplete',
   waitlist_questions: 'forms:err_publish_waitlist',
   no_email: 'forms:err_publish_no_email',
 } as const;

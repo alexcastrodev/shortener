@@ -47,7 +47,7 @@ import {
   BookingDraftContext,
   applyBookingDraft,
   type BookingDraft,
-} from '../../modules/forms/booking-draft.tsx';
+} from '../../modules/forms/booking-draft.ts';
 import { useSetFormPublished } from '@internal/core/actions/set-form-published/set-form-published.hook';
 import { useDeleteForm } from '@internal/core/actions/delete-form/delete-form.hook';
 import { PAGE_THEMES } from '@internal/core/types/Page';

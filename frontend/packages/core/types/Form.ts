@@ -72,7 +72,19 @@ export type BookingException = {
 
 export type BookingExceptionInput = Omit<BookingException, 'id'> & { id?: string };
 
-export type BookingServiceInput = Omit<BookingService, 'id'> & { id?: string };
+export type BookingServiceInput = Omit<BookingService, 'id' | 'days' | 'times'> & {
+  id?: string;
+  days?: string[];
+  times?: string[];
+};
+
+export type BookingMode = 'individual';
+
+export type BookingAvailability = {
+  days: string[];
+  times: string[];
+  times_by_day?: Record<string, string[]>;
+};
 
 export type FormField = {
   id: string;
@@ -85,6 +97,8 @@ export type FormField = {
   scale?: 5 | 10;
   min?: number;
   max?: number;
+  mode?: BookingMode;
+  availability?: BookingAvailability;
   categories?: BookingCategory[];
   services?: BookingService[];
   rules?: BookingRules;
@@ -141,6 +155,8 @@ export type FormFieldInput = {
   scale?: 5 | 10;
   min?: number | null;
   max?: number | null;
+  mode?: BookingMode;
+  availability?: BookingAvailability;
   categories?: BookingCategory[];
   services?: BookingServiceInput[];
   rules?: Partial<BookingRules>;

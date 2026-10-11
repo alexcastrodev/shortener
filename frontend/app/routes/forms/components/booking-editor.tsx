@@ -1,5 +1,6 @@
 import { Button, Group, Stack, TextInput } from '@mantine/core';
 import { useForm, type FormErrors } from '@mantine/form';
+import type { TFunction } from 'i18next';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { IconPlus } from '@tabler/icons-react';
@@ -11,19 +12,33 @@ import type { FormField, FormFieldInput } from '@internal/core/types/Form';
 import { CategoriesSection } from './categories-section';
 import { ExceptionsSection } from './exceptions-section';
 import { RulesSection } from './rules-section';
+import { ScheduleFields } from './schedule-fields';
 import { ServiceCard } from './service-card';
-import { useBookingDraft } from '../../../modules/forms/booking-draft.tsx';
+import { useBookingDraft } from '../../../modules/forms/booking-draft.ts';
 import { timeoutInRange } from '../../../modules/forms/duration-units.ts';
 import {
   DAYS,
   TIME,
+  blankLesson,
   blankService,
   initialValues,
   toBookingInput,
   type Values,
 } from '../../../modules/forms/booking-config.ts';
+import { scheduleSummary } from '../../../modules/forms/service-summary.ts';
 
 const SERVICE_ERROR = /^services\.(\d+)\./;
+
+const scheduleShape = (t: TFunction<'booking'>) => ({
+  days: z.array(z.string()).min(1, t('error_days')),
+  times: z
+    .array(z.object({ value: z.string().regex(TIME, t('error_time')) }))
+    .min(1, t('error_times')),
+  byDay: z.record(
+    z.string(),
+    z.array(z.object({ value: z.string().regex(TIME, t('error_time')) }))
+  ),
+});
 
 export function BookingEditor({
   field,
@@ -40,11 +55,13 @@ export function BookingEditor({
 }) {
   const { t } = useTranslation('booking');
   const creating = !field;
+  const individual = field?.mode === 'individual';
 
   const schema = useMemo(
     () =>
       z
         .object({
+          ...(individual ? { availability: z.object(scheduleShape(t)) } : {}),
           label: z.string().trim().min(1).max(300),
           help: z.string().max(500),
           approval: z.enum(['auto', 'manual']),
@@ -103,12 +120,7 @@ export function BookingEditor({
                   .max(600, t('error_duration')),
                 price: z.union([z.number().min(0), z.literal('')]),
                 currency: z.string(),
-                days: z.array(z.string()).min(1, t('error_days')),
-                times: z
-                  .array(
-                    z.object({ value: z.string().regex(TIME, t('error_time')) })
-                  )
-                  .min(1, t('error_times')),
+                ...(individual ? {} : scheduleShape(t)),
                 extraDurations: z.array(
                   z.object({
                     duration: z
@@ -129,12 +141,6 @@ export function BookingEditor({
                     .max(600, t('error_duration')),
                   z.literal(''),
                 ]),
-                byDay: z.record(
-                  z.string(),
-                  z.array(
-                    z.object({ value: z.string().regex(TIME, t('error_time')) })
-                  )
-                ),
               })
               .check(ctx => {
                 const {
@@ -231,7 +237,7 @@ export function BookingEditor({
             });
           }
         }),
-    [t]
+    [t, individual]
   );
 
   const form = useForm<Values>({
@@ -312,10 +318,12 @@ export function BookingEditor({
   };
 
   const addService = () => {
-    const service = blankService(
-      t('service_new'),
-      form.getValues().categories[0]?.id ?? ''
-    );
+    const service = individual
+      ? blankLesson(t('lesson_new'))
+      : blankService(
+          t('service_new'),
+          form.getValues().categories[0]?.id ?? ''
+        );
     form.insertListItem('services', service);
     expand([service.key]);
   };
@@ -323,7 +331,7 @@ export function BookingEditor({
   const confirmRemove = (key: string) => {
     const service = form.getValues().services.find(item => item.key === key);
     if (!service) return;
-    const name = service.name || t('service_new');
+    const name = service.name || t(individual ? 'lesson_new' : 'service_new');
     modals.openConfirmModal({
       title: t('service_remove_title'),
       centered: true,
@@ -345,7 +353,12 @@ export function BookingEditor({
     });
   };
 
-  const { services } = form.values;
+  const { services, availability } = form.values;
+  const availabilitySummary = scheduleSummary(availability, {
+    times: count => t('summary_times', { count }),
+    ownTimes: days => t('summary_own_times', { days }),
+    day: day => dayLabels[day],
+  });
 
   return (
     <form
@@ -368,19 +381,49 @@ export function BookingEditor({
           <TextInput label={t('help_label')} {...form.getInputProps('help')} />
         </Stack>
 
+        {individual && (
+          <section
+            aria-labelledby="booking-availability-title"
+            className="flex flex-col gap-4 border-t border-border pt-6"
+          >
+            <div>
+              <h3
+                id="booking-availability-title"
+                className="text-sm font-medium"
+              >
+                {t('availability_title')}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {t('availability_hint')}
+              </p>
+              <p className="break-words text-xs text-muted-foreground">
+                {availabilitySummary}
+              </p>
+            </div>
+            <ScheduleFields
+              form={form}
+              path="availability"
+              duration={Number(services[0]?.duration) || 60}
+              dayLabels={dayLabels}
+            />
+          </section>
+        )}
+
         <section
           aria-labelledby="booking-services-title"
           className="flex flex-col gap-4 border-t border-border pt-6"
         >
           <div className="flex items-baseline justify-between gap-3">
             <h3 id="booking-services-title" className="text-sm font-medium">
-              {t('services_title')}
+              {t(individual ? 'lessons_title' : 'services_title')}
             </h3>
             <span className="text-xs text-muted-foreground">
-              {t('category_count', { count: services.length })}
+              {individual
+                ? t('lesson_count', { count: services.length })
+                : t('category_count', { count: services.length })}
             </span>
           </div>
-          <CategoriesSection form={form} />
+          {!individual && <CategoriesSection form={form} />}
           {services.length === 0 && (
             <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
               {t('no_services')}
@@ -404,7 +447,7 @@ export function BookingEditor({
             leftSection={<IconPlus size={14} />}
             onClick={addService}
           >
-            {t('service_add')}
+            {t(individual ? 'lesson_add' : 'service_add')}
           </Button>
         </section>
 
