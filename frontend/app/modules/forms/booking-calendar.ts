@@ -1,6 +1,6 @@
 import type { FormSlot } from '@internal/core/actions/get-form-slots/get-form-slots.types';
 import type { BookingService } from '@internal/core/types/Form';
-import { bookingOptions } from './booking-options.ts';
+import { bookingOptions, type Allowance } from './booking-options.ts';
 import { pad } from './monthly-booking.ts';
 
 export const MAX_DAYS = 56;
@@ -98,14 +98,22 @@ const minutesOf = (time: string) => {
 const startsFirst = (a: PickedSession, b: PickedSession) =>
   `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`);
 
+export const mondayOf = (iso: string) => {
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+  return date.toISOString().slice(0, 10);
+};
+
 export function toggleSession(
   sessions: PickedSession[],
   pick: PickedSession,
   buffer = 0,
-  others: PickedSession[] = []
+  others: PickedSession[] = [],
+  cap?: Allowance
 ):
   | { kind: 'saved' | 'removed'; sessions: PickedSession[] }
-  | { kind: 'overlap'; sessions: PickedSession[]; clash: PickedSession } {
+  | { kind: 'overlap'; sessions: PickedSession[]; clash: PickedSession }
+  | { kind: 'limit'; sessions: PickedSession[]; per: Allowance['per'] } {
   const sameTime = (item: PickedSession) =>
     item.date === pick.date && item.time === pick.time;
   if (sessions.some(item => sameTime(item) && item.duration === pick.duration))
@@ -120,6 +128,15 @@ export function toggleSession(
       minutesOf(item.time) < start + pick.duration + buffer
   );
   if (clash) return { kind: 'overlap', sessions, clash };
+  if (cap) {
+    const week = mondayOf(pick.date);
+    const counted =
+      cap.per === 'week'
+        ? rest.filter(item => mondayOf(item.date) === week)
+        : rest;
+    if (counted.length >= cap.limit)
+      return { kind: 'limit', sessions, per: cap.per };
+  }
   return { kind: 'saved', sessions: [...rest, pick].sort(startsFirst) };
 }
 

@@ -8,6 +8,7 @@ import {
   lastBookable,
   monthGrid,
   monthRange,
+  mondayOf,
   previewSlots,
   shiftMonth,
   toggleSession,
@@ -120,6 +121,72 @@ test('back to back is fine, and the buffer between sessions counts', () => {
   assert.equal(toggleSession(sessions, at('2026-10-13', '10:00', 60), 0).kind, 'saved');
   assert.equal(toggleSession(sessions, at('2026-10-13', '12:00', 60), 15).kind, 'overlap');
   assert.equal(toggleSession(sessions, at('2026-10-13', '12:15', 60), 15).kind, 'saved');
+});
+
+test('a week runs from Monday to Sunday', () => {
+  assert.equal(mondayOf('2026-11-02'), '2026-11-02');
+  assert.equal(mondayOf('2026-11-08'), '2026-11-02');
+  assert.equal(mondayOf('2026-11-09'), '2026-11-09');
+  assert.equal(mondayOf('2026-11-01'), '2026-10-26');
+  assert.equal(mondayOf('2027-01-01'), '2026-12-28');
+});
+
+test('with an allowance per month the next pick is refused once the places are taken', () => {
+  const cap = { limit: 2, per: 'month' as const };
+  const first = toggleSession([], at('2026-11-03', '09:00'), 0, [], cap);
+  assert.equal(first.kind, 'saved');
+  const second = toggleSession(first.sessions, at('2026-11-17', '10:00'), 0, [], cap);
+  assert.equal(second.kind, 'saved');
+  const third = toggleSession(second.sessions, at('2026-11-24', '09:00'), 0, [], cap);
+  assert.equal(third.kind, 'limit');
+  assert.deepEqual(third.sessions, second.sessions);
+  assert.equal(third.kind === 'limit' && third.per, 'month');
+});
+
+test('with an allowance a second time on the same day counts as another session', () => {
+  const cap = { limit: 2, per: 'month' as const };
+  const sessions = [at('2026-11-03', '09:00'), at('2026-11-03', '11:00')];
+  assert.equal(toggleSession(sessions, at('2026-11-03', '14:00'), 0, [], cap).kind, 'limit');
+});
+
+test('removing a session frees a place, and a pick that only changes the duration does not take one', () => {
+  const cap = { limit: 2, per: 'month' as const };
+  const full = [at('2026-11-03', '09:00'), at('2026-11-17', '10:00')];
+  const removed = toggleSession(full, at('2026-11-03', '09:00'), 0, [], cap);
+  assert.equal(removed.kind, 'removed');
+  assert.equal(toggleSession(removed.sessions, at('2026-11-24', '09:00'), 0, [], cap).kind, 'saved');
+  const longer = toggleSession(full, at('2026-11-03', '09:00', 90), 0, [], cap);
+  assert.equal(longer.kind, 'saved');
+  assert.deepEqual(longer.sessions, [at('2026-11-03', '09:00', 90), at('2026-11-17', '10:00')]);
+});
+
+test('with an allowance per week the cap counts each Monday to Sunday week on its own', () => {
+  const cap = { limit: 1, per: 'week' as const };
+  const monday = [at('2026-11-02', '09:00')];
+  const sameWeek = toggleSession(monday, at('2026-11-08', '09:00'), 0, [], cap);
+  assert.equal(sameWeek.kind, 'limit');
+  assert.equal(sameWeek.kind === 'limit' && sameWeek.per, 'week');
+  assert.equal(toggleSession(monday, at('2026-11-09', '09:00'), 0, [], cap).kind, 'saved');
+  assert.equal(toggleSession(monday, at('2026-11-16', '09:00'), 0, [], cap).kind, 'saved');
+});
+
+test('a weekly allowance of two keeps the third pick of a week out, and a week with a place left takes it', () => {
+  const cap = { limit: 2, per: 'week' as const };
+  const sessions = [at('2026-11-02', '09:00'), at('2026-11-04', '09:00'), at('2026-11-09', '09:00')];
+  assert.equal(toggleSession(sessions, at('2026-11-06', '09:00'), 0, [], cap).kind, 'limit');
+  assert.equal(toggleSession(sessions, at('2026-11-10', '09:00'), 0, [], cap).kind, 'saved');
+});
+
+test('a time that overlaps is reported as an overlap, not as the allowance', () => {
+  const cap = { limit: 1, per: 'month' as const };
+  const sessions = [at('2026-11-03', '09:00', 60)];
+  assert.equal(toggleSession(sessions, at('2026-11-03', '09:30', 30), 0, [], cap).kind, 'overlap');
+});
+
+test('sessions of other services never count towards the allowance', () => {
+  const cap = { limit: 1, per: 'month' as const };
+  const others = [{ ...at('2026-11-04', '14:00'), service: 'Bateria' }];
+  assert.equal(toggleSession([], at('2026-11-03', '09:00'), 0, others, cap).kind, 'saved');
 });
 
 test('only sessions inside the loaded range can be dropped', () => {
