@@ -15,6 +15,7 @@ import {
 } from '@tabler/icons-react';
 import type { FormFieldType } from '@internal/core/types/Form';
 import i18n from '../../i18n';
+import { fieldTitle } from './field-title.ts';
 
 export const FIELD_GROUPS: { label: () => string; types: FormFieldType[] }[] = [
   {
@@ -65,9 +66,14 @@ export const fieldTypeLabel = (type: FormFieldType) => LABELS[type]();
 
 export const fieldTypeHint = (type: FormFieldType) => HINTS[type]();
 
+export const questionTitle = (field: {
+  type: FormFieldType;
+  label?: string | null;
+}) => fieldTitle(field, fieldTypeLabel);
+
 export const isSection = (field: { type: FormFieldType }) => field.type === 'section';
 
-export function sectionOf(fields: { id: string; type: FormFieldType; label: string }[], id: string) {
+export function sectionOf(fields: { id: string; type: FormFieldType; label?: string }[], id: string) {
   let title: string | undefined;
   for (const field of fields) {
     if (field.id === id) return title;

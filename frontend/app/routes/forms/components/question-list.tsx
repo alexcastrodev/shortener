@@ -38,6 +38,7 @@ import {
   fieldTypeLabel,
   isChoiceType,
   isSection,
+  questionTitle,
 } from '../../../modules/forms/field-types';
 import { formErrorMessage } from '../../../modules/forms/form-errors';
 import { editorModes } from './booking-modes/modes';
@@ -60,7 +61,7 @@ const defaultsFor = (type: FormFieldType): FormFieldInput => ({
 
 const copyOf = (field: FormField): FormFieldInput => ({
   type: field.type,
-  label: i18n.t('forms:ed_copy_suffix', { label: field.label }).slice(0, 300),
+  label: i18n.t('forms:ed_copy_suffix', { label: questionTitle(field) }).slice(0, 300),
   help: field.help,
   required: field.required,
   max_choices: field.max_choices,
@@ -154,7 +155,7 @@ export function QuestionList({
     modals.openConfirmModal({
       title: t('ed_remove_title'),
       centered: true,
-      children: <p className="text-sm">{t('ed_remove_body', { label: field.label })}</p>,
+      children: <p className="text-sm">{t('ed_remove_body', { label: questionTitle(field) })}</p>,
       labels: { confirm: t('ed_remove_confirm'), cancel: t('ed_keep') },
       confirmProps: { color: 'red' },
       onConfirm: () => remove({ formId: form.id, fieldId: field.id }),
@@ -246,7 +247,7 @@ export function QuestionList({
                         <div className="flex items-center gap-3 p-3">
                           <span
                             {...drag.dragHandleProps}
-                            aria-label={t('ed_drag', { label: field.label })}
+                            aria-label={t('ed_drag', { label: questionTitle(field) })}
                             className="flex h-8 w-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground active:cursor-grabbing"
                           >
                             <IconGripVertical size={16} />
@@ -267,7 +268,7 @@ export function QuestionList({
                                 isSection(field) ? 'font-bold' : 'font-medium'
                               }`}
                             >
-                              {field.label}
+                              {questionTitle(field)}
                               {field.required && <span className="text-red-500"> *</span>}
                             </span>
                             <span className="shrink-0 text-xs text-muted-foreground">
