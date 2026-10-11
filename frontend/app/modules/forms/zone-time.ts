@@ -154,6 +154,14 @@ export function isZone(value: unknown): value is string {
   }
 }
 
+export function browserStorage(): Storage | undefined {
+  try {
+    return typeof window === 'undefined' ? undefined : window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
 export function readZone(
   storage: Pick<Storage, 'getItem'> | undefined
 ): string | undefined {

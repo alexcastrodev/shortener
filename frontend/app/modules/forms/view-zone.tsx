@@ -10,8 +10,10 @@ import { useTranslation } from 'react-i18next';
 import type { BioTheme } from '../bio-page/themes';
 import { timeZoneOptions } from '../../i18n/time-zones.ts';
 import {
+  browserStorage,
   browserZone,
   convertWall,
+  isZone,
   readZone,
   saveZone,
   zoneChoices,
@@ -46,21 +48,22 @@ export function ViewZoneProvider({
   children: ReactNode;
 }) {
   const [chosen, setChosen] = useState<string | undefined>(() =>
-    typeof window === 'undefined' ? undefined : readZone(window.localStorage)
+    readZone(browserStorage())
   );
-  const zone = formZone ? (chosen ?? formZone) : undefined;
+  const known = isZone(formZone) ? formZone : undefined;
+  const zone = known ? (chosen ?? known) : undefined;
   const value = useMemo<ViewZone>(
     () => ({
       zone,
-      formZone,
-      shifted: Boolean(zone && formZone && zone !== formZone),
+      formZone: known,
+      shifted: Boolean(zone && known && zone !== known),
       setZone: next => {
         setChosen(next);
-        saveZone(window.localStorage, next);
+        saveZone(browserStorage(), next);
       },
-      toView: wall => convertWall(wall, formZone, zone),
+      toView: wall => convertWall(wall, known, zone),
     }),
-    [zone, formZone]
+    [zone, known]
   );
   return (
     <ViewZoneContext.Provider value={value}>{children}</ViewZoneContext.Provider>
@@ -71,13 +74,16 @@ export function ZoneSelect({ theme }: { theme: BioTheme }) {
   const { t } = useTranslation('respond');
   const { zone, formZone, setZone } = useViewZone();
   const id = useId();
-  const choices = useMemo(
-    () =>
-      zone && formZone
-        ? zoneChoices(formZone, browserZone(), timeZoneOptions(zone))
-        : [],
-    [zone, formZone]
-  );
+  const choices = useMemo(() => {
+    if (!zone || !formZone) return [];
+    let all: string[];
+    try {
+      all = timeZoneOptions(zone);
+    } catch {
+      all = [zone];
+    }
+    return zoneChoices(formZone, browserZone(), all);
+  }, [zone, formZone]);
   if (!zone || !formZone) return null;
 
   return (
