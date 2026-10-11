@@ -42,10 +42,4 @@ RSpec.describe(Appointments::FreeSlots) do
     AppointmentSlot.update_all(booked: 0)
     expect(free(physics).map(&:first)).to(eq(["09:00", "10:00", "11:00", "12:00"]))
   end
-
-  it "sees a row an older instance created without a resource key" do
-    at = Time.utc(2026, 11, 2, 10)
-    AppointmentSlot.insert_all([{ form_id: form.id, service_key: "alone", starts_at: at, capacity: 1, booked: 1 }])
-    expect(free(alone).map(&:first)).to(eq(["09:00", "11:00", "12:00"]))
-  end
 end

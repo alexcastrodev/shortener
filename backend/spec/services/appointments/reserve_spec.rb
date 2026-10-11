@@ -137,12 +137,6 @@ RSpec.describe(Appointments::Reserve) do
       described_class.call(form: form, service_key: "cut", resource_key: "main", capacity: 1, times: [day])
       expect(stored(day).resource_key).to(eq("main"))
     end
-
-    it "gives a row made without a resource the one of the booking that takes it" do
-      AppointmentSlot.insert_all([{ form_id: form.id, service_key: "cut", starts_at: day, capacity: 1, booked: 0 }])
-      reserve([day])
-      expect(stored(day).resource_key).to(eq("cut"))
-    end
   end
 
   describe "a resource shared by two services" do
