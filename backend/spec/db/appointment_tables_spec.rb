@@ -9,8 +9,8 @@ RSpec.describe("appointment tables") do
 
   def insert_slot(capacity: 2, booked: 0, at: starts_at)
     connection.select_value(<<~SQL)
-      INSERT INTO appointment_slots (form_id, service_key, starts_at, capacity, booked, created_at, updated_at)
-      VALUES (#{form.id}, 'cut', #{connection.quote(at)}, #{capacity || "NULL"}, #{booked}, NOW(), NOW()) RETURNING id
+      INSERT INTO appointment_slots (form_id, service_key, resource_key, starts_at, capacity, booked, created_at, updated_at)
+      VALUES (#{form.id}, 'cut', 'cut', #{connection.quote(at)}, #{capacity || "NULL"}, #{booked}, NOW(), NOW()) RETURNING id
     SQL
   end
 

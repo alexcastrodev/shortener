@@ -30,4 +30,8 @@ RSpec.describe("the resource of an appointment slot") do
     insert(service: "math", resource: "main")
     expect { insert(service: "math", resource: "main", at: starts_at + 1.hour) }.not_to(raise_error)
   end
+
+  it "does not accept a row without a resource" do
+    expect { ActiveRecord::Base.transaction(requires_new: true) { insert(service: "math", resource: nil) } }.to(raise_error(ActiveRecord::NotNullViolation))
+  end
 end
