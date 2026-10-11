@@ -12,7 +12,7 @@ class Form < ApplicationRecord
   before_validation(on: :create) { self.workspace ||= Workspace.default_for(user) if user }
 
   belongs_to :user
-  belongs_to :workspace, optional: true
+  belongs_to :workspace
   belongs_to :shortlink, optional: true
   before_destroy { shortlink&.soft_delete! }
   has_many :uploads, class_name: "FormUpload", dependent: :destroy

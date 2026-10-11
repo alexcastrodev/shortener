@@ -1,11 +1,13 @@
 require "rails_helper"
-require Rails.root.join("db/migrate/20261012090200_backfill_workspaces_of_forms")
+require Rails.root.join("db/migrate/20261012100100_require_workspace_of_forms")
 
-RSpec.describe(BackfillWorkspacesOfForms) do
+RSpec.describe(RequireWorkspaceOfForms) do
   let(:connection) { ActiveRecord::Base.connection }
   let(:first_user) { FactoryBot.create(:user) }
   let(:second_user) { FactoryBot.create(:user) }
   let(:idle_user) { FactoryBot.create(:user) }
+
+  before { connection.change_column_null(:forms, :workspace_id, true) }
 
   def raw_form(user, workspace_id: nil)
     connection.select_value(<<~SQL.squish)
@@ -41,14 +43,10 @@ RSpec.describe(BackfillWorkspacesOfForms) do
     expect([workspace_of(placed), workspace_of(loose)]).to(eq([kept.id, kept.id]))
   end
 
-  it "can run again without changing anything" do
-    form = raw_form(first_user)
-    migrate
-    workspace = workspace_of(form)
-
+  it "makes the workspace required and leaves no helper constraint behind" do
     migrate
 
-    expect(workspace_of(form)).to(eq(workspace))
-    expect(Workspace.where(user: first_user).count).to(eq(1))
+    expect(connection.columns(:forms).find { |column| column.name == "workspace_id" }.null).to(be(false))
+    expect(connection.check_constraints(:forms).map(&:name)).not_to(include("forms_workspace_id_not_null"))
   end
 end

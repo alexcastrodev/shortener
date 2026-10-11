@@ -25,7 +25,7 @@ RSpec.describe("workspaces in the database") do
     violates { insert_form(workspace_id: workspace.id, user_id: other.id) }
   end
 
-  it "still accepts a form with no workspace while the column is being filled" do
-    expect { insert_form(workspace_id: nil, user_id: user.id) }.not_to(raise_error)
+  it "rejects a form with no workspace" do
+    expect { ActiveRecord::Base.transaction(requires_new: true) { insert_form(workspace_id: nil, user_id: user.id) } }.to(raise_error(ActiveRecord::NotNullViolation))
   end
 end
