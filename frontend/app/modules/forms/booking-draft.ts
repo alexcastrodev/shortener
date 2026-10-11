@@ -21,12 +21,11 @@ const compile = (field: FormField): FormField =>
   field.mode === 'individual'
     ? {
         ...field,
-        services: field.services?.map(service => ({
-          ...service,
-          days: [],
-          times: [],
-          ...field.availability,
-        })),
+        services: field.services?.map(service =>
+          service.days?.length || service.times?.length
+            ? service
+            : { ...service, days: [], times: [], ...field.availability }
+        ),
       }
     : field;
 

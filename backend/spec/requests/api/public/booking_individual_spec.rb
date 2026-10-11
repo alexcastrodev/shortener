@@ -104,6 +104,35 @@ RSpec.describe("a teacher with several lessons", type: :request) do
     expect(offered("Physics").keys).not_to(include("10:00"))
   end
 
+  describe "lessons with their own hours" do
+    def set_hours(math_hours, physics_hours)
+      Forms::Definition.update(form, booking_id, { "services" => [math.merge("id" => service_id("Math")).merge(math_hours), physics.merge("id" => service_id("Physics")).merge(physics_hours)] })
+      Forms::Publish.call(form: form.reload)
+    end
+
+    it "offers each lesson its own days and times, and the others the hours of the teacher" do
+      set_hours({}, { "days" => ["tue", "thu"], "times" => ["13:00"] })
+
+      expect(offered("Math")).to(eq("10:00" => [60], "11:00" => [60], "14:00" => [60]))
+      expect(offered("Physics")).to(eq("13:00" => [60, 90]))
+      expect(offered("Physics", date: "2026-11-04")).to(eq({}))
+      expect(offered("Physics", date: "2026-11-05")).to(eq("13:00" => [60, 90]))
+    end
+
+    it "still keeps the teacher out of two lessons at once when the hours overlap" do
+      set_hours({ "days" => ["tue"], "times" => ["10:00", "10:30", "12:00"] }, { "days" => ["tue"], "times" => ["10:00", "11:00", "13:00"] })
+      book("Physics", "10:00", duration: 90)
+      expect(response).to(have_http_status(:created))
+
+      expect(offered("Math").keys).to(eq(["12:00"]))
+      expect(offered("Physics").keys).to(eq(["13:00"]))
+      book("Math", "10:30", who: "Bo")
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(json.dig("errors", "answers", booking_id)).to(eq(["unavailable"]))
+      expect(Appointment.count).to(eq(1))
+    end
+  end
+
   describe "a class of the teacher" do
     before do
       Forms::Definition.update(form, booking_id, { "services" => [math.merge("id" => service_id("Math"), "capacity" => 2), physics.merge("id" => service_id("Physics"))] })

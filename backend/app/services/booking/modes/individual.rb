@@ -28,7 +28,8 @@ module Booking
           service = raw.stringify_keys
           result << "#{label} id is invalid or repeated" unless service["id"].to_s.match?(Forms::FieldSchema::ID_FORMAT) && !ids.include?(service["id"])
           ids << service["id"]
-          result.concat(schema.service_errors(service, schedule: false).map { |message| "#{label} #{message}" })
+          result.concat(schema.service_errors(service.except(*AVAILABILITY_KEYS), schedule: false).map { |message| "#{label} #{message}" })
+          result.concat(schema.schedule_errors(service).map { |message| "#{label} #{message}" }) if own?(service)
         end
         result.concat(schema.rule_errors(rules.stringify_keys))
         result << "the waiting list is not available in this mode" if rules["waitlist"] == true
@@ -42,15 +43,20 @@ module Booking
         blocks = []
         blocks << schema.block("no_service", "add at least one service") if booking["services"].to_a.empty?
         blocks << schema.block("availability_incomplete", "add at least one day and one time you are available") if availability["days"].blank? || availability["times"].blank?
+        booking["services"].to_a.select { |service| own?(service) && (service["days"].blank? || service["times"].blank?) }.each do |service|
+          blocks << schema.block("service_incomplete", "#{service["name"]} needs at least one day and one time", name: service["name"], service_id: service["id"])
+        end
         blocks.concat(schema.common_blocks(fields, booking))
       end
 
       def compile(field)
         availability = (field["availability"] || {}).slice(*AVAILABILITY_KEYS)
-        field.merge("services" => field["services"].to_a.map { |service| service.merge(availability).merge("resource_key" => RESOURCE) })
+        field.merge("services" => field["services"].to_a.map { |service| (own?(service) ? service : service.merge(availability)).merge("resource_key" => RESOURCE) })
       end
 
       private
+
+      def own?(service) = (service.keys & AVAILABILITY_KEYS).any?
 
       def availability_errors(availability)
         return [] if availability.nil?
