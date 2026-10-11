@@ -76,10 +76,10 @@ module Appointments
       service_key = value["service"]
       lengths = value["starts_at"].zip(value["durations"]).to_h { |time, minutes| [time.to_i, minutes] }
       starts = value["starts_at"].uniq.sort
-      ids = Reserve.call(form: form, service_key: service_key, capacity: value["capacity"], times: starts, held: held, durations: lengths)
-      slot_ids = starts.zip(ids).to_h
       booking = Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" }
       service = booking["services"].find { |item| item["id"] == service_key }
+      ids = Reserve.call(form: form, service_key: service_key, resource_key: Resource.key(service), capacity: value["capacity"], times: starts, held: held, durations: lengths)
+      slot_ids = starts.zip(ids).to_h
       rules = booking["rules"] || {}
       manual = needs_approval?(rules, starts)
       verify = !manual && rules["approval"] != "manual" && rules["verify_email"] == true && contact[:email].present?

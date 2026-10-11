@@ -5,14 +5,14 @@ module Appointments
     MAX_RANGE_DAYS = 62
     WEEKDAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"].freeze
 
-    def call(service:, rules:, from:, to:, now: Time.current, booked: {}, day_totals: {}, exceptions: [], lengths: {}, only: nil)
+    def call(service:, rules:, from:, to:, now: Time.current, booked: {}, day_totals: {}, exceptions: [], lengths: {}, occupied: [], only: nil)
       zone = Time.find_zone!(rules.fetch("time_zone"))
       notice = rules.fetch("min_notice_minutes", 0).minutes
       last = [to, now.in_time_zone(zone).to_date + rules.fetch("window_days", 60), from + (MAX_RANGE_DAYS - 1)].min
       return [] if last < from
 
       (from..last).flat_map do |date|
-        day_slots(service, rules, { zone: zone, date: date, earliest: now + notice, booked: booked, totals: day_totals, exceptions: exceptions, lengths: lengths, only: only })
+        day_slots(service, rules, { zone: zone, date: date, earliest: now + notice, booked: booked, totals: day_totals, exceptions: exceptions, lengths: lengths, occupied: occupied, only: only })
       end
     end
 
@@ -38,9 +38,11 @@ module Appointments
       wanted = context[:only] || Durations.minutes(service)
       buffer = rules.fetch("buffer_minutes", 0).minutes
       lengths = context[:lengths]
+      taken = context[:occupied]
       spans = busy.map { |other| [other[:starts_at], other[:starts_at] + lengths.fetch(other[:starts_at].to_i, service["duration"]).minutes + buffer] }
+      spans += taken.map { |other| [other[:starts_at], other[:starts_at] + other[:minutes].minutes + buffer] }
       all.filter_map do |slot|
-        next if slot[:starts_at] < earliest || slot[:remaining]&.zero?
+        next if slot[:starts_at] < earliest || slot[:remaining]&.zero? || taken.any? { |other| other[:starts_at] == slot[:starts_at] }
 
         open = lengths.key?(slot[:starts_at].to_i) ? wanted & [lengths[slot[:starts_at].to_i]] : wanted
         fits = open.select { |minutes| fits?(slot[:starts_at], slot[:starts_at] + minutes.minutes + buffer, spans) }

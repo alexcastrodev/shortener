@@ -144,4 +144,53 @@ RSpec.describe(Appointments::Reserve) do
       expect(stored(day).resource_key).to(eq("cut"))
     end
   end
+
+  describe "a resource shared by two services" do
+    def take(service, capacity: 1, at: day, held: false)
+      described_class.call(form: form, service_key: service, resource_key: "main", capacity: capacity, times: [at], held: held)
+    end
+
+    def row = AppointmentSlot.where(form_id: form.id, resource_key: "main", starts_at: day)
+
+    it "keeps one row for the resource and gives the hour to the first service" do
+      take("math")
+      expect { take("physics") }.to(raise_error(described_class::Full))
+      expect(row.pluck(:service_key, :booked)).to(eq([["math", 1]]))
+    end
+
+    it "lets the same service take more places of its own class" do
+      take("math", capacity: 2)
+      take("math", capacity: 2)
+      expect { take("physics", capacity: 2) }.to(raise_error(described_class::Full))
+      expect(row.pick(:booked)).to(eq(2))
+    end
+
+    it "hands the row to the other service once the hour is free again" do
+      take("math")
+      row.update_all(booked: 0)
+      take("physics")
+      expect(row.pluck(:service_key, :booked)).to(eq([["physics", 1]]))
+    end
+
+    it "does not let a service claim the place held for another one" do
+      take("math")
+      row.update_all(booked: 0, held: 1)
+      expect { take("physics") }.to(raise_error(described_class::Full))
+      expect { take("physics", held: true) }.to(raise_error(described_class::Full))
+      take("math", held: true)
+      expect(row.pluck(:service_key, :booked, :held)).to(eq([["math", 1, 0]]))
+    end
+
+    it "gives the hour to exactly one service when both ask at once" do
+      results = concurrently(8) do |index|
+        take(index.even? ? "math" : "physics")
+        :taken
+      rescue described_class::Full
+        :full
+      end
+
+      expect(results.tally).to(eq(taken: 1, full: 7))
+      expect(row.pick(:booked)).to(eq(1))
+    end
+  end
 end
