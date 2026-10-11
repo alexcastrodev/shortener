@@ -6,6 +6,7 @@ import { dayText, monthlyText } from './booking-bar';
 import { durationText, endTime, hasSeveralDurations } from './booking-options.ts';
 import type { AllSummary } from './booking-summary.ts';
 import { useDurationWords } from './use-duration-words.ts';
+import { useViewZone } from './view-zone.tsx';
 import { usePlanWords } from './use-plan-words.ts';
 
 export function BookingReview({
@@ -20,6 +21,7 @@ export function BookingReview({
   const { t } = useTranslation('respond');
   const words = useDurationWords();
   const plan = usePlanWords();
+  const { zone, shifted } = useViewZone();
   const id = useId();
   const several = summary.items.length > 1;
   const money = (amount: number | null, currency: string | null) =>
@@ -43,6 +45,9 @@ export function BookingReview({
           {t('booking_review_change')}
         </button>
       </div>
+      {shifted && (
+        <p className="text-xs opacity-70">{t('booking_zone', { zone })}</p>
+      )}
       {summary.items.map(({ service, summary: item }) => (
         <Fragment key={service.id}>
           <p className="text-sm opacity-80">

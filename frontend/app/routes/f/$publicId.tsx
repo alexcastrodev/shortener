@@ -20,6 +20,7 @@ import {
   type SubmitFailure,
 } from '../../modules/forms/form-renderer';
 import { publicCoverUrl } from '../../modules/forms/form-cover-url';
+import { browserZone } from '../../modules/forms/zone-time';
 import type { Route } from './+types/$publicId';
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -74,7 +75,7 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
 
   const onSubmit = async (
     answers: Record<string, unknown>,
-    { confirmFieldId }: { confirmFieldId: string | null }
+    { confirmFieldId, timeZone }: { confirmFieldId: string | null; timeZone?: string }
   ) => {
     if (TURNSTILE_SITE_KEY && !token) {
       throw { message: i18n.t('respond:err_verifying') } satisfies SubmitFailure;
@@ -87,7 +88,7 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
         turnstileToken: token,
         website,
         referer: document.referrer,
-        clientTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        clientTimeZone: timeZone ?? browserZone(),
         clientLocale: i18n.language,
         confirmFieldId,
       });
@@ -117,14 +118,14 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
       loadSlots={(service, from, to, monthly) =>
         getFormSlots(publicId, service, from, to, monthly)
       }
-      joinWaitlist={async join => {
+      joinWaitlist={async ({ timeZone, ...join }) => {
         try {
           await joinWaitlist(publicId, {
             ...join,
             turnstile_token: token,
             website,
             client_locale: i18n.language,
-            client_time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            client_time_zone: timeZone ?? browserZone(),
           });
         } finally {
           turnstile.current?.reset();

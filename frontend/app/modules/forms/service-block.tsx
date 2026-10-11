@@ -35,6 +35,7 @@ import {
 } from './monthly-booking';
 import { usePickerMemory, type PickerMemory } from './picker-memory.ts';
 import { SessionPicker, type LoadSlots } from './session-picker.tsx';
+import { useViewZone } from './view-zone.tsx';
 
 export type { LoadSlots };
 
@@ -391,6 +392,7 @@ function MonthlyPicker({
 }) {
   const { t } = useTranslation('respond');
   const durationWords = useDurationWords();
+  const { formZone, shifted } = useViewZone();
   const months = monthOptions(new Date());
   const times = [...service.times].sort();
   const [draft, setDraft] = useState<MonthlyPattern>(
@@ -443,6 +445,11 @@ function MonthlyPicker({
         ))}
       </div>
       <p className="text-sm font-medium">{t('monthly_time')}</p>
+      {shifted && (
+        <p className="text-xs opacity-70">
+          {t('monthly_form_zone', { zone: formZone })}
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
         {times.map(time => (
           <button

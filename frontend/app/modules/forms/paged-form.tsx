@@ -11,7 +11,8 @@ import type { Props, SubmitFailure, SubmitFormReceipt } from './form-renderer';
 import { BookingBar } from './booking-bar';
 import { BookingReview } from './booking-review';
 import { SubmissionResult } from './submission-result';
-import { summarizeAll } from './booking-summary';
+import { inZone, summarizeAll } from './booking-summary';
+import { useViewZone } from './view-zone.tsx';
 import { FormCover } from './form-cover';
 import { QuestionHeading } from './question-heading';
 import { takenMessage } from './booking-refusal.ts';
@@ -47,6 +48,7 @@ export function PagedForm({
 }: Props) {
   const { t } = useTranslation('respond');
   const takenWords = useTakenWords();
+  const { zone, formZone, shifted, toView } = useViewZone();
   const theme = getBioTheme(form.theme, form.custom_colors);
   const uid = useId();
   const pages = splitPages(form.fields, form.layout);
@@ -67,10 +69,14 @@ export function PagedForm({
   const bookingField = pages[current].find(item => item.type === 'booking');
   const summaryOf = (field: FormField | undefined) =>
     field
-      ? summarizeAll(
-          field.services,
-          answers[field.id] as BookingAnswer | undefined,
-          new Date()
+      ? inZone(
+          summarizeAll(
+            field.services,
+            answers[field.id] as BookingAnswer | undefined,
+            new Date()
+          ),
+          toView,
+          shifted ? t('monthly_form_zone', { zone: formZone }) : undefined
         )
       : null;
   const bookingSummary = summaryOf(bookingField);
@@ -148,7 +154,9 @@ export function PagedForm({
     if (mode === 'live' && onSubmit) {
       setSubmitting(true);
       try {
-        setReceipt((await onSubmit(answers, { confirmFieldId })) ?? null);
+        setReceipt(
+          (await onSubmit(answers, { confirmFieldId, timeZone: zone })) ?? null
+        );
         setDone(true);
       } catch (failure) {
         const { message, fieldErrors, details } = (failure ?? {}) as SubmitFailure;
@@ -192,7 +200,7 @@ export function PagedForm({
           receipt={receipt}
           message={form.thank_you_message}
           theme={theme}
-          timeZone={form.fields.find(item => item.type === 'booking')?.time_zone}
+          timeZone={zone}
         />
         {mode === 'preview' && (
           <div className="mt-8">

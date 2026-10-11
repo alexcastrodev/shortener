@@ -30,6 +30,7 @@ export type BookingSummary = {
   total: number | null;
   currency: string | null;
   allowance: Allowance | null;
+  note?: string;
 };
 
 export type AllSummary = {
@@ -60,6 +61,32 @@ export function summarizeAll(
       ? Math.round(totals.reduce((sum, amount) => sum + amount, 0) * 100) / 100
       : null,
     currency: items.find(({ summary }) => summary.currency)?.summary.currency ?? null,
+  };
+}
+
+type Wall = { date: string; time: string };
+
+export function inZone(
+  summary: AllSummary | null,
+  toView: (wall: Wall) => Wall,
+  patternNote?: string
+): AllSummary | null {
+  if (!summary) return null;
+  return {
+    ...summary,
+    items: summary.items.map(({ service, summary: item }) => ({
+      service,
+      summary:
+        item.kind === 'monthly' && !item.allowance
+          ? { ...item, ...(patternNote ? { note: patternNote } : {}) }
+          : {
+              ...item,
+              sessions: item.sessions.map(session => ({
+                ...session,
+                ...toView(session),
+              })),
+            },
+    })),
   };
 }
 

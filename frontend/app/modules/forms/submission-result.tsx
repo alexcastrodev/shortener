@@ -5,6 +5,7 @@ import type { BioTheme } from '../bio-page/themes';
 import { durationText } from './booking-options.ts';
 import { LinkedText } from './linked-text';
 import { useDurationWords } from './use-duration-words.ts';
+import { useViewZone } from './view-zone.tsx';
 import type { SubmitFormReceipt } from '@internal/core/actions/submit-form-response/submit-form-response.types';
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
 export function SubmissionResult({ receipt, message, theme, timeZone }: Props) {
   const { t } = useTranslation('respond');
   const durationWords = useDurationWords();
+  const { shifted } = useViewZone();
   const sessions = receipt?.appointments ?? [];
   const services = [...new Set(sessions.map(item => item.service))];
   const booked = Boolean(receipt?.manage_url) && sessions.length > 0;
@@ -90,6 +92,9 @@ export function SubmissionResult({ receipt, message, theme, timeZone }: Props) {
                 </li>
               ))}
             </ul>
+            {shifted && timeZone && (
+              <p className="text-xs opacity-70">{t('booking_zone', { zone: timeZone })}</p>
+            )}
             {receipt.skipped && receipt.skipped.length > 0 && (
               <p className="text-sm opacity-80">
                 {t('receipt_skipped', {
