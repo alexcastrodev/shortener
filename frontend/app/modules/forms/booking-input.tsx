@@ -15,6 +15,7 @@ import {
   hasSeveralDurations,
   monthlyMinutes,
 } from './booking-options.ts';
+import { questionTitle } from './field-types';
 import { monthlyDates } from './monthly-booking';
 import { ServiceBlock, type LoadSlots } from './service-block.tsx';
 
@@ -146,7 +147,12 @@ export function BookingInput({
       });
 
   return (
-    <div id={inputId} className="space-y-4">
+    <div
+      id={inputId}
+      role="group"
+      aria-label={questionTitle(field)}
+      className="space-y-4"
+    >
       {grouped && (
         <fieldset
           role="radiogroup"

@@ -12,6 +12,7 @@ import { BookingReview } from './booking-review';
 import { SubmissionResult } from './submission-result';
 import { summarizeAll } from './booking-summary';
 import { FormCover } from './form-cover';
+import { QuestionHeading } from './question-heading';
 
 const alertClass =
   'rounded-md bg-[#fee2e2] px-3 py-1.5 text-sm font-medium text-[#991b1b]';
@@ -288,13 +289,7 @@ export function PagedForm({
               className={outline}
               onClick={mode === 'preview' ? () => onSelectField?.(field.id) : undefined}
             >
-              <label htmlFor={inputId} className={`text-xl font-semibold ${theme.title}`}>
-                {field.label}
-                {field.required && <span aria-hidden="true"> *</span>}
-              </label>
-              <p id={`${inputId}-help`} className={`mt-1 mb-3 text-sm ${theme.bio}`}>
-                {field.help}
-              </p>
+              <QuestionHeading field={field} inputId={inputId} theme={theme} gap="mb-3" />
               <FieldInput
                 field={field}
                 value={answers[field.id]}
