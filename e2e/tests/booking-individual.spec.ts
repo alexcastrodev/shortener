@@ -13,7 +13,11 @@ test('the owner creates a teacher question with one availability and a second le
   await page.goto(`/app/forms/${form.id}`);
 
   await page.getByRole('button', { name: 'Marcação de serviço' }).click();
-  await page.getByRole('dialog').getByRole('button', { name: /^Professor/ }).click();
+  const choices = page.getByRole('dialog').getByRole('button', { name: /^(Professor|Serviços)/ });
+  await expect(choices.first()).toHaveAccessibleName(/^Professor/);
+  await expect(choices.first()).toBeFocused();
+  await expect(choices.nth(1)).toHaveAccessibleName(/^Serviços/);
+  await choices.first().click();
 
   const editor = new BookingEditor(page);
   const availability = page.getByRole('region', { name: 'Disponibilidade' });
