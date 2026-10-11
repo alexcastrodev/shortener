@@ -56,7 +56,7 @@ module Booking
 
       private
 
-      def own?(service) = (service.keys & AVAILABILITY_KEYS).any?
+      def own?(service) = service.keys.intersect?(AVAILABILITY_KEYS)
 
       def availability_errors(availability)
         return [] if availability.nil?
