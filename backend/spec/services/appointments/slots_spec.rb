@@ -121,4 +121,30 @@ RSpec.describe(Appointments::Slots) do
       expect(day(occupied: []).map { |slot| slot[:time] }).to(eq(["09:00", "10:00", "11:00", "12:00"]))
     end
   end
+
+  describe "a teacher's lessons" do
+    let(:service) { { "id" => "math", "resource_key" => "main", "duration" => 60, "capacity" => 2, "days" => ["mon"], "times" => ["09:00", "10:00", "10:30", "11:00"] } }
+    let(:monday) { Date.new(2026, 11, 2) }
+    let(:now) { Time.utc(2026, 11, 1) }
+
+    def at(time) = Time.utc(2026, 11, 2, *time.split(":").map(&:to_i))
+
+    def day(booked:, **options) = slots(from: monday, to: monday, now: now, booked: booked, lengths: booked.keys.to_h { |key| [key, 60] }, **options)
+
+    it "stops offering what overlaps a class that still has room, but keeps the class itself" do
+      result = day(booked: { at("10:00").to_i => 1 })
+      expect(result.map { |slot| slot[:time] }).to(eq(["09:00", "10:00", "11:00"]))
+    end
+
+    it "does the same for a service that is its own resource only when it is full" do
+      alone = service.except("resource_key")
+      result = described_class.call(service: alone, rules: { "time_zone" => "UTC" }, from: monday, to: monday, now: now, booked: { at("10:00").to_i => 1 }, lengths: { at("10:00").to_i => 60 })
+      expect(result.map { |slot| slot[:time] }).to(eq(["09:00", "10:00", "10:30", "11:00"]))
+    end
+
+    it "uses the length of the booking and the buffer" do
+      result = day(booked: { at("10:00").to_i => 1 }, rules: { "buffer_minutes" => 30 })
+      expect(result.map { |slot| slot[:time] }).to(eq(["10:00"]))
+    end
+  end
 end

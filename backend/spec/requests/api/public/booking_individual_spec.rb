@@ -104,6 +104,35 @@ RSpec.describe("a teacher with several lessons", type: :request) do
     expect(offered("Physics").keys).not_to(include("10:00"))
   end
 
+  describe "a class of the teacher" do
+    before do
+      Forms::Definition.update(form, booking_id, { "services" => [math.merge("id" => service_id("Math"), "capacity" => 2), physics.merge("id" => service_id("Physics"))] })
+      Forms::Publish.call(form: form.reload)
+    end
+
+    it "does not offer the teacher another hour that overlaps it, to the same lesson or to another" do
+      Forms::Definition.update(form, booking_id, { "availability" => { "days" => days, "times" => ["10:00", "10:30", "11:00"] } })
+      Forms::Publish.call(form: form.reload)
+      book("Math", "10:00")
+
+      expect(offered("Math").keys).to(eq(["10:00", "11:00"]))
+      expect(offered("Physics").keys).to(eq(["11:00"]))
+      book("Math", "10:30", who: "Bo")
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(json.dig("errors", "answers", booking_id)).to(eq(["unavailable"]))
+    end
+
+    it "is refused by the database even when the engine is bypassed" do
+      Forms::Definition.update(form, booking_id, { "availability" => { "days" => days, "times" => ["10:00", "10:30"] } })
+      Forms::Publish.call(form: form.reload)
+      book("Math", "10:00")
+      starts = Time.utc(2026, 11, 3, 10, 30)
+
+      expect { Appointments::Reserve.call(form: form, service_key: service_id("Physics"), resource_key: "main", capacity: 1, times: [starts], durations: { starts.to_i => 60 }) }.to(raise_error(Appointments::Reserve::Full))
+      expect(Appointment.count).to(eq(1))
+    end
+  end
+
   describe "the monthly booking of a lesson" do
     it "books every Monday with its own duration and blocks that hour for the others" do
       monthly("Physics")

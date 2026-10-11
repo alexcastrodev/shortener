@@ -10,8 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_11_170300) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_11_172000) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
 
   create_table "abuse_signals", force: :cascade do |t|
@@ -68,12 +69,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_170300) do
     t.integer "held", default: 0, null: false
     t.integer "duration"
     t.string "resource_key", null: false
+    t.datetime "ends_at"
     t.index ["form_id", "resource_key", "starts_at"], name: "index_appointment_slots_on_form_resource_start", unique: true
     t.index ["form_id", "service_key", "starts_at"], name: "index_appointment_slots_on_form_service_start", unique: true
     t.index ["form_id"], name: "index_appointment_slots_on_form_id"
     t.check_constraint "booked >= 0", name: "appointment_slots_booked_non_negative"
     t.check_constraint "capacity IS NULL OR (booked + held) <= capacity", name: "appointment_slots_taken_within_capacity"
     t.check_constraint "held >= 0", name: "appointment_slots_held_non_negative"
+    t.exclusion_constraint "form_id WITH =, resource_key WITH =, tsrange(starts_at, ends_at) WITH &&", where: "((resource_key)::text <> (service_key)::text) AND ((booked + held) > 0) AND (ends_at IS NOT NULL)", using: :gist, name: "appointment_slots_no_overlap_in_shared_resource"
   end
 
   create_table "appointment_tokens", force: :cascade do |t|
