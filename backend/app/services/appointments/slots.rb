@@ -5,14 +5,14 @@ module Appointments
     MAX_RANGE_DAYS = 62
     WEEKDAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"].freeze
 
-    def call(service:, rules:, from:, to:, now: Time.current, booked: {}, day_totals: {}, exceptions: [])
+    def call(service:, rules:, from:, to:, now: Time.current, booked: {}, day_totals: {}, exceptions: [], lengths: {}, only: nil)
       zone = Time.find_zone!(rules.fetch("time_zone"))
       notice = rules.fetch("min_notice_minutes", 0).minutes
       last = [to, now.in_time_zone(zone).to_date + rules.fetch("window_days", 60), from + (MAX_RANGE_DAYS - 1)].min
       return [] if last < from
 
       (from..last).flat_map do |date|
-        day_slots(service, rules, { zone: zone, date: date, earliest: now + notice, booked: booked, totals: day_totals, exceptions: exceptions })
+        day_slots(service, rules, { zone: zone, date: date, earliest: now + notice, booked: booked, totals: day_totals, exceptions: exceptions, lengths: lengths, only: only })
       end
     end
 
@@ -35,10 +35,21 @@ module Appointments
       capacity = service["capacity"]
       all = times.sort.filter_map { |time| build(zone, date, time, capacity, booked) }
       busy = capacity ? all.select { |slot| slot[:remaining].zero? } : []
-      gap = (service["duration"] + rules.fetch("buffer_minutes", 0)).minutes
-      all.reject do |slot|
-        slot[:starts_at] < earliest || slot[:remaining]&.zero? || busy.any? { |other| other[:starts_at] != slot[:starts_at] && (other[:starts_at] - slot[:starts_at]).abs < gap }
+      wanted = context[:only] || Durations.minutes(service)
+      buffer = rules.fetch("buffer_minutes", 0).minutes
+      lengths = context[:lengths]
+      spans = busy.map { |other| [other[:starts_at], other[:starts_at] + lengths.fetch(other[:starts_at].to_i, service["duration"]).minutes + buffer] }
+      all.filter_map do |slot|
+        next if slot[:starts_at] < earliest || slot[:remaining]&.zero?
+
+        open = lengths.key?(slot[:starts_at].to_i) ? wanted & [lengths[slot[:starts_at].to_i]] : wanted
+        fits = open.select { |minutes| fits?(slot[:starts_at], slot[:starts_at] + minutes.minutes + buffer, spans) }
+        slot.merge(durations: fits) if fits.any?
       end
+    end
+
+    def fits?(starts_at, finish, spans)
+      spans.none? { |from, to| from != starts_at && starts_at < to && from < finish }
     end
 
     def times_for(service, date, exceptions)

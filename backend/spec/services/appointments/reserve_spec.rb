@@ -102,4 +102,26 @@ RSpec.describe(Appointments::Reserve) do
       expect { reserve([day]) }.not_to(raise_error)
     end
   end
+
+  describe "duration" do
+    def stored(time) = AppointmentSlot.find_by(form_id: form.id, service_key: "cut", starts_at: time).duration
+
+    it "records the duration of the first booking and keeps it for the next ones" do
+      described_class.call(form: form, service_key: "cut", capacity: 2, times: [day], durations: { day.to_i => 90 })
+      described_class.call(form: form, service_key: "cut", capacity: 2, times: [day], durations: { day.to_i => 60 })
+      expect(stored(day)).to(eq(90))
+    end
+
+    it "takes the new duration once the slot has been emptied" do
+      described_class.call(form: form, service_key: "cut", capacity: 1, times: [day], durations: { day.to_i => 90 })
+      AppointmentSlot.where(form_id: form.id).update_all(booked: 0)
+      described_class.call(form: form, service_key: "cut", capacity: 1, times: [day], durations: { day.to_i => 60 })
+      expect(stored(day)).to(eq(60))
+    end
+
+    it "leaves the duration empty when none is given" do
+      reserve([day])
+      expect(stored(day)).to(be_nil)
+    end
+  end
 end

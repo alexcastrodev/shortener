@@ -23,16 +23,17 @@ module Appointments
       return cast_monthly(form: form, booking: booking, service: service, raw: raw["monthly"], now: now) if service && raw["monthly"]
 
       sessions = raw["sessions"]
-      return [nil, :invalid] unless service && valid_sessions?(sessions)
+      return [nil, :invalid] unless service && valid_sessions?(sessions, service)
 
       dates = sessions.map { |session| Date.iso8601(session["date"]) }
       return [nil, :invalid] if dates.max - dates.min >= Slots::MAX_RANGE_DAYS
 
       free = FreeSlots.call(form: form, booking: booking, service: service, from: dates.min, to: dates.max, now: now, releasing: claim_at)
-      times = sessions.map { |session| free.find { |slot| slot[:date].iso8601 == session["date"] && slot[:time] == session["time"] } }
+      lengths = sessions.map { |session| session["duration"] || service["duration"] }
+      times = sessions.zip(lengths).map { |session, minutes| free.find { |slot| slot[:date].iso8601 == session["date"] && slot[:time] == session["time"] && slot[:durations].include?(minutes) } }
       return [nil, :unavailable] if times.any?(&:nil?)
 
-      [{ "service" => service["id"], "sessions" => sessions.map { |session| session.slice("date", "time") }, "starts_at" => times.map { |slot| slot[:starts_at] }, "capacity" => service["capacity"] }, nil]
+      [{ "service" => service["id"], "sessions" => sessions.zip(lengths).map { |session, minutes| session.slice("date", "time").merge("duration" => minutes) }, "starts_at" => times.map { |slot| slot[:starts_at] }, "durations" => lengths, "capacity" => service["capacity"] }, nil]
     rescue Date::Error
       [nil, :invalid]
     end
@@ -51,8 +52,9 @@ module Appointments
 
       from = [month, today].max
       wanted = (from..month.end_of_month).select { |date| weekdays.include?(Slots::WEEKDAYS[date.wday]) }
-      offered = Slots.call(service: service, rules: rules, from: from, to: month.end_of_month, now: now, exceptions: booking["exceptions"].to_a)
-      free = FreeSlots.call(form: form, booking: booking, service: service, from: from, to: month.end_of_month, now: now)
+      minutes = Durations.monthly_minutes(service)
+      offered = Slots.call(service: service, rules: rules, from: from, to: month.end_of_month, now: now, exceptions: booking["exceptions"].to_a, only: [minutes])
+      free = FreeSlots.call(form: form, booking: booking, service: service, from: from, to: month.end_of_month, now: now, only: [minutes])
       picked = []
       skipped = []
       wanted.each do |date|
@@ -65,15 +67,16 @@ module Appointments
       end
       return [nil, :unavailable] if picked.empty?
 
-      [{ "service" => service["id"], "sessions" => picked.map { |slot| { "date" => slot[:date].iso8601, "time" => slot[:time] } }, "starts_at" => picked.map { |slot| slot[:starts_at] }, "capacity" => service["capacity"], "monthly" => { "month" => raw["month"], "skipped" => skipped } }, nil]
+      [{ "service" => service["id"], "sessions" => picked.map { |slot| { "date" => slot[:date].iso8601, "time" => slot[:time], "duration" => minutes } }, "starts_at" => picked.map { |slot| slot[:starts_at] }, "durations" => picked.map { minutes }, "capacity" => service["capacity"], "monthly" => { "month" => raw["month"], "skipped" => skipped } }, nil]
     rescue Date::Error
       [nil, :invalid]
     end
 
     def call(form:, response:, value:, contact:, meta:, version:, held: false)
       service_key = value["service"]
+      lengths = value["starts_at"].zip(value["durations"]).to_h { |time, minutes| [time.to_i, minutes] }
       starts = value["starts_at"].uniq.sort
-      ids = Reserve.call(form: form, service_key: service_key, capacity: value["capacity"], times: starts, held: held)
+      ids = Reserve.call(form: form, service_key: service_key, capacity: value["capacity"], times: starts, held: held, durations: lengths)
       slot_ids = starts.zip(ids).to_h
       booking = Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" }
       service = booking["services"].find { |item| item["id"] == service_key }
@@ -91,10 +94,11 @@ module Appointments
       priced = if monthly && monthly_price && service["currency"]
         { total: monthly_price.to_f }
       else
-        Pricing.call(service: service, count: starts.size)
+        Pricing.call(service: service, durations: value["durations"])
       end
       pricing = priced ? { "total" => priced[:total], "sessions" => starts.size } : {}
       rows = starts.map do |time|
+        minutes = lengths.fetch(time.to_i)
         {
           form_id: form.id,
           response_id: response.id,
@@ -105,7 +109,7 @@ module Appointments
           client_name: contact[:name],
           client_email: contact[:email],
           published_version: version,
-          snapshot: service.slice("name", "duration", "price", "currency").merge("on_timeout" => (rules["approval_on_timeout"] if manual)).merge(pricing).merge("monthly" => monthly).compact,
+          snapshot: service.slice("name", "duration", "price", "currency").merge("duration" => minutes, "price" => Durations.option(service, minutes)&.dig("price") || service["price"]).merge("on_timeout" => (rules["approval_on_timeout"] if manual)).merge(pricing).merge("monthly" => monthly).compact,
           client_time_zone: meta[:time_zone],
           client_locale: meta[:locale],
           created_at: Time.current,
@@ -139,7 +143,7 @@ module Appointments
 
     def summary(response)
       response.appointments.includes(:slot).order("appointment_slots.starts_at").references(:slot).map do |appointment|
-        { starts_at: appointment.slot.starts_at.iso8601, service: appointment.snapshot["name"], status: appointment.status }
+        { starts_at: appointment.slot.starts_at.iso8601, service: appointment.snapshot["name"], status: appointment.status, duration: appointment.snapshot["duration"] }
       end
     end
 
@@ -184,9 +188,10 @@ module Appointments
       ActiveRecord.after_all_transactions_commit { ids.each { |id| NotificationDeliveryJob.perform_later(id) } }
     end
 
-    def valid_sessions?(sessions)
+    def valid_sessions?(sessions, service)
+      minutes = Durations.minutes(service)
       sessions.is_a?(Array) && sessions.size.between?(1, MAX_SESSIONS) &&
-        sessions.all? { |session| session.is_a?(Hash) && session["date"].is_a?(String) && session["date"].match?(DATE) && session["time"].is_a?(String) && session["time"].match?(TIME) } &&
+        sessions.all? { |session| session.is_a?(Hash) && session["date"].is_a?(String) && session["date"].match?(DATE) && session["time"].is_a?(String) && session["time"].match?(TIME) && (session["duration"].nil? || (session["duration"].is_a?(Integer) && minutes.include?(session["duration"]))) } &&
         sessions.map { |session| session.values_at("date", "time") }.uniq.size == sessions.size
     end
   end

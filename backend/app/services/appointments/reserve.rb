@@ -11,7 +11,7 @@ module Appointments
       end
     end
 
-    def call(form:, service_key:, capacity:, times:, held: false)
+    def call(form:, service_key:, capacity:, times:, held: false, durations: {})
       ids = []
       AppointmentSlot.transaction(requires_new: true) do
         times.map(&:utc).uniq.sort.each do |starts_at|
@@ -20,11 +20,12 @@ module Appointments
             [{ form_id: form.id, service_key: service_key, starts_at: starts_at, capacity: capacity, booked: 0 }],
             unique_by: :index_appointment_slots_on_form_service_start,
           )
+          minutes = durations[starts_at.to_i]
           if held
-            raise Full, starts_at if slot.where("held > 0").update_all(["booked = booked + 1, held = held - 1, capacity = ?, updated_at = NOW()", capacity]).zero?
+            raise Full, starts_at if slot.where("held > 0").update_all(["booked = booked + 1, held = held - 1, capacity = ?, duration = COALESCE(?, duration), updated_at = NOW()", capacity, minutes]).zero?
           else
             open = capacity ? slot.where("booked + held < ?", capacity) : slot
-            raise Full, starts_at if open.update_all(["booked = booked + 1, capacity = ?, updated_at = NOW()", capacity]).zero?
+            raise Full, starts_at if open.update_all(["booked = booked + 1, capacity = ?, duration = CASE WHEN booked + held = 0 THEN COALESCE(?, duration) ELSE duration END, updated_at = NOW()", capacity, minutes]).zero?
           end
 
           ids << slot.pick(:id)

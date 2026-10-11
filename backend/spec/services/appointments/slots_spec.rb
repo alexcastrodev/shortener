@@ -43,4 +43,48 @@ RSpec.describe(Appointments::Slots) do
     result = slots(zone: "Pacific/Auckland", from: Date.new(2026, 11, 2), to: Date.new(2026, 11, 2), now: Time.utc(2026, 10, 1))
     expect(result.map { |slot| slot[:starts_at].utc.iso8601 }).to(include("2026-11-01T20:00:00Z"))
   end
+
+  describe "several durations" do
+    let(:service) { { "id" => "cut", "duration" => 60, "price" => 40, "currency" => "EUR", "extra_durations" => [{ "duration" => 90, "price" => 55 }], "capacity" => 1, "days" => ["mon"], "times" => ["09:00", "10:00", "11:00", "14:00"] } }
+    let(:monday) { Date.new(2026, 11, 2) }
+    let(:now) { Time.utc(2026, 11, 1) }
+
+    def day(**options) = slots(from: monday, to: monday, now: now, **options)
+
+    def at(time) = Time.utc(2026, 11, 2, *time.split(":").map(&:to_i))
+
+    it "offers every duration on a free day" do
+      expect(day.map { |slot| [slot[:time], slot[:durations]] }).to(eq([["09:00", [60, 90]], ["10:00", [60, 90]], ["11:00", [60, 90]], ["14:00", [60, 90]]]))
+    end
+
+    it "drops the durations that run into a full neighbour and keeps the ones that fit" do
+      result = day(booked: { at("11:00").to_i => 1 }, lengths: { at("11:00").to_i => 60 })
+      expect(result.map { |slot| [slot[:time], slot[:durations]] }).to(eq([["09:00", [60, 90]], ["10:00", [60]], ["14:00", [60, 90]]]))
+    end
+
+    it "blocks the times a long booking covers" do
+      result = day(booked: { at("09:00").to_i => 1 }, lengths: { at("09:00").to_i => 90 })
+      expect(result.map { |slot| slot[:time] }).to(eq(["11:00", "14:00"]))
+    end
+
+    it "treats a booking with no stored duration as the main one" do
+      result = day(booked: { at("09:00").to_i => 1 })
+      expect(result.map { |slot| [slot[:time], slot[:durations]] }).to(eq([["10:00", [60, 90]], ["11:00", [60, 90]], ["14:00", [60, 90]]]))
+    end
+
+    it "adds the buffer on both sides of a booking" do
+      result = day(rules: { "buffer_minutes" => 60 }, booked: { at("11:00").to_i => 1 }, lengths: { at("11:00").to_i => 60 })
+      expect(result.map { |slot| [slot[:time], slot[:durations]] }).to(eq([["09:00", [60]], ["14:00", [60, 90]]]))
+    end
+
+    it "offers a partly booked time only with the duration it was booked with" do
+      service["capacity"] = 2
+      result = day(booked: { at("09:00").to_i => 1 }, lengths: { at("09:00").to_i => 90 })
+      expect(result.first).to(include(time: "09:00", durations: [90]))
+    end
+
+    it "narrows the offer to the wanted durations" do
+      expect(day(only: [90]).map { |slot| slot[:durations] }.uniq).to(eq([[90]]))
+    end
+  end
 end

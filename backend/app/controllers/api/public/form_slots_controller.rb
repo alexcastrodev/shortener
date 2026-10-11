@@ -41,7 +41,7 @@ class Api::Public::FormSlotsController < ApplicationController
 
   def slots_for(form, booking, service, from, to)
     Appointments::FreeSlots.call(form: form, booking: booking, service: service, from: from, to: to).map do |slot|
-      { starts_at: slot[:starts_at].iso8601, date: slot[:date].iso8601, time: slot[:time], remaining: slot[:remaining] }
+      { starts_at: slot[:starts_at].iso8601, date: slot[:date].iso8601, time: slot[:time], remaining: slot[:remaining], durations: slot[:durations] }
     end
   end
 end
