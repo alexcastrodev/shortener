@@ -121,6 +121,44 @@ RSpec.describe("sessions with several durations", type: :request) do
     expect(offered("2026-11-03")["10:00"]).to(eq([60, 90]))
   end
 
+  describe "a time opened with a length the service no longer offers" do
+    let(:service) { super().merge("capacity" => nil, "extra_durations" => nil, "monthly" => nil).compact }
+    let(:old_class) { Time.utc(2026, 11, 3, 9) }
+
+    before do
+      AppointmentSlot.create!(form: form, service_key: service_id, resource_key: service_id, starts_at: old_class, capacity: nil, booked: 3, duration: 90, ends_at: old_class + 90.minutes)
+    end
+
+    it "offers the lengths of the service instead of hiding the time" do
+      expect(offered("2026-11-03")).to(eq("09:00" => [60], "10:00" => [60], "11:00" => [60], "14:00" => [60]))
+    end
+
+    it "lets a visitor join it with a length the service offers, and keeps the length the time was opened with" do
+      book(["2026-11-03", "09:00", 60])
+
+      expect(response).to(have_http_status(:created))
+      expect(snapshots.map { |item| item["duration"] }).to(eq([60]))
+      expect(AppointmentSlot.find_by(starts_at: old_class)).to(have_attributes(booked: 4, duration: 90))
+    end
+
+    it "does the same for the monthly plan, which asks for its own length" do
+      Forms::Definition.update(form, booking_id, { "services" => [service.merge("id" => service_id, "monthly" => { "price" => 120, "sessions" => 2 })] })
+      Forms::Publish.call(form: form.reload)
+
+      submit({ "service" => service_id, "monthly" => { "month" => "2026-11", "sessions" => [{ "date" => "2026-11-03", "time" => "09:00" }, { "date" => "2026-11-04", "time" => "09:00" }] } })
+
+      expect(response).to(have_http_status(:created))
+      expect(snapshots.map { |item| item["duration"] }.uniq).to(eq([60]))
+    end
+
+    it "still pins a time to the length it was opened with while the service offers that length" do
+      Forms::Definition.update(form, booking_id, { "services" => [service.merge("id" => service_id, "extra_durations" => [{ "duration" => 90, "price" => 55 }])] })
+      Forms::Publish.call(form: form.reload)
+
+      expect(offered("2026-11-03")).to(eq("09:00" => [90], "10:00" => [60, 90], "11:00" => [60, 90], "14:00" => [60, 90]))
+    end
+  end
+
   describe "the fixed monthly booking" do
     it "uses its own duration and its own price" do
       monthly

@@ -44,7 +44,8 @@ module Appointments
       all.filter_map do |slot|
         next if slot[:starts_at] < earliest || slot[:remaining]&.zero? || taken.any? { |other| other[:starts_at] == slot[:starts_at] }
 
-        open = lengths.key?(slot[:starts_at].to_i) ? wanted & [lengths[slot[:starts_at].to_i]] : wanted
+        pinned = lengths[slot[:starts_at].to_i]
+        open = wanted.include?(pinned) ? [pinned] : wanted
         fits = open.select { |minutes| fits?(slot[:starts_at], slot[:starts_at] + minutes.minutes + buffer, spans) }
         slot.merge(durations: fits) if fits.any?
       end
