@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Button,
   Checkbox,
   Chip,
@@ -8,6 +9,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
+import { IconTrash } from '@tabler/icons-react';
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatNumber } from '../../../i18n/format';
@@ -82,6 +84,10 @@ export function ServiceCard({
   };
   const { details, schedule } = serviceSummary(service, words);
 
+  const removeLabel = t(individual ? 'lesson_remove' : 'service_remove', {
+    name: service.name.trim() || unnamed,
+  });
+
   const border = expanded
     ? 'border-primary'
     : problem
@@ -121,16 +127,27 @@ export function ServiceCard({
             )
           )}
         </div>
-        <Button
-          variant="subtle"
-          size="compact-sm"
-          aria-expanded={expanded}
-          aria-controls={`${id}-panel`}
-          aria-describedby={`${id}-title`}
-          onClick={onToggle}
-        >
-          {expanded ? t('sec_close') : t('sec_edit')}
-        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant="subtle"
+            size="compact-sm"
+            aria-expanded={expanded}
+            aria-controls={`${id}-panel`}
+            aria-describedby={`${id}-title`}
+            onClick={onToggle}
+          >
+            {expanded ? t('sec_close') : t('sec_edit')}
+          </Button>
+          <ActionIcon
+            variant="subtle"
+            color="red"
+            aria-label={removeLabel}
+            title={removeLabel}
+            onClick={onRemove}
+          >
+            <IconTrash size={16} />
+          </ActionIcon>
+        </div>
       </div>
       {expanded && (
         <div
@@ -143,22 +160,6 @@ export function ServiceCard({
             dayLabels={dayLabels}
             individual={individual}
           />
-          <div>
-            <Button
-              variant="subtle"
-              color="red"
-              size="compact-sm"
-              maw="100%"
-              h="auto"
-              py={4}
-              styles={{ label: { whiteSpace: 'normal', overflowWrap: 'anywhere', textAlign: 'left' } }}
-              onClick={onRemove}
-            >
-              {t(individual ? 'lesson_remove' : 'service_remove', {
-                name: service.name.trim() || unnamed,
-              })}
-            </Button>
-          </div>
         </div>
       )}
     </div>

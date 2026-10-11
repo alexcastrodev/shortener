@@ -22,6 +22,8 @@ test('page layout: the confirmation checkbox follows the e-mail values and ticks
 
   await view.open();
   await expect(view.emailBox()).toBeVisible();
+  await expect(page.getByText(/^0[1-9]$/)).toHaveCount(0);
+  await expect(page.getByText('Nome *', { exact: true })).toBeVisible();
   await expect(view.confirmBoxes()).toHaveCount(0);
 
   await view.nameBox().fill('Ana Teste');
