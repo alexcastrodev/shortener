@@ -12,7 +12,6 @@ import { BookingCalendar } from './booking-calendar.tsx';
 import {
   canGoNext,
   keepFree,
-  monthOf,
   monthRange,
   previewSlots,
   shiftMonth,
@@ -26,6 +25,7 @@ import {
   type Allowance,
 } from './booking-options.ts';
 import { useDurationWords } from './use-duration-words.ts';
+import type { PickerMemory } from './picker-memory.ts';
 
 export type LoadSlots = (
   service: string,
@@ -49,8 +49,6 @@ const dayHeading = (iso: string) =>
     month: 'long',
     timeZone: 'UTC',
   });
-
-type Cache = { key: string; months: Record<string, LoadedSlots> };
 
 type Note = {
   kind: 'saved' | 'removed' | 'overlap' | 'limit';
@@ -77,6 +75,7 @@ export function SessionPicker({
   joinWaitlist,
   reloadKey,
   hideSummary,
+  memory,
   month: fixedMonth,
   duration: fixedDuration,
   cap,
@@ -93,6 +92,7 @@ export function SessionPicker({
   joinWaitlist?: JoinWaitlist;
   reloadKey?: string;
   hideSummary?: boolean;
+  memory: PickerMemory;
   month?: string;
   duration?: number;
   cap?: Allowance;
@@ -101,15 +101,13 @@ export function SessionPicker({
   const { t } = useTranslation('respond');
   const durationWords = useDurationWords();
   const serviceId = service.id;
-  const [free, setFree] = useState(() => monthOf(new Date()));
-  const month = fixedMonth ?? free;
+  const { cache, setCache, seeking } = memory;
+  const month = fixedMonth ?? memory.month;
   const [viewed, setViewed] = useState<string>();
   const [attempt, setAttempt] = useState(0);
   const [dropped, setDropped] = useState(false);
   const [note, setNote] = useState<Note>();
-  const [cache, setCache] = useState<Cache>({ key: '', months: {} });
   const [failed, setFailed] = useState<string | null>(null);
-  const seeking = useRef(fixedMonth === undefined);
   const cached = useRef(cache);
   cached.current = cache;
   const key = `${reloadKey ?? ''}|${attempt}`;
@@ -149,7 +147,7 @@ export function SessionPicker({
         }
         if (seeking.current) {
           if (loaded.slots.length === 0 && canGoNext(month, today))
-            setFree(shiftMonth(month, 1));
+            memory.setMonth(shiftMonth(month, 1));
           else seeking.current = false;
         }
       })
@@ -161,7 +159,7 @@ export function SessionPicker({
 
   const goMonth = (next: string) => {
     seeking.current = false;
-    setFree(next);
+    memory.setMonth(next);
   };
 
   const toggle = (date: string, time: string, minutes: number) => {

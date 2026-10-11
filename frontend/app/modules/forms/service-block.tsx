@@ -9,7 +9,7 @@ import type { BioTheme } from '../bio-page/themes';
 import { formatCurrency, formatDate } from '../../i18n/format';
 import type { JoinWaitlist } from './waitlist-join';
 import { isPlan } from './booking-answer.ts';
-import type { PickedSession } from './booking-calendar.ts';
+import { monthOf, type PickedSession } from './booking-calendar.ts';
 import {
   allowanceOf,
   cheapestPrice,
@@ -27,6 +27,7 @@ import {
   monthlyDates,
   toggleWeekday,
 } from './monthly-booking';
+import { usePickerMemory, type PickerMemory } from './picker-memory.ts';
 import { SessionPicker, type LoadSlots } from './session-picker.tsx';
 
 export type { LoadSlots };
@@ -69,6 +70,11 @@ export function ServiceBlock({
   const sessions = item?.sessions ?? [];
   const monthly = item?.monthly;
   const allowance = allowanceOf(service);
+  const daysMemory = usePickerMemory(monthOf(new Date()), true);
+  const planMemory = usePickerMemory(
+    monthly && isPlan(monthly) ? monthly.month : monthOptions(new Date())[0].value,
+    false
+  );
 
   const chooseMode = (next: 'days' | 'monthly') => {
     if (next === mode) return;
@@ -195,7 +201,7 @@ export function ServiceBlock({
           field={field}
           service={service}
           allowance={allowance}
-          month={monthly && isPlan(monthly) ? monthly.month : undefined}
+          memory={planMemory}
           picks={monthly && isPlan(monthly) ? monthly.sessions : []}
           others={others}
           onItem={onItem}
@@ -225,6 +231,7 @@ export function ServiceBlock({
           joinWaitlist={joinWaitlist}
           reloadKey={reloadKey}
           hideSummary={hideSummary}
+          memory={daysMemory}
           named={multiple}
         />
       )}
@@ -280,7 +287,7 @@ function PlanPicker({
   field,
   service,
   allowance,
-  month: chosenMonth,
+  memory,
   picks,
   others,
   onItem,
@@ -294,7 +301,7 @@ function PlanPicker({
   field: FormField;
   service: Service;
   allowance: Allowance;
-  month: string | undefined;
+  memory: PickerMemory;
   picks: { date: string; time: string }[];
   others: PickedSession[];
   onItem: (item: BookingItem | undefined) => void;
@@ -306,13 +313,11 @@ function PlanPicker({
   named: boolean;
 }) {
   const plan = usePlanWords();
-  const [month, setMonth] = useState(
-    () => chosenMonth ?? monthOptions(new Date())[0].value
-  );
+  const month = memory.month;
 
   const chooseMonth = (next: string) => {
     if (next === month) return;
-    setMonth(next);
+    memory.setMonth(next);
     onItem(undefined);
   };
 
@@ -346,6 +351,7 @@ function PlanPicker({
         loadSlots={loadSlots}
         reloadKey={reloadKey}
         hideSummary={hideSummary}
+        memory={memory}
         month={month}
         duration={monthlyMinutes(service)}
         cap={allowance}
