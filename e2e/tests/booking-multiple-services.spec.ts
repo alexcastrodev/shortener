@@ -4,6 +4,7 @@ import { expect, test } from '../support/fixtures.ts';
 import { appointmentsOf, createForm, service } from '../support/forms.ts';
 import {
   bookingBar,
+  bookViaApi,
   firstWeekdayOfNextMonth,
   monthLabel,
   PublicForm,
@@ -204,4 +205,72 @@ test('the radio list of a form without the rule still keeps only one service', a
 
   await view.chooseService('Guitarra');
   await expect(bookingBar(page).getByText('Nenhum horário escolhido')).toBeVisible();
+});
+
+test('a time taken in the meantime is dropped from the block of its service, which says so', async ({ page }) => {
+  const form = await createForm({ rules: { multiple_services: true }, services: [guitar(), drums()], publish: true });
+  const view = new PublicForm(page, form);
+  const [day, other] = nextWeekdays(2, 3);
+  await view.open();
+  await view.tickService('Guitarra');
+  await view.tickService('Bateria');
+  await view.pickSlotIn('Guitarra', day, '09:00');
+  await view.pickSlotIn('Bateria', other, '10:00');
+  await view.nameBox().fill('Ana Teste');
+
+  await bookViaApi(form, day, '09:00');
+  await view.submit();
+
+  await expect(view.block('Guitarra').getByRole('alert')).toHaveText('A hora de Guitarra já não está disponível. Escolha outra.');
+  await expect(view.block('Bateria').getByRole('alert')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toHaveCount(0);
+  expect(await appointmentsOf(form.id)).toHaveLength(1);
+});
+
+test('a refusal from the server names the service and the time it is about', async ({ page }) => {
+  const form = await createForm({ rules: { multiple_services: true }, services: [guitar(), drums()], publish: true });
+  const view = new PublicForm(page, form);
+  const [day, other] = nextWeekdays(2, 3);
+  await page.route('**/api/public/forms/*/responses', route =>
+    route.fulfill({
+      status: 422,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        errors: { answers: { [form.bookingId]: ['unavailable'] } },
+        details: { [form.bookingId]: { service: form.serviceIds[1], date: other, time: '10:00' } },
+      }),
+    }),
+  );
+  await view.open();
+  await view.tickService('Guitarra');
+  await view.tickService('Bateria');
+  await view.pickSlotIn('Guitarra', day, '09:00');
+  await view.pickSlotIn('Bateria', other, '10:00');
+  await view.nameBox().fill('Ana Teste');
+  await view.submit();
+
+  await expect(page.getByRole('alert').filter({ hasText: /^A hora de Bateria \(.*às 10:00\) já não está disponível\. Escolha outra\.$/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toHaveCount(0);
+});
+
+test('a refusal without details keeps the plain message', async ({ page }) => {
+  const form = await createForm({ rules: { multiple_services: true }, services: [guitar(), drums()], publish: true });
+  const view = new PublicForm(page, form);
+  const [day, other] = nextWeekdays(2, 3);
+  await page.route('**/api/public/forms/*/responses', route =>
+    route.fulfill({
+      status: 422,
+      contentType: 'application/json',
+      body: JSON.stringify({ errors: { answers: { [form.bookingId]: ['unavailable'] } } }),
+    }),
+  );
+  await view.open();
+  await view.tickService('Guitarra');
+  await view.tickService('Bateria');
+  await view.pickSlotIn('Guitarra', day, '09:00');
+  await view.pickSlotIn('Bateria', other, '10:00');
+  await view.nameBox().fill('Ana Teste');
+  await view.submit();
+
+  await expect(page.getByRole('alert').filter({ hasText: 'Esse horário acabou de ser ocupado. Escolha outro.' })).toBeVisible();
 });
