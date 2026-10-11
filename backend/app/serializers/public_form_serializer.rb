@@ -17,6 +17,7 @@ class PublicFormSerializer < BaseSerializer
           visible["categories"] = field["categories"].to_a
           visible["waitlist"] = field.dig("rules", "waitlist") == true
           visible["multiple_services"] = field.dig("rules", "multiple_services") == true
+          visible["buffer_minutes"] = field.dig("rules", "buffer_minutes").to_i
           visible["verify_email"] = field.dig("rules", "verify_email") == true
           visible["time_zone"] = field.dig("rules", "time_zone")
         end
