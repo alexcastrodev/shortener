@@ -36,7 +36,7 @@ export function BookingCalendar({
   viewed: string | undefined;
   theme: BioTheme;
   onView: (iso: string) => void;
-  onMonth: (month: string) => void;
+  onMonth?: (month: string) => void;
 }) {
   const { t } = useTranslation('respond');
   const todayIso = isoDay(today);
@@ -53,16 +53,20 @@ export function BookingCalendar({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <button
-          type="button"
-          className={nav}
-          aria-label={t('booking_prev_month')}
-          disabled={!canGoPrev(month, today)}
-          onClick={() => onMonth(shiftMonth(month, -1))}
-        >
-          <span aria-hidden="true">‹</span>
-        </button>
+      <div
+        className={`flex items-center gap-2 ${onMonth ? 'justify-between' : 'justify-center'}`}
+      >
+        {onMonth && (
+          <button
+            type="button"
+            className={nav}
+            aria-label={t('booking_prev_month')}
+            disabled={!canGoPrev(month, today)}
+            onClick={() => onMonth(shiftMonth(month, -1))}
+          >
+            <span aria-hidden="true">‹</span>
+          </button>
+        )}
         <p aria-live="polite" className="text-[15px] font-semibold first-letter:uppercase">
           {formatDate(`${month}-01T00:00:00Z`, {
             month: 'long',
@@ -70,15 +74,17 @@ export function BookingCalendar({
             timeZone: 'UTC',
           })}
         </p>
-        <button
-          type="button"
-          className={nav}
-          aria-label={t('booking_next_month')}
-          disabled={!canGoNext(month, today)}
-          onClick={() => onMonth(shiftMonth(month, 1))}
-        >
-          <span aria-hidden="true">›</span>
-        </button>
+        {onMonth && (
+          <button
+            type="button"
+            className={nav}
+            aria-label={t('booking_next_month')}
+            disabled={!canGoNext(month, today)}
+            onClick={() => onMonth(shiftMonth(month, 1))}
+          >
+            <span aria-hidden="true">›</span>
+          </button>
+        )}
       </div>
       <table className="w-full table-fixed border-separate border-spacing-0.5">
         <thead>

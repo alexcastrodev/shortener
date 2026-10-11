@@ -8,7 +8,13 @@ import type {
 import type { BioTheme } from '../bio-page/themes';
 import { formatCurrency } from '../../i18n/format';
 import type { JoinWaitlist } from './waitlist-join';
-import { answerFrom, dropItem, itemsOf, setItem } from './booking-answer.ts';
+import {
+  answerFrom,
+  dropItem,
+  itemsOf,
+  monthlySessions,
+  setItem,
+} from './booking-answer.ts';
 import type { PickedSession } from './booking-calendar.ts';
 import {
   cheapestPrice,
@@ -16,7 +22,6 @@ import {
   monthlyMinutes,
 } from './booking-options.ts';
 import { questionTitle } from './field-types';
-import { monthlyDates } from './monthly-booking';
 import { ServiceBlock, type LoadSlots } from './service-block.tsx';
 
 export type { JoinWaitlist, LoadSlots };
@@ -128,13 +133,8 @@ export function BookingInput({
         const other = allServices.find(entry => entry.id === item.service);
         if (!other) return [];
         if (item.monthly)
-          return monthlyDates(
-            item.monthly.month,
-            item.monthly.weekdays,
-            new Date()
-          ).map(date => ({
-            date,
-            time: item.monthly!.time,
+          return monthlySessions(item.monthly, new Date()).map(session => ({
+            ...session,
             duration: monthlyMinutes(other),
             service: other.name,
           }));

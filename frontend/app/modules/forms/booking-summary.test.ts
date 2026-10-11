@@ -118,6 +118,84 @@ test('a monthly booking is made of sessions of the monthly duration', () => {
   assert.equal(summary?.total, 120);
 });
 
+const plan = (...picks: [string, string][]) => ({
+  service: 's1',
+  sessions: [],
+  monthly: {
+    month: '2026-11',
+    sessions: picks.map(([date, time]) => ({ date, time })),
+  },
+});
+
+test('a plan lists the days it was picked with, each with its own time, for the plan price once', () => {
+  const today = new Date(2026, 9, 9);
+  const summary = summarize(
+    service({ monthly: { price: 120, duration: 45, sessions: 5 } }),
+    plan(['2026-11-03', '09:00'], ['2026-11-05', '10:30'], ['2026-11-17', '09:00']),
+    today
+  );
+  assert.equal(summary?.kind, 'monthly');
+  assert.equal(summary?.count, 3);
+  assert.equal(summary?.total, 120);
+  assert.deepEqual(summary?.allowance, { limit: 5, per: 'month' });
+  assert.deepEqual(
+    summary?.sessions.map(session => [session.date, session.time, session.duration, session.price]),
+    [
+      ['2026-11-03', '09:00', 45, null],
+      ['2026-11-05', '10:30', 45, null],
+      ['2026-11-17', '09:00', 45, null],
+    ]
+  );
+});
+
+test('a plan with fewer picks than the allowance costs the same, and a weekly one says so', () => {
+  const today = new Date(2026, 9, 9);
+  const summary = summarize(
+    service({ monthly: { price: 80, sessions: 1, per: 'week' } }),
+    plan(['2026-11-03', '09:00']),
+    today
+  );
+  assert.equal(summary?.count, 1);
+  assert.equal(summary?.total, 80);
+  assert.deepEqual(summary?.allowance, { limit: 1, per: 'week' });
+});
+
+test('a weekday pattern and single sessions carry no allowance, and a plan with no pick is no summary', () => {
+  const today = new Date(2026, 9, 9);
+  const priced = service({ monthly: { price: 200, sessions: 5 } });
+  const pattern = summarize(
+    priced,
+    {
+      service: 's1',
+      sessions: [],
+      monthly: { month: '2026-11', weekdays: ['mon'], time: '09:00' },
+    },
+    today
+  );
+  assert.equal(pattern?.allowance, null);
+  assert.equal(summarize(priced, days(1), today)?.allowance, null);
+  assert.equal(summarize(priced, plan(), today), null);
+});
+
+test('a plan next to single sessions of another service adds the plan price once', () => {
+  const today = new Date(2026, 9, 9);
+  const all = summarizeAll(
+    [
+      service({ id: 'massage1', name: 'Massagem', monthly: { price: 150, sessions: 4 } }),
+      service({ id: 'guitar01', name: 'Guitarra', price: 40 }),
+    ],
+    {
+      items: [
+        { ...plan(['2026-11-03', '09:00'], ['2026-11-10', '09:00']), service: 'massage1' },
+        { service: 'guitar01', sessions: days(2).sessions },
+      ],
+    },
+    today
+  );
+  assert.equal(all?.total, 230);
+  assert.equal(all?.count, 4);
+});
+
 const guitar = () =>
   service({
     id: 'guitar01',

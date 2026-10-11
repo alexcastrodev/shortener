@@ -14,7 +14,14 @@ export type FormFieldType =
   | 'booking'
   | 'section';
 
-export type MonthlyChoice = { month: string; weekdays: string[]; time: string };
+export type MonthlyPattern = { month: string; weekdays: string[]; time: string };
+
+export type MonthlyPlan = {
+  month: string;
+  sessions: { date: string; time: string }[];
+};
+
+export type MonthlyChoice = MonthlyPattern | MonthlyPlan;
 
 export type BookingItem = {
   service: string;
