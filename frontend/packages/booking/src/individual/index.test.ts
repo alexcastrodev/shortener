@@ -4,7 +4,12 @@ import type { BookingService, FormField } from '@internal/core/types/Form';
 import { blankSchedule } from '../shared/schedule.ts';
 import { blankService } from '../shared/service.ts';
 import { bookingSchema } from '../shared/validation.ts';
-import { blankLesson, individualMode, setOwnSchedule } from './index.ts';
+import {
+  availabilityRequired,
+  blankLesson,
+  individualMode,
+  setOwnSchedule,
+} from './index.ts';
 
 const teacher: FormField = {
   id: 'teach001',
@@ -233,9 +238,59 @@ test('the availability of the teacher needs days and a valid time', () => {
   values.availability.days = [];
   values.availability.times = [{ key: 'a', value: '25:00' }];
   assert.deepEqual(issues(values), [
-    ['availability.days', 'error_days'],
     ['availability.times.0.value', 'error_time'],
+    ['availability.days', 'error_days'],
   ]);
+});
+
+test('an empty availability asks for days and times while a lesson uses it', () => {
+  const values = individualMode.initialValues(teacher);
+  values.availability = { days: [], times: [], byDay: {} };
+  assert.deepEqual(issues(values), [
+    ['availability.days', 'error_days'],
+    ['availability.times', 'error_times'],
+  ]);
+});
+
+test('the availability is optional when every lesson has its own days and times', () => {
+  const values = individualMode.initialValues({
+    ...teacher,
+    availability: undefined,
+    services: [own, { ...own, id: 'lesson04', name: 'Biology' }],
+  });
+  assert.deepEqual(
+    values.services.map(lesson => lesson.ownSchedule),
+    [true, true]
+  );
+  assert.deepEqual(values.availability.days, []);
+  assert.deepEqual(issues(values), []);
+});
+
+test('an availability that is there still has to be valid when no lesson needs it', () => {
+  const values = individualMode.initialValues({
+    ...teacher,
+    availability: undefined,
+    services: [own],
+  });
+  values.availability.times = [{ key: 'a', value: '' }];
+  assert.deepEqual(issues(values), [['availability.times.0.value', 'error_time']]);
+});
+
+test('the availability is needed as soon as one lesson has no schedule of its own, and not before there is a lesson', () => {
+  const values = individualMode.initialValues({
+    ...teacher,
+    availability: undefined,
+    services: [own, { id: 'lesson05', name: 'Art', duration: 45 } as BookingService],
+  });
+  assert.deepEqual(issues(values), [
+    ['availability.days', 'error_days'],
+    ['availability.times', 'error_times'],
+  ]);
+  assert.equal(availabilityRequired(values.services), true);
+  assert.equal(availabilityRequired(values.services.slice(0, 1)), false);
+  assert.equal(availabilityRequired([]), false);
+  values.services = [];
+  assert.deepEqual(issues(values), []);
 });
 
 test('a lesson without its own schedule needs no days or times', () => {

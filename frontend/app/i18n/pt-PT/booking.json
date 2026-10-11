@@ -17,6 +17,7 @@
   "no_lessons": "Adicione pelo menos uma aula para poder publicar.",
   "availability_title": "Disponibilidade",
   "availability_hint": "Os dias e horários em que dá aulas. As aulas usam-nos, a menos que tenham os seus próprios, e um horário marcado fica ocupado para todas.",
+  "availability_optional": "Opcional enquanto todas as aulas tiverem os seus próprios dias e horários.",
   "lesson_own_schedule": "Esta aula tem dias e horários próprios",
   "lesson_own_schedule_hint": "Sem isto, usa a disponibilidade acima. O tempo continua partilhado: um horário marcado fica ocupado para todas as aulas.",
   "service_name": "Nome do serviço",

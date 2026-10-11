@@ -5,7 +5,7 @@ import { blankSchedule, fromSchedule, toSchedule } from '../shared/schedule.ts';
 import { blankService, serviceInput, serviceValues } from '../shared/service.ts';
 import {
   looseSchedule,
-  requiredSchedule,
+  optionalSchedule,
   scheduleIssues,
 } from '../shared/validation.ts';
 import type { ServiceValues } from '../shared/values.ts';
@@ -30,13 +30,32 @@ export const setOwnSchedule = (
     : { days: [], times: [], byDay: {} }),
 });
 
+export const availabilityRequired = (lessons: { ownSchedule: boolean }[]) =>
+  lessons.some(lesson => !lesson.ownSchedule);
+
 export const individualMode: BookingMode = {
   name: 'individual',
 
   validation: {
-    fields: t => ({ availability: z.object(requiredSchedule(t)) }),
+    fields: t => ({ availability: z.object(optionalSchedule(t)) }),
     schedule: () => looseSchedule,
     itemIssues: (item, t) => (item.ownSchedule ? scheduleIssues(item, t) : []),
+    formIssues: ({ availability, services }, t) =>
+      availabilityRequired(services)
+        ? [
+            ...(availability.days.length
+              ? []
+              : [{ message: t('error_days'), path: ['availability', 'days'] }]),
+            ...(availability.times.length
+              ? []
+              : [
+                  {
+                    message: t('error_times'),
+                    path: ['availability', 'times'],
+                  },
+                ]),
+          ]
+        : [],
   },
 
   initialValues: field => ({

@@ -1,6 +1,10 @@
 export type { BookingMode, ModeName } from './mode.ts';
 export { modeFor } from './registry.ts';
-export { individualMode, setOwnSchedule } from './individual/index.ts';
+export {
+  availabilityRequired,
+  individualMode,
+  setOwnSchedule,
+} from './individual/index.ts';
 export {
   MAX_CATEGORIES,
   isGrouped,
