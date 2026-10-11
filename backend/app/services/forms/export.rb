@@ -61,7 +61,19 @@ module Forms
     end
 
     def sessions(raw)
-      Array(raw.is_a?(Hash) ? raw["sessions"] : nil).map { |session| "#{session["date"]} #{session["time"]}" }.join(", ")
+      return unless raw.is_a?(Hash)
+      return times(raw["sessions"]) unless raw["items"]
+
+      raw["items"].to_a.map { |item| "#{service_name(item["service"])}: #{times(item["sessions"])}" }.join("; ")
+    end
+
+    def times(sessions)
+      Array(sessions).map { |session| "#{session["date"]} #{session["time"]}" }.join(", ")
+    end
+
+    def service_name(id)
+      @services ||= questions.flat_map { |field| field["type"] == "booking" ? field["services"].to_a : [] }.to_h { |service| [service["id"], service["name"]] }
+      @services.fetch(id, id)
     end
 
     def label(field, id)

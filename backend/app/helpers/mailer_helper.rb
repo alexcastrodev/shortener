@@ -45,11 +45,15 @@ module MailerHelper
     ActiveSupport::NumberHelper.number_to_currency(amount, **options)
   end
 
-  def booking_rows(service:, starts:, zone:, minutes: nil, who: nil, total: nil, extra: [])
+  def booking_rows(service:, starts:, zone:, minutes: nil, names: nil, who: nil, total: nil, extra: [])
     label = starts.one? ? I18n.t("mailer.when") : I18n.t("mailer.sessions", count: starts.size)
     rows = [[I18n.t("mailer.service"), service]]
     rows << [I18n.t("mailer.#{who.first}"), who.last] if who&.last.present?
-    rows << [label, starts.map { |time| mail_session(time, zone, minutes) }, I18n.t("mailer.zone", zone: zone.tr("_", " "))]
+    lines = starts.each_with_index.map do |time, index|
+      line = mail_session(time, zone, minutes.is_a?(Array) ? minutes[index] : minutes)
+      names ? "#{names[index]} · #{line}" : line
+    end
+    rows << [label, lines, I18n.t("mailer.zone", zone: zone.tr("_", " "))]
     rows.concat(extra.select { |_, value| value.present? }.map { |label, value| [label, value, nil, :quiet] })
     rows << [I18n.t("mailer.total"), mail_money(*total)] if total
     rows

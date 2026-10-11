@@ -65,6 +65,19 @@ RSpec.describe("Form responses export", type: :request) do
     expect(text).not_to(include("svc00001"))
   end
 
+  it "writes a booking of several services as one list per service, by name" do
+    services = [{ "id" => "guit0001", "name" => "Guitar" }, { "id" => "drum0001", "name" => "Drums" }]
+    form.update_columns(fields: [{ "id" => "when0001", "type" => "booking", "label" => "When", "services" => services }])
+    items = [{ "service" => "guit0001", "sessions" => [{ "date" => "2026-11-03", "time" => "09:00" }, { "date" => "2026-11-04", "time" => "09:00" }] }, { "service" => "drum0001", "sessions" => [{ "date" => "2026-11-03", "time" => "14:00" }] }]
+    FormResponse.create!(form: form, answers: { "when0001" => { "items" => items } })
+
+    export
+
+    entries = sheet_of(response.body)
+    text = entries["xl/worksheets/sheet1.xml"] + entries["xl/sharedStrings.xml"].to_s
+    expect(text).to(include("Guitar: 2026-11-03 09:00, 2026-11-04 09:00; Drums: 2026-11-03 14:00"))
+  end
+
   it "writes hostile cell text as plain strings, never as formulas" do
     payloads = ["=HYPERLINK(\"http://evil.test\",\"x\")", "+cmd|' /C calc'!A0", "-2+3", "@SUM(1+1)", "=1+1"]
     payloads.each { |payload| FormResponse.create!(form: form, answers: { "name0001" => payload }) }

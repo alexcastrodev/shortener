@@ -3,6 +3,7 @@ module Appointments
     extend self
 
     MAX_SESSIONS = 31
+    ITEMS_MAX = 5
     LOCALES = ["en", "pt-PT"].freeze
     DATE = /\A\d{4}-\d{2}-\d{2}\z/
     TIME = /\A([01]\d|2[0-3]):[0-5]\d\z/
@@ -19,6 +20,47 @@ module Appointments
     def cast(form:, booking:, raw:, now: Time.current, claim_at: nil)
       return [nil, :invalid] unless raw.is_a?(Hash)
 
+      entries = raw.key?("items") ? items_of(raw, booking, claim_at) : [raw]
+      return [nil, :invalid] unless entries
+
+      items = []
+      entries.each do |entry|
+        item, error = cast_item(form: form, booking: booking, raw: entry, now: now, claim_at: claim_at)
+        return [nil, error] if error
+
+        items << item
+      end
+      return [nil, :unavailable] if clashing?(form, booking["rules"], items)
+
+      [{ "items" => items, "stored" => stored(raw, items) }, nil]
+    rescue Date::Error
+      [nil, :invalid]
+    end
+
+    def items_of(raw, booking, claim_at)
+      list = raw["items"]
+      return unless booking.dig("rules", "multiple_services") == true && claim_at.nil? && (raw.keys - ["items"]).empty?
+      return unless list.is_a?(Array) && list.size.between?(1, ITEMS_MAX) && list.all?(Hash) && list.pluck("service").uniq.size == list.size
+
+      chosen = booking["services"].select { |service| list.pluck("service").include?(service["id"]) }
+      list if chosen.filter_map { |service| service["currency"] if service["price"] }.uniq.size <= 1
+    end
+
+    def stored(raw, items)
+      return { "items" => items.map { |item| item.slice("service", "sessions") } } if raw.key?("items")
+
+      items.first.slice("service", "sessions")
+    end
+
+    def clashing?(form, rules, items)
+      starts = items.flat_map { |item| item["starts_at"] }
+      lengths = items.flat_map { |item| item["durations"] }
+      overlapping?(starts, lengths, rules.fetch("buffer_minutes", 0)) || over_daily_limit?(form, rules, items.flat_map { |item| item["sessions"] })
+    end
+
+    def cast_item(form:, booking:, raw:, now:, claim_at:)
+      return [nil, :invalid] unless raw.is_a?(Hash)
+
       service = booking["services"].find { |item| item["id"] == raw["service"] }
       return cast_monthly(form: form, booking: booking, service: service, raw: raw["monthly"], now: now) if service && raw["monthly"]
 
@@ -32,11 +74,8 @@ module Appointments
       lengths = sessions.map { |session| session["duration"] || service["duration"] }
       times = sessions.zip(lengths).map { |session, minutes| free.find { |slot| slot[:date].iso8601 == session["date"] && slot[:time] == session["time"] && slot[:durations].include?(minutes) } }
       return [nil, :unavailable] if times.any?(&:nil?)
-      return [nil, :unavailable] if overlapping?(times.map { |slot| slot[:starts_at] }, lengths, booking["rules"].fetch("buffer_minutes", 0)) || over_daily_limit?(form, booking["rules"], sessions)
 
       [{ "service" => service["id"], "sessions" => sessions.zip(lengths).map { |session, minutes| session.slice("date", "time").merge("duration" => minutes) }, "starts_at" => times.map { |slot| slot[:starts_at] }, "durations" => lengths, "capacity" => service["capacity"] }, nil]
-    rescue Date::Error
-      [nil, :invalid]
     end
 
     def cast_monthly(form:, booking:, service:, raw:, now:)
@@ -74,14 +113,11 @@ module Appointments
     end
 
     def call(form:, response:, value:, contact:, meta:, version:, held: false)
-      service_key = value["service"]
-      lengths = value["starts_at"].zip(value["durations"]).to_h { |time, minutes| [time.to_i, minutes] }
-      starts = value["starts_at"].uniq.sort
+      items = value["items"]
       booking = Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" }
-      service = booking["services"].find { |item| item["id"] == service_key }
-      ids = Reserve.call(form: form, service_key: service_key, resource_key: Resource.key(service), capacity: value["capacity"], times: starts, held: held, durations: lengths)
-      slot_ids = starts.zip(ids).to_h
       rules = booking["rules"] || {}
+      reserved = items.sort_by { |item| item["starts_at"].min }.map { |item| reserve(form, booking, item, held) }
+      starts = reserved.flat_map { |entry| entry[:starts] }
       manual = needs_approval?(rules, starts)
       verify = !manual && rules["approval"] != "manual" && rules["verify_email"] == true && contact[:email].present?
       status = "confirmed"
@@ -90,31 +126,28 @@ module Appointments
       expires_at = Time.current + rules.fetch("approval_timeout_minutes", Forms::BookingSchema::DEFAULT_TIMEOUT_MINUTES).minutes if manual
       expires_at = Time.current + Forms::BookingSchema::VERIFY_MINUTES.minutes if verify
       group = SecureRandom.uuid
-      monthly = value["monthly"]
-      monthly_price = service.dig("monthly", "price")
-      priced = if monthly && monthly_price && service["currency"]
-        { total: monthly_price.to_f }
-      else
-        Pricing.call(service: service, durations: value["durations"])
-      end
-      pricing = priced ? { "total" => priced[:total], "sessions" => starts.size } : {}
-      rows = starts.map do |time|
-        minutes = lengths.fetch(time.to_i)
-        {
-          form_id: form.id,
-          response_id: response.id,
-          slot_id: slot_ids.fetch(time),
-          group_key: group,
-          status: status,
-          expires_at: expires_at,
-          client_name: contact[:name],
-          client_email: contact[:email],
-          published_version: version,
-          snapshot: service.slice("name", "duration", "price", "currency").merge("duration" => minutes, "price" => Durations.option(service, minutes)&.dig("price") || service["price"]).merge("on_timeout" => (rules["approval_on_timeout"] if manual)).merge(pricing).merge("monthly" => monthly).compact,
-          client_time_zone: meta[:time_zone],
-          client_locale: meta[:locale],
-          created_at: Time.current,
-        }
+      totals = reserved.filter_map { |entry| total_of(entry) }
+      pricing = totals.any? ? { "total" => totals.sum(BigDecimal("0")).round(2).to_f, "sessions" => starts.size } : {}
+      rows = reserved.flat_map do |entry|
+        service = entry[:service]
+        entry[:starts].map do |time|
+          minutes = entry[:lengths].fetch(time.to_i)
+          {
+            form_id: form.id,
+            response_id: response.id,
+            slot_id: entry[:slot_ids].fetch(time),
+            group_key: group,
+            status: status,
+            expires_at: expires_at,
+            client_name: contact[:name],
+            client_email: contact[:email],
+            published_version: version,
+            snapshot: service.slice("name", "duration", "price", "currency").merge("duration" => minutes, "price" => Durations.option(service, minutes)&.dig("price") || service["price"]).merge("on_timeout" => (rules["approval_on_timeout"] if manual)).merge(pricing).merge("monthly" => entry[:monthly]).compact,
+            client_time_zone: meta[:time_zone],
+            client_locale: meta[:locale],
+            created_at: Time.current,
+          }
+        end
       end
       Appointment.insert_all!(rows)
       first = response.appointments.order(:id).first
@@ -155,8 +188,8 @@ module Appointments
       first = rows.min_by(&:id)
       last = rows.map { |row| row.slot.starts_at }.max
       receipt = { manage_url: manage_url(first, last, now: now), email_delivery: first.client_email.present? ? "queued" : "none" }
-      receipt[:skipped] = first.snapshot.dig("monthly", "skipped").to_a if first.snapshot["monthly"]
-      receipt[:price] = { total: first.snapshot["total"], currency: first.snapshot["currency"] } if first.snapshot["total"]
+      receipt[:skipped] = rows.flat_map { |row| row.snapshot.dig("monthly", "skipped").to_a }.uniq.sort if rows.any? { |row| row.snapshot["monthly"] }
+      receipt[:price] = { total: first.snapshot["total"], currency: rows.filter_map { |row| row.snapshot["currency"] }.first } if first.snapshot["total"]
       receipt
     end
 
@@ -174,6 +207,22 @@ module Appointments
     end
 
     private
+
+    def reserve(form, booking, item, held)
+      service = booking["services"].find { |entry| entry["id"] == item["service"] }
+      lengths = item["starts_at"].zip(item["durations"]).to_h { |time, minutes| [time.to_i, minutes] }
+      starts = item["starts_at"].uniq.sort
+      ids = Reserve.call(form: form, service_key: item["service"], resource_key: Resource.key(service), capacity: item["capacity"], times: starts, held: held, durations: lengths)
+      { service: service, starts: starts, lengths: lengths, slot_ids: starts.zip(ids).to_h, durations: item["durations"], monthly: item["monthly"] }
+    end
+
+    def total_of(entry)
+      service = entry[:service]
+      monthly_price = service.dig("monthly", "price")
+      return BigDecimal(monthly_price.to_s) if entry[:monthly] && monthly_price && service["currency"]
+
+      Pricing.call(service: service, durations: entry[:durations])&.fetch(:total)&.then { |amount| BigDecimal(amount.to_s) }
+    end
 
     def queue_verification(first:, group:, email:, payload:)
       queued = Notification.queue_email(kind: "appointment_verify", event_key: group, source: first, recipient_kind: "client", recipient_email: email, payload: payload)

@@ -72,7 +72,7 @@ RSpec.describe("managing a booking from its link", type: :request) do
 
       expect(response).to(have_http_status(:ok))
       expect(json["appointment"]).to(include("form_title" => "Salon", "service" => "Haircut", "status" => "confirmed", "cancellable" => true, "time_zone" => "Europe/Lisbon"))
-      expect(json["appointment"]["sessions"]).to(eq([{ "starts_at" => "2026-11-03T09:00:00Z", "status" => "confirmed" }, { "starts_at" => "2026-11-04T10:00:00Z", "status" => "confirmed" }]))
+      expect(json["appointment"]["sessions"]).to(eq([{ "starts_at" => "2026-11-03T09:00:00Z", "status" => "confirmed", "service" => "Haircut", "duration" => 60 }, { "starts_at" => "2026-11-04T10:00:00Z", "status" => "confirmed", "service" => "Haircut", "duration" => 60 }]))
     end
   end
 

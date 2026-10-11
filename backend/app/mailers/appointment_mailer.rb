@@ -30,7 +30,8 @@ class AppointmentMailer < ApplicationMailer
   def rescheduled
     load_group(:rescheduled)
     moved = params[:notification].appointment
-    @starts = [moved.slot.starts_at]
+    @shown = [moved]
+    @service = single_line(moved.snapshot["name"])
     @was = Appointment.includes(:slot).find(moved.rescheduled_from_id).slot.starts_at
     @message = moved.decision_message.to_s.strip.presence
     @manage_url = manage_url
@@ -81,7 +82,7 @@ class AppointmentMailer < ApplicationMailer
     @first = @appointments.first
     @form = Form.find(@first.form_id)
     @form_title = single_line(@form.title)
-    @service = single_line(@first.snapshot["name"])
+    @service = @appointments.map { |row| single_line(row.snapshot["name"]) }.uniq.join(", ")
   end
 
   def to_client(reply: true)
@@ -106,14 +107,16 @@ class AppointmentMailer < ApplicationMailer
   end
 
   def details(zone, who)
-    snapshot = @first.snapshot
+    rows = @shown || @appointments
+    names = rows.map { |row| single_line(row.snapshot["name"]) }
     {
       service: @service,
-      starts: @starts || @appointments.map { |appointment| appointment.slot.starts_at },
+      starts: rows.map { |row| row.slot.starts_at },
       zone: zone,
-      minutes: snapshot["duration"],
+      minutes: rows.map { |row| row.snapshot["duration"] },
+      names: (names if names.uniq.size > 1),
       who: who,
-      total: ([snapshot["total"], snapshot["currency"]] if snapshot["total"]),
+      total: ([@first.snapshot["total"], @appointments.filter_map { |row| row.snapshot["currency"] }.first] if @first.snapshot["total"]),
     }
   end
 

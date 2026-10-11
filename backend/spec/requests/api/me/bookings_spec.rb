@@ -81,7 +81,7 @@ RSpec.describe("/api/me/bookings", type: :request) do
         "cancellable" => true,
         "time_zone" => "Europe/Lisbon",
         "series" => false,
-        "sessions" => [{ "starts_at" => "2026-11-03T09:00:00Z", "status" => "confirmed" }, { "starts_at" => "2026-11-03T10:00:00Z", "status" => "confirmed" }],
+        "sessions" => [{ "starts_at" => "2026-11-03T09:00:00Z", "status" => "confirmed", "service" => "Haircut", "duration" => 60 }, { "starts_at" => "2026-11-03T10:00:00Z", "status" => "confirmed", "service" => "Haircut", "duration" => 60 }],
       ))
       expect(json["bookings"].first["time_zone"]).to(eq("America/Sao_Paulo"))
       expect(response.body).not_to(include("someone@example.com"))

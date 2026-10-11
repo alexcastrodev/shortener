@@ -1,3 +1,3 @@
 <%= render "shared/mailer/intro", title: t(".title"), lead: t(".lead", form: @form_title) %>
-<%= render "shared/mailer/details", rows: booking_rows(**@booking, total: nil, extra: [[t(".was"), mail_session(@was, @booking[:zone], @booking[:minutes])], [t(".message", form: @form_title), @message]]) %>
+<%= render "shared/mailer/details", rows: booking_rows(**@booking, total: nil, extra: [[t(".was"), mail_session(@was, @booking[:zone], @booking[:minutes].first)], [t(".message", form: @form_title), @message]]) %>
 <%= render "shared/mailer/action", url: @manage_url, label: t(".manage_link") %>
