@@ -108,3 +108,11 @@ latest binary's recommended copy:
 Both are idempotent: re-runs replace the block delimited by the ai-memory
 start/end HTML-comment markers, without disturbing the rest of the file.
 <!-- ai-memory:end -->
+
+## Tests run in containers
+
+Run every test, lint and typecheck in containers, never on the host: the host has other Ruby and Node versions and macOS-only `node_modules`. Use throwaway containers, not the compose dev database.
+
+- **Backend** (`rspec`, `rubocop`, `brakeman`): image `kurz-backend-vips` (built from `Dockerfile.backend`, Ruby 4.0.7) with `backend` mounted at `/rails`, gems in a named volume (`BUNDLE_PATH=/bundle`, then `bundle install`), `RAILS_ENV=test`, a throwaway `postgres:17` and `valkey/valkey:8.1.4` on a private network, and `bin/rails db:create db:schema:load` before the specs.
+- **Frontend** (`npm run typecheck`, `npm test`): `node:22` with `frontend` mounted and `node_modules` in a named volume. The build needs `NODE_OPTIONS=--dns-result-order=ipv4first` (see `frontend/Dockerfile`).
+- **e2e**: the Playwright image that matches `e2e/package.json`, Rails with `RAILS_ENV=e2e`, the built frontend and Mailpit, all sharing the Rails container's network (`--network container:<rails>`) so `localhost:3000`, `3001` and `8025` work. Seed with `bin/rails runner ../e2e/support/seed.rb` first.
