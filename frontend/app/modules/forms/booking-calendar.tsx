@@ -32,7 +32,7 @@ export function BookingCalendar({
   month: string;
   today: Date;
   available: Set<string>;
-  chosen: Map<string, string>;
+  chosen: Map<string, string[]>;
   viewed: string | undefined;
   theme: BioTheme;
   onView: (iso: string) => void;
@@ -114,17 +114,18 @@ export function BookingCalendar({
                       aria-pressed={cell.viewed}
                       aria-current={cell.today ? 'date' : undefined}
                       aria-label={
-                        cell.time
+                        cell.times.length > 0
                           ? t('booking_day_chosen', {
                               date: label,
-                              time: cell.time,
+                              time: cell.times.join(', '),
+                              count: cell.times.length,
                             })
                           : label
                       }
                       onClick={() => onView(iso)}
                       className={`flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-lg text-sm! ${
-                        cell.time
-                          ? 'border border-current bg-current/25 font-semibold!'
+                        cell.times.length > 0
+                          ? 'border border-teal-500 bg-teal-500/25 font-semibold!'
                           : cell.enabled
                             ? `font-semibold! ${theme.button}`
                             : 'cursor-default font-normal! opacity-40'
@@ -133,12 +134,14 @@ export function BookingCalendar({
                       }`}
                     >
                       {Number(iso.slice(8))}
-                      {cell.time ? (
+                      {cell.times.length > 0 ? (
                         <span
                           aria-hidden="true"
                           className="font-mono text-[10px] leading-none font-semibold no-underline"
                         >
-                          {cell.time}
+                          {cell.times.length > 1
+                            ? `${cell.times.length}×`
+                            : cell.times[0]}
                         </span>
                       ) : (
                         cell.enabled && (
@@ -163,7 +166,7 @@ export function BookingCalendar({
         <li className="flex items-center gap-1.5">
           <span
             aria-hidden="true"
-            className="h-3.5 w-3.5 rounded border border-current bg-current/25"
+            className="h-3.5 w-3.5 rounded border border-teal-500 bg-teal-500/25"
           />
           {t('booking_legend_chosen')}
         </li>

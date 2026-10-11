@@ -32,6 +32,15 @@ export function monthlyText(summary: BookingSummary) {
   return `${month} · ${weekdays.join(', ')} · ${first.time}`;
 }
 
+export function daysText(summary: BookingSummary) {
+  const byDay = new Map<string, string[]>();
+  for (const item of summary.sessions)
+    byDay.set(item.date, [...(byDay.get(item.date) ?? []), item.time]);
+  return [...byDay]
+    .map(([date, times]) => `${dayText(date)} · ${times.join(', ')}`)
+    .join('  ·  ');
+}
+
 export function BookingBar({
   summary,
   currency,
@@ -64,9 +73,7 @@ export function BookingBar({
               ? t('bar_none')
               : summary.kind === 'monthly'
                 ? monthlyText(summary)
-                : summary.sessions
-                    .map(item => `${dayText(item.date)} · ${item.time}`)
-                    .join('  ·  ')}
+                : daysText(summary)}
           </p>
           <p className="truncate text-xs opacity-70">
             {!summary

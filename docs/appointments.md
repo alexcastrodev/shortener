@@ -50,6 +50,7 @@ A booking is created **inside** `Forms::SubmitResponse`, in the same transaction
 1. Turnstile and the existing rate limits run first.
 2. Each requested session is reserved with `UPDATE appointment_slots SET booked = booked + 1 WHERE id = ? AND (capacity IS NULL OR booked < capacity)`. One affected row means reserved, zero means full and the whole request fails.
 3. Several days are reserved in `starts_at` order inside one transaction: all or nothing, no deadlocks.
+   A request can also hold several times on the same day. They must not overlap each other (the buffer between sessions counts) and, with a per-day limit, every one of them counts towards it; otherwise the whole request fails as unavailable. The public form refuses an overlapping pick before sending it, with a message.
 4. The appointment starts as `confirmed` (automatic approval) or `pending` (manual approval, with an expiry). Pending appointments hold their slot.
 5. Cancelling or expiring releases the slot with `booked = GREATEST(booked - 1, 0)`.
 

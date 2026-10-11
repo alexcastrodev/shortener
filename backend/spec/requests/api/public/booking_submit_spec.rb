@@ -226,6 +226,69 @@ RSpec.describe("booking through POST /api/public/forms/:public_id/responses", ty
     end
   end
 
+  describe "two times on the same day" do
+    let(:two) { sessions(["2026-11-03", "09:00"], ["2026-11-03", "11:00"]) }
+
+    it "books both under one group and adds both prices" do
+      expect { book(two) }.to(change(Appointment, :count).by(2))
+      expect(response).to(have_http_status(:created))
+      expect(json["appointments"].map { |item| item["starts_at"] }).to(eq(["2026-11-03T09:00:00Z", "2026-11-03T11:00:00Z"]))
+      expect(json["price"]).to(eq("total" => 50.0, "currency" => "EUR"))
+      expect(Appointment.pluck(:group_key).uniq.size).to(eq(1))
+    end
+
+    it "refuses the same time twice" do
+      expect { book(sessions(["2026-11-03", "09:00"], ["2026-11-03", "09:00"])) }.not_to(change(Appointment, :count))
+      expect(response).to(have_http_status(:unprocessable_content))
+    end
+
+    context "when the times overlap" do
+      let(:service) { super().merge("extra_durations" => [{ "duration" => 90, "price" => 35 }]) }
+
+      it "refuses them as a whole and reserves nothing" do
+        list = [{ "date" => "2026-11-03", "time" => "09:00", "duration" => 90 }, { "date" => "2026-11-03", "time" => "10:00" }]
+        expect { book(list) }.not_to(change { [Appointment.count, AppointmentSlot.count] })
+        expect(response).to(have_http_status(:unprocessable_content))
+        expect(json.dig("errors", "answers", booking_id)).to(eq(["unavailable"]))
+      end
+
+      it "takes a time that starts when the longer one ends" do
+        list = [{ "date" => "2026-11-03", "time" => "09:00", "duration" => 90 }, { "date" => "2026-11-03", "time" => "11:00" }]
+        expect { book(list) }.to(change(Appointment, :count).by(2))
+        expect(response).to(have_http_status(:created))
+      end
+    end
+
+    context "with a gap between sessions" do
+      let(:rules) { { "buffer_minutes" => 30 } }
+
+      it "refuses times that are closer than the gap and takes the ones that are not" do
+        expect { book(sessions(["2026-11-03", "09:00"], ["2026-11-03", "10:00"])) }.not_to(change(Appointment, :count))
+        expect(response).to(have_http_status(:unprocessable_content))
+
+        expect { book(two, ip: "198.51.100.8") }.to(change(Appointment, :count).by(2))
+        expect(response).to(have_http_status(:created))
+      end
+    end
+
+    context "with a per-day limit" do
+      let(:rules) { { "max_per_day" => 2 } }
+
+      it "counts every time of the day, not only the first" do
+        expect { book(sessions(["2026-11-03", "09:00"], ["2026-11-03", "10:00"], ["2026-11-03", "11:00"])) }.not_to(change(Appointment, :count))
+        expect(response).to(have_http_status(:unprocessable_content))
+        expect { book(two, ip: "198.51.100.8") }.to(change(Appointment, :count).by(2))
+        expect(response).to(have_http_status(:created))
+      end
+
+      it "counts what the day already has" do
+        book(sessions(["2026-11-03", "10:00"]))
+        expect { book(two, ip: "198.51.100.8") }.not_to(change(Appointment, :count))
+        expect(response).to(have_http_status(:unprocessable_content))
+      end
+    end
+  end
+
   describe "rules" do
     let(:rules) { { "min_notice_minutes" => 150, "max_per_day" => 1 } }
 

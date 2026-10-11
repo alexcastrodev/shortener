@@ -16,6 +16,8 @@ import {
   monthRange,
   previewSlots,
   shiftMonth,
+  toggleSession,
+  type PickedSession,
 } from './booking-calendar.ts';
 import {
   bookingOptions,
@@ -60,10 +62,11 @@ const dayHeading = (iso: string) =>
 type Cache = { key: string; months: Record<string, LoadedSlots> };
 
 type Note = {
-  kind: 'saved' | 'removed';
+  kind: 'saved' | 'removed' | 'overlap';
   date: string;
   time: string;
   duration: number;
+  clash?: PickedSession;
 };
 
 export function BookingInput({
@@ -235,20 +238,24 @@ export function BookingInput({
   const toggle = (date: string, time: string, duration: number) => {
     if (!serviceId) return;
     setDropped(false);
-    const others = sessions.filter(session => session.date !== date);
-    const same = sessions.some(
-      session =>
-        session.date === date &&
-        session.time === time &&
-        (session.duration ?? service?.duration) === duration
+    const result = toggleSession(
+      sessions.map(session => ({
+        ...session,
+        duration: session.duration ?? service?.duration ?? 0,
+      })),
+      { date, time, duration },
+      field.rules?.buffer_minutes ?? 0
     );
-    const next = same
-      ? others
-      : [...others, { date, time, duration }].sort((a, b) =>
-          `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)
-        );
-    setNote({ kind: same ? 'removed' : 'saved', date, time, duration });
-    onChange(next.length ? { service: serviceId, sessions: next } : undefined);
+    if (result.kind === 'overlap') {
+      setNote({ kind: 'overlap', date, time, duration, clash: result.clash });
+      return;
+    }
+    setNote({ kind: result.kind, date, time, duration });
+    onChange(
+      result.sessions.length
+        ? { service: serviceId, sessions: result.sessions }
+        : undefined
+    );
   };
 
   const months = cache.key === key ? cache.months : {};
@@ -278,10 +285,20 @@ export function BookingInput({
       .join(' · ');
   const chip = (selected: boolean, size = 'text-sm!') =>
     `min-h-11 rounded-lg px-3 py-1.5 ${size} font-medium! ${theme.button} ${selected ? 'ring-2 ring-current' : ''}`;
-  const picked = new Map(sessions.map(session => [session.date, session.time]));
-  const pickedDuration = new Map(
-    sessions.map(session => [session.date, session.duration ?? service?.duration])
-  );
+  const picked = new Map<string, string[]>();
+  for (const session of sessions)
+    picked.set(session.date, [...(picked.get(session.date) ?? []), session.time]);
+  const isPicked = (date: string, time: string, duration: number) =>
+    sessions.some(
+      session =>
+        session.date === date &&
+        session.time === time &&
+        (session.duration ?? service?.duration) === duration
+    );
+  const sessionText = (time: string, duration: number | undefined) =>
+    several
+      ? `${time} · ${durationText(duration ?? service?.duration ?? 0, durationWords)}`
+      : time;
   const offeredDurations = (slot: FormSlot) =>
     preview && service
       ? bookingOptions(service).map(item => item.duration)
@@ -304,13 +321,18 @@ export function BookingInput({
                 ? `${noteWhen(note)} · ${optionText(note.duration, priceOf(note.duration))}`
                 : noteWhen(note),
             })
-          : t('booking_note_removed', { what: noteWhen(note) });
+          : note.kind === 'removed'
+            ? t('booking_note_removed', { what: noteWhen(note) })
+            : t('booking_note_overlap', {
+                what: sessionText(note.clash!.time, note.clash!.duration),
+              });
     } else if (picked.has(shown)) {
-      const duration = pickedDuration.get(shown) ?? service?.duration ?? 0;
+      const today = sessions.filter(session => session.date === shown);
       message = t('booking_note_kept', {
-        what: several
-          ? `${picked.get(shown)} · ${durationText(duration, durationWords)}`
-          : picked.get(shown),
+        count: today.length,
+        what: today
+          .map(session => sessionText(session.time, session.duration))
+          .join(', '),
       });
     }
   }
@@ -557,7 +579,11 @@ export function BookingInput({
                     </p>
                   </div>
                   <div
-                    className={`grid gap-2 ${
+                    className={`grid gap-2 rounded-xl border border-dashed p-2 ${
+                      sessions.length > 0
+                        ? 'border-teal-500/60'
+                        : 'border-transparent'
+                    } ${
                       several
                         ? 'grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))]'
                         : 'grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))]'
@@ -565,15 +591,13 @@ export function BookingInput({
                   >
                     {byDay.get(shown)!.flatMap(slot =>
                       offeredDurations(slot).map(duration => {
-                        const selected =
-                          picked.get(shown) === slot.time &&
-                          pickedDuration.get(shown) === duration;
+                        const selected = isPicked(shown, slot.time, duration);
                         return (
                           <button
                             key={`${slot.starts_at}-${duration}`}
                             type="button"
                             aria-pressed={selected}
-                            className={`${chip(selected, 'text-[15px]!')} min-h-12`}
+                            className={`${chip(false, 'text-[15px]!')} min-h-12 ${selected ? 'ring-2 ring-teal-500' : ''}`}
                             onClick={() => toggle(shown, slot.time, duration)}
                           >
                             {several ? (
@@ -591,9 +615,36 @@ export function BookingInput({
                       })
                     )}
                   </div>
-                  <p aria-live="polite" className="text-sm font-medium">
-                    {message}
-                  </p>
+                  <div aria-live="polite">
+                    {message && (
+                      <p
+                        className={`flex items-start gap-2 rounded-lg border border-dashed p-3 text-sm font-medium ${
+                          note?.kind === 'overlap' && note.date === shown
+                            ? 'border-amber-500/70 bg-amber-500/15'
+                            : 'border-teal-500/60 bg-teal-500/15'
+                        }`}
+                      >
+                        <svg
+                          aria-hidden="true"
+                          viewBox="0 0 16 16"
+                          className={`mt-0.5 h-4 w-4 shrink-0 fill-none stroke-2 ${
+                            note?.kind === 'overlap' && note.date === shown
+                              ? 'stroke-amber-500'
+                              : 'stroke-teal-500'
+                          }`}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          {note?.kind === 'overlap' && note.date === shown ? (
+                            <path d="M8 3v6M8 12.5v.01" />
+                          ) : (
+                            <path d="M3 8.5l3.2 3.2L13 4.5" />
+                          )}
+                        </svg>
+                        <span>{message}</span>
+                      </p>
+                    )}
+                  </div>
                   <p className="text-xs opacity-70">{t('booking_pick_hint')}</p>
                 </div>
               ) : (
