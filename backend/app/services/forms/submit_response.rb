@@ -2,7 +2,9 @@ module Forms
   class SubmitResponse
     include Callable
 
-    Result = Data.define(:response, :errors, :created)
+    Result = Data.define(:response, :errors, :created, :details) do
+      def initialize(response:, errors:, created:, details: nil) = super
+    end
 
     META_MAX = 40
 
@@ -38,8 +40,9 @@ module Forms
       raise FormChanged, definition if stale?
 
       @claims = []
+      @details = {}
       values, errors = cast_all
-      return Result.new(nil, errors, false) if errors.any?
+      return Result.new(nil, errors, false, @details.presence) if errors.any?
 
       create(values)
     end
@@ -82,8 +85,9 @@ module Forms
     def cast_booking(field, raw)
       return [nil, :blank] if raw.nil? || raw == ""
 
-      value, error = Appointments::Book.cast(form: form, booking: field, raw: raw, claim_at: claim_at)
+      value, error, detail = Appointments::Book.cast(form: form, booking: field, raw: raw, claim_at: claim_at)
       @booking = value
+      @details[field["id"]] = detail if detail
       [value&.fetch("stored"), error]
     end
 

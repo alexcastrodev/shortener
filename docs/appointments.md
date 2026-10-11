@@ -75,6 +75,8 @@ An owner can switch on the rule `multiple_services` (off by default, both modes)
 
 Every item is cast on its own with the rules of its service, then the whole request is checked as one person's time: sessions of different services may not overlap (the buffer counts) and every session of a day counts towards `max_per_day`. The group total is the sum of the items (each priced as before, a monthly item at its monthly price), written on every row next to that row's own price and duration. The receipt, the e-mails and the manage page show each service and the length of each session.
 
+An `unavailable` refusal keeps its body (`errors.answers.<booking_field_id>: ["unavailable"]`) and adds `details.<booking_field_id>` with the `service` id and, when the refusal is about one session, its `date` and `time`: the first pick that is taken, or the later of two services that overlap. A day that is over `max_per_day` blames no service and carries no `details`. The public form uses it to name the service.
+
 Limits: with the rule on every priced service must use one currency and the question cannot have categories; the waiting list stays per service.
 
 ## Approval and deadlines

@@ -34,7 +34,9 @@ class Api::Public::FormResponsesController < ApplicationController
     )
 
     if result.errors
-      render(json: { errors: { answers: result.errors.fetch("answers", result.errors) } }, status: :unprocessable_content)
+      body = { errors: { answers: result.errors.fetch("answers", result.errors) } }
+      body[:details] = result.details if result.details
+      render(json: body, status: :unprocessable_content)
     else
       body = { ok: true }
       appointments = Appointments::Book.summary(result.response)

@@ -127,6 +127,49 @@ RSpec.describe("several services in one booking", type: :request) do
     end
   end
 
+  describe "which service was refused" do
+    def details = json.dig("details", booking_id)
+
+    it "names the service whose time is taken and that time, and keeps the error as it was" do
+      submit(items(singles("Guitar", ["2026-11-03", "09:00"])), who: "Bo", ip: "198.51.100.8")
+
+      submit(items(singles("Drums", ["2026-11-03", "14:00"]), singles("Guitar", ["2026-11-04", "10:00"], ["2026-11-03", "09:00"])))
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(json["errors"]).to(eq("answers" => { booking_id => ["unavailable"] }))
+      expect(details).to(eq("service" => service_id("Guitar"), "date" => "2026-11-03", "time" => "09:00"))
+    end
+
+    it "names the service of a day of a monthly booking that is taken" do
+      submit(singles("Drums", ["2026-11-18", "10:00"]), who: "Bo", ip: "198.51.100.8")
+
+      submit(items(singles("Guitar", ["2026-11-03", "09:00"]), monthly("Drums")))
+      expect(unavailable?).to(be(true))
+      expect(details).to(eq("service" => service_id("Drums"), "date" => "2026-11-18", "time" => "10:00"))
+    end
+
+    it "names the service that runs into another one of the same booking" do
+      submit(items(singles("Guitar", ["2026-11-03", "09:00"]), singles("Drums", ["2026-11-03", "09:00"])))
+      expect(unavailable?).to(be(true))
+      expect(details).to(eq("service" => service_id("Drums"), "date" => "2026-11-03", "time" => "09:00"))
+    end
+
+    context "with a limit per day" do
+      let(:rules) { { "multiple_services" => true, "max_per_day" => 2 } }
+
+      it "has no service to blame for the day being full" do
+        submit(items(singles("Guitar", ["2026-11-03", "09:00"], ["2026-11-03", "10:00"]), singles("Drums", ["2026-11-03", "14:00"])))
+        expect(unavailable?).to(be(true))
+        expect(json).not_to(have_key("details"))
+      end
+    end
+
+    it "adds nothing to the other refusals" do
+      submit(items(singles("Guitar", ["2026-11-03", "09:00"]), singles("Drums", ["2026-11-03", "14:00"]).merge("service" => "nope0001")))
+      expect(json.dig("errors", "answers", booking_id)).to(eq(["invalid"]))
+      expect(json).not_to(have_key("details"))
+    end
+  end
+
   describe "what the owner has not allowed" do
     let(:rules) { {} }
 
