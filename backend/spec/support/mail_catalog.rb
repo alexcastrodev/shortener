@@ -14,7 +14,6 @@ module MailCatalog
     service_key = form.fields.find { |field| field["type"] == "booking" }["services"].first["id"]
     group = lambda do |status, times, **attributes|
       key = SecureRandom.uuid
-      free = times.size > 1 ? 1 : 0
       response = FormResponse.create!(form: form, answers: {})
       times.map do |time|
         slot = AppointmentSlot.find_or_create_by!(form: form, service_key: service_key, starts_at: time)
@@ -28,7 +27,7 @@ module MailCatalog
           client_email: "rita@example.com",
           client_time_zone: "Europe/Lisbon",
           client_locale: locale,
-          snapshot: { "name" => SERVICE, "duration" => 30, "price" => 40, "currency" => "EUR", "total" => 40.0 * (times.size - free), "free_sessions" => free, "sessions" => times.size },
+          snapshot: { "name" => SERVICE, "duration" => 30, "price" => 40, "currency" => "EUR", "total" => 40.0 * times.size, "sessions" => times.size },
           created_at: Time.current,
         }.merge(attributes))
       end

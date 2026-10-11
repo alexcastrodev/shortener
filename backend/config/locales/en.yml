@@ -74,9 +74,6 @@ en:
     with: "With"
     client: "Client"
     total: "Total"
-    free:
-      one: "%{count} free session"
-      other: "%{count} free sessions"
     zone: "Time zone: %{zone}"
     someone: "Someone"
     see_responses: "See it in your responses"

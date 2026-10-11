@@ -15,7 +15,7 @@ export interface SubmitFormReceipt {
   email_delivery?: 'queued' | 'none';
   skipped?: string[];
   appointments?: { starts_at: string; service: string; status: string }[];
-  price?: { total: number; currency: string; free_sessions?: number };
+  price?: { total: number; currency: string };
 }
 
 export interface SubmitFormResponseError {

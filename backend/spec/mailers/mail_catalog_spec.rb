@@ -104,11 +104,11 @@ RSpec.describe("Every email, in both languages") do
     expect(mail.html_part.body.decoded).to(include("Mudei &lt;u&gt;para a tarde&lt;/u&gt;"))
   end
 
-  it "lists many sessions under their count and adds the total with the free sessions" do
+  it "lists many sessions under their count and adds the total" do
     text = catalog_mails("pt-PT").fetch("appointment_mailer/confirmed").call.text_part.body.decoded
 
     expect(text).to(include("3 sessões:\n- segunda-feira, 12 de outubro · 09:00–09:30\n- quarta-feira, 14 de outubro · 15:00–15:30\n- sexta-feira, 16 de outubro · 09:00–09:30\n  Fuso horário: Europe/Lisbon"))
-    expect(text).to(include("Total: 80,00\u00a0€ · 1 sessão grátis"))
+    expect(text).to(include("Total: 120,00\u00a0€"))
   end
 
   it "puts a short localized date in the subject" do

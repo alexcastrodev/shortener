@@ -18,7 +18,6 @@ module Mcp
           times: TIME_LIST,
           times_by_day: { type: "object", properties: DAYS.to_h { |day| [day, TIME_LIST] }, additionalProperties: false },
           monthly: { type: "object", properties: { price: { type: "number", minimum: 0 } }, additionalProperties: false },
-          bundle: { type: "object", properties: { take: { type: "integer" }, pay: { type: "integer" } }, required: ["take", "pay"], additionalProperties: false },
         },
         required: ["name", "duration", "days", "times"],
         additionalProperties: false,

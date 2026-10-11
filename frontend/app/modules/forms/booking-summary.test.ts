@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { BookingService } from '@internal/core/types/Form';
-import { paidSessions, summarize } from './booking-summary.ts';
+import { summarize } from './booking-summary.ts';
 
 const service = (extra: Partial<BookingService> = {}): BookingService => ({
   id: 's1',
@@ -22,26 +22,9 @@ const days = (count: number) => ({
   })),
 });
 
-test('without a bundle every session is paid', () => {
-  assert.equal(paidSessions(null, 3), 3);
-  assert.equal(paidSessions(undefined, 0), 0);
-});
-
-test('a take 5 pay 4 bundle matches the server rule', () => {
-  const bundle = { take: 5, pay: 4 };
-  assert.equal(paidSessions(bundle, 3), 3);
-  assert.equal(paidSessions(bundle, 5), 4);
-  assert.equal(paidSessions(bundle, 7), 6);
-  assert.equal(paidSessions(bundle, 10), 8);
-});
-
-test('the total is price times the paid sessions', () => {
+test('the total is price times the sessions', () => {
   const today = new Date(2026, 9, 9);
   assert.equal(summarize(service(), days(3), today)?.total, 36);
-  assert.equal(
-    summarize(service({ bundle: { take: 5, pay: 4 } }), days(5), today)?.total,
-    48
-  );
   assert.equal(summarize(service({ price: 12.5 }), days(3), today)?.total, 37.5);
 });
 

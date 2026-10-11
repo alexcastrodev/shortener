@@ -9,7 +9,6 @@ export type ServiceInput = {
   price?: number;
   currency?: string;
   monthly?: { price?: number };
-  bundle?: { take: number; pay: number };
 };
 
 export type FormOptions = {

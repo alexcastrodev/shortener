@@ -9,6 +9,7 @@ This page records the decisions the implementation follows. It is open to every 
 - Kurz is the **only source of availability**. It does not read or write the owner's other calendars.
 - One `booking` question per form. Its configuration (categories, services, weekly availability, exceptions, rules) lives inside `forms.fields` with stable ids, and it is validated like every other field.
 - Out of the first release: monthly fixed bookings, per-weekday time lists, "take X, pay Y" promotions, the category UI, `.ics` feeds, waiting list. They stay in the plan but ship later.
+- "Take X, pay Y" packages were built and then removed: with a price per duration the total is no longer a simple multiple, so every session now costs the price of its own duration.
 
 ## Data model
 

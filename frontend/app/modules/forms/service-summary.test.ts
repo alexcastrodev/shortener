@@ -15,7 +15,6 @@ const words: SummaryWords = {
   price: (amount, currency) => `${amount} ${currency}`,
   unlimited: 'No limit',
   places: count => `${count} places`,
-  bundle: (take, pay) => `Take ${take} pay ${pay}`,
   monthly: price => (price ? `Monthly ${price}` : 'Monthly'),
   times: count => `${count} times`,
   ownTimes: days => `${days} own times`,
@@ -38,13 +37,12 @@ test('a new service reads as duration, places, weekdays and its times', () => {
   assert.equal(summary.schedule, 'Mon–Fri · 18 times');
 });
 
-test('price, no limit, package, monthly price and own day times all show', () => {
+test('price, no limit, monthly price and own day times all show', () => {
   const service = {
     ...blankService('Yoga'),
     duration: 60 as const,
     price: 12,
     capacity: '' as const,
-    bundle: true,
     monthly: true,
     monthlyPrice: 40,
     days: ['mon', 'wed', 'sat'],
@@ -58,7 +56,7 @@ test('price, no limit, package, monthly price and own day times all show', () =>
   const summary = serviceSummary(service, words);
   assert.equal(
     summary.details,
-    '60 min · 12 EUR · No limit · Take 5 pay 4 · Monthly 40 EUR'
+    '60 min · 12 EUR · No limit · Monthly 40 EUR'
   );
   assert.equal(summary.schedule, 'Mon, Wed, Sat · 1 times · Sat own times');
 });

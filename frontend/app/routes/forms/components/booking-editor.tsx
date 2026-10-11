@@ -111,9 +111,6 @@ export function BookingEditor({
                   .min(1, t('error_times')),
                 monthly: z.boolean(),
                 monthlyPrice: z.union([z.number().min(0), z.literal('')]),
-                bundle: z.boolean(),
-                bundleTake: z.union([z.number(), z.literal('')]),
-                bundlePay: z.union([z.number(), z.literal('')]),
                 byDay: z.record(
                   z.string(),
                   z.array(
@@ -127,37 +124,7 @@ export function BookingEditor({
                   currency,
                   monthly,
                   monthlyPrice,
-                  bundle,
-                  bundleTake,
-                  bundlePay,
                 } = ctx.value;
-                if (bundle) {
-                  if (price === '') {
-                    ctx.issues.push({
-                      code: 'custom',
-                      message: t('error_bundle_price'),
-                      path: ['price'],
-                      input: price,
-                    });
-                  }
-                  const valid =
-                    bundleTake !== '' &&
-                    bundlePay !== '' &&
-                    Number.isInteger(bundleTake) &&
-                    Number.isInteger(bundlePay) &&
-                    bundleTake >= 2 &&
-                    bundleTake <= 31 &&
-                    bundlePay >= 1 &&
-                    bundlePay < bundleTake;
-                  if (!valid) {
-                    ctx.issues.push({
-                      code: 'custom',
-                      message: t('error_bundle'),
-                      path: ['bundlePay'],
-                      input: bundlePay,
-                    });
-                  }
-                }
                 if (
                   monthly &&
                   monthlyPrice !== '' &&

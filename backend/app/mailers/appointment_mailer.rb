@@ -113,7 +113,7 @@ class AppointmentMailer < ApplicationMailer
       zone: zone,
       minutes: snapshot["duration"],
       who: who,
-      total: ([snapshot["total"], snapshot["currency"], snapshot["free_sessions"]] if snapshot["total"]),
+      total: ([snapshot["total"], snapshot["currency"]] if snapshot["total"]),
     }
   end
 

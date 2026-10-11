@@ -89,11 +89,11 @@ module Appointments
       monthly = value["monthly"]
       monthly_price = service.dig("monthly", "price")
       priced = if monthly && monthly_price && service["currency"]
-        { total: monthly_price.to_f, free_sessions: 0 }
+        { total: monthly_price.to_f }
       else
         Pricing.call(service: service, count: starts.size)
       end
-      pricing = priced ? { "total" => priced[:total], "free_sessions" => priced[:free_sessions], "sessions" => starts.size } : {}
+      pricing = priced ? { "total" => priced[:total], "sessions" => starts.size } : {}
       rows = starts.map do |time|
         {
           form_id: form.id,
@@ -151,7 +151,7 @@ module Appointments
       last = rows.map { |row| row.slot.starts_at }.max
       receipt = { manage_url: manage_url(first, last, now: now), email_delivery: first.client_email.present? ? "queued" : "none" }
       receipt[:skipped] = first.snapshot.dig("monthly", "skipped").to_a if first.snapshot["monthly"]
-      receipt[:price] = { total: first.snapshot["total"], currency: first.snapshot["currency"], free_sessions: first.snapshot["free_sessions"] } if first.snapshot["total"]
+      receipt[:price] = { total: first.snapshot["total"], currency: first.snapshot["currency"] } if first.snapshot["total"]
       receipt
     end
 

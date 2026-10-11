@@ -33,8 +33,8 @@ test('a service without a price shows no total', async ({ page }) => {
   await expect(page.getByText('Total', { exact: true })).toHaveCount(0);
 });
 
-test('the bar lists the chosen days and the total follows a take 2 pay 1 bundle', async ({ page }) => {
-  await open(page, { services: [service('Sessão', { price: 10, currency: 'EUR', bundle: { take: 2, pay: 1 } })] });
+test('the bar lists the chosen days and the total follows the number of sessions', async ({ page }) => {
+  await open(page, { services: [service('Sessão', { price: 10, currency: 'EUR' })] });
   const [first, second, third] = nextWeekdays(3, 3);
 
   await choose(page, first, '09:00');
@@ -44,15 +44,15 @@ test('the bar lists the chosen days and the total follows a take 2 pay 1 bundle'
 
   await choose(page, second, '10:00');
   await expect(page.getByText('Sessão · 2 sessões')).toBeVisible();
-  await expect(page.getByText(/^10,00\s*€$/)).toBeVisible();
+  await expect(page.getByText(/^20,00\s*€$/)).toBeVisible();
 
   await choose(page, third, '09:00');
   await expect(page.getByText('Sessão · 3 sessões')).toBeVisible();
-  await expect(page.getByText(/^20,00\s*€$/)).toBeVisible();
+  await expect(page.getByText(/^30,00\s*€$/)).toBeVisible();
 
   await page.getByRole('button', { name: '09:00', exact: true }).click();
   await expect(page.getByText('Sessão · 2 sessões')).toBeVisible();
-  await expect(page.getByText(/^10,00\s*€$/)).toBeVisible();
+  await expect(page.getByText(/^20,00\s*€$/)).toBeVisible();
 });
 
 test('a monthly booking shows the month, the number of sessions and the monthly price', async ({ page }) => {

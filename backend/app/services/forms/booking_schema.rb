@@ -2,8 +2,8 @@ module Forms
   module BookingSchema
     extend self
 
-    SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day", "bundle", "monthly"].freeze
-    PUBLIC_SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "days", "times", "bundle", "monthly"].freeze
+    SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "capacity", "days", "times", "times_by_day", "monthly"].freeze
+    PUBLIC_SERVICE_KEYS = ["id", "category_id", "name", "duration", "price", "currency", "days", "times", "monthly"].freeze
     RULE_KEYS = ["time_zone", "approval", "approval_timeout_minutes", "approval_on_timeout", "approval_within_minutes", "verify_email", "waitlist", "waitlist_confirm_minutes", "reminder_minutes", "min_notice_minutes", "window_days", "buffer_minutes", "max_per_day"].freeze
     RULE_RANGES = { "min_notice_minutes" => (0..43_200), "window_days" => (1..365), "buffer_minutes" => (0..600), "max_per_day" => (1..1000), "approval_timeout_minutes" => (5..43_200), "approval_within_minutes" => (1..43_200), "waitlist_confirm_minutes" => (15..4_320) }.freeze
     APPROVALS = ["auto", "manual"].freeze
@@ -18,7 +18,6 @@ module Forms
     CATEGORIES_MAX = 10
     CATEGORY_KEYS = ["id", "name"].freeze
     CATEGORY_NAME_MAX = 60
-    BUNDLE_TAKE_MAX = 31
     TIMES_MAX = 96
     NAME_MAX = 100
     DURATION = (5..600)
@@ -210,7 +209,6 @@ module Forms
       times = service["times"]
       result << "times must be unique HH:MM values (max #{TIMES_MAX})" unless times.is_a?(Array) && times.size <= TIMES_MAX && times.all? { |time| time.is_a?(String) && time.match?(TIME) } && times.uniq.size == times.size
       result.concat(by_day_errors(service))
-      result.concat(bundle_errors(service))
       result.concat(monthly_errors(service))
       result
     end
@@ -226,22 +224,6 @@ module Forms
       result = []
       result << "monthly price must be between 0 and #{PRICE_MAX}" unless price.is_a?(Numeric) && price.to_f.finite? && price >= 0 && price <= PRICE_MAX
       result << "monthly price needs a currency" unless service["currency"].is_a?(String) && service["currency"].match?(CURRENCY)
-      result
-    end
-
-    def bundle_errors(service)
-      bundle = service["bundle"]
-      return [] if bundle.nil?
-      return ["bundle must be an object"] unless bundle.is_a?(Hash) && (bundle.keys - ["take", "pay"]).empty?
-
-      result = []
-      result << "bundle needs a price" if service["price"].nil?
-      take = bundle["take"]
-      pay = bundle["pay"]
-      return result + ["bundle take and pay must be whole numbers"] unless take.is_a?(Integer) && pay.is_a?(Integer)
-
-      result << "bundle take must be between 2 and #{BUNDLE_TAKE_MAX}" unless take.between?(2, BUNDLE_TAKE_MAX)
-      result << "bundle pay must be at least 1 and less than take" if pay < 1 || pay >= take
       result
     end
 

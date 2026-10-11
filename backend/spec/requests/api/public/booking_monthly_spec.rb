@@ -49,7 +49,7 @@ RSpec.describe("fixed monthly booking", type: :request) do
       expect(days).to(eq(["11-02", "11-04", "11-09", "11-16", "11-18", "11-23", "11-25", "11-30"]))
       expect(Appointment.pluck(:group_key).uniq.size).to(eq(1))
       expect(json["skipped"]).to(eq(["2026-11-11"]))
-      expect(json["price"]).to(include("total" => 120.0, "currency" => "EUR", "free_sessions" => 0))
+      expect(json["price"]).to(include("total" => 120.0, "currency" => "EUR"))
       expect(AppointmentSlot.sum(:booked)).to(eq(8))
     end
 
