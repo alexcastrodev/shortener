@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { BioTheme } from '../bio-page/themes';
 import { formatCurrency, formatDate } from '../../i18n/format';
-import type { BookingSummary } from './booking-summary.ts';
+import type { AllSummary, BookingSummary } from './booking-summary.ts';
 
 export const dayText = (iso: string) =>
   formatDate(`${iso}T00:00:00Z`, {
@@ -50,7 +50,7 @@ export function BookingBar({
   ready,
   onSubmit,
 }: {
-  summary: BookingSummary | null;
+  summary: AllSummary | null;
   currency: string | null;
   monthly: boolean;
   theme: BioTheme;
@@ -61,6 +61,8 @@ export function BookingBar({
   const { t } = useTranslation('respond');
   const total = summary ? summary.total : currency ? 0 : null;
   const shownCurrency = summary?.currency ?? currency;
+  const only: BookingSummary | null =
+    summary?.items.length === 1 ? summary.items[0].summary : null;
 
   return (
     <div className="sticky bottom-0 z-10 mt-auto">
@@ -71,16 +73,23 @@ export function BookingBar({
           >
             {!summary
               ? t('bar_none')
-              : summary.kind === 'monthly'
-                ? monthlyText(summary)
-                : daysText(summary)}
+              : !only
+                ? summary.items.map(({ service }) => service.name).join(', ')
+                : only.kind === 'monthly'
+                  ? monthlyText(only)
+                  : daysText(only)}
           </p>
           <p className="truncate text-xs opacity-70">
             {!summary
               ? t(monthly ? 'bar_hint' : 'bar_hint_days')
-              : summary.kind === 'monthly'
-                ? t('bar_monthly', { count: summary.count })
-                : t('bar_sessions', { count: summary.count })}
+              : !only
+                ? t('bar_services', {
+                    total: summary.count,
+                    services: summary.items.length,
+                  })
+                : only.kind === 'monthly'
+                  ? t('bar_monthly', { count: only.count })
+                  : t('bar_sessions', { count: only.count })}
           </p>
         </div>
         {total !== null && shownCurrency && (

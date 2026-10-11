@@ -6,7 +6,7 @@ export interface DecisionAppointment {
   status: string;
   expires_at: string | null;
   time_zone: string;
-  sessions: { starts_at: string }[];
+  sessions: { starts_at: string; service?: string; duration?: number }[];
 }
 
 export interface GetAppointmentDecisionResponse {

@@ -24,6 +24,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { formatDateTime, formatNumber } from '../../i18n/format';
+import { answerText } from '../../modules/forms/booking-answer';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Card, PageContainer } from '@internal/ui';
 import { useGetForm } from '@internal/core/actions/get-form/get-form.hook';
@@ -100,12 +101,16 @@ function ResponseImage({ formId, token }: { formId: string; token: string }) {
   return <img src={state.url} alt={t('image_alt')} className="mt-1 max-h-80 max-w-full rounded-md border border-border" />;
 }
 
-function formatAnswer(value: FormResponse['answers'][number]['value'], type?: string) {
+function formatAnswer(
+  value: FormResponse['answers'][number]['value'],
+  type?: string,
+  serviceNames: Map<string, string> = new Map()
+) {
   if (value === null || value === undefined) return '—';
   const t = i18n.getFixedT(null, 'responses');
   if (type === 'image') return t('answer_image');
   if (Array.isArray(value)) return value.join(', ');
-  if (typeof value === 'object') return value.sessions.map(session => `${session.date} ${session.time}`).join(', ');
+  if (typeof value === 'object') return answerText(value, serviceNames);
   if (typeof value === 'boolean') return value ? t('answer_yes') : t('answer_no');
   return String(value);
 }
@@ -163,10 +168,15 @@ export default function FormResponsesPage() {
   const questions = (form?.fields ?? []).filter(field => !isSection(field));
   const rows = responses.data?.pages.flatMap(page => page.response) ?? [];
   const total = form?.responses_count ?? 0;
+  const serviceNames = new Map(
+    (form?.fields.find(field => field.type === 'booking')?.services ?? []).map(service => [service.id, service.name])
+  );
+  const show = (value: FormResponse['answers'][number]['value'], type?: string) =>
+    formatAnswer(value, type, serviceNames);
   const needle = query.trim().toLowerCase();
   const visible = needle
     ? rows.filter(row =>
-        row.answers.some(answer => formatAnswer(answer.value, answer.type).toLowerCase().includes(needle))
+        row.answers.some(answer => show(answer.value, answer.type).toLowerCase().includes(needle))
       )
     : rows;
   const stats = summary.data;
@@ -213,7 +223,7 @@ export default function FormResponsesPage() {
         const byId = new Map(row.answers.map(answer => [answer.id, answer.value]));
         return [
           row.submitted_at,
-          ...questions.map(q => (byId.has(q.id) ? formatAnswer(byId.get(q.id)!, q.type) : '')),
+          ...questions.map(q => (byId.has(q.id) ? show(byId.get(q.id)!, q.type) : '')),
           row.source ?? '',
           row.platform ?? '',
           row.browser ?? '',
@@ -505,7 +515,7 @@ export default function FormResponsesPage() {
                         <td className="whitespace-nowrap px-4 py-3">{formatWhen(row.submitted_at)}</td>
                         {questions.slice(0, TABLE_QUESTIONS).map(question => (
                           <td key={question.id} className="max-w-[220px] truncate px-4 py-3">
-                            {formatAnswer(byId.get(question.id) ?? null, question.type)}
+                            {show(byId.get(question.id) ?? null, question.type)}
                           </td>
                         ))}
                         <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
@@ -548,7 +558,7 @@ export default function FormResponsesPage() {
                 {answer.type === 'image' && typeof answer.value === 'string' ? (
                   <ResponseImage formId={id} token={answer.value} />
                 ) : (
-                  <p className="mt-0.5 whitespace-pre-line text-sm">{formatAnswer(answer.value, answer.type)}</p>
+                  <p className="mt-0.5 whitespace-pre-line text-sm">{show(answer.value, answer.type)}</p>
                 )}
               </div>
             ))}

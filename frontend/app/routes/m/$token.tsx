@@ -54,6 +54,8 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
   const [target, setTarget] = useState<CancelTarget | undefined>();
 
   const cancelled = appointment.status === 'cancelled';
+  const several =
+    new Set(appointment.sessions.map(session => session.service)).size > 1;
   const cancelledPart =
     cancelled === false && justCancelled && Boolean(appointment.series);
 
@@ -114,6 +116,7 @@ export default function ManageBooking({ loaderData }: Route.ComponentProps) {
                   className="flex justify-between gap-3"
                 >
                   <span>
+                    {several && session.service ? `${session.service} · ` : ''}
                     {formatDateTime(session.starts_at, {
                       dateStyle: 'full',
                       timeStyle: 'short',

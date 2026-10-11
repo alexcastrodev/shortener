@@ -17,6 +17,7 @@ export function SubmissionResult({ receipt, message, theme, timeZone }: Props) {
   const { t } = useTranslation('respond');
   const durationWords = useDurationWords();
   const sessions = receipt?.appointments ?? [];
+  const services = [...new Set(sessions.map(item => item.service))];
   const booked = Boolean(receipt?.manage_url) && sessions.length > 0;
   const unverified = sessions.some(item => item.status === 'unverified');
   const pending = sessions.some(item => item.status === 'pending');
@@ -58,7 +59,7 @@ export function SubmissionResult({ receipt, message, theme, timeZone }: Props) {
             className="space-y-3 rounded-xl border border-current/20 p-5"
           >
             <div className="flex items-baseline justify-between gap-3">
-              <p className="text-base font-semibold">{sessions[0].service}</p>
+              <p className="text-base font-semibold">{services.join(', ')}</p>
               {receipt.price && (
                 <p className="text-xl font-semibold">
                   {formatCurrency(receipt.price.total, receipt.price.currency)}
@@ -69,6 +70,7 @@ export function SubmissionResult({ receipt, message, theme, timeZone }: Props) {
               {sessions.map(item => (
                 <li key={item.starts_at} className="flex items-center gap-2">
                   <IconCalendarEvent size={16} aria-hidden="true" className="shrink-0 opacity-70" />
+                  {services.length > 1 ? `${item.service} · ` : ''}
                   {formatDate(item.starts_at, {
                     weekday: 'long',
                     day: 'numeric',

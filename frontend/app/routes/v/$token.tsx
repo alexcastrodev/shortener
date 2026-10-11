@@ -47,6 +47,8 @@ export default function VerifyBooking({ loaderData }: Route.ComponentProps) {
   const [failed, setFailed] = useState(false);
   const { appointment, result } = state;
   const waiting = appointment.status === 'unverified' && result !== 'expired';
+  const several =
+    new Set(appointment.sessions.map(session => session.service)).size > 1;
 
   const confirm = async () => {
     if (busy) return;
@@ -92,6 +94,7 @@ export default function VerifyBooking({ loaderData }: Route.ComponentProps) {
             <ul className="mt-1 space-y-1">
               {appointment.sessions.map(session => (
                 <li key={session.starts_at}>
+                  {several && session.service ? `${session.service} · ` : ''}
                   {formatDateTime(session.starts_at, {
                     dateStyle: 'full',
                     timeStyle: 'short',

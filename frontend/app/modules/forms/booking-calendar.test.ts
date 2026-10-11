@@ -98,6 +98,22 @@ test('a time that overlaps a session of the same day is refused and says which o
   assert.equal(toggleSession(sessions, at('2026-10-14', '11:30', 60)).kind, 'saved');
 });
 
+test('sessions of other services block overlapping times, and are never removed from here', () => {
+  const own = [at('2026-10-13', '09:00')];
+  const others = [{ ...at('2026-10-13', '14:00'), service: 'Bateria' }];
+  const clash = toggleSession(own, at('2026-10-13', '14:30', 30), 0, others);
+  assert.equal(clash.kind, 'overlap');
+  assert.deepEqual(clash.kind === 'overlap' && clash.clash, others[0]);
+  assert.deepEqual(clash.sessions, own);
+  const same = toggleSession(own, at('2026-10-13', '14:00'), 0, others);
+  assert.equal(same.kind, 'overlap');
+  assert.equal(toggleSession(own, at('2026-10-13', '15:00'), 0, others).kind, 'saved');
+  assert.equal(toggleSession(own, at('2026-10-13', '15:00'), 30, others).kind, 'overlap');
+  const removed = toggleSession(own, at('2026-10-13', '09:00'), 0, others);
+  assert.equal(removed.kind, 'removed');
+  assert.deepEqual(removed.sessions, []);
+});
+
 test('back to back is fine, and the buffer between sessions counts', () => {
   const sessions = [at('2026-10-13', '11:00', 60)];
   assert.equal(toggleSession(sessions, at('2026-10-13', '12:00', 60), 0).kind, 'saved');

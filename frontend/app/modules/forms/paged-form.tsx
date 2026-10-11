@@ -7,10 +7,9 @@ import { useConfirmEmail } from './confirm-email';
 import { isSection } from './field-types';
 import type { Props, SubmitFailure, SubmitFormReceipt } from './form-renderer';
 import { BookingBar } from './booking-bar';
-import { hasSeveralDurations } from './booking-options';
 import { BookingReview } from './booking-review';
 import { SubmissionResult } from './submission-result';
-import { summarize } from './booking-summary';
+import { summarizeAll } from './booking-summary';
 import { FormCover } from './form-cover';
 
 const alertClass =
@@ -60,17 +59,15 @@ export function PagedForm({
   const last = current === pages.length - 1;
   const primary = `min-h-11 rounded-lg px-5 py-2 font-medium ${theme.button}`;
   const bookingField = pages[current].find(item => item.type === 'booking');
-  const summaryOf = (field: FormField | undefined) => {
-    const answer = field
-      ? (answers[field.id] as BookingAnswer | undefined)
-      : undefined;
-    const service = field?.services?.find(item => item.id === answer?.service);
-    return {
-      service,
-      summary: field ? summarize(service, answer, new Date()) : null,
-    };
-  };
-  const bookingSummary = summaryOf(bookingField).summary;
+  const summaryOf = (field: FormField | undefined) =>
+    field
+      ? summarizeAll(
+          field.services,
+          answers[field.id] as BookingAnswer | undefined,
+          new Date()
+        )
+      : null;
+  const bookingSummary = summaryOf(bookingField);
   const reviewField = form.fields.find(item => item.type === 'booking');
   const review = summaryOf(reviewField);
   const pricedService = bookingField?.services?.find(
@@ -319,11 +316,9 @@ export function PagedForm({
           );
         })}
       </div>
-      {last && reviewField && review.service && review.summary && review.summary.count > 0 && (
+      {last && reviewField && review && review.count > 0 && (
         <BookingReview
-          summary={review.summary}
-          serviceName={review.service.name}
-          showPrices={hasSeveralDurations(review.service)}
+          summary={review}
           theme={theme}
           onChange={() => changeBooking(reviewField.id)}
         />

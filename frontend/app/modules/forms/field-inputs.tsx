@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import type { BookingAnswer } from '@internal/core/types/Form';
+import { isEmptyItem, itemsOf } from './booking-answer.ts';
 import { BookingInput, type JoinWaitlist, type LoadSlots } from './booking-input';
 import type { BioTheme } from '../bio-page/themes';
 import type { FormField } from '@internal/core/types/Form';
@@ -15,8 +16,7 @@ export const isBlank = (value: Answer) =>
   (Array.isArray(value) && value.length === 0) ||
   (typeof value === 'object' &&
     !Array.isArray(value) &&
-    value.sessions.length === 0 &&
-    !value.monthly);
+    itemsOf(value).every(isEmptyItem));
 
 export function focusFirstInput(root: HTMLElement | null) {
   requestAnimationFrame(() =>

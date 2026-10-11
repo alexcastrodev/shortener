@@ -1,4 +1,9 @@
-import type { BookingAnswer, BookingService } from '@internal/core/types/Form';
+import type {
+  BookingAnswer,
+  BookingItem,
+  BookingService,
+} from '@internal/core/types/Form';
+import { itemsOf } from './booking-answer.ts';
 import { monthlyMinutes, optionFor } from './booking-options.ts';
 import { monthlyDates } from './monthly-booking.ts';
 
@@ -17,9 +22,40 @@ export type BookingSummary = {
   currency: string | null;
 };
 
+export type AllSummary = {
+  items: { service: BookingService; summary: BookingSummary }[];
+  count: number;
+  total: number | null;
+  currency: string | null;
+};
+
+export function summarizeAll(
+  services: BookingService[] | undefined,
+  answer: BookingAnswer | undefined,
+  today: Date
+): AllSummary | null {
+  const items = itemsOf(answer).flatMap(item => {
+    const service = services?.find(entry => entry.id === item.service);
+    const summary = summarize(service, item, today);
+    return service && summary ? [{ service, summary }] : [];
+  });
+  if (items.length === 0) return null;
+  const totals = items.flatMap(({ summary }) =>
+    summary.total === null ? [] : [summary.total]
+  );
+  return {
+    items,
+    count: items.reduce((sum, { summary }) => sum + summary.count, 0),
+    total: totals.length
+      ? Math.round(totals.reduce((sum, amount) => sum + amount, 0) * 100) / 100
+      : null,
+    currency: items.find(({ summary }) => summary.currency)?.summary.currency ?? null,
+  };
+}
+
 export function summarize(
   service: BookingService | undefined,
-  answer: BookingAnswer | undefined,
+  answer: BookingItem | undefined,
   today: Date
 ): BookingSummary | null {
   if (!service || !answer) return null;
