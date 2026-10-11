@@ -2,6 +2,7 @@ import type { FormSlot } from '@internal/core/actions/get-form-slots/get-form-sl
 import type { BookingService } from '@internal/core/types/Form';
 import { bookingOptions, type Allowance } from './booking-options.ts';
 import { monthlyDates, pad } from './monthly-booking.ts';
+import { instantOf } from './zone-time.ts';
 
 export const MAX_DAYS = 56;
 
@@ -203,7 +204,8 @@ export function previewSlots(
     >,
   from: string,
   to: string,
-  today: Date
+  today: Date,
+  zone?: string
 ): FormSlot[] {
   const durations = bookingOptions(service).map(item => item.duration);
   const slots: FormSlot[] = [];
@@ -216,7 +218,9 @@ export function previewSlots(
       const times = service.times_by_day?.[weekday] ?? service.times;
       for (const time of [...times].sort())
         slots.push({
-          starts_at: `${date}T${time}:00`,
+          starts_at: zone
+            ? instantOf(date, time, zone).toISOString()
+            : `${date}T${time}:00`,
           date,
           time,
           remaining: service.capacity ?? 1,

@@ -240,6 +240,19 @@ test('preview slots offer every duration of the service', () => {
   assert.deepEqual(slot.durations, [60, 90]);
 });
 
+test('preview slots of a zone carry the real instant, so they can be shown in another zone', () => {
+  const today = new Date(2026, 9, 8);
+  const service = { duration: 60, days: ['mon'], times: ['09:00', '23:30'] };
+  const slots = previewSlots(service, '2026-10-12', '2026-10-12', today, 'Europe/Lisbon');
+  assert.deepEqual(
+    slots.map(slot => [slot.date, slot.time, slot.starts_at]),
+    [
+      ['2026-10-12', '09:00', '2026-10-12T08:00:00.000Z'],
+      ['2026-10-12', '23:30', '2026-10-12T22:30:00.000Z'],
+    ]
+  );
+});
+
 test('a chosen session is kept only while its duration is still offered', () => {
   const range = { from: '2026-10-01', to: '2026-10-31' };
   const slots = [{ date: '2026-10-12', time: '09:00', durations: [60] }];

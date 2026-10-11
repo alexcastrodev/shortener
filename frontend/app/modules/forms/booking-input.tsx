@@ -232,7 +232,7 @@ export function BookingInput({
         )
       )}
 
-      {several && chosen.length > 0 && <PickHeading zone={field.time_zone} />}
+      {several && chosen.length > 0 && <PickHeading theme={theme} />}
 
       {chosen.map(service => (
         <ServiceBlock
