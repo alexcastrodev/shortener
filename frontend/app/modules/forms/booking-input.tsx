@@ -22,6 +22,7 @@ import {
   monthlyMinutes,
 } from './booking-options.ts';
 import { questionTitle } from './field-types';
+import { PickHeading } from './pick-heading.tsx';
 import { ServiceBlock, type LoadSlots } from './service-block.tsx';
 
 export type { JoinWaitlist, LoadSlots };
@@ -228,6 +229,8 @@ export function BookingInput({
           </p>
         )
       )}
+
+      {several && chosen.length > 0 && <PickHeading zone={field.time_zone} />}
 
       {chosen.map(service => (
         <ServiceBlock

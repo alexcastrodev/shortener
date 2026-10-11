@@ -99,7 +99,10 @@ export function ServiceBlock({
     <>
       {service.monthly && (
         <div className="space-y-2">
-          <p id={modeId} className="text-xl font-semibold">
+          <p
+            id={modeId}
+            className={multiple ? 'sr-only' : 'text-xl font-semibold'}
+          >
             {t('booking_mode')}
           </p>
           <fieldset
@@ -218,7 +221,7 @@ export function ServiceBlock({
           loadSlots={loadSlots}
           reloadKey={reloadKey}
           hideSummary={hideSummary}
-          named={multiple}
+          shared={multiple}
         />
       )}
 
@@ -240,7 +243,7 @@ export function ServiceBlock({
           reloadKey={reloadKey}
           hideSummary={hideSummary}
           memory={daysMemory}
-          named={multiple}
+          shared={multiple}
         />
       )}
     </>
@@ -304,7 +307,7 @@ function PlanPicker({
   loadSlots,
   reloadKey,
   hideSummary,
-  named,
+  shared,
 }: {
   field: FormField;
   service: Service;
@@ -318,7 +321,7 @@ function PlanPicker({
   loadSlots?: LoadSlots;
   reloadKey?: string;
   hideSummary?: boolean;
-  named: boolean;
+  shared: boolean;
 }) {
   const plan = usePlanWords();
   const month = memory.month;
@@ -363,7 +366,7 @@ function PlanPicker({
         month={month}
         duration={monthlyMinutes(service)}
         cap={allowance}
-        named={named}
+        shared={shared}
       />
     </div>
   );

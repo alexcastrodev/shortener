@@ -10,6 +10,7 @@ import { formatCurrency, formatDate } from '../../i18n/format';
 import { WaitlistJoin, type JoinWaitlist } from './waitlist-join';
 import { BookingCalendar } from './booking-calendar.tsx';
 import { BookingNote } from './booking-note.tsx';
+import { PickHeading } from './pick-heading.tsx';
 import {
   bufferOf,
   canGoNext,
@@ -81,7 +82,7 @@ export function SessionPicker({
   month: fixedMonth,
   duration: fixedDuration,
   cap,
-  named,
+  shared,
 }: {
   field: FormField;
   service: Service;
@@ -98,7 +99,7 @@ export function SessionPicker({
   month?: string;
   duration?: number;
   cap?: Allowance;
-  named?: boolean;
+  shared?: boolean;
 }) {
   const { t } = useTranslation('respond');
   const durationWords = useDurationWords();
@@ -290,19 +291,12 @@ export function SessionPicker({
       <div className="space-y-3">
         {dropped && (
           <p role="alert" className="text-sm font-medium">
-            {named
+            {shared
               ? t('booking_taken_service', { service: service.name })
               : t('booking_taken')}
           </p>
         )}
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="text-xl font-semibold">{t('booking_pick')}</p>
-          {field.time_zone && (
-            <p className="text-xs opacity-70">
-              {t('booking_zone', { zone: field.time_zone })}
-            </p>
-          )}
-        </div>
+        {!shared && <PickHeading zone={field.time_zone} />}
         {status === 'error' ? (
           <div className="space-y-2">
             <p role="alert" className="text-sm">
