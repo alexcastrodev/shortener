@@ -47,6 +47,7 @@ export type RulesSummaryValues = {
   approval: 'auto' | 'manual';
   verify_email: boolean;
   waitlist: boolean;
+  multiple_services: boolean;
   reminder_minutes: number[];
   min_notice_minutes: number | '';
   window_days: number | '';
@@ -59,6 +60,7 @@ export type RulesSummaryLabels = {
   autoVerify: string;
   manual: string;
   waitlist: string;
+  multiple: string;
   reminders: (minutes: number[]) => string;
   window: (days: number) => string;
   notice: (minutes: number) => string;
@@ -78,6 +80,7 @@ export function summarizeRules(
         : labels.auto,
   ];
   if (values.waitlist) parts.push(labels.waitlist);
+  if (values.multiple_services) parts.push(labels.multiple);
   const reminders = [...new Set(values.reminder_minutes)].sort((a, b) => b - a);
   if (reminders.length > 0) parts.push(labels.reminders(reminders));
   if (values.window_days !== '') parts.push(labels.window(values.window_days));

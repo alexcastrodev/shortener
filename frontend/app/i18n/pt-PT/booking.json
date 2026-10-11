@@ -210,5 +210,14 @@
   "monthly_price_needs_price": "Indique um preço acima para mostrar um preço mensal.",
   "waitlist": "Lista de espera para horários cheios",
   "waitlist_hint": "Os clientes podem entrar na fila de um horário cheio. Quando abre um lugar fica guardado para o primeiro da fila. Exige um formulário em que só nome, e-mail e marcação são obrigatórios.",
+  "multiple_services": "Vários serviços na mesma marcação",
+  "multiple_services_hint": "Os clientes podem escolher mais do que um serviço e marcá-los juntos, cada um com os seus dias ou a sua reserva mensal. As sessões de serviços diferentes não se podem sobrepor e todos os preços têm de usar a mesma moeda.",
+  "multiple_lessons": "Várias aulas na mesma marcação",
+  "multiple_lessons_hint": "Os clientes podem escolher mais do que uma aula e marcá-las juntas, cada uma com os seus dias ou a sua reserva mensal. As sessões de aulas diferentes não se podem sobrepor e todos os preços têm de usar a mesma moeda.",
+  "multiple_categories_hint": "Ainda não disponível com categorias. Retire as categorias para ligar.",
+  "rules_sum_multiple_services": "Vários serviços",
+  "rules_sum_multiple_lessons": "Várias aulas",
+  "error_multiple_currency": "Use a mesma moeda dos outros preços quando os clientes podem marcar vários de uma vez",
+  "error_multiple_categories": "Vários na mesma marcação não está disponível com categorias",
   "waitlist_confirm": "Tempo para confirmar um lugar"
 }

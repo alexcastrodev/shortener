@@ -54,6 +54,7 @@ export type RuleValues = {
   verify_email: boolean;
   waitlist: boolean;
   waitlist_confirm_minutes: number | '';
+  multiple_services: boolean;
   min_notice_minutes: number | '';
   window_days: number | '';
   buffer_minutes: number | '';

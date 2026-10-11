@@ -13,6 +13,9 @@ export type ItemWords = {
   remove: (name: string) => string;
   removeTitle: string;
   removeBody: string;
+  multiple: string;
+  multipleHint: string;
+  multipleSummary: string;
 };
 
 export type ItemList = {

@@ -226,3 +226,36 @@ test('a services question does not need an availability', () => {
   assert.deepEqual(values.availability.days, []);
   assert.deepEqual(issues(values), []);
 });
+
+test('several services in one booking needs the same currency on every price', () => {
+  const values = servicesMode.initialValues({
+    ...field,
+    rules: { ...field.rules!, multiple_services: true },
+    services: [
+      ...field.services!,
+      { id: 'svc00002', name: 'Massage', duration: 30, price: 40, currency: 'USD', days: ['mon'], times: ['09:00'] },
+      { id: 'svc00003', name: 'Free chat', duration: 15, days: ['mon'], times: ['09:00'] },
+    ],
+  });
+  assert.deepEqual(issues(values), [
+    ['services.1.price', 'error_multiple_currency'],
+  ]);
+  assert.deepEqual(issues({ ...values, multiple_services: false }), []);
+  values.services[1].currency = 'eur';
+  assert.deepEqual(issues(values), []);
+});
+
+test('several services in one booking is refused while the question has two categories', () => {
+  const values = servicesMode.initialValues({
+    ...field,
+    rules: { ...field.rules!, multiple_services: true },
+    categories: [
+      { id: 'cat00001', name: 'Hair' },
+      { id: 'cat00002', name: 'Body' },
+    ],
+    services: [{ ...field.services![0], category_id: 'cat00001' }],
+  });
+  assert.deepEqual(issues(values), [
+    ['multiple_services', 'error_multiple_categories'],
+  ]);
+});

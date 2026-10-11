@@ -152,6 +152,25 @@ test('the owner gives a lesson its own days and times and the other lesson keeps
   expect(saved.availability.times).toEqual(['09:00', '10:00']);
 });
 
+test('the teacher mode talks about lessons when several can be booked together', async ({ page, signIn }) => {
+  const form = await createForm({
+    mode: 'individual',
+    availability: { days: WEEK, times: ['09:00', '10:00'] },
+    services: [lesson('Guitarra'), lesson('Bateria')],
+  });
+  await signIn('owner');
+  await page.goto(`/app/forms/${form.id}`);
+  await page.getByRole('button', { name: /Marcação de serviço$/ }).click();
+
+  const editor = new BookingEditor(page);
+  await editor.expand('rules');
+  await expect(editor.rules.getByRole('switch', { name: 'Vários serviços na mesma marcação' })).toHaveCount(0);
+  await editor.rules.getByRole('switch', { name: 'Várias aulas na mesma marcação' }).click();
+  await editor.save();
+  await expect(editor.saved).toBeVisible();
+  expect(bookingOf(await ownerForm(form.id)).rules.multiple_services).toBe(true);
+});
+
 test('the publish checklist asks for the hours of the teacher and publishing works once they are set', async ({ page, signIn }) => {
   const form = await createForm({
     mode: 'individual',

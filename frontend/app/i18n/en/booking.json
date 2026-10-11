@@ -210,5 +210,14 @@
   "monthly_price_needs_price": "Add a price above to show a monthly price.",
   "waitlist": "Waiting list for full times",
   "waitlist_hint": "Clients can queue for a full time. When a place opens it is held for the first in line. Needs a form whose only required questions are name, email and the booking.",
+  "multiple_services": "Several services in one booking",
+  "multiple_services_hint": "Clients can tick more than one service and book them together, each with its own days or monthly booking. Sessions of different services cannot overlap, and every price must use the same currency.",
+  "multiple_lessons": "Several lessons in one booking",
+  "multiple_lessons_hint": "Clients can tick more than one lesson and book them together, each with its own days or monthly booking. Sessions of different lessons cannot overlap, and every price must use the same currency.",
+  "multiple_categories_hint": "Not available with categories yet. Remove the categories to turn it on.",
+  "rules_sum_multiple_services": "Several services",
+  "rules_sum_multiple_lessons": "Several lessons",
+  "error_multiple_currency": "Use the same currency as the other prices when clients can book several at once",
+  "error_multiple_categories": "Several in one booking is not available with categories",
   "waitlist_confirm": "Time to confirm a place"
 }
