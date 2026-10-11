@@ -1,5 +1,3 @@
-import type { ModeName } from '../mode.ts';
-
 export const REMINDER_CHOICES =[60, 120, 360, 1440, 2880, 10080] as const;
 export const REMINDERS_MAX = 3;
 
@@ -46,15 +44,7 @@ export type ExceptionValues = {
   note: string;
 };
 
-export type Values = {
-  label: string;
-  help: string;
-  mode: ModeName;
-  availability: ScheduleValues;
-  categories: CategoryValues[];
-  services: ServiceValues[];
-  exceptions: ExceptionValues[];
-  exceptionDraft: ExceptionValues;
+export type RuleValues = {
   approval: 'auto' | 'manual';
   approval_timeout_minutes: number | '';
   approval_on_timeout: 'decline' | 'accept';
@@ -70,10 +60,18 @@ export type Values = {
   max_per_day: number | '';
 };
 
-export type FormValues = Omit<
-  Values,
-  'mode' | 'availability' | 'categories' | 'services'
->;
+export type FormValues = RuleValues & {
+  label: string;
+  help: string;
+  exceptions: ExceptionValues[];
+  exceptionDraft: ExceptionValues;
+};
+
+export type Values = FormValues & {
+  availability: ScheduleValues;
+  categories: CategoryValues[];
+  services: ServiceValues[];
+};
 
 export const newKey = () => Math.random().toString(36).slice(2);
 

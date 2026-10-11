@@ -29,7 +29,6 @@ test('every mode loads and saves a stored question that has nothing but a label'
   const stored = { id: 'f1', type: 'booking' as const, label: 'Lessons' };
   for (const mode of modes) {
     const values = mode.initialValues(stored);
-    assert.equal(values.mode, mode.name);
     assert.equal(mode.toBookingInput(values, false).label, 'Lessons');
   }
 });

@@ -31,7 +31,6 @@ const issues = (values: ReturnType<typeof servicesMode.initialValues>) =>
 
 test('a stored question loads with its services and no availability', () => {
   const values = servicesMode.initialValues(field);
-  assert.equal(values.mode, 'services');
   assert.equal(values.services[0].id, 'svc00001');
   assert.equal(values.services[0].price, 25);
   assert.deepEqual(values.availability, { days: [], times: [], byDay: {} });

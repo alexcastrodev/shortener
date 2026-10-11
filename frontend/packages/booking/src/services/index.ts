@@ -31,7 +31,6 @@ export const servicesMode: BookingMode = {
 
   initialValues: field => ({
     ...baseValues(field),
-    mode: 'services',
     availability: toSchedule(undefined),
     categories: (field?.categories ?? []).map(item => ({
       id: item.id,

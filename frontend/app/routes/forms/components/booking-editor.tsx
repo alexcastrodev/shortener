@@ -2,27 +2,15 @@ import { Button, Group, Stack, TextInput } from '@mantine/core';
 import { useForm, type FormErrors } from '@mantine/form';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconPlus } from '@tabler/icons-react';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FormField, FormFieldInput } from '@internal/core/types/Form';
-import { CategoriesSection } from './categories-section';
+import { bookingSchema, type Values } from '@internal/booking';
+import type { DayLabels } from './booking-modes/editor-mode';
+import { editorFor } from './booking-modes/modes';
 import { ExceptionsSection } from './exceptions-section';
 import { RulesSection } from './rules-section';
-import { ScheduleFields } from './schedule-fields';
-import { ServiceCard } from './service-card';
-import {
-  DAYS,
-  blankLesson,
-  blankService,
-  bookingSchema,
-  initialValues,
-  modeFor,
-  scheduleSummary,
-  toBookingInput,
-  type Values,
-} from '@internal/booking';
 import { useBookingDraft } from '../../../modules/forms/booking-draft.ts';
 
 const SERVICE_ERROR = /^services\.(\d+)\./;
@@ -42,16 +30,16 @@ export function BookingEditor({
 }) {
   const { t } = useTranslation('booking');
   const creating = !field;
-  const individual = field?.mode === 'individual';
+  const editor = editorFor(field?.mode);
 
   const schema = useMemo(
-    () => bookingSchema(modeFor(field?.mode).validation, t),
-    [t, field?.mode]
+    () => bookingSchema(editor.mode.validation, t),
+    [t, editor]
   );
 
   const form = useForm<Values>({
     mode: 'controlled',
-    initialValues: initialValues(field),
+    initialValues: editor.mode.initialValues(field),
     validate: zod4Resolver(schema),
   });
 
@@ -71,7 +59,7 @@ export function BookingEditor({
     const openIndex = form.values.services.findIndex(item => expanded.has(item.key));
     publishDraft({
       fieldId: field.id,
-      input: toBookingInput(form.values, false),
+      input: editor.mode.toBookingInput(form.values, false),
       openIndex,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,7 +104,7 @@ export function BookingEditor({
     notifications.show({ message: t('fix_errors'), color: 'red' });
   };
 
-  const dayLabels: Record<(typeof DAYS)[number], string> = {
+  const dayLabels: DayLabels = {
     mon: t('day_mon'),
     tue: t('day_tue'),
     wed: t('day_wed'),
@@ -126,13 +114,10 @@ export function BookingEditor({
     sun: t('day_sun'),
   };
 
+  const words = editor.words(t);
+
   const addService = () => {
-    const service = individual
-      ? blankLesson(t('lesson_new'))
-      : blankService(
-          t('service_new'),
-          form.getValues().categories[0]?.id ?? ''
-        );
+    const service = editor.mode.blankItem(form.getValues(), words.unnamed);
     form.insertListItem('services', service);
     expand([service.key]);
   };
@@ -140,24 +125,17 @@ export function BookingEditor({
   const confirmRemove = (key: string) => {
     const service = form.getValues().services.find(item => item.key === key);
     if (!service) return;
-    const name = service.name || t(individual ? 'lesson_new' : 'service_new');
     modals.openConfirmModal({
-      title: t(individual ? 'lesson_remove_title' : 'service_remove_title'),
+      title: words.removeTitle,
       centered: true,
-      children: (
-        <p className="text-sm">
-          {t(individual ? 'lesson_remove_body' : 'service_remove_body')}
-        </p>
-      ),
+      children: <p className="text-sm">{words.removeBody}</p>,
       labels: {
         confirm: t('service_remove_confirm'),
         cancel: t('service_remove_cancel'),
       },
       confirmProps: {
         color: 'red',
-        'aria-label': t(individual ? 'lesson_remove' : 'service_remove', {
-          name,
-        }),
+        'aria-label': words.remove(service.name || words.unnamed),
       },
       onConfirm: () => {
         const index = form
@@ -168,17 +146,10 @@ export function BookingEditor({
     });
   };
 
-  const { services, availability } = form.values;
-  const availabilitySummary = scheduleSummary(availability, {
-    times: count => t('summary_times', { count }),
-    ownTimes: days => t('summary_own_times', { days }),
-    day: day => dayLabels[day],
-  });
-
   return (
     <form
       onSubmit={form.onSubmit(
-        values => onSubmit(toBookingInput(values, creating)),
+        values => onSubmit(editor.mode.toBookingInput(values, creating)),
         openInvalidServices
       )}
     >
@@ -196,79 +167,25 @@ export function BookingEditor({
           <TextInput label={t('help_label')} {...form.getInputProps('help')} />
         </Stack>
 
-        {individual && (
-          <section
-            aria-labelledby="booking-availability-title"
-            className="flex flex-col gap-4 border-t border-border pt-6"
-          >
-            <div>
-              <h3
-                id="booking-availability-title"
-                className="text-sm font-medium"
-              >
-                {t('availability_title')}
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {t('availability_hint')}
-              </p>
-              <p className="break-words text-xs text-muted-foreground">
-                {availabilitySummary}
-              </p>
-            </div>
-            <ScheduleFields
-              form={form}
-              path="availability"
-              duration={Number(services[0]?.duration) || 60}
-              dayLabels={dayLabels}
-            />
-          </section>
-        )}
-
-        <section
-          aria-labelledby="booking-services-title"
-          className="flex flex-col gap-4 border-t border-border pt-6"
-        >
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 id="booking-services-title" className="text-sm font-medium">
-              {t(individual ? 'lessons_title' : 'services_title')}
-            </h3>
-            <span className="text-xs text-muted-foreground">
-              {individual
-                ? t('lesson_count', { count: services.length })
-                : t('category_count', { count: services.length })}
-            </span>
-          </div>
-          {!individual && <CategoriesSection form={form} />}
-          {services.length === 0 && (
-            <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-              {t(individual ? 'no_lessons' : 'no_services')}
-            </p>
-          )}
-          {services.map((service, index) => (
-            <ServiceCard
-              key={service.key}
-              form={form}
-              index={index}
-              dayLabels={dayLabels}
-              expanded={expanded.has(service.key)}
-              onToggle={() => toggle(service.key)}
-              onRemove={() => confirmRemove(service.key)}
-            />
-          ))}
-          <Button
-            variant="default"
-            fullWidth
-            style={{ borderStyle: 'dashed' }}
-            leftSection={<IconPlus size={14} />}
-            onClick={addService}
-          >
-            {t(individual ? 'lesson_add' : 'service_add')}
-          </Button>
-        </section>
+        <editor.Flow
+          form={form}
+          editor={editor}
+          dayLabels={dayLabels}
+          list={{
+            expanded,
+            toggle,
+            add: addService,
+            remove: confirmRemove,
+          }}
+        />
 
         <ExceptionsSection form={form} />
 
-        <RulesSection form={form} timeZone={field?.rules?.time_zone} />
+        <RulesSection
+          form={form}
+          editor={editor}
+          timeZone={field?.rules?.time_zone}
+        />
 
         <Group
           justify="flex-end"

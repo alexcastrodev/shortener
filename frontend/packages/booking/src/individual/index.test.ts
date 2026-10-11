@@ -49,7 +49,6 @@ const issues = (values: ReturnType<typeof individualMode.initialValues>) =>
 
 test('a teacher question loads its availability and saves lessons without a schedule', () => {
   const values = individualMode.initialValues(teacher);
-  assert.equal(values.mode, 'individual');
   assert.deepEqual(values.availability.days, ['wed', 'mon']);
   assert.deepEqual(
     values.availability.byDay.wed.map(time => time.value),
