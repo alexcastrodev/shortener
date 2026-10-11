@@ -39,6 +39,18 @@ export function cheapestPrice(service: Offer): number | null {
 export const monthlyMinutes = (service: Pick<BookingService, 'duration' | 'monthly'>) =>
   service.monthly?.duration ?? service.duration;
 
+export type Allowance = { limit: number; per: 'month' | 'week' };
+
+export const allowanceOf = (
+  service: Pick<BookingService, 'monthly'>
+): Allowance | null =>
+  service.monthly?.sessions
+    ? {
+        limit: service.monthly.sessions,
+        per: service.monthly.per === 'week' ? 'week' : 'month',
+      }
+    : null;
+
 export function durationText(minutes: number, words: DurationWords): string {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;

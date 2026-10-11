@@ -292,3 +292,41 @@ test('a price without a valid currency is reported on the price that needs it', 
   values.services[0].currency = 'EUR';
   assert.deepEqual(issues(values), []);
 });
+
+test('the allowance of a monthly offer is a whole number from 1 to 31, or from 1 to 7 per week', () => {
+  const values = servicesMode.initialValues(field);
+  const [service] = values.services;
+  const set = (patch: Partial<typeof service>) => {
+    values.services[0] = { ...service, monthly: true, ...patch };
+    return issues(values);
+  };
+
+  assert.deepEqual(set({ monthlySessions: 5 }), []);
+  assert.deepEqual(set({ monthlySessions: 31 }), []);
+  assert.deepEqual(set({ monthlySessions: 1, monthlyPer: 'week' }), []);
+  assert.deepEqual(set({ monthlySessions: 7, monthlyPer: 'week' }), []);
+  assert.deepEqual(set({ monthlySessions: '' }), []);
+
+  assert.deepEqual(set({ monthlySessions: 0 }), [
+    ['services.0.monthlySessions', 'error_monthly_sessions'],
+  ]);
+  assert.deepEqual(set({ monthlySessions: 32 }), [
+    ['services.0.monthlySessions', 'error_monthly_sessions'],
+  ]);
+  assert.deepEqual(set({ monthlySessions: 2.5 }), [
+    ['services.0.monthlySessions', 'error_monthly_sessions'],
+  ]);
+  assert.deepEqual(set({ monthlySessions: 8, monthlyPer: 'week' }), [
+    ['services.0.monthlySessions', 'error_monthly_sessions_week'],
+  ]);
+});
+
+test('an allowance left behind by a monthly offer that was switched off is not validated', () => {
+  const values = servicesMode.initialValues(field);
+  values.services[0] = {
+    ...values.services[0],
+    monthly: false,
+    monthlySessions: 99,
+  };
+  assert.deepEqual(issues(values), []);
+});

@@ -19,6 +19,7 @@ const words: SummaryWords = {
   places: count => `${count} places`,
   also: list => `Also ${list}`,
   monthly: detail => (detail ? `Monthly ${detail}` : 'Monthly'),
+  allowance: (count, per) => `${count} per ${per}`,
   times: count => `${count} times`,
   ownTimes: days => `${days} own times`,
   day: label,
@@ -121,6 +122,35 @@ test('the monthly offer shows its own duration and price', () => {
   assert.equal(
     serviceSummary(service, words).details,
     '30 min · 40 EUR · 1 places · Monthly 45 min 120 EUR'
+  );
+});
+
+test('the allowance shows next to the monthly offer, per month or per week', () => {
+  const service = {
+    ...blankService('Massage'),
+    price: 40,
+    monthly: true,
+    monthlyPrice: 120,
+    monthlySessions: 5 as const,
+  };
+  assert.equal(
+    serviceSummary(service, words).details,
+    '30 min · 40 EUR · 1 places · Monthly 120 EUR · 5 per month'
+  );
+  assert.equal(
+    serviceSummary({ ...service, monthlySessions: 1, monthlyPer: 'week' }, words)
+      .details,
+    '30 min · 40 EUR · 1 places · Monthly 120 EUR · 1 per week'
+  );
+});
+
+test('an allowance is not shown without the monthly offer or without a number', () => {
+  const service = { ...blankService('Massage'), monthlySessions: 5 as const };
+  assert.equal(serviceSummary(service, words).details, '30 min · 1 places');
+  assert.equal(
+    serviceSummary({ ...service, monthly: true, monthlySessions: '' }, words)
+      .details,
+    '30 min · 1 places · Monthly'
   );
 });
 

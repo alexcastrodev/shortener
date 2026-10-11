@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { pickDay } from './calendar.ts';
+import { pickDay, pickLockedDay } from './calendar.ts';
 import { anonymous, owner, waiter } from './api.ts';
 import { createForm, type CreatedForm, type FormOptions } from './forms.ts';
 import { isoDate } from './dates.ts';
@@ -62,6 +62,11 @@ export class PublicForm {
     const block = this.block(name);
     await pickDay(block, iso);
     await block.getByRole('button', { name: time, exact: true }).click();
+  }
+
+  async pickPlanSlot(iso: string, time: string, scope: Page | Locator = this.page) {
+    await pickLockedDay(scope, iso);
+    await scope.getByRole('button', { name: time, exact: true }).click();
   }
 
   async pickSlot(iso: string, time: string) {

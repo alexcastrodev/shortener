@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { BioTheme } from '../bio-page/themes';
 import { formatCurrency, formatDate } from '../../i18n/format';
 import type { AllSummary, BookingSummary } from './booking-summary.ts';
+import { usePlanWords } from './use-plan-words.ts';
 
 export const dayText = (iso: string) =>
   formatDate(`${iso}T00:00:00Z`, {
@@ -17,18 +18,22 @@ const weekdayText = (iso: string) =>
 const mondayFirst = (iso: string) =>
   (new Date(`${iso}T00:00:00Z`).getUTCDay() + 6) % 7;
 
-export function monthlyText(summary: BookingSummary) {
+export function monthlyText(
+  summary: BookingSummary,
+  sessions: (count: number) => string
+) {
   const first = summary.sessions[0];
   if (!first) return '';
+  const month = formatDate(`${first.date.slice(0, 7)}-01T00:00:00Z`, {
+    month: 'long',
+    timeZone: 'UTC',
+  });
+  if (summary.allowance) return `${month} · ${sessions(summary.count)}`;
   const weekdays = [
     ...new Map(summary.sessions.map(item => [mondayFirst(item.date), item.date])),
   ]
     .sort(([a], [b]) => a - b)
     .map(([, date]) => weekdayText(date));
-  const month = formatDate(`${first.date.slice(0, 7)}-01T00:00:00Z`, {
-    month: 'long',
-    timeZone: 'UTC',
-  });
   return `${month} · ${weekdays.join(', ')} · ${first.time}`;
 }
 
@@ -61,6 +66,7 @@ export function BookingBar({
   onSubmit: () => void;
 }) {
   const { t } = useTranslation('respond');
+  const plan = usePlanWords();
   const total = summary ? summary.total : currency ? 0 : null;
   const shownCurrency = summary?.currency ?? currency;
   const only: BookingSummary | null =
@@ -78,7 +84,7 @@ export function BookingBar({
               : !only
                 ? summary.items.map(({ service }) => service.name).join(', ')
                 : only.kind === 'monthly'
-                  ? monthlyText(only)
+                  ? monthlyText(only, plan.sessions)
                   : daysText(only)}
           </p>
           <p className="truncate text-xs opacity-70">
@@ -91,9 +97,11 @@ export function BookingBar({
                     total: summary.count,
                     services: summary.items.length,
                   })
-                : only.kind === 'monthly'
-                  ? t('bar_monthly', { count: only.count })
-                  : t('bar_sessions', { count: only.count })}
+                : only.allowance
+                  ? plan.counter(only.allowance, only.count)
+                  : only.kind === 'monthly'
+                    ? t('bar_monthly', { count: only.count })
+                    : t('bar_sessions', { count: only.count })}
           </p>
         </div>
         {total !== null && shownCurrency && (

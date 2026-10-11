@@ -3,9 +3,18 @@ import type {
   BookingItem,
   BookingService,
 } from '@internal/core/types/Form';
-import { itemsOf } from './booking-answer.ts';
-import { monthlyMinutes, optionFor } from './booking-options.ts';
-import { monthlyDates } from './monthly-booking.ts';
+import {
+  isEmptyItem,
+  isPlan,
+  itemsOf,
+  monthlySessions,
+} from './booking-answer.ts';
+import {
+  allowanceOf,
+  monthlyMinutes,
+  optionFor,
+  type Allowance,
+} from './booking-options.ts';
 
 export type SummarySession = {
   date: string;
@@ -20,6 +29,7 @@ export type BookingSummary = {
   count: number;
   total: number | null;
   currency: string | null;
+  allowance: Allowance | null;
 };
 
 export type AllSummary = {
@@ -58,15 +68,13 @@ export function summarize(
   answer: BookingItem | undefined,
   today: Date
 ): BookingSummary | null {
-  if (!service || !answer) return null;
+  if (!service || !answer || isEmptyItem(answer)) return null;
   const currency = service.currency || null;
 
   if (answer.monthly) {
-    const { month, weekdays, time } = answer.monthly;
     const duration = monthlyMinutes(service);
-    const sessions = monthlyDates(month, weekdays, today).map(date => ({
-      date,
-      time,
+    const sessions = monthlySessions(answer.monthly, today).map(session => ({
+      ...session,
       duration,
       price: null,
     }));
@@ -77,6 +85,7 @@ export function summarize(
       count: sessions.length,
       total: price && currency ? price : null,
       currency,
+      allowance: isPlan(answer.monthly) ? allowanceOf(service) : null,
     };
   }
 
@@ -96,5 +105,12 @@ export function summarize(
           sessions.reduce((sum, session) => sum + (session.price ?? 0), 0) * 100
         ) / 100
       : null;
-  return { kind: 'days', sessions, count: sessions.length, total, currency };
+  return {
+    kind: 'days',
+    sessions,
+    count: sessions.length,
+    total,
+    currency,
+    allowance: null,
+  };
 }

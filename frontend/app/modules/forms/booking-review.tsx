@@ -6,6 +6,7 @@ import { dayText, monthlyText } from './booking-bar';
 import { durationText, endTime, hasSeveralDurations } from './booking-options.ts';
 import type { AllSummary } from './booking-summary.ts';
 import { useDurationWords } from './use-duration-words.ts';
+import { usePlanWords } from './use-plan-words.ts';
 
 export function BookingReview({
   summary,
@@ -18,6 +19,7 @@ export function BookingReview({
 }) {
   const { t } = useTranslation('respond');
   const words = useDurationWords();
+  const plan = usePlanWords();
   const id = useId();
   const several = summary.items.length > 1;
   const money = (amount: number | null, currency: string | null) =>
@@ -50,9 +52,9 @@ export function BookingReview({
               ? t('booking_mode_monthly')
               : t('booking_review_days', { count: item.count })}
           </p>
-          {item.kind === 'monthly' ? (
+          {item.kind === 'monthly' && !item.allowance ? (
             <p className="text-[15px]">
-              {monthlyText(item)}
+              {monthlyText(item, plan.sessions)}
               {' · '}
               {durationText(item.sessions[0].duration, words)}
             </p>
@@ -77,6 +79,11 @@ export function BookingReview({
                 </li>
               ))}
             </ul>
+          )}
+          {item.allowance && (
+            <p className="text-sm opacity-80">
+              {plan.counter(item.allowance, item.count)}
+            </p>
           )}
         </Fragment>
       ))}

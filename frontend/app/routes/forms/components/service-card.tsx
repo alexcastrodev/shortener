@@ -62,6 +62,10 @@ export function ServiceCard({
     also: list => t('summary_also', { list }),
     monthly: detail =>
       detail ? t('summary_monthly_price', { detail }) : t('summary_monthly'),
+    allowance: (count, per) =>
+      per === 'week'
+        ? t('summary_allowance_week', { count })
+        : t('summary_allowance_month', { count }),
     times: count => t('summary_times', { count }),
     ownTimes: days => t('summary_own_times', { days }),
     day: day => dayLabels[day],

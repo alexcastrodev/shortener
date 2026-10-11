@@ -14,6 +14,7 @@ export type SummaryWords = {
   places: (count: number) => string;
   also: (list: string) => string;
   monthly: (detail: string | null) => string;
+  allowance: (count: number, per: 'month' | 'week') => string;
   times: (count: number) => string;
   ownTimes: (days: string) => string;
   day: (day: Day) => string;
@@ -77,6 +78,9 @@ export function serviceSummary(service: ServiceValues, words: SummaryWords) {
             .filter(Boolean)
             .join(' ') || null
         )
+      : null,
+    service.monthly && service.monthlySessions !== ''
+      ? words.allowance(service.monthlySessions, service.monthlyPer)
       : null,
   ]);
   return { details, schedule: scheduleSummary(service, words) };

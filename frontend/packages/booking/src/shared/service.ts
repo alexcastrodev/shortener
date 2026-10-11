@@ -26,6 +26,8 @@ export const blankService = (name: string, categoryId = ''): ServiceValues => ({
   monthly: false,
   monthlyPrice: '',
   monthlyDuration: '',
+  monthlySessions: '',
+  monthlyPer: 'month',
 });
 
 export const serviceValues = (
@@ -50,6 +52,8 @@ export const serviceValues = (
   monthly: Boolean(service.monthly),
   monthlyPrice: service.monthly?.price ?? '',
   monthlyDuration: service.monthly?.duration ?? '',
+  monthlySessions: service.monthly?.sessions ?? '',
+  monthlyPer: service.monthly?.per === 'week' ? 'week' : 'month',
 });
 
 export const serviceInput = (service: ServiceValues): BookingServiceInput => {
@@ -78,6 +82,12 @@ export const serviceInput = (service: ServiceValues): BookingServiceInput => {
               : {}),
             ...(service.monthlyDuration !== ''
               ? { duration: service.monthlyDuration }
+              : {}),
+            ...(service.monthlySessions !== ''
+              ? {
+                  sessions: service.monthlySessions,
+                  ...(service.monthlyPer === 'week' ? { per: 'week' } : {}),
+                }
               : {}),
           },
         }

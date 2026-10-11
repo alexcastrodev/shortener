@@ -14,7 +14,14 @@ export type FormFieldType =
   | 'booking'
   | 'section';
 
-export type MonthlyChoice = { month: string; weekdays: string[]; time: string };
+export type MonthlyPattern = { month: string; weekdays: string[]; time: string };
+
+export type MonthlyPlan = {
+  month: string;
+  sessions: { date: string; time: string }[];
+};
+
+export type MonthlyChoice = MonthlyPattern | MonthlyPlan;
 
 export type BookingItem = {
   service: string;
@@ -43,7 +50,12 @@ export type BookingService = {
   times: string[];
   times_by_day?: Record<string, string[]>;
   extra_durations?: { duration: number; price?: number | null }[] | null;
-  monthly?: { price?: number | null; duration?: number | null } | null;
+  monthly?: {
+    price?: number | null;
+    duration?: number | null;
+    sessions?: number | null;
+    per?: 'month' | 'week' | null;
+  } | null;
 };
 
 export type BookingRules = {

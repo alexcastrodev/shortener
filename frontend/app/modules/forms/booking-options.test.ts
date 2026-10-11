@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  allowanceOf,
   bookingOptions,
   cheapestPrice,
   durationText,
@@ -79,6 +80,21 @@ test('the monthly offer has its own duration, or the service one', () => {
   assert.equal(monthlyMinutes(piano), 45);
   assert.equal(monthlyMinutes({ duration: 60, monthly: { price: 10 } }), 60);
   assert.equal(monthlyMinutes({ duration: 60 }), 60);
+});
+
+test('the allowance is the number of sessions with its period, per month unless the offer says week', () => {
+  assert.deepEqual(allowanceOf({ monthly: { price: 120, sessions: 5 } }), {
+    limit: 5,
+    per: 'month',
+  });
+  assert.deepEqual(
+    allowanceOf({ monthly: { sessions: 1, per: 'week' } }),
+    { limit: 1, per: 'week' }
+  );
+  assert.equal(allowanceOf(piano), null);
+  assert.equal(allowanceOf({ monthly: { sessions: null } }), null);
+  assert.equal(allowanceOf({ monthly: null }), null);
+  assert.equal(allowanceOf({}), null);
 });
 
 test('durations read as minutes, whole hours, or hours and minutes', () => {

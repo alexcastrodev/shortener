@@ -7,7 +7,9 @@ import {
   dropItem,
   incompleteServices,
   isEmptyItem,
+  isPlan,
   itemsOf,
+  monthlySessions,
   setItem,
 } from './booking-answer.ts';
 
@@ -22,6 +24,17 @@ const drums: BookingItem = {
   service: 'drums001',
   sessions: [],
   monthly: { month: '2026-11', weekdays: ['wed'], time: '10:00' },
+};
+const massage: BookingItem = {
+  service: 'massage1',
+  sessions: [],
+  monthly: {
+    month: '2026-11',
+    sessions: [
+      { date: '2026-11-03', time: '09:00' },
+      { date: '2026-11-17', time: '16:30' },
+    ],
+  },
 };
 
 test('both shapes read as a list of items', () => {
@@ -51,6 +64,41 @@ test('an item with no session and no monthly choice is empty', () => {
   assert.equal(isEmptyItem({ service: 'x', sessions: [] }), true);
   assert.equal(isEmptyItem(guitar), false);
   assert.equal(isEmptyItem(drums), false);
+  assert.equal(isEmptyItem(massage), false);
+});
+
+test('a plan with no day picked is empty, so the service still asks for a choice', () => {
+  const none: BookingItem = {
+    service: 'massage1',
+    sessions: [],
+    monthly: { month: '2026-11', sessions: [] },
+  };
+  assert.equal(isEmptyItem(none), true);
+  assert.deepEqual(incompleteServices(
+    [{ id: 'massage1', name: 'Massage', duration: 60, days: [], times: [] }],
+    { items: [none] }
+  ), ['Massage']);
+});
+
+test('a monthly choice is a plan when it lists the days, a weekday pattern otherwise', () => {
+  assert.equal(isPlan(massage.monthly!), true);
+  assert.equal(isPlan(drums.monthly!), false);
+});
+
+test('the sessions of a plan are the days it lists, each with its own time', () => {
+  assert.deepEqual(monthlySessions(massage.monthly!, new Date(2026, 9, 20)), [
+    { date: '2026-11-03', time: '09:00' },
+    { date: '2026-11-17', time: '16:30' },
+  ]);
+});
+
+test('the sessions of a weekday pattern are every matching date of the month with the one time', () => {
+  assert.deepEqual(monthlySessions(drums.monthly!, new Date(2026, 9, 20)), [
+    { date: '2026-11-04', time: '10:00' },
+    { date: '2026-11-11', time: '10:00' },
+    { date: '2026-11-18', time: '10:00' },
+    { date: '2026-11-25', time: '10:00' },
+  ]);
 });
 
 test('an answer reads as text with the dates and times, by service when there are several', () => {
@@ -74,6 +122,22 @@ test('an answer reads as text with the dates and times, by service when there ar
   assert.equal(
     answerText({ items: [guitar] }, new Map()),
     'guitar01: 2026-11-03 09:00, 2026-11-04 09:00'
+  );
+});
+
+test('a plan reads as the days it lists, and the stored sessions win when the answer has them', () => {
+  const names = new Map([['massage1', 'Massagem']]);
+  assert.equal(answerText(massage, names), '2026-11-03 09:00, 2026-11-17 16:30');
+  assert.equal(
+    answerText({ items: [massage] }, names),
+    'Massagem: 2026-11-03 09:00, 2026-11-17 16:30'
+  );
+  assert.equal(
+    answerText(
+      { ...massage, sessions: [{ date: '2026-11-05', time: '10:00' }] },
+      names
+    ),
+    '2026-11-05 10:00'
   );
 });
 

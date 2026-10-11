@@ -2,7 +2,24 @@ import type {
   BookingAnswer,
   BookingItem,
   BookingService,
+  MonthlyChoice,
+  MonthlyPlan,
 } from '@internal/core/types/Form';
+import { monthlyDates } from './monthly-booking.ts';
+
+export const isPlan = (choice: MonthlyChoice): choice is MonthlyPlan =>
+  'sessions' in choice;
+
+export const monthlySessions = (
+  choice: MonthlyChoice,
+  today: Date
+): { date: string; time: string }[] =>
+  isPlan(choice)
+    ? choice.sessions
+    : monthlyDates(choice.month, choice.weekdays, today).map(date => ({
+        date,
+        time: choice.time,
+      }));
 
 export const itemsOf = (answer: BookingAnswer | undefined): BookingItem[] =>
   !answer ? [] : 'items' in answer ? answer.items : [answer];
@@ -22,7 +39,9 @@ export const dropItem = (items: BookingItem[], service: string) =>
   items.filter(entry => entry.service !== service);
 
 export const isEmptyItem = (item: BookingItem) =>
-  item.sessions.length === 0 && !item.monthly;
+  item.sessions.length === 0 &&
+  (!item.monthly ||
+    (isPlan(item.monthly) && item.monthly.sessions.length === 0));
 
 export const incompleteServices = (
   services: BookingService[] | undefined,
@@ -32,8 +51,15 @@ export const incompleteServices = (
     .filter(isEmptyItem)
     .map(item => services?.find(entry => entry.id === item.service)?.name ?? item.service);
 
+const picked = (item: BookingItem) =>
+  item.sessions.length === 0 && item.monthly && isPlan(item.monthly)
+    ? item.monthly.sessions
+    : item.sessions;
+
 const times = (item: BookingItem) =>
-  item.sessions.map(session => `${session.date} ${session.time}`).join(', ');
+  picked(item)
+    .map(session => `${session.date} ${session.time}`)
+    .join(', ');
 
 export function answerText(
   answer: BookingAnswer,

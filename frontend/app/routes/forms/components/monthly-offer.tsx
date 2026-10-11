@@ -1,7 +1,7 @@
-import { NumberInput, Switch } from '@mantine/core';
+import { NumberInput, SegmentedControl, Switch } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { useTranslation } from 'react-i18next';
-import type { Values } from '@internal/booking';
+import { ALLOWANCE_MAX, type Values } from '@internal/booking';
 
 export function MonthlyOffer({
   form,
@@ -60,6 +60,34 @@ export function MonthlyOffer({
           }
           rightSectionWidth={48}
           {...form.getInputProps(`services.${index}.monthlyPrice`)}
+        />
+      )}
+      {service.monthly && (
+        <NumberInput
+          mt="xs"
+          label={t('monthly_sessions')}
+          description={t('monthly_sessions_hint')}
+          min={1}
+          max={ALLOWANCE_MAX[service.monthlyPer]}
+          allowDecimal={false}
+          {...form.getInputProps(`services.${index}.monthlySessions`)}
+        />
+      )}
+      {service.monthly && service.monthlySessions !== '' && (
+        <SegmentedControl
+          mt="xs"
+          aria-label={t('monthly_per')}
+          data={[
+            { value: 'month', label: t('monthly_per_month') },
+            { value: 'week', label: t('monthly_per_week') },
+          ]}
+          value={service.monthlyPer}
+          onChange={value =>
+            form.setFieldValue(
+              `services.${index}.monthlyPer`,
+              value as 'month' | 'week'
+            )
+          }
         />
       )}
     </div>
