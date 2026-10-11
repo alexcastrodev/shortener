@@ -160,7 +160,7 @@ export function BookingEditor({
           </p>
           <TextInput
             label={t('question_label')}
-            required
+            description={t('question_hint')}
             data-autofocus
             {...form.getInputProps('label')}
           />

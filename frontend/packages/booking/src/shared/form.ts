@@ -33,7 +33,7 @@ export const baseInput = (
   values: FormValues,
   creating: boolean
 ): FormFieldInput => ({
-  label: values.label.trim(),
+  label: values.label.trim() || (creating ? undefined : null),
   help: values.help.trim() || (creating ? undefined : null),
   rules: ruleInput(values),
   exceptions: values.exceptions.map(item => {

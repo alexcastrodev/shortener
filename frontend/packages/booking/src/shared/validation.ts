@@ -185,7 +185,7 @@ export const bookingSchema = (validation: ModeValidation, t: Translate) =>
   z
     .object({
       ...validation.fields(t),
-      label: z.string().trim().min(1).max(300),
+      label: z.string().trim().max(300),
       help: z.string().max(500),
       approval: z.enum(['auto', 'manual']),
       approval_timeout_minutes: z.union([z.number(), z.literal('')]),

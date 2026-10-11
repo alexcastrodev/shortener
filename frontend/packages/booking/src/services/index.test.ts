@@ -260,6 +260,20 @@ test('several services in one booking is refused while the question has two cate
   ]);
 });
 
+test('the question label is optional, but not unlimited', () => {
+  const values = servicesMode.initialValues(field);
+  const labelIssues = () => issues(values).filter(([path]) => path === 'label');
+
+  values.label = '';
+  assert.deepEqual(labelIssues(), []);
+
+  values.label = '   ';
+  assert.deepEqual(labelIssues(), []);
+
+  values.label = 'a'.repeat(301);
+  assert.equal(labelIssues().length, 1);
+});
+
 test('a price without a valid currency is reported on the price that needs it', () => {
   const values = servicesMode.initialValues(field);
   values.services[0].currency = '';

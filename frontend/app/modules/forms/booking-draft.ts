@@ -40,7 +40,7 @@ export function applyBookingDraft(
         field.id === draft.fieldId
           ? {
               ...field,
-              label: draft.input.label || field.label,
+              label: draft.input.label || undefined,
               help: draft.input.help ?? undefined,
               categories: draft.input.categories ?? field.categories,
               availability: draft.input.availability ?? field.availability,

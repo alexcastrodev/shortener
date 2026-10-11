@@ -78,6 +78,23 @@ test('the draft availability reaches every lesson and the preview offers its hou
   );
 });
 
+test('clearing the label in the editor shows the question without a heading in the preview', () => {
+  const cut = { id: 'svc00001', name: 'Cut', duration: 30 };
+  const cleared = applyBookingDraft([salon], {
+    fieldId: 'salon001',
+    openIndex: 0,
+    input: { label: null, services: [cut] },
+  });
+  assert.equal(cleared.fields[0].label, undefined);
+
+  const typed = applyBookingDraft([salon], {
+    fieldId: 'salon001',
+    openIndex: 0,
+    input: { label: 'Book here', services: [cut] },
+  });
+  assert.equal(typed.fields[0].label, 'Book here');
+});
+
 test('a teacher without an availability yet previews no hours instead of breaking', () => {
   const { fields } = applyBookingDraft(
     [{ ...teacher, availability: undefined }],

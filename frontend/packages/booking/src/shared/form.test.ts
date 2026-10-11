@@ -99,6 +99,23 @@ test('removing every exception sends an empty list so the server clears them', (
   assert.deepEqual(baseInput(values, false).exceptions, []);
 });
 
+test('a question stored without a label loads as an empty box', () => {
+  const { label: _label, ...unlabelled } = field;
+  assert.equal(baseValues(unlabelled).label, '');
+});
+
+test('an empty label is sent as null on an existing question so the server clears it', () => {
+  const values = baseValues(field);
+  values.label = '   ';
+  assert.equal(baseInput(values, false).label, null);
+});
+
+test('an empty label is left out when the question is created', () => {
+  const input = baseInput(baseValues(), true);
+  assert.equal(input.label, undefined);
+  assert.equal(JSON.stringify(input).includes('"label"'), false);
+});
+
 test('a day off that was typed but not added starts blank and is never sent', () => {
   const values = baseValues(undefined);
   assert.equal(values.exceptionDraft.from, '');

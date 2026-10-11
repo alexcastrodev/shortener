@@ -1,6 +1,7 @@
 {
   "type_label": "Booking",
   "question_label": "Question",
+  "question_hint": "Optional. Leave it empty to show the services with no heading.",
   "help_label": "Help text",
   "services_title": "Services",
   "lessons_title": "Lessons",
