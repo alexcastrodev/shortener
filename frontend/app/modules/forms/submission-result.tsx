@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { formatCurrency, formatDate } from '../../i18n/format';
 import type { BioTheme } from '../bio-page/themes';
 import { durationText } from './booking-options.ts';
+import { LinkedText } from './linked-text';
 import { useDurationWords } from './use-duration-words.ts';
 import type { SubmitFormReceipt } from '@internal/core/actions/submit-form-response/submit-form-response.types';
 
@@ -46,9 +47,13 @@ export function SubmissionResult({ receipt, message, theme, timeZone }: Props) {
           <Icon size={26} />
         </span>
         <h1 className={`text-[32px] leading-tight font-semibold ${theme.title}`}>{title}</h1>
-        <p className={`text-[15px] whitespace-pre-line ${theme.bio}`}>{lead}</p>
+        <p className={`text-[15px] whitespace-pre-line ${theme.bio}`}>
+          <LinkedText>{lead}</LinkedText>
+        </p>
         {booked && (pending || unverified) && message && (
-          <p className={`text-[15px] whitespace-pre-line ${theme.bio}`}>{message}</p>
+          <p className={`text-[15px] whitespace-pre-line ${theme.bio}`}>
+            <LinkedText>{message}</LinkedText>
+          </p>
         )}
       </div>
 

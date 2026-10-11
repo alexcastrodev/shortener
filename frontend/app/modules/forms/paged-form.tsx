@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { BookingAnswer, FormField } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
 import { incompleteServices } from './booking-answer.ts';
+import { LinkedText } from './linked-text';
 import { FieldInput, focusFirstInput, isBlank, type Answer } from './field-inputs';
 import { useConfirmEmail } from './confirm-email';
 import { isSection } from './field-types';
@@ -213,7 +214,7 @@ export function PagedForm({
         <FormCover url={coverUrl} position={form.cover_position} />
         <h1 className={`text-[32px] leading-tight font-semibold ${theme.title}`}>{form.title}</h1>
         {form.description && (
-          <p className={`mt-3 text-[15px] whitespace-pre-line ${theme.bio}`}>{form.description}</p>
+          <p className={`mt-3 text-[15px] whitespace-pre-line ${theme.bio}`}><LinkedText>{form.description}</LinkedText></p>
         )}
         <div className="mt-8">
           <button
@@ -255,7 +256,7 @@ export function PagedForm({
           {!form.intro_enabled && <FormCover url={coverUrl} position={form.cover_position} />}
           <h1 className={`text-[32px] leading-tight font-semibold ${theme.title}`}>{form.title}</h1>
           {form.description && (
-            <p className={`mt-3 text-[15px] whitespace-pre-line ${theme.bio}`}>{form.description}</p>
+            <p className={`mt-3 text-[15px] whitespace-pre-line ${theme.bio}`}><LinkedText>{form.description}</LinkedText></p>
           )}
         </header>
       )}
