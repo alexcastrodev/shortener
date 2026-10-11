@@ -5,7 +5,7 @@ module Appointments
     SAMPLE = 50
 
     def call(form:, now: Time.current)
-      booking = form.fields.find { |field| field["type"] == "booking" }
+      booking = form.fields.find { |field| field["type"] == "booking" }&.then { |field| Booking::Modes.compile(field) }
       return { upcoming: 0, affected: 0, appointments: [] } unless booking
 
       zone = Time.find_zone!(booking.dig("rules", "time_zone") || "UTC")

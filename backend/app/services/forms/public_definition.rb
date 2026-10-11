@@ -6,7 +6,9 @@ module Forms
 
     def self.for(form)
       source = form.published_snapshot.present? ? Snapshot.stored(form) : Snapshot.of(form)
-      new(**source.symbolize_keys.slice(*Snapshot::KEYS.map(&:to_sym)), published_version: form.published_version)
+      attributes = source.symbolize_keys.slice(*Snapshot::KEYS.map(&:to_sym))
+      attributes[:fields] = attributes[:fields].map { |field| Booking::Modes.compile(field) }
+      new(**attributes, published_version: form.published_version)
     end
   end
 end

@@ -78,6 +78,13 @@ module Mcp
       def self.draft_booking(form)
         form.fields.find { |field| field["type"] == "booking" } || raise(Mcp::ToolError.new("no_booking", "This form has no booking question"))
       end
+
+      def self.editable_booking(form)
+        field = draft_booking(form)
+        raise Mcp::ToolError.new("unsupported_mode", "This booking question uses a mode these tools cannot edit yet") unless Booking::Modes.fetch(field["mode"]) == Booking::Modes::Services
+
+        field
+      end
     end
   end
 end

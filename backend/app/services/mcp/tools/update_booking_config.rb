@@ -23,6 +23,7 @@ module Mcp
         changes = Mcp::Guards.contract!(FormFieldUpdateContract, { services: services, rules: rules, exceptions: exceptions, categories: categories })
         existing = form.fields.find { |field| field["type"] == "booking" }
         if existing
+          BookingConfigHelpers.editable_booking(form)
           Forms::Definition.update(form, existing["id"], changes)
         else
           Forms::Definition.add(form, { type: "booking", label: "When would you like to come?" }.merge(changes))

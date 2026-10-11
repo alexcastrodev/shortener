@@ -57,6 +57,21 @@ RSpec.describe("MCP booking setup tools", type: :request) do
     end
   end
 
+  describe "a question in the individual mode" do
+    before { Forms::Definition.add(draft, { "type" => "booking", "label" => "When", "mode" => "individual", "availability" => { "days" => ["mon"], "times" => ["09:00"] }, "services" => [{ "name" => "Math", "duration" => 60 }] }) }
+
+    it "is not edited through the tools made for services, and the question is left as it was" do
+      before = booking_of(draft)
+      expect(data(tool("update_booking_config", { form_id: draft.id, services: [service] }))["error"]).to(eq("unsupported_mode"))
+      expect(data(tool("apply_time_slots", { form_id: draft.id, service_id: service_id(draft), from: "09:00", to: "13:00", step: 60 }))["error"]).to(eq("unsupported_mode"))
+      expect(booking_of(draft)).to(eq(before))
+    end
+
+    it "still has its impact reported" do
+      expect(failed?(tool("get_booking_impact", { form_id: draft.id }))).to(be(false))
+    end
+  end
+
   describe "update_booking_config" do
     it "creates the booking question of a draft with the services, giving them ids" do
       reply = data(tool("update_booking_config", { form_id: draft.id, services: [service], rules: { approval: "manual" } }))
