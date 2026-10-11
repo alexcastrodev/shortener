@@ -124,4 +124,24 @@ RSpec.describe(Appointments::Reserve) do
       expect(stored(day)).to(be_nil)
     end
   end
+
+  describe "resource" do
+    def stored(time) = AppointmentSlot.find_by(form_id: form.id, service_key: "cut", starts_at: time)
+
+    it "is the service itself unless a resource is given" do
+      reserve([day])
+      expect(stored(day).resource_key).to(eq("cut"))
+    end
+
+    it "records the resource it is given" do
+      described_class.call(form: form, service_key: "cut", resource_key: "main", capacity: 1, times: [day])
+      expect(stored(day).resource_key).to(eq("main"))
+    end
+
+    it "gives a row made without a resource the one of the booking that takes it" do
+      AppointmentSlot.insert_all([{ form_id: form.id, service_key: "cut", starts_at: day, capacity: 1, booked: 0 }])
+      reserve([day])
+      expect(stored(day).resource_key).to(eq("cut"))
+    end
+  end
 end
