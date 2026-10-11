@@ -121,7 +121,9 @@ export default function PublicForm({ loaderData }: Route.ComponentProps) {
       coverUrl={publicCoverUrl(publicId, form.cover_token)}
       onSubmit={onSubmit}
       onUploadImage={(fieldId, file) => uploadFormImage(publicId, fieldId, file)}
-      loadSlots={(service, from, to) => getFormSlots(publicId, service, from, to)}
+      loadSlots={(service, from, to, monthly) =>
+        getFormSlots(publicId, service, from, to, monthly)
+      }
       joinWaitlist={async join => {
         try {
           await joinWaitlist(publicId, {
