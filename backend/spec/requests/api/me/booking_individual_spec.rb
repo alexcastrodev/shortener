@@ -147,6 +147,26 @@ RSpec.describe("the individual booking question", type: :request) do
       expect(json["blocks"].pluck("code")).to(eq(["availability_incomplete"]))
     end
 
+    it "does not need the availability of the teacher when every lesson has its own days and times" do
+      own = [{ name: "Math", duration: 60, days: ["mon"], times: ["09:00"] }, { name: "Physics", duration: 90, days: ["tue"], times: ["14:00"] }]
+      complete(availability: nil, services: own)
+      publish
+      expect(response).to(have_http_status(:ok))
+    end
+
+    it "still needs the availability of the teacher for a lesson that has none of its own" do
+      complete(availability: nil, services: [lesson, { name: "Physics", duration: 90, days: ["tue"], times: ["14:00"] }])
+      publish
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(json["blocks"].pluck("code")).to(eq(["availability_incomplete"]))
+    end
+
+    it "does not ask for the availability of the teacher when there is no lesson, only for the lesson" do
+      complete(availability: nil, services: [])
+      publish
+      expect(json["blocks"].pluck("code")).to(eq(["no_service"]))
+    end
+
     it "is blocked while a lesson with its own schedule has no time, and names the lesson" do
       complete(services: [lesson, { name: "Physics", duration: 90, days: ["tue"], times: [] }])
       publish
