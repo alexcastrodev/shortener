@@ -5,7 +5,7 @@ module Forms
     def add(form, attributes)
       attributes = BookingSchema.defaults(attributes, form.user) if attributes.stringify_keys["type"] == "booking"
       form.with_lock do
-        form.fields = form.fields + [FieldSchema.with_new_ids(attributes.except(:id, "id"))]
+        form.fields = form.fields + [FieldSchema.with_new_ids(FieldSchema.without_blank_label(attributes.except(:id, "id")))]
         form.save!
       end
       form
@@ -20,7 +20,7 @@ module Forms
 
         attributes = attributes.merge("rules" => field["rules"].merge(attributes["rules"].stringify_keys)) if field["rules"].is_a?(Hash) && attributes["rules"].is_a?(Hash)
         changed = field.merge(attributes.except("type", "id")).compact
-        form.fields = form.fields.map { |current| current["id"] == id ? FieldSchema.with_new_ids(changed) : current }
+        form.fields = form.fields.map { |current| current["id"] == id ? FieldSchema.with_new_ids(FieldSchema.without_blank_label(changed)) : current }
         form.save!
       end
       form

@@ -17,6 +17,7 @@ module Forms
     NUMBER_DECIMALS = 4
     RATING_SCALES = [5, 10].freeze
     DATE_YEARS = (1900..2100)
+    LABEL_OPTIONAL_TYPES = ["booking"].freeze
     COMMON_KEYS = ["id", "type", "label", "help", "required"].freeze
     EXTRA_KEYS = {
       "single_choice" => ["choices"],
@@ -49,6 +50,16 @@ module Forms
 
     def answerable?(field)
       field.stringify_keys["type"] != "section"
+    end
+
+    def title(field)
+      field = field.stringify_keys
+      field["label"].presence || field["type"].to_s.humanize
+    end
+
+    def without_blank_label(field)
+      field = field.stringify_keys
+      field["label"].to_s.strip.empty? ? field.except("label") : field
     end
 
     def with_new_ids(field)
@@ -100,7 +111,7 @@ module Forms
 
       allowed = COMMON_KEYS + EXTRA_KEYS.fetch(type, [])
       errors << "has unknown keys" unless (field.keys - allowed).empty?
-      errors << "label is required (max #{LABEL_MAX})" unless text?(field["label"], LABEL_MAX, required: true)
+      errors << "label is required (max #{LABEL_MAX})" unless text?(field["label"], LABEL_MAX, required: !LABEL_OPTIONAL_TYPES.include?(type))
       errors << "help is too long (max #{HELP_MAX})" unless text?(field["help"], HELP_MAX, required: false)
       errors << "required must be true or false" unless field["required"].nil? || [true, false].include?(field["required"])
       errors.concat(type_errors(field, type))

@@ -1,7 +1,7 @@
 class FormFieldContract < ApplicationContract
   params do
     required(:type).filled(:string)
-    required(:label).filled(:string)
+    optional(:label).maybe(:string)
     optional(:help).maybe(:string)
     optional(:required).filled(:bool)
     optional(:scale).filled(:integer)
