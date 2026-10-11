@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_11_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_11_170200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -67,6 +67,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100000) do
     t.datetime "updated_at", null: false
     t.integer "held", default: 0, null: false
     t.integer "duration"
+    t.string "resource_key"
+    t.index ["form_id", "resource_key", "starts_at"], name: "index_appointment_slots_on_form_resource_start", unique: true
     t.index ["form_id", "service_key", "starts_at"], name: "index_appointment_slots_on_form_service_start", unique: true
     t.index ["form_id"], name: "index_appointment_slots_on_form_id"
     t.check_constraint "booked >= 0", name: "appointment_slots_booked_non_negative"
