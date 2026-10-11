@@ -9,7 +9,7 @@ export type ServiceInput = {
   price?: number;
   currency?: string;
   extra_durations?: { duration: number; price?: number }[];
-  monthly?: { price?: number; duration?: number };
+  monthly?: { price?: number; duration?: number; sessions?: number; per?: 'month' | 'week' };
 };
 
 export type Availability = {

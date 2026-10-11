@@ -19,3 +19,7 @@ export async function pickDay(scope: Page | Locator, iso: string) {
   }
   await target.click();
 }
+
+export async function pickLockedDay(scope: Page | Locator, iso: string) {
+  await scope.getByRole('button', { name: new RegExp(`^${escape(dayLabel(iso))}`) }).click();
+}

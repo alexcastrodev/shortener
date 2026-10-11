@@ -21,3 +21,15 @@ export function firstOfNextMonth(): string {
   date.setMonth(date.getMonth() + 1, 1);
   return isoDate(date);
 }
+
+export function nextMonthWeek(): string[] {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setMonth(date.getMonth() + 1, 1);
+  while (date.getDay() !== 1) date.setDate(date.getDate() + 1);
+  return [0, 1, 2, 3, 4, 7, 8].map(offset => {
+    const day = new Date(date);
+    day.setDate(date.getDate() + offset);
+    return isoDate(day);
+  });
+}
