@@ -40,6 +40,7 @@ import {
   isSection,
   questionTitle,
 } from '../../../modules/forms/field-types';
+import { hasLabel } from '../../../modules/forms/field-title.ts';
 import { formErrorMessage } from '../../../modules/forms/form-errors';
 import { editorModes } from './booking-modes/modes';
 import { PublishChecklist } from './publish-checklist';
@@ -271,9 +272,11 @@ export function QuestionList({
                               {questionTitle(field)}
                               {field.required && <span className="text-red-500"> *</span>}
                             </span>
-                            <span className="shrink-0 text-xs text-muted-foreground">
-                              {fieldTypeLabel(field.type)}
-                            </span>
+                            {hasLabel(field) && (
+                              <span className="shrink-0 text-xs text-muted-foreground">
+                                {fieldTypeLabel(field.type)}
+                              </span>
+                            )}
                           </button>
                           <Group gap={2} wrap="nowrap">
                             <ActionIcon
