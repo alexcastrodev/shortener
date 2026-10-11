@@ -41,6 +41,8 @@ class FormFieldContract < ApplicationContract
       optional(:monthly).maybe(:hash) do
         optional(:price).maybe(:float)
         optional(:duration).maybe(:integer)
+        optional(:sessions).maybe(:integer)
+        optional(:per).maybe(:string)
       end
       optional(:times_by_day).hash do
         ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].each { |day| optional(day.to_sym).array(:string) }

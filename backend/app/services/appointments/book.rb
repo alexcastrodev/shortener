@@ -78,7 +78,43 @@ module Appointments
       [{ "service" => service["id"], "sessions" => sessions.zip(lengths).map { |session, minutes| session.slice("date", "time").merge("duration" => minutes) }, "starts_at" => times.map { |slot| slot[:starts_at] }, "durations" => lengths, "capacity" => service["capacity"] }, nil]
     end
 
+    def cast_plan(form:, booking:, service:, raw:, now:)
+      plan = service["monthly"]
+      return [nil, :invalid] unless raw.is_a?(Hash) && raw["month"].to_s.match?(/\A\d{4}-\d{2}\z/)
+
+      picks = raw["sessions"]
+      return [nil, :invalid] unless picks.is_a?(Array) && picks.size.between?(1, MAX_SESSIONS) && picks.all? { |pick| pick.is_a?(Hash) && pick["date"].is_a?(String) && pick["date"].match?(DATE) && pick["time"].is_a?(String) && pick["time"].match?(TIME) }
+      return [nil, :invalid] unless picks.map { |pick| pick.values_at("date", "time") }.uniq.size == picks.size
+
+      rules = booking["rules"]
+      today = now.in_time_zone(Time.find_zone!(rules["time_zone"])).to_date
+      month = Date.strptime(raw["month"], "%Y-%m")
+      return [nil, :invalid] unless [today.beginning_of_month, today.beginning_of_month.next_month].include?(month)
+
+      dates = picks.map { |pick| Date.iso8601(pick["date"]) }
+      return [nil, :invalid] unless dates.all? { |date| date.beginning_of_month == month && date >= today }
+      return [nil, :invalid] if over_allowance?(plan, dates)
+
+      minutes = Durations.monthly_minutes(service)
+      free = FreeSlots.call(form: form, booking: booking, service: service, from: dates.min, to: dates.max, now: now, only: [minutes])
+      found = picks.map { |pick| free.find { |slot| slot[:date].iso8601 == pick["date"] && slot[:time] == pick["time"] } }
+      return [nil, :unavailable] if found.any?(&:nil?)
+
+      slots = found.sort_by { |slot| slot[:starts_at] }
+      [{ "service" => service["id"], "sessions" => slots.map { |slot| { "date" => slot[:date].iso8601, "time" => slot[:time], "duration" => minutes } }, "starts_at" => slots.map { |slot| slot[:starts_at] }, "durations" => slots.map { minutes }, "capacity" => service["capacity"], "monthly" => { "month" => raw["month"], "skipped" => [] } }, nil]
+    rescue Date::Error
+      [nil, :invalid]
+    end
+
+    def over_allowance?(plan, dates)
+      allowed = plan["sessions"]
+      return dates.size > allowed unless plan["per"] == "week"
+
+      dates.group_by { |date| date.beginning_of_week(:monday) }.values.any? { |week| week.size > allowed }
+    end
+
     def cast_monthly(form:, booking:, service:, raw:, now:)
+      return cast_plan(form: form, booking: booking, service: service, raw: raw, now: now) if service.dig("monthly", "sessions")
       return [nil, :invalid] unless service["monthly"].is_a?(Hash) && raw.is_a?(Hash) && raw["time"].to_s.match?(TIME) && raw["month"].to_s.match?(/\A\d{4}-\d{2}\z/)
 
       weekdays = raw["weekdays"]

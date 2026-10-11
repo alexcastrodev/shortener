@@ -57,6 +57,12 @@ A booking is created **inside** `Forms::SubmitResponse`, in the same transaction
 4. The appointment starts as `confirmed` (automatic approval) or `pending` (manual approval, with an expiry). Pending appointments hold their slot.
 5. Cancelling or expiring releases the slot with `booked = GREATEST(booked - 1, 0)`.
 
+## Monthly plan with an allowance
+
+A monthly offer is, by default, a weekly pattern: the visitor picks a month, some weekdays and one time, and every matching date of the month is booked for the monthly price. The owner can turn it into a **plan with an allowance** with `monthly.sessions` (1 to 31) and `monthly.per` (`month`, the default, or `week`, then 1 to 7): "5 massages a month" or "1 lesson a week".
+
+With an allowance the visitor picks the days he wants, each with its own time, up to the allowance: `{service, monthly: {month, sessions: [{date, time}]}}`. At most `sessions` in the month, or at most `sessions` in each Monday-Sunday week of it. Each pick is checked like a single session (`FreeSlots` with the monthly duration, min notice, buffer, days off), the month must be this or the next one and a day in the past is refused; one pick that is taken refuses the whole plan. The price is the whole monthly price whatever the number of sessions chosen. One appointment per picked day, like the weekday pattern, so cancelling, reminders, e-mails and the agenda work unchanged. An offer without `sessions` keeps the weekday pattern exactly as before.
+
 ## Several services in one booking
 
 An owner can switch on the rule `multiple_services` (off by default, both modes). The answer is then `{items: [{service, sessions | monthly}, ...]}`, one item per service (at most 5); the legacy `{service, sessions, monthly?}` stays valid, with the rule on or off, and is the only shape accepted while the rule is off or for a waiting list claim. A request is still one response, one `group_key`, one approval, verification or expiry decision, one reminder and one e-mail; cancelling a booking cancels every session, and `scope=remaining` only the sessions of the same service.

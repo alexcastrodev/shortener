@@ -109,6 +109,169 @@ RSpec.describe("fixed monthly booking", type: :request) do
     end
   end
 
+  describe "a plan with an allowance" do
+    let(:allowance) { { "sessions" => 3 } }
+    let(:service) { super().merge("monthly" => { "price" => 120 }.merge(allowance)) }
+
+    def plan(*picks, month: "2026-11", name: "Ana", service: service_id, ip: "198.51.100.#{rand(1..250)}")
+      sessions = picks.map { |date, time| { "date" => date, "time" => time } }
+      answers = { name_id => name, mail_id => "#{name.downcase}@example.com", booking_id => { "service" => service, "monthly" => { "month" => month, "sessions" => sessions } } }
+      post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", confirm_field_id: mail_id, client_time_zone: "UTC" }, headers: { "CF-Connecting-IP" => ip }, as: :json)
+    end
+
+    it "books the days the visitor chose, each with its own time, for the price of the plan" do
+      plan(["2026-11-03", "09:00"], ["2026-11-05", "10:00"], ["2026-11-17", "09:00"])
+
+      expect(response).to(have_http_status(:created))
+      expect(days).to(eq(["11-03", "11-05", "11-17"]))
+      expect(Appointment.joins(:slot).order("appointment_slots.starts_at").map { |row| row.slot.starts_at.strftime("%H:%M") }).to(eq(["09:00", "10:00", "09:00"]))
+      expect(Appointment.pluck(:group_key).uniq.size).to(eq(1))
+      expect(json["price"]).to(include("total" => 120.0, "currency" => "EUR"))
+      expect(json["skipped"]).to(eq([]))
+      expect(Appointment.first.snapshot["monthly"]).to(eq("month" => "2026-11", "skipped" => []))
+      expect(FormResponse.last.answers[booking_id]["sessions"].size).to(eq(3))
+    end
+
+    it "charges the whole plan even when fewer sessions are chosen" do
+      plan(["2026-11-03", "09:00"])
+
+      expect(response).to(have_http_status(:created))
+      expect(Appointment.count).to(eq(1))
+      expect(json["price"]["total"]).to(eq(120.0))
+    end
+
+    it "refuses more sessions than the plan includes and books nothing" do
+      plan(["2026-11-03", "09:00"], ["2026-11-04", "09:00"], ["2026-11-05", "09:00"], ["2026-11-06", "09:00"])
+
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(json.dig("errors", "answers", booking_id)).to(eq(["invalid"]))
+      expect(Appointment.count).to(eq(0))
+      expect(AppointmentSlot.count).to(eq(0))
+    end
+
+    it "refuses the weekday pattern, a month that is not this or the next, a day of another month and a day in the past" do
+      monthly
+      expect(response).to(have_http_status(:unprocessable_content))
+      plan(["2026-11-03", "09:00"], month: "2027-01")
+      expect(response).to(have_http_status(:unprocessable_content))
+      plan(["2026-12-01", "09:00"], month: "2026-11")
+      expect(response).to(have_http_status(:unprocessable_content))
+      plan(["2026-11-01", "09:00"])
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(Appointment.count).to(eq(0))
+    end
+
+    it "refuses repeated picks, an empty list and a malformed pick" do
+      plan(["2026-11-03", "09:00"], ["2026-11-03", "09:00"])
+      expect(response).to(have_http_status(:unprocessable_content))
+      plan
+      expect(response).to(have_http_status(:unprocessable_content))
+      plan(["soon", "09:00"])
+      expect(response).to(have_http_status(:unprocessable_content))
+      plan(["2026-11-03", "9am"])
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(Appointment.count).to(eq(0))
+    end
+
+    it "is all or nothing: a taken time or a day off refuses the whole plan" do
+      plan(["2026-11-03", "09:00"], name: "Bo")
+      expect(Appointment.count).to(eq(1))
+
+      plan(["2026-11-03", "09:00"], ["2026-11-05", "10:00"])
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(json.dig("errors", "answers", booking_id)).to(eq(["unavailable"]))
+
+      plan(["2026-11-05", "10:00"], ["2026-11-11", "09:00"])
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(json.dig("errors", "answers", booking_id)).to(eq(["unavailable"]))
+      expect(Appointment.count).to(eq(1))
+    end
+
+    it "lets a time that is not offered be refused, not booked" do
+      plan(["2026-11-03", "13:00"])
+      expect(response).to(have_http_status(:unprocessable_content))
+      plan(["2026-11-08", "09:00"])
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(Appointment.count).to(eq(0))
+    end
+
+    it "can be cancelled from the day it is, like any series" do
+      plan(["2026-11-03", "09:00"], ["2026-11-05", "10:00"], ["2026-11-17", "09:00"])
+      token = json["manage_url"].split("/").last
+      second = Appointment.joins(:slot).order("appointment_slots.starts_at").second
+
+      get("/api/public/appointments/#{token}")
+      expect(json["appointment"]).to(include("series" => true))
+      post("/api/public/appointments/#{token}/cancel", params: { scope: "remaining", session: second.slot.starts_at.iso8601 }, as: :json)
+      expect(response).to(have_http_status(:ok))
+      expect(Appointment.joins(:slot).order("appointment_slots.starts_at").pluck(:status)).to(eq(["confirmed", "cancelled", "cancelled"]))
+    end
+
+    context "when it allows one session per week" do
+      let(:allowance) { { "sessions" => 1, "per" => "week" } }
+
+      it "takes one session in each week of the month and refuses two in the same week" do
+        plan(["2026-11-03", "09:00"], ["2026-11-05", "10:00"])
+        expect(response).to(have_http_status(:unprocessable_content))
+        expect(Appointment.count).to(eq(0))
+
+        plan(["2026-11-03", "09:00"], ["2026-11-10", "09:00"], ["2026-11-17", "10:00"], ["2026-11-24", "09:00"])
+        expect(response).to(have_http_status(:created))
+        expect(days).to(eq(["11-03", "11-10", "11-17", "11-24"]))
+        expect(json["price"]["total"]).to(eq(120.0))
+      end
+
+      it "counts a week from Monday to Sunday, so Sunday and the next Monday are different weeks" do
+        Forms::Definition.update(form, booking_id, { "services" => [service.merge("id" => service_id, "days" => ["mon", "tue", "wed", "thu", "fri", "sat", "sun"])] })
+        Forms::Publish.call(form: form.reload)
+
+        plan(["2026-11-08", "09:00"], ["2026-11-09", "09:00"])
+        expect(response).to(have_http_status(:created))
+        expect(days).to(eq(["11-08", "11-09"]))
+      end
+    end
+
+    context "with several services in one booking" do
+      let(:massage) { { "name" => "Massage", "duration" => 60, "price" => 50, "currency" => "EUR", "capacity" => 1, "days" => ["mon", "tue", "wed", "thu", "fri"], "times" => ["09:00", "10:00", "11:00"] } }
+
+      before do
+        Forms::Definition.update(form, booking_id, { "services" => [service.merge("id" => service_id), massage], "rules" => { "multiple_services" => true, "window_days" => 90 } })
+        Forms::Publish.call(form: form.reload)
+      end
+
+      it "books the plan of one service next to single sessions of another and adds the prices" do
+        massage_id = form.reload.fields.find { |field| field["type"] == "booking" }["services"].last["id"]
+        items = [
+          { "service" => service_id, "monthly" => { "month" => "2026-11", "sessions" => [{ "date" => "2026-11-03", "time" => "09:00" }, { "date" => "2026-11-10", "time" => "09:00" }] } },
+          { "service" => massage_id, "sessions" => [{ "date" => "2026-11-04", "time" => "11:00" }] },
+        ]
+        answers = { name_id => "Ana", mail_id => "ana@example.com", booking_id => { "items" => items } }
+        post("/api/public/forms/#{form.public_id}/responses", params: { answers: answers, turnstile_token: "t", confirm_field_id: mail_id, client_time_zone: "UTC" }, headers: { "CF-Connecting-IP" => "198.51.100.9" }, as: :json)
+
+        expect(response).to(have_http_status(:created))
+        expect(Appointment.count).to(eq(3))
+        expect(json["price"]).to(include("total" => 170.0, "currency" => "EUR"))
+      end
+    end
+  end
+
+  describe "saving the allowance" do
+    def update(monthly) = Forms::Definition.update(form.reload, booking_id, { "services" => [service.merge("id" => service_id, "monthly" => monthly)] })
+
+    it "takes a number of sessions per month or per week" do
+      expect { update({ "price" => 120, "sessions" => 5 }) }.not_to(raise_error)
+      expect { update({ "price" => 120, "sessions" => 5, "per" => "month" }) }.not_to(raise_error)
+      expect { update({ "price" => 120, "sessions" => 1, "per" => "week" }) }.not_to(raise_error)
+      expect(form.reload.fields.first["services"].first["monthly"]).to(eq("price" => 120, "sessions" => 1, "per" => "week"))
+    end
+
+    it "refuses a number out of range, a period it does not know and a period without a number" do
+      [{ "sessions" => 0 }, { "sessions" => 32 }, { "sessions" => 8, "per" => "week" }, { "sessions" => 2, "per" => "year" }, { "per" => "week" }, { "sessions" => "five" }].each do |extra|
+        expect { update({ "price" => 120 }.merge(extra)) }.to(raise_error(ActiveRecord::RecordInvalid), extra.inspect)
+      end
+    end
+  end
+
   describe "cancelling" do
     let(:token) { json["manage_url"].split("/").last }
     def rows = Appointment.joins(:slot).order("appointment_slots.starts_at").to_a
