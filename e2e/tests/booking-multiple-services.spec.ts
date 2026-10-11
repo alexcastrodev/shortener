@@ -300,3 +300,22 @@ test('a weekday pattern that lands on a session of another service is refused in
   await expect(bar.getByText('Guitarra, Bateria')).toBeVisible();
   await expect(bar.getByText(money(390))).toBeVisible();
 });
+
+test('with several services the day question and the time zone are said once, and the mode question is not repeated', async ({ page }) => {
+  const form = await createForm({ rules: { multiple_services: true }, services: [guitar(), drums()], publish: true });
+  const view = new PublicForm(page, form);
+  await view.open();
+  await view.tickService('Guitarra');
+  await view.tickService('Bateria');
+
+  await expect(page.getByText('Escolha dia e hora', { exact: true })).toHaveCount(1);
+  await expect(page.getByText(/^Horas em /)).toHaveCount(1);
+  const drawn = await page
+    .getByText('Como quer marcar?', { exact: true })
+    .evaluateAll(nodes => nodes.filter(node => node.getBoundingClientRect().width > 2).length);
+  expect(drawn).toBe(0);
+  for (const name of ['Guitarra', 'Bateria']) {
+    await expect(view.block(name).getByRole('radiogroup', { name: 'Como quer marcar?' })).toBeVisible();
+    await expect(view.block(name).getByText(name, { exact: true })).toBeVisible();
+  }
+});
