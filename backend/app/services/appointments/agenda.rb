@@ -11,28 +11,33 @@ module Appointments
       forms = user.forms.where("fields @> ?", [{ type: "booking" }].to_json).index_by(&:id)
       return [] if forms.empty?
 
-      sessions = stored(forms, range, zone)
-      derived(forms.values, from, to, now, zone).each { |key, session| sessions[key] ||= session }
+      bookings = forms.transform_values { |form| Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" } }
+      sessions = stored(forms, bookings, range, zone)
+      derived(forms.values, bookings, from..to, now, zone).each { |key, session| sessions[key] ||= session }
       sessions.values.sort_by { |session| [session[:starts_at], session[:form_id]] }
     end
 
     private
 
-    def stored(forms, range, zone)
+    def stored(forms, bookings, range, zone)
       AppointmentSlot.where(form_id: forms.keys, starts_at: range).where("booked > 0 OR held > 0").includes(:appointments).to_h do |slot|
         appointments = slot.appointments.sort_by(&:id)
         snapshot = appointments.first&.snapshot || {}
-        [key(slot.form_id, slot.resource_key, slot.starts_at), session(forms[slot.form_id], zone, { service_id: slot.service_key, name: snapshot["name"], duration: slot.duration || snapshot["duration"], starts_at: slot.starts_at, capacity: slot.capacity, booked: slot.booked, appointments: appointments })]
+        current = bookings[slot.form_id]&.fetch("services", nil)&.find { |service| service["id"] == slot.service_key }
+        name = current ? current["name"] : snapshot["name"]
+        capacity = current ? current["capacity"] : slot.capacity
+        [key(slot.form_id, slot.resource_key, slot.starts_at), session(forms[slot.form_id], zone, { service_id: slot.service_key, name: name, duration: slot.duration || snapshot["duration"], starts_at: slot.starts_at, capacity: capacity, booked: slot.booked, appointments: appointments })]
       end
     end
 
-    def derived(forms, from, to, now, zone)
+    def derived(forms, bookings, dates, now, zone)
       today = now.in_time_zone(zone).to_date
-      start = [from, today].max
+      start = [dates.begin, today].max
+      to = dates.end
       return {} if start > to
 
       forms.select(&:published).each_with_object({}) do |form, result|
-        booking = Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" }
+        booking = bookings[form.id]
         next unless booking
 
         rules = booking["rules"].merge(OPEN_RULES)

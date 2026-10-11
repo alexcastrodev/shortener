@@ -64,6 +64,56 @@ RSpec.describe("GET /api/me/agenda", type: :request) do
     expect(past["appointments"].map { |item| item.slice("status", "client_name", "client_email") }).to(eq([{ "status" => "confirmed", "client_name" => "Bo", "client_email" => "bo@example.com" }]))
   end
 
+  describe "a service the owner has changed since the booking" do
+    let(:form) { booking_form }
+    let(:booked_at) { Time.utc(2026, 11, 5, 9) }
+
+    def republish(changes)
+      booking = form.reload.fields.find { |field| field["type"] == "booking" }
+      Forms::Definition.update(form, booking["id"], { "services" => [booking["services"].first.merge(changes).compact] })
+    end
+
+    def session = json["sessions"].find { |item| item["starts_at"] == "2026-11-05T09:00:00Z" }
+
+    before do
+      book(form, booked_at, count: 2)
+      form.reload
+    end
+
+    it "shows the current name and limit of places of the published service, not the ones it had when it was booked" do
+      republish("name" => "Hair class", "capacity" => 6)
+      Forms::Publish.call(form: form.reload)
+      agenda
+
+      expect(session).to(include("service_name" => "Hair class", "capacity" => 6, "booked" => 2))
+      expect(session["appointments"].size).to(eq(2))
+    end
+
+    it "shows unlimited places when the service no longer has a limit, even if the time was opened with one" do
+      republish("capacity" => nil)
+      Forms::Publish.call(form: form.reload)
+      agenda
+
+      expect(session).to(include("capacity" => nil, "booked" => 2))
+    end
+
+    it "keeps showing what was published until the owner publishes the change" do
+      republish("name" => "Hair class", "capacity" => 6)
+      agenda
+
+      expect(session).to(include("service_name" => "Haircut", "capacity" => 2))
+    end
+
+    it "falls back to what was booked when the service is gone from the form" do
+      booking = form.reload.fields.find { |field| field["type"] == "booking" }
+      Forms::Definition.update(form, booking["id"], { "services" => [service.merge("id" => "other001", "name" => "Shave")] })
+      Forms::Publish.call(form: form.reload)
+      agenda
+
+      expect(session).to(include("service_name" => "Haircut", "capacity" => 2))
+    end
+  end
+
   it "carries the service category, or null without one" do
     booking_form(title: "Plain", services: [service.merge("name" => "Cut")])
     form = booking_form(title: "Spa", published: false, services: [service.merge("name" => "Massage")])
