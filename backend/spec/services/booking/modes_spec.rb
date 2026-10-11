@@ -33,6 +33,15 @@ RSpec.describe(Booking::Modes) do
     expect(compiled["services"].last).to(include("name" => "Physics", "duration" => 90, "price" => 40))
   end
 
+  it "keeps the own schedule of a lesson, shares the resource and leaves the other lessons on the availability of the teacher" do
+    own = { "days" => ["tue"], "times" => ["14:00"], "times_by_day" => { "tue" => ["15:00"] } }
+    field = individual_field.merge("services" => [individual_field["services"].first, individual_field["services"].last.merge(own)])
+    first, last = described_class.compile(field)["services"]
+    expect(first.slice("days", "times", "times_by_day")).to(eq(individual_field["availability"]))
+    expect(last.slice("days", "times", "times_by_day")).to(eq(own))
+    expect([first, last].map { |service| Appointments::Resource.key(service) }).to(eq(["main", "main"]))
+  end
+
   it "does not change the field it is given" do
     original = Marshal.load(Marshal.dump(individual_field))
     described_class.compile(individual_field)

@@ -32,6 +32,7 @@ export type ServiceValues = ScheduleValues & {
   price: number | '';
   currency: string;
   capacity: number | '';
+  ownSchedule: boolean;
   extraDurations: { key: string; duration: number | ''; price: number | '' }[];
   monthly: boolean;
   monthlyPrice: number | '';
@@ -192,6 +193,7 @@ export const blankService = (name: string, categoryId = ''): ServiceValues => ({
   price: '',
   currency: DEFAULT_CURRENCY,
   capacity: 1,
+  ownSchedule: false,
   ...blankSchedule(DEFAULT_DURATION),
   extraDurations: [],
   monthly: false,
@@ -226,6 +228,7 @@ export function initialValues(field?: FormField): Values {
       price: service.price ?? '',
       currency: service.currency || DEFAULT_CURRENCY,
       capacity: service.capacity ?? '',
+      ownSchedule: service.days !== undefined || service.times !== undefined,
       ...toSchedule(service),
       extraDurations: (service.extra_durations ?? []).map(item => ({
         key: newKey(),
@@ -338,7 +341,7 @@ export function toBookingInput(
           ? { price, currency: service.currency.trim().toUpperCase() }
           : {}),
         ...(capacity !== null ? { capacity } : {}),
-        ...(individual ? {} : fromSchedule(service)),
+        ...(individual && !service.ownSchedule ? {} : fromSchedule(service)),
         ...(extras.length ? { extra_durations: extras } : {}),
         ...(service.monthly
           ? {

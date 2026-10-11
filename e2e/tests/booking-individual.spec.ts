@@ -98,6 +98,60 @@ test('a time booked for one lesson is no longer offered by the other lesson of t
   await expect(time('10:00')).toHaveCount(0);
 });
 
+test('a lesson with its own days and times is offered only at those times, next to a lesson on the hours of the teacher', async ({ page }) => {
+  const [day] = nextWeekdays(1, 3);
+  const form = await createForm({
+    mode: 'individual',
+    availability: { days: WEEK, times: ['09:00', '10:00', '11:00'] },
+    services: [lesson('Matemática'), lesson('Física', { duration: 90, days: WEEK, times: ['14:00', '16:00'] })],
+    publish: true,
+  });
+  const view = new PublicForm(page, form);
+  const time = (value: string) => page.getByRole('button', { name: value, exact: true });
+
+  await view.open();
+  await view.chooseService('Matemática');
+  await pickDay(page, day);
+  await expect(time('09:00')).toBeVisible();
+  await expect(time('14:00')).toHaveCount(0);
+
+  await view.chooseService('Física');
+  await pickDay(page, day);
+  await expect(time('14:00')).toBeVisible();
+  await expect(time('16:00')).toBeVisible();
+  await expect(time('09:00')).toHaveCount(0);
+});
+
+test('the owner gives a lesson its own days and times and the other lesson keeps the availability', async ({ page, signIn }) => {
+  const form = await createForm({
+    mode: 'individual',
+    availability: { days: WEEK, times: ['09:00', '10:00'] },
+    services: [lesson('Matemática'), lesson('Física', { duration: 90 })],
+  });
+  await signIn('owner');
+  await page.goto(`/app/forms/${form.id}`);
+  await page.getByRole('button', { name: /Marcação de serviço$/ }).click();
+
+  const editor = new BookingEditor(page);
+  const lessons = page.getByRole('region', { name: 'Aulas' });
+  const physics = lessons.locator('[id^="service-"]').filter({ hasText: 'Física' });
+  await physics.getByRole('button', { name: 'Editar' }).click();
+  await expect(physics.getByText('Dias em que decorre')).toHaveCount(0);
+
+  await physics.getByRole('switch', { name: 'Esta aula tem dias e horários próprios' }).check();
+  await expect(physics.getByText('Dias em que decorre')).toBeVisible();
+  await editor.save();
+  await expect(editor.saved).toBeVisible();
+
+  const saved = bookingOf(await ownerForm(form.id));
+  const [math, physicsSaved] = saved.services;
+  expect(math).not.toHaveProperty('days');
+  expect(math).not.toHaveProperty('times');
+  expect(physicsSaved.days).toEqual(WEEK);
+  expect(physicsSaved.times).toHaveLength(6);
+  expect(saved.availability.times).toEqual(['09:00', '10:00']);
+});
+
 test('the publish checklist asks for the hours of the teacher and publishing works once they are set', async ({ page, signIn }) => {
   const form = await createForm({
     mode: 'individual',

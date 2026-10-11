@@ -43,6 +43,16 @@ RSpec.describe("the individual booking question", type: :request) do
       expect(booking_field["availability"]["times_by_day"]).to(eq("wed" => ["15:00"]))
     end
 
+    it "keeps the own days and times of a lesson next to the availability of the teacher" do
+      own = { name: "Physics", duration: 90, days: ["tue", "thu"], times: ["14:00"], times_by_day: { thu: ["16:00"] } }
+      add_individual(services: [lesson, own])
+      expect(response).to(have_http_status(:created))
+      math, physics = booking_field["services"]
+      expect(math.keys).not_to(include("days", "times", "times_by_day"))
+      expect(physics).to(include("days" => ["tue", "thu"], "times" => ["14:00"], "times_by_day" => { "thu" => ["16:00"] }))
+      expect(booking_field["availability"]).to(eq("days" => ["mon", "tue", "wed"], "times" => ["09:00", "10:00"]))
+    end
+
     it "keeps a services question exactly as it was, with no mode" do
       post("/api/me/forms/#{form.id}/fields", params: { type: "booking", label: "Pick", services: [{ name: "Cut", duration: 30, days: ["mon"], times: ["09:00"] }] }, headers: auth_headers, as: :json)
       expect(response).to(have_http_status(:created))
@@ -52,7 +62,9 @@ RSpec.describe("the individual booking question", type: :request) do
 
   describe "what it refuses" do
     {
-      "a lesson with its own days" => { services: [{ name: "Math", duration: 60, days: ["mon"], times: ["09:00"] }] },
+      "a lesson with its own days and no times" => { services: [{ name: "Math", duration: 60, days: ["mon"] }] },
+      "a lesson with an unknown weekday of its own" => { services: [{ name: "Math", duration: 60, days: ["funday"], times: ["09:00"] }] },
+      "a lesson with times for a day it does not run" => { services: [{ name: "Math", duration: 60, days: ["mon"], times: ["09:00"], times_by_day: { fri: ["10:00"] } }] },
       "a lesson with a category" => { services: [{ name: "Math", duration: 60, category_id: "cat00001" }] },
       "categories" => { categories: [{ id: "cat00001", name: "Sciences" }] },
       "the waiting list" => { rules: { waitlist: true } },
@@ -135,6 +147,20 @@ RSpec.describe("the individual booking question", type: :request) do
       expect(json["blocks"].pluck("code")).to(eq(["availability_incomplete"]))
     end
 
+    it "is blocked while a lesson with its own schedule has no time, and names the lesson" do
+      complete(services: [lesson, { name: "Physics", duration: 90, days: ["tue"], times: [] }])
+      publish
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(json["blocks"].map { |block| block.slice("code", "name") }).to(eq([{ "code" => "service_incomplete", "name" => "Physics" }]))
+      expect(json["blocks"].first["service_id"]).to(be_present)
+    end
+
+    it "publishes a lesson that has its own days and times" do
+      complete(services: [lesson, { name: "Physics", duration: 90, days: ["tue"], times: ["14:00"] }])
+      publish
+      expect(response).to(have_http_status(:ok))
+    end
+
     it "still asks for a required email when the code is sent by email" do
       add_individual(rules: { verify_email: true })
       Forms::Definition.add(form.reload, name)
@@ -161,5 +187,18 @@ RSpec.describe("the individual booking question", type: :request) do
       expect(shown["waitlist"]).to(be(false))
       expect(response.body).not_to(include("resource_key", "individual", "availability"))
     end
+
+    it "gets a lesson with its own days and times as they were set, and the others with the ones of the teacher" do
+      Forms::Definition.update(form, booking_field_id(public_form), { "services" => [lesson.stringify_keys, { "name" => "Physics", "duration" => 90, "days" => ["tue", "thu"], "times" => ["14:00"] }] })
+      Forms::Publish.call(form: form.reload)
+      get("/api/public/forms/#{form.public_id}")
+      shown = JSON.parse(response.body)["form"]["fields"].find { |field| field["type"] == "booking" }
+      expect(shown["services"].map { |item| item.slice("name", "days", "times") }).to(eq([
+        { "name" => "Math", "days" => ["mon", "tue", "wed"], "times" => ["09:00", "10:00"] },
+        { "name" => "Physics", "days" => ["tue", "thu"], "times" => ["14:00"] },
+      ]))
+    end
+
+    def booking_field_id(item) = item.reload.fields.find { |field| field["type"] == "booking" }["id"]
   end
 end

@@ -40,6 +40,12 @@ const scheduleShape = (t: TFunction<'booking'>) => ({
   ),
 });
 
+const looseSchedule = {
+  days: z.array(z.string()),
+  times: z.array(z.object({ value: z.string() })),
+  byDay: z.record(z.string(), z.array(z.object({ value: z.string() }))),
+};
+
 export function BookingEditor({
   field,
   loading,
@@ -120,7 +126,8 @@ export function BookingEditor({
                   .max(600, t('error_duration')),
                 price: z.union([z.number().min(0), z.literal('')]),
                 currency: z.string(),
-                ...(individual ? {} : scheduleShape(t)),
+                ownSchedule: z.boolean(),
+                ...(individual ? looseSchedule : scheduleShape(t)),
                 extraDurations: z.array(
                   z.object({
                     duration: z
@@ -150,7 +157,23 @@ export function BookingEditor({
                   monthly,
                   monthlyPrice,
                   extraDurations,
+                  ownSchedule,
+                  days,
+                  times,
+                  byDay,
                 } = ctx.value;
+                if (individual && ownSchedule) {
+                  z.object(scheduleShape(t))
+                    .safeParse({ days, times, byDay })
+                    .error?.issues.forEach(issue =>
+                      ctx.issues.push({
+                        code: 'custom',
+                        message: issue.message,
+                        path: issue.path,
+                        input: ctx.value,
+                      })
+                    );
+                }
                 const seen = new Set([duration]);
                 extraDurations.forEach((extra, at) => {
                   if (seen.has(extra.duration)) {

@@ -11,17 +11,18 @@ export type DurationWords = {
 type Offer = Pick<BookingService, 'duration' | 'price' | 'extra_durations'>;
 
 export function bookingOptions(service: Offer): BookingOption[] {
+  const seen = new Set<number>();
   return [
     { duration: service.duration, price: service.price ?? null },
     ...(service.extra_durations ?? []).map(item => ({
       duration: item.duration,
       price: item.price ?? null,
     })),
-  ];
+  ].filter(item => !seen.has(item.duration) && seen.add(item.duration));
 }
 
 export const hasSeveralDurations = (service: Offer) =>
-  (service.extra_durations?.length ?? 0) > 0;
+  bookingOptions(service).length > 1;
 
 export const optionFor = (service: Offer, minutes: number | undefined) =>
   bookingOptions(service).find(

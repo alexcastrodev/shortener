@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import type { BookingService, FormField } from '@internal/core/types/Form';
 import {
   blankException,
+  blankSchedule,
   blankService,
   initialValues,
   removeCategory,
@@ -586,6 +587,61 @@ test('creating a teacher question sends the mode, and new lessons get no days, t
   for (const key of ['days', 'times', 'times_by_day', 'category_id']) {
     assert.equal(key in added, false, key);
   }
+});
+
+test('a lesson with its own days and times keeps them and the others stay on the availability', () => {
+  const own = {
+    id: 'lesson03',
+    name: 'Chemistry',
+    duration: 90,
+    days: ['thu', 'tue'],
+    times: ['16:00', '14:00'],
+    times_by_day: { thu: ['17:00'] },
+  } as BookingService;
+  const values = initialValues({
+    ...teacher,
+    services: [...(teacher.services ?? []), own],
+  });
+  assert.deepEqual(
+    values.services.map(item => item.ownSchedule),
+    [false, false, true]
+  );
+
+  const input = toBookingInput(values, false);
+  assert.equal('days' in input.services![0], false);
+  assert.deepEqual(input.services![2], {
+    id: 'lesson03',
+    name: 'Chemistry',
+    duration: 90,
+    days: ['tue', 'thu'],
+    times: ['14:00', '16:00'],
+    times_by_day: { thu: ['17:00'] },
+  });
+  assert.deepEqual(
+    toBookingInput(
+      initialValues({ ...teacher, ...input } as FormField),
+      false
+    ),
+    input
+  );
+});
+
+test('turning the own schedule off sends the lesson without days and times', () => {
+  const values = initialValues(teacher);
+  const lesson = values.services[0];
+  values.services[0] = {
+    ...lesson,
+    ownSchedule: true,
+    ...blankSchedule(90),
+  };
+  const [first] = toBookingInput(values, false).services!;
+  assert.deepEqual(first.days, ['mon', 'tue', 'wed', 'thu', 'fri']);
+  assert.equal(first.times?.length, 6);
+
+  values.services[0] = { ...values.services[0], ownSchedule: false };
+  const [again] = toBookingInput(values, false).services!;
+  assert.equal('days' in again, false);
+  assert.equal('times' in again, false);
 });
 
 test('a services question round-trips with no mode and no availability', () => {

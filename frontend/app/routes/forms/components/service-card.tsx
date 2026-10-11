@@ -6,6 +6,7 @@ import {
   Group,
   NativeSelect,
   NumberInput,
+  Switch,
   TextInput,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
@@ -15,6 +16,8 @@ import { useTranslation } from 'react-i18next';
 import { formatNumber } from '../../../i18n/format';
 import {
   DAYS,
+  LESSON_DURATION,
+  blankSchedule,
   isGrouped,
   type Values,
 } from '../../../modules/forms/booking-config.ts';
@@ -68,7 +71,8 @@ export function ServiceCard({
   const category = grouped
     ? form.values.categories.find(item => item.id === service.categoryId)
     : undefined;
-  const problem = individual ? null : serviceProblem(service);
+  const scheduled = !individual || service.ownSchedule;
+  const problem = scheduled ? serviceProblem(service) : null;
 
   const words: SummaryWords = {
     minutes: count => t('gen_step_minutes', { count }),
@@ -120,7 +124,7 @@ export function ServiceCard({
               {problem === 'days' ? t('error_days') : t('error_times')}
             </p>
           ) : (
-            !individual && (
+            scheduled && (
               <p className="break-words text-xs text-muted-foreground">
                 {schedule}
               </p>
@@ -295,7 +299,25 @@ function ServiceFields({
           {...form.getInputProps(`services.${index}.price`)}
         />
       </div>
-      {!individual && (
+      {individual && (
+        <Switch
+          size="sm"
+          label={t('lesson_own_schedule')}
+          description={t('lesson_own_schedule_hint')}
+          checked={service.ownSchedule}
+          onChange={event => {
+            const ownSchedule = event.currentTarget.checked;
+            form.setFieldValue(`services.${index}`, {
+              ...service,
+              ownSchedule,
+              ...(ownSchedule
+                ? blankSchedule(Number(service.duration) || LESSON_DURATION)
+                : { days: [], times: [], byDay: {} }),
+            });
+          }}
+        />
+      )}
+      {(!individual || service.ownSchedule) && (
         <ScheduleFields
           form={form}
           path={`services.${index}`}
