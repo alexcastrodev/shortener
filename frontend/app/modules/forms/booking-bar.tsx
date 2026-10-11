@@ -74,10 +74,10 @@ export function BookingBar({
 
   return (
     <div className="sticky bottom-0 z-10 mt-auto">
-      <div className="flex items-center gap-4 rounded-t-xl border border-b-0 border-current/20 bg-current/10 px-4 py-3 backdrop-blur-xl">
+      <div className="flex items-center gap-2 rounded-t-xl border border-b-0 border-current/20 bg-current/10 px-3 py-3 backdrop-blur-xl sm:gap-4 sm:px-4">
         <div className="min-w-0 flex-1" aria-live="polite">
           <p
-            className={`truncate text-sm font-semibold ${summary ? '' : 'opacity-70'}`}
+            className={`line-clamp-2 break-words text-sm leading-tight font-semibold ${summary ? '' : 'opacity-70'}`}
           >
             {!summary
               ? t('bar_none')
@@ -107,7 +107,7 @@ export function BookingBar({
         {total !== null && shownCurrency && (
           <div className="flex flex-col items-end">
             <span className="text-xs opacity-70">{t('bar_total')}</span>
-            <span className="text-xl font-semibold">
+            <span className="text-lg font-semibold sm:text-xl">
               {formatCurrency(total, shownCurrency)}
             </span>
           </div>
@@ -115,7 +115,7 @@ export function BookingBar({
         <button
           type="button"
           aria-disabled={!ready}
-          className={`min-h-12 rounded-lg px-6 py-2 text-[15px]! font-semibold! ${theme.button} ${ready ? '' : 'cursor-not-allowed opacity-60'}`}
+          className={`min-h-12 rounded-lg px-4 py-2 text-[15px]! font-semibold! sm:px-6 ${theme.button} ${ready ? '' : 'cursor-not-allowed opacity-60'}`}
           onClick={onSubmit}
         >
           {label}
