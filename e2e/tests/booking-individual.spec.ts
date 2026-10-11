@@ -16,6 +16,9 @@ test('the owner creates a teacher question with one availability and a second le
   const choices = page.getByRole('dialog').getByRole('button', { name: /^(Professor|Serviços)/ });
   await expect(choices.first()).toHaveAccessibleName(/^Professor/);
   await expect(choices.first()).toBeFocused();
+  const title = await page.getByRole('dialog').getByText('Como se faz a marcação?').boundingBox();
+  const first = await choices.first().boundingBox();
+  expect(first!.y - (title!.y + title!.height)).toBeGreaterThanOrEqual(30);
   await expect(choices.nth(1)).toHaveAccessibleName(/^Serviços/);
   await choices.first().click();
 

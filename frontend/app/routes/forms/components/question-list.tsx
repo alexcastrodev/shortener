@@ -207,8 +207,9 @@ export function QuestionList({
     const id = modals.open({
       title: t('ed_booking_mode_title'),
       centered: true,
+      padding: 'lg',
       children: (
-        <Stack gap="sm">
+        <Stack gap="sm" pt="xs">
           {modes.map((item, index) => (
             <button
               key={item.label}
