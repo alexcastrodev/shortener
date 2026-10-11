@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { BookingAnswer, Form } from '@internal/core/types/Form';
 import { getBioTheme } from '../bio-page/themes';
 import { incompleteServices } from './booking-answer.ts';
+import { LinkedText } from './linked-text';
 import { FieldInput, focusFirstInput, isBlank, type Answer, type UploadImage } from './field-inputs';
 import type { JoinWaitlist, LoadSlots } from './booking-input';
 import { isSection, sectionOf } from './field-types';
@@ -169,7 +170,7 @@ function SequentialForm({
         <FormCover url={coverUrl} position={form.cover_position} />
         <h1 className={`text-2xl font-semibold ${theme.title}`}>{form.title}</h1>
         {form.description && (
-          <p className={`mt-3 whitespace-pre-line ${theme.bio}`}>{form.description}</p>
+          <p className={`mt-3 whitespace-pre-line ${theme.bio}`}><LinkedText>{form.description}</LinkedText></p>
         )}
         <div className="mt-8">
           <button
