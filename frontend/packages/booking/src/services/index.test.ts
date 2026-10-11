@@ -259,3 +259,22 @@ test('several services in one booking is refused while the question has two cate
     ['multiple_services', 'error_multiple_categories'],
   ]);
 });
+
+test('a price without a valid currency is reported on the price that needs it', () => {
+  const values = servicesMode.initialValues(field);
+  values.services[0].currency = '';
+  assert.deepEqual(issues(values), [['services.0.price', 'error_price_currency']]);
+
+  values.services[0] = {
+    ...values.services[0],
+    price: '',
+    monthly: true,
+    monthlyPrice: 100,
+  };
+  assert.deepEqual(issues(values), [
+    ['services.0.monthlyPrice', 'error_price_currency'],
+  ]);
+
+  values.services[0].currency = 'EUR';
+  assert.deepEqual(issues(values), []);
+});

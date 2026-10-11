@@ -139,16 +139,16 @@ const serviceSchema = (validation: ModeValidation, t: Translate) =>
         ctx.issues.push({
           code: 'custom',
           message: t('error_price_currency'),
-          path: ['currency'],
-          input: currency,
+          path: ['monthlyPrice'],
+          input: monthlyPrice,
         });
       }
       if (price !== '' && !/^[A-Za-z]{3}$/.test(currency.trim())) {
         ctx.issues.push({
           code: 'custom',
           message: t('error_price_currency'),
-          path: ['currency'],
-          input: currency,
+          path: ['price'],
+          input: price,
         });
       }
     });
