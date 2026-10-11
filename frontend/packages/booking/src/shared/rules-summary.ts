@@ -1,4 +1,4 @@
-import { TIME } from './booking-config.ts';
+import { TIME } from './values.ts';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SEPARATOR = ' · ';

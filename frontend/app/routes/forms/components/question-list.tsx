@@ -39,37 +39,12 @@ import {
   isChoiceType,
   isSection,
 } from '../../../modules/forms/field-types';
-import {
-  LESSON_DURATION,
-  blankLesson,
-  blankSchedule,
-  blankService,
-  initialValues,
-  toBookingInput,
-} from '../../../modules/forms/booking-config.ts';
 import { formErrorMessage } from '../../../modules/forms/form-errors';
+import { editorModes } from './booking-modes/modes';
 import { PublishChecklist } from './publish-checklist';
 import { QuestionEditor } from './question-editor';
 
-const bookingServices = () => {
-  const values = initialValues();
-  values.services = [blankService(i18n.t('booking:service_default'))];
-  return toBookingInput(values, true).services;
-};
-
-const teacherBooking = (): FormFieldInput => {
-  const values = initialValues();
-  values.mode = 'individual';
-  values.availability = blankSchedule(LESSON_DURATION);
-  values.services = [blankLesson(i18n.t('booking:lesson_default'))];
-  const { mode, availability, services } = toBookingInput(values, true);
-  return { mode, availability, services };
-};
-
-const defaultsFor = (
-  type: FormFieldType,
-  mode?: 'individual'
-): FormFieldInput => ({
+const defaultsFor = (type: FormFieldType): FormFieldInput => ({
   type,
   label:
     type === 'section'
@@ -81,11 +56,6 @@ const defaultsFor = (
     ? { choices: [1, 2, 3].map(n => ({ label: i18n.t('forms:ed_new_option', { n }) })) }
     : {}),
   ...(type === 'rating' ? { scale: 5 as const } : {}),
-  ...(type === 'booking'
-    ? mode === 'individual'
-      ? teacherBooking()
-      : { services: bookingServices() }
-    : {}),
 });
 
 const copyOf = (field: FormField): FormFieldInput => ({
@@ -192,39 +162,33 @@ export function QuestionList({
   };
 
   const chooseBookingMode = () => {
-    const modes = [
-      {
-        mode: 'individual' as const,
-        label: t('ed_booking_mode_individual'),
-        hint: t('ed_booking_mode_individual_hint'),
-      },
-      {
-        mode: undefined,
-        label: t('ed_booking_mode_services'),
-        hint: t('ed_booking_mode_services_hint'),
-      },
-    ];
     const id = modals.open({
       title: t('ed_booking_mode_title'),
       centered: true,
       padding: 'lg',
       children: (
         <Stack gap="sm" pt="xs">
-          {modes.map((item, index) => (
-            <button
-              key={item.label}
-              type="button"
-              data-autofocus={index === 0 ? true : undefined}
-              onClick={() => {
-                modals.close(id);
-                create({ formId: form.id, data: defaultsFor('booking', item.mode) });
-              }}
-              className="rounded-lg border border-border bg-card px-3 py-2.5 text-left hover:border-primary focus-visible:border-primary focus-visible:outline-none"
-            >
-              <span className="block text-sm font-medium">{item.label}</span>
-              <span className="block text-xs text-muted-foreground">{item.hint}</span>
-            </button>
-          ))}
+          {editorModes.map((editor, index) => {
+            const { label, hint } = editor.choice(t);
+            return (
+              <button
+                key={label}
+                type="button"
+                data-autofocus={index === 0 ? true : undefined}
+                onClick={() => {
+                  modals.close(id);
+                  create({
+                    formId: form.id,
+                    data: { ...defaultsFor('booking'), ...editor.create() },
+                  });
+                }}
+                className="rounded-lg border border-border bg-card px-3 py-2.5 text-left hover:border-primary focus-visible:border-primary focus-visible:outline-none"
+              >
+                <span className="block text-sm font-medium">{label}</span>
+                <span className="block text-xs text-muted-foreground">{hint}</span>
+              </button>
+            );
+          })}
         </Stack>
       ),
     });

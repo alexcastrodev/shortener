@@ -9,7 +9,7 @@ import {
   scheduleAt,
   type SchedulePath,
   type Values,
-} from '../../../modules/forms/booking-config.ts';
+} from '@internal/booking';
 
 export function WeekdayTimes({
   form,

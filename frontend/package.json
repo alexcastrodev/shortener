@@ -7,11 +7,12 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "test": "node --test \"app/i18n/*.test.ts\" \"app/modules/forms/*.test.ts\" \"app/modules/agenda/*.test.ts\" \"app/modules/notices/*.test.ts\" \"app/modules/appointments-tab/*.test.ts\"",
+    "test": "node --test \"app/i18n/*.test.ts\" \"app/modules/forms/*.test.ts\" \"app/modules/agenda/*.test.ts\" \"app/modules/notices/*.test.ts\" \"app/modules/appointments-tab/*.test.ts\" \"packages/booking/src/**/*.test.ts\"",
     "format": "prettier --write \"**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
+    "@internal/booking": "0.0.0",
     "@internal/core": "0.0.0",
     "@internal/ui": "0.0.0",
     "@mantine/charts": "9.7.1",

@@ -4,6 +4,7 @@ import type {
   FormField,
   FormFieldInput,
 } from '@internal/core/types/Form';
+import { modeFor } from '@internal/booking';
 
 export type BookingDraft = {
   fieldId: string;
@@ -18,16 +19,7 @@ export const BookingDraftContext = createContext<(draft: BookingDraft | null) =>
 export const useBookingDraft = () => useContext(BookingDraftContext);
 
 const compile = (field: FormField): FormField =>
-  field.mode === 'individual'
-    ? {
-        ...field,
-        services: field.services?.map(service =>
-          service.days?.length || service.times?.length
-            ? service
-            : { ...service, days: [], times: [], ...field.availability }
-        ),
-      }
-    : field;
+  modeFor(field.mode).compile(field);
 
 export function applyBookingDraft(
   fields: FormField[],

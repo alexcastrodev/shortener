@@ -17,7 +17,7 @@ import {
   stepFor,
   toGenerateParams,
   type GeneratorValues,
-} from '../../../modules/forms/time-generator.ts';
+} from '@internal/booking';
 
 export function TimeGeneratorPanel({
   duration,

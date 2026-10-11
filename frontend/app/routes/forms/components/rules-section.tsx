@@ -6,42 +6,28 @@ import {
   Stack,
   Switch,
 } from '@mantine/core';
-import type { UseFormReturnType } from '@mantine/form';
 import { useTranslation } from 'react-i18next';
 import {
   REMINDERS_MAX,
   REMINDER_CHOICES,
-  type Values,
-} from '../../../modules/forms/booking-config.ts';
-import { splitMinutes } from '../../../modules/forms/duration-units.ts';
-import { summarizeRules } from '../../../modules/forms/rules-summary.ts';
+  RULE_FIELDS,
+  splitMinutes,
+  summarizeRules,
+} from '@internal/booking';
+import type { BookingForm, EditorMode } from './booking-modes/editor-mode';
 import { SummarySection, useOpenOnErrors } from './summary-section';
 import { TimeoutInput } from './timeout-input';
-
-const RULE_FIELDS = [
-  'approval',
-  'approval_timeout_minutes',
-  'approval_on_timeout',
-  'approval_soon_only',
-  'approval_within_minutes',
-  'verify_email',
-  'waitlist',
-  'waitlist_confirm_minutes',
-  'reminder_minutes',
-  'min_notice_minutes',
-  'window_days',
-  'buffer_minutes',
-  'max_per_day',
-];
 
 const ownsError = (key: string) =>
   RULE_FIELDS.some(name => key === name || key.startsWith(`${name}.`));
 
 export function RulesSection({
   form,
+  editor,
   timeZone,
 }: {
-  form: UseFormReturnType<Values>;
+  form: BookingForm;
+  editor: EditorMode;
   timeZone?: string;
 }) {
   const { t } = useTranslation('booking');
@@ -185,33 +171,7 @@ export function RulesSection({
             </div>
           )}
         </Stack>
-        {form.values.mode !== 'individual' && (
-          <Stack gap="xs">
-            <Switch
-              label={t('waitlist')}
-              description={t('waitlist_hint')}
-              checked={form.values.waitlist}
-              onChange={event =>
-                form.setFieldValue('waitlist', event.currentTarget.checked)
-              }
-            />
-            {form.values.waitlist && (
-              <TimeoutInput
-                label={t('waitlist_confirm')}
-                hint={t('waitlist_confirm_range')}
-                min={15}
-                max={4320}
-                minutes={form.values.waitlist_confirm_minutes}
-                error={
-                  form.errors.waitlist_confirm_minutes as string | undefined
-                }
-                onChange={value =>
-                  form.setFieldValue('waitlist_confirm_minutes', value)
-                }
-              />
-            )}
-          </Stack>
-        )}
+        {editor.RulesExtras && <editor.RulesExtras form={form} />}
         <div>
           <p className="mb-1 text-sm font-medium">{t('reminders')}</p>
           <Chip.Group

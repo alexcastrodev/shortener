@@ -10,7 +10,7 @@ import {
   newCategoryId,
   removeCategory,
   type Values,
-} from '../../../modules/forms/booking-config.ts';
+} from '@internal/booking';
 
 function MoveAndRemove({
   options,

@@ -1,50 +1,19 @@
 import { Button, Group, Stack, TextInput } from '@mantine/core';
 import { useForm, type FormErrors } from '@mantine/form';
-import type { TFunction } from 'i18next';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { IconPlus } from '@tabler/icons-react';
 import { zod4Resolver } from 'mantine-form-zod-resolver';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { z } from 'zod/v4';
 import type { FormField, FormFieldInput } from '@internal/core/types/Form';
-import { CategoriesSection } from './categories-section';
+import { bookingSchema, type Values } from '@internal/booking';
+import type { DayLabels } from './booking-modes/editor-mode';
+import { editorFor } from './booking-modes/modes';
 import { ExceptionsSection } from './exceptions-section';
 import { RulesSection } from './rules-section';
-import { ScheduleFields } from './schedule-fields';
-import { ServiceCard } from './service-card';
 import { useBookingDraft } from '../../../modules/forms/booking-draft.ts';
-import { timeoutInRange } from '../../../modules/forms/duration-units.ts';
-import {
-  DAYS,
-  TIME,
-  blankLesson,
-  blankService,
-  initialValues,
-  toBookingInput,
-  type Values,
-} from '../../../modules/forms/booking-config.ts';
-import { scheduleSummary } from '../../../modules/forms/service-summary.ts';
 
 const SERVICE_ERROR = /^services\.(\d+)\./;
-
-const scheduleShape = (t: TFunction<'booking'>) => ({
-  days: z.array(z.string()).min(1, t('error_days')),
-  times: z
-    .array(z.object({ value: z.string().regex(TIME, t('error_time')) }))
-    .min(1, t('error_times')),
-  byDay: z.record(
-    z.string(),
-    z.array(z.object({ value: z.string().regex(TIME, t('error_time')) }))
-  ),
-});
-
-const looseSchedule = {
-  days: z.array(z.string()),
-  times: z.array(z.object({ value: z.string() })),
-  byDay: z.record(z.string(), z.array(z.object({ value: z.string() }))),
-};
 
 export function BookingEditor({
   field,
@@ -61,211 +30,16 @@ export function BookingEditor({
 }) {
   const { t } = useTranslation('booking');
   const creating = !field;
-  const individual = field?.mode === 'individual';
+  const editor = editorFor(field?.mode);
 
   const schema = useMemo(
-    () =>
-      z
-        .object({
-          ...(individual ? { availability: z.object(scheduleShape(t)) } : {}),
-          label: z.string().trim().min(1).max(300),
-          help: z.string().max(500),
-          approval: z.enum(['auto', 'manual']),
-          approval_timeout_minutes: z.union([z.number(), z.literal('')]),
-          waitlist: z.boolean(),
-          waitlist_confirm_minutes: z.union([z.number(), z.literal('')]),
-          approval_soon_only: z.boolean(),
-          approval_within_minutes: z.union([z.number(), z.literal('')]),
-          categories: z.array(
-            z.object({
-              name: z.string().trim().min(1, t('category_name_error')).max(60),
-            })
-          ),
-          exceptionDraft: z.object({ from: z.string() }).loose(),
-          exceptions: z.array(
-            z
-              .object({
-                kind: z.enum(['closed', 'special']),
-                from: z
-                  .string()
-                  .regex(/^\d{4}-\d{2}-\d{2}$/, t('err_exc_from')),
-                to: z.string(),
-                times: z.array(z.object({ value: z.string() })),
-              })
-              .check(ctx => {
-                const { kind, from, to, times } = ctx.value;
-                if (to && from && to < from) {
-                  ctx.issues.push({
-                    code: 'custom',
-                    message: t('err_exc_range'),
-                    path: ['to'],
-                    input: to,
-                  });
-                }
-                if (
-                  kind === 'special' &&
-                  !times.some(time => TIME.test(time.value))
-                ) {
-                  ctx.issues.push({
-                    code: 'custom',
-                    message: t('err_exc_times'),
-                    path: ['times'],
-                    input: times,
-                  });
-                }
-              })
-          ),
-          services: z.array(
-            z
-              .object({
-                name: z.string().trim().min(1, t('error_name')).max(100),
-                duration: z
-                  .number(t('error_duration'))
-                  .int()
-                  .min(5, t('error_duration'))
-                  .max(600, t('error_duration')),
-                price: z.union([z.number().min(0), z.literal('')]),
-                currency: z.string(),
-                ownSchedule: z.boolean(),
-                ...(individual ? looseSchedule : scheduleShape(t)),
-                extraDurations: z.array(
-                  z.object({
-                    duration: z
-                      .number(t('error_duration'))
-                      .int()
-                      .min(5, t('error_duration'))
-                      .max(600, t('error_duration')),
-                    price: z.union([z.number().min(0), z.literal('')]),
-                  })
-                ),
-                monthly: z.boolean(),
-                monthlyPrice: z.union([z.number().min(0), z.literal('')]),
-                monthlyDuration: z.union([
-                  z
-                    .number()
-                    .int()
-                    .min(5, t('error_duration'))
-                    .max(600, t('error_duration')),
-                  z.literal(''),
-                ]),
-              })
-              .check(ctx => {
-                const {
-                  duration,
-                  price,
-                  currency,
-                  monthly,
-                  monthlyPrice,
-                  extraDurations,
-                  ownSchedule,
-                  days,
-                  times,
-                  byDay,
-                } = ctx.value;
-                if (individual && ownSchedule) {
-                  z.object(scheduleShape(t))
-                    .safeParse({ days, times, byDay })
-                    .error?.issues.forEach(issue =>
-                      ctx.issues.push({
-                        code: 'custom',
-                        message: issue.message,
-                        path: issue.path,
-                        input: ctx.value,
-                      })
-                    );
-                }
-                const seen = new Set([duration]);
-                extraDurations.forEach((extra, at) => {
-                  if (seen.has(extra.duration)) {
-                    ctx.issues.push({
-                      code: 'custom',
-                      message: t('error_extra_duration_repeated'),
-                      path: ['extraDurations', at, 'duration'],
-                      input: extra.duration,
-                    });
-                  }
-                  seen.add(extra.duration);
-                  if (price !== '' && extra.price === '') {
-                    ctx.issues.push({
-                      code: 'custom',
-                      message: t('error_extra_price'),
-                      path: ['extraDurations', at, 'price'],
-                      input: extra.price,
-                    });
-                  }
-                });
-                if (
-                  monthly &&
-                  monthlyPrice !== '' &&
-                  !/^[A-Za-z]{3}$/.test(currency.trim())
-                ) {
-                  ctx.issues.push({
-                    code: 'custom',
-                    message: t('error_price_currency'),
-                    path: ['currency'],
-                    input: currency,
-                  });
-                }
-                if (price !== '' && !/^[A-Za-z]{3}$/.test(currency.trim())) {
-                  ctx.issues.push({
-                    code: 'custom',
-                    message: t('error_price_currency'),
-                    path: ['currency'],
-                    input: currency,
-                  });
-                }
-              })
-          ),
-        })
-        .check(ctx => {
-          const {
-            approval,
-            approval_soon_only: soonOnly,
-            approval_within_minutes: within,
-            approval_timeout_minutes: minutes,
-            waitlist,
-            waitlist_confirm_minutes: confirm,
-            exceptionDraft,
-          } = ctx.value;
-          if (exceptionDraft.from) {
-            ctx.issues.push({
-              code: 'custom',
-              message: t('err_exc_pending'),
-              path: ['exceptionDraft', 'from'],
-              input: exceptionDraft.from,
-            });
-          }
-          if (approval === 'manual' && soonOnly && !timeoutInRange(within)) {
-            ctx.issues.push({
-              code: 'custom',
-              message: t('error_timeout'),
-              path: ['approval_within_minutes'],
-              input: within,
-            });
-          }
-          if (waitlist && !timeoutInRange(confirm, 15, 4320)) {
-            ctx.issues.push({
-              code: 'custom',
-              message: t('error_waitlist_timeout'),
-              path: ['waitlist_confirm_minutes'],
-              input: confirm,
-            });
-          }
-          if (approval === 'manual' && !timeoutInRange(minutes)) {
-            ctx.issues.push({
-              code: 'custom',
-              message: t('error_timeout'),
-              path: ['approval_timeout_minutes'],
-              input: minutes,
-            });
-          }
-        }),
-    [t, individual]
+    () => bookingSchema(editor.mode.validation, t),
+    [t, editor]
   );
 
   const form = useForm<Values>({
     mode: 'controlled',
-    initialValues: initialValues(field),
+    initialValues: editor.mode.initialValues(field),
     validate: zod4Resolver(schema),
   });
 
@@ -285,7 +59,7 @@ export function BookingEditor({
     const openIndex = form.values.services.findIndex(item => expanded.has(item.key));
     publishDraft({
       fieldId: field.id,
-      input: toBookingInput(form.values, false),
+      input: editor.mode.toBookingInput(form.values, false),
       openIndex,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -330,7 +104,7 @@ export function BookingEditor({
     notifications.show({ message: t('fix_errors'), color: 'red' });
   };
 
-  const dayLabels: Record<(typeof DAYS)[number], string> = {
+  const dayLabels: DayLabels = {
     mon: t('day_mon'),
     tue: t('day_tue'),
     wed: t('day_wed'),
@@ -340,13 +114,10 @@ export function BookingEditor({
     sun: t('day_sun'),
   };
 
+  const words = editor.words(t);
+
   const addService = () => {
-    const service = individual
-      ? blankLesson(t('lesson_new'))
-      : blankService(
-          t('service_new'),
-          form.getValues().categories[0]?.id ?? ''
-        );
+    const service = editor.mode.blankItem(form.getValues(), words.unnamed);
     form.insertListItem('services', service);
     expand([service.key]);
   };
@@ -354,24 +125,17 @@ export function BookingEditor({
   const confirmRemove = (key: string) => {
     const service = form.getValues().services.find(item => item.key === key);
     if (!service) return;
-    const name = service.name || t(individual ? 'lesson_new' : 'service_new');
     modals.openConfirmModal({
-      title: t(individual ? 'lesson_remove_title' : 'service_remove_title'),
+      title: words.removeTitle,
       centered: true,
-      children: (
-        <p className="text-sm">
-          {t(individual ? 'lesson_remove_body' : 'service_remove_body')}
-        </p>
-      ),
+      children: <p className="text-sm">{words.removeBody}</p>,
       labels: {
         confirm: t('service_remove_confirm'),
         cancel: t('service_remove_cancel'),
       },
       confirmProps: {
         color: 'red',
-        'aria-label': t(individual ? 'lesson_remove' : 'service_remove', {
-          name,
-        }),
+        'aria-label': words.remove(service.name || words.unnamed),
       },
       onConfirm: () => {
         const index = form
@@ -382,17 +146,10 @@ export function BookingEditor({
     });
   };
 
-  const { services, availability } = form.values;
-  const availabilitySummary = scheduleSummary(availability, {
-    times: count => t('summary_times', { count }),
-    ownTimes: days => t('summary_own_times', { days }),
-    day: day => dayLabels[day],
-  });
-
   return (
     <form
       onSubmit={form.onSubmit(
-        values => onSubmit(toBookingInput(values, creating)),
+        values => onSubmit(editor.mode.toBookingInput(values, creating)),
         openInvalidServices
       )}
     >
@@ -410,79 +167,25 @@ export function BookingEditor({
           <TextInput label={t('help_label')} {...form.getInputProps('help')} />
         </Stack>
 
-        {individual && (
-          <section
-            aria-labelledby="booking-availability-title"
-            className="flex flex-col gap-4 border-t border-border pt-6"
-          >
-            <div>
-              <h3
-                id="booking-availability-title"
-                className="text-sm font-medium"
-              >
-                {t('availability_title')}
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {t('availability_hint')}
-              </p>
-              <p className="break-words text-xs text-muted-foreground">
-                {availabilitySummary}
-              </p>
-            </div>
-            <ScheduleFields
-              form={form}
-              path="availability"
-              duration={Number(services[0]?.duration) || 60}
-              dayLabels={dayLabels}
-            />
-          </section>
-        )}
-
-        <section
-          aria-labelledby="booking-services-title"
-          className="flex flex-col gap-4 border-t border-border pt-6"
-        >
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 id="booking-services-title" className="text-sm font-medium">
-              {t(individual ? 'lessons_title' : 'services_title')}
-            </h3>
-            <span className="text-xs text-muted-foreground">
-              {individual
-                ? t('lesson_count', { count: services.length })
-                : t('category_count', { count: services.length })}
-            </span>
-          </div>
-          {!individual && <CategoriesSection form={form} />}
-          {services.length === 0 && (
-            <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-              {t(individual ? 'no_lessons' : 'no_services')}
-            </p>
-          )}
-          {services.map((service, index) => (
-            <ServiceCard
-              key={service.key}
-              form={form}
-              index={index}
-              dayLabels={dayLabels}
-              expanded={expanded.has(service.key)}
-              onToggle={() => toggle(service.key)}
-              onRemove={() => confirmRemove(service.key)}
-            />
-          ))}
-          <Button
-            variant="default"
-            fullWidth
-            style={{ borderStyle: 'dashed' }}
-            leftSection={<IconPlus size={14} />}
-            onClick={addService}
-          >
-            {t(individual ? 'lesson_add' : 'service_add')}
-          </Button>
-        </section>
+        <editor.Flow
+          form={form}
+          editor={editor}
+          dayLabels={dayLabels}
+          list={{
+            expanded,
+            toggle,
+            add: addService,
+            remove: confirmRemove,
+          }}
+        />
 
         <ExceptionsSection form={form} />
 
-        <RulesSection form={form} timeZone={field?.rules?.time_zone} />
+        <RulesSection
+          form={form}
+          editor={editor}
+          timeZone={field?.rules?.time_zone}
+        />
 
         <Group
           justify="flex-end"

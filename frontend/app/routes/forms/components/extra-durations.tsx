@@ -6,7 +6,7 @@ import {
   EXTRA_DURATIONS_MAX,
   newKey,
   type Values,
-} from '../../../modules/forms/booking-config.ts';
+} from '@internal/booking';
 
 export function ExtraDurations({
   form,
