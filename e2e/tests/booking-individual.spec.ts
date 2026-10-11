@@ -27,6 +27,8 @@ test('the owner creates a teacher question with one availability and a second le
   await expect(lessons.getByRole('textbox', { name: 'Nome da aula' })).toHaveValue('Aula');
   await expect(lessons.getByText('60 min · 1 vaga por horário')).toBeVisible();
   await expect(lessons.getByText('Dias em que decorre')).toHaveCount(0);
+  await expect(lessons.getByRole('button', { name: 'Remover a aula Aula' })).toBeVisible();
+  await expect(lessons.getByRole('button', { name: /Remover o serviço/ })).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Serviços' })).toHaveCount(0);
 
   await pickDay(page, nextWeekdays(1, 3)[0]);
