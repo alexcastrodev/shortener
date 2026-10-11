@@ -333,16 +333,22 @@ export function BookingEditor({
     if (!service) return;
     const name = service.name || t(individual ? 'lesson_new' : 'service_new');
     modals.openConfirmModal({
-      title: t('service_remove_title'),
+      title: t(individual ? 'lesson_remove_title' : 'service_remove_title'),
       centered: true,
-      children: <p className="text-sm">{t('service_remove_body')}</p>,
+      children: (
+        <p className="text-sm">
+          {t(individual ? 'lesson_remove_body' : 'service_remove_body')}
+        </p>
+      ),
       labels: {
         confirm: t('service_remove_confirm'),
         cancel: t('service_remove_cancel'),
       },
       confirmProps: {
         color: 'red',
-        'aria-label': t('service_remove', { name }),
+        'aria-label': t(individual ? 'lesson_remove' : 'service_remove', {
+          name,
+        }),
       },
       onConfirm: () => {
         const index = form
@@ -426,7 +432,7 @@ export function BookingEditor({
           {!individual && <CategoriesSection form={form} />}
           {services.length === 0 && (
             <p className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-              {t('no_services')}
+              {t(individual ? 'no_lessons' : 'no_services')}
             </p>
           )}
           {services.map((service, index) => (

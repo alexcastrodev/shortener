@@ -154,7 +154,9 @@ export function ServiceCard({
               styles={{ label: { whiteSpace: 'normal', overflowWrap: 'anywhere', textAlign: 'left' } }}
               onClick={onRemove}
             >
-              {t('service_remove', { name: service.name.trim() || unnamed })}
+              {t(individual ? 'lesson_remove' : 'service_remove', {
+                name: service.name.trim() || unnamed,
+              })}
             </Button>
           </div>
         </div>
