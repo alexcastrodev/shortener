@@ -302,6 +302,25 @@ test('other durations and a monthly duration are saved with the service and the 
   expect(saved.monthly).toEqual({ price: 120, duration: 45 });
 });
 
+test('the price of another duration waits for the price of the service and says so', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Piano', { duration: 60, times: ['09:00'] })] });
+  await signIn('owner');
+  const editor = new BookingEditor(page);
+  await editor.open(form.id);
+
+  await editor.services.getByRole('button', { name: 'Adicionar duração' }).click();
+  const extra = editor.serviceField('Preço', 1);
+  await expect(extra).toBeVisible();
+  await expect(extra).toBeDisabled();
+  await extra.locator('xpath=ancestor::div[contains(@class, "flex-1")][1]').hover();
+  await expect(page.getByText('Preencha primeiro o preço acima')).toBeVisible();
+
+  await editor.serviceField('Preço', 0).fill('40');
+  await expect(extra).toBeEnabled();
+  await extra.fill('55');
+  await expect(extra).toHaveValue(/55/);
+});
+
 test('a repeated duration or an other duration without a price blocks the save', async ({ page, signIn }) => {
   const form = await createForm({ services: [service('Piano', { duration: 60, price: 40, currency: 'EUR', times: ['09:00'] })] });
   await signIn('owner');
