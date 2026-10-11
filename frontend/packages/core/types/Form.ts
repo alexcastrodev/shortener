@@ -61,7 +61,6 @@ export type BookingRules = {
   window_days?: number;
   buffer_minutes?: number;
   max_per_day?: number | null;
-  multiple_services?: boolean;
 };
 
 export type BookingException = {
