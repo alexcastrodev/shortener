@@ -77,6 +77,43 @@ RSpec.describe(Forms::FieldSchema) do
     end
   end
 
+  describe "the label of a booking question" do
+    let(:booking) { { "id" => "abcd1234", "type" => "booking", "mode" => "services", "services" => [], "rules" => { "time_zone" => "UTC", "approval" => "auto" } } }
+
+    it "is optional for the booking question, absent, blank or filled" do
+      expect(described_class.definition_errors([booking])).to(eq([]))
+      expect(described_class.definition_errors([booking.merge("label" => "")])).to(eq([]))
+      expect(described_class.definition_errors([booking.merge("label" => "When?")])).to(eq([]))
+    end
+
+    it "still has to be text of a sensible size and without NUL" do
+      expect(described_class.definition_errors([booking.merge("label" => "a" * 301)])).not_to(be_empty)
+      expect(described_class.definition_errors([booking.merge("label" => "a\u0000b")])).not_to(be_empty)
+      expect(described_class.definition_errors([booking.merge("label" => 5)])).not_to(be_empty)
+    end
+
+    it "stays required for every other type" do
+      (described_class::TYPES - ["booking"]).each do |type|
+        extra = { "single_choice" => { "choices" => choices(*choice_ids) }, "multiple_choice" => { "choices" => choices(*choice_ids) }, "rating" => { "scale" => 5 } }.fetch(type, {})
+        expect(described_class.definition_errors([{ "id" => "abcd1234", "type" => type }.merge(extra)])).not_to(be_empty, type)
+        expect(described_class.definition_errors([{ "id" => "abcd1234", "type" => type, "label" => " " }.merge(extra)])).not_to(be_empty, type)
+      end
+    end
+
+    it "drops a blank label so that nothing stores an empty string" do
+      expect(described_class.without_blank_label(booking.merge("label" => "   "))).not_to(have_key("label"))
+      expect(described_class.without_blank_label(booking.merge("label" => nil))).not_to(have_key("label"))
+      expect(described_class.without_blank_label(booking.merge(label: ""))).not_to(have_key("label"))
+      expect(described_class.without_blank_label(booking.merge("label" => "When?"))).to(include("label" => "When?"))
+    end
+
+    it "names a question for a report from its label or, without one, from its type" do
+      expect(described_class.title(booking.merge("label" => "When?"))).to(eq("When?"))
+      expect(described_class.title(booking)).to(eq("Booking"))
+      expect(described_class.title(booking.merge("label" => " "))).to(eq("Booking"))
+    end
+  end
+
   describe ".cast_answer" do
     def cast(type, raw, **extra)
       described_class.cast_answer(field(type, **extra), raw)

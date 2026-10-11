@@ -92,7 +92,7 @@ export type BookingAvailability = {
 export type FormField = {
   id: string;
   type: FormFieldType;
-  label: string;
+  label?: string;
   help?: string;
   required?: boolean;
   choices?: FormChoice[];
@@ -152,7 +152,7 @@ export type FormTemplate = {
 
 export type FormFieldInput = {
   type?: FormFieldType;
-  label?: string;
+  label?: string | null;
   help?: string | null;
   required?: boolean;
   choices?: { id?: string; label: string }[];
@@ -175,7 +175,7 @@ export type PublicForm = Pick<
 
 export type FormResponseAnswer = {
   id: string;
-  label: string;
+  label?: string | null;
   type: FormFieldType;
   value: string | number | boolean | string[] | BookingAnswer | null;
 };
@@ -195,7 +195,7 @@ export type FormSummaryBucket = { name: string; count: number };
 export type FormFieldSummary = {
   id: string;
   type: FormFieldType;
-  label: string;
+  label?: string | null;
   answered: number;
   samples?: string[];
   min?: number;

@@ -53,7 +53,7 @@ import {
   formatDay,
   share,
 } from '../../components/stats';
-import { FIELD_ICONS, isSection } from '../../modules/forms/field-types';
+import { FIELD_ICONS, isSection, questionTitle } from '../../modules/forms/field-types';
 import { formErrorMessage } from '../../modules/forms/form-errors';
 import { AppointmentsTab } from './components/appointments-tab';
 import { WaitlistList } from './components/waitlist-list';
@@ -218,7 +218,7 @@ export default function FormResponsesPage() {
         all.push(...page.response);
         before = page.next_before;
       } while (before);
-      const header = [t('csv_submitted'), ...questions.map(q => q.label), t('csv_source'), t('csv_platform'), t('csv_browser'), t('csv_country')];
+      const header = [t('csv_submitted'), ...questions.map(questionTitle), t('csv_source'), t('csv_platform'), t('csv_browser'), t('csv_country')];
       const lines = all.map(row => {
         const byId = new Map(row.answers.map(answer => [answer.id, answer.value]));
         return [
@@ -495,7 +495,7 @@ export default function FormResponsesPage() {
                     <th className="px-4 py-3 font-normal">{t('col_submitted')}</th>
                     {questions.slice(0, TABLE_QUESTIONS).map(question => (
                       <th key={question.id} className="px-4 py-3 font-normal">
-                        {question.label}
+                        {questionTitle(question)}
                       </th>
                     ))}
                     <th className="px-4 py-3 font-normal">{t('col_country')}</th>
@@ -554,7 +554,7 @@ export default function FormResponsesPage() {
             <p className="text-xs text-muted-foreground">{formatWhen(open.submitted_at)}</p>
             {open.answers.map(answer => (
               <div key={answer.id}>
-                <p className="text-xs font-medium text-muted-foreground">{answer.label}</p>
+                <p className="text-xs font-medium text-muted-foreground">{questionTitle(answer)}</p>
                 {answer.type === 'image' && typeof answer.value === 'string' ? (
                   <ResponseImage formId={id} token={answer.value} />
                 ) : (
@@ -655,7 +655,7 @@ function FieldSummaryCard({
             <span className="mr-2 font-mono text-xs text-primary">
               {String(number).padStart(2, '0')}
             </span>
-            {field.label}
+            {questionTitle(field)}
           </p>
           <p className="text-xs text-muted-foreground">
             {t('answered_line', { answered: formatNumber(field.answered), n: share(field.answered, respondents) })}

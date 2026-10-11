@@ -10,6 +10,7 @@ import { useConfirmEmail } from './confirm-email';
 import { PagedForm } from './paged-form';
 import { SubmissionResult } from './submission-result';
 import { FormCover } from './form-cover';
+import { QuestionHeading } from './question-heading';
 import type { SubmitFormReceipt } from '@internal/core/actions/submit-form-response/submit-form-response.types';
 
 export type RenderableForm = Pick<
@@ -250,13 +251,7 @@ function SequentialForm({
           {t('question_of', { current: step + 1, total })}
         </span>
       </p>
-      <label htmlFor={inputId} className={`text-xl font-semibold ${theme.title}`}>
-        {field!.label}
-        {field!.required && <span aria-hidden="true"> *</span>}
-      </label>
-      <p id={`${inputId}-help`} className={`mt-1 mb-4 text-sm ${theme.bio}`}>
-        {field!.help}
-      </p>
+      <QuestionHeading field={field!} inputId={inputId} theme={theme} gap="mb-4" />
       <FieldInput
         key={field!.id}
         field={field!}

@@ -30,6 +30,7 @@ export type FormOptions = {
   publish?: boolean;
   accepting?: boolean;
   bookingRequired?: boolean;
+  bookingLabel?: string | null;
 };
 
 export type CreatedForm = {
@@ -88,7 +89,7 @@ export async function createForm(options: FormOptions = {}): Promise<CreatedForm
   if (options.services) {
     const booked = await owner.post(`/api/me/forms/${id}/fields`, {
       type: 'booking',
-      label: 'Escolha um horário',
+      ...(options.bookingLabel === null ? {} : { label: options.bookingLabel ?? 'Escolha um horário' }),
       services: options.services,
       ...(options.mode ? { mode: options.mode, availability: options.availability } : {}),
       ...(options.bookingRequired ? { required: true } : {}),
