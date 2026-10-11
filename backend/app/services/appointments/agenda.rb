@@ -5,10 +5,10 @@ module Appointments
     MAX_RANGE_DAYS = Slots::MAX_RANGE_DAYS
     OPEN_RULES = { "min_notice_minutes" => 0, "window_days" => 36_500, "buffer_minutes" => 0, "max_per_day" => nil }.freeze
 
-    def call(user:, from:, to:, now: Time.current)
+    def call(user:, from:, to:, now: Time.current, workspace: nil)
       zone = Time.find_zone!(user.time_zone)
       range = zone.local(from.year, from.month, from.day).utc..zone.local(to.year, to.month, to.day).end_of_day.utc
-      forms = user.forms.where("fields @> ?", [{ type: "booking" }].to_json).index_by(&:id)
+      forms = (workspace ? workspace.forms : user.forms).where("fields @> ?", [{ type: "booking" }].to_json).index_by(&:id)
       return [] if forms.empty?
 
       sessions = stored(forms, range, zone)

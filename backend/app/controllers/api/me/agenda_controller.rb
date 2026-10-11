@@ -6,7 +6,8 @@ class Api::Me::AgendaController < ApplicationController
     to = Date.iso8601(params[:to].to_s)
     return render(json: { error: "invalid_range" }, status: :unprocessable_content) if to < from || (to - from) >= Appointments::Agenda::MAX_RANGE_DAYS
 
-    sessions = Appointments::Agenda.call(user: current_user, from: from, to: to)
+    workspace = current_user.workspaces.find(params[:workspace_id]) if params[:workspace_id].present?
+    sessions = Appointments::Agenda.call(user: current_user, workspace: workspace, from: from, to: to)
     render(json: { time_zone: current_user.time_zone, sessions: sessions.map { |session| serialize(session) } }, status: :ok)
   rescue Date::Error
     render(json: { error: "invalid_range" }, status: :unprocessable_content)

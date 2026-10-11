@@ -9,8 +9,10 @@ class Form < ApplicationRecord
   audited only: [:title, :published, :accepting_responses]
   PUBLIC_ID_LENGTH = 12
   before_validation(on: :create) { self.public_id ||= SecureRandom.alphanumeric(PUBLIC_ID_LENGTH) }
+  before_validation(on: :create) { self.workspace ||= Workspace.default_for(user) if user }
 
   belongs_to :user
+  belongs_to :workspace, optional: true
   belongs_to :shortlink, optional: true
   before_destroy { shortlink&.soft_delete! }
   has_many :uploads, class_name: "FormUpload", dependent: :destroy
@@ -28,6 +30,7 @@ class Form < ApplicationRecord
   validates :cover_position, numericality: { only_integer: true, in: 0..100 }
   validates :start_label, length: { maximum: START_LABEL_MAX }
   validate :field_definitions
+  validate :workspace_of_owner
 
   def cover
     uploads.find_by(token: cover_token, field_id: COVER_FIELD) if cover_token.present?
@@ -47,6 +50,10 @@ class Form < ApplicationRecord
   end
 
   private
+
+  def workspace_of_owner
+    errors.add(:workspace, "must belong to the owner of the form") if workspace && workspace.user_id != user_id
+  end
 
   def field_definitions
     Forms::FieldSchema.definition_errors(fields).each { |message| errors.add(:fields, message) }

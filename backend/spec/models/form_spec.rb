@@ -17,6 +17,27 @@ RSpec.describe(Form, type: :model) do
     expect(form.public_id).to(match(/\A[A-Za-z0-9]{12}\z/))
   end
 
+  it "joins the default workspace of its owner when none is given" do
+    first = build_form.tap(&:save!)
+    second = build_form.tap(&:save!)
+
+    expect(first.workspace).to(have_attributes(user_id: user.id, mode: "services"))
+    expect(second.workspace).to(eq(first.workspace))
+  end
+
+  it "keeps the workspace it is given" do
+    workspace = Workspace.create!(user: user, name: "Other")
+    expect(build_form(workspace: workspace).tap(&:save!).workspace).to(eq(workspace))
+  end
+
+  it "refuses the workspace of another account" do
+    foreign = Workspace.create!(user: FactoryBot.create(:user), name: "Theirs")
+    form = build_form(workspace: foreign)
+
+    expect(form).not_to(be_valid)
+    expect(form.errors[:workspace]).to(be_present)
+  end
+
   it "gives every form its own public id" do
     ids = Array.new(5) { build_form.tap(&:save!).public_id }
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_11_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_090200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -238,10 +238,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100000) do
     t.boolean "intro_enabled", default: false, null: false
     t.string "start_label", limit: 40
     t.boolean "accepting_responses", default: true, null: false
+    t.bigint "workspace_id"
     t.index ["public_id"], name: "index_forms_on_public_id", unique: true
     t.index ["shortlink_id"], name: "index_forms_on_shortlink_id"
     t.index ["user_id", "created_at"], name: "index_forms_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_forms_on_user_id"
+    t.index ["workspace_id"], name: "index_forms_on_workspace_id"
     t.check_constraint "jsonb_typeof(fields) = 'array'::text", name: "forms_fields_is_array"
   end
 
@@ -665,6 +667,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100000) do
     t.check_constraint "status::text = ANY (ARRAY['waiting'::character varying, 'offered'::character varying, 'claimed'::character varying, 'expired'::character varying, 'left'::character varying]::text[])", name: "waitlist_entries_status_known"
   end
 
+  create_table "workspaces", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", null: false
+    t.string "mode", default: "services", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["id", "user_id"], name: "index_workspaces_on_id_and_user_id", unique: true
+    t.index ["user_id"], name: "index_workspaces_on_user_id"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "appointment_slots", "forms", on_delete: :cascade
@@ -682,6 +694,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100000) do
   add_foreign_key "form_uploads", "forms"
   add_foreign_key "forms", "shortlinks", on_delete: :nullify
   add_foreign_key "forms", "users", on_delete: :cascade
+  add_foreign_key "forms", "workspaces", column: ["workspace_id", "user_id"], primary_key: ["id", "user_id"], validate: false
   add_foreign_key "identities", "users", on_delete: :cascade
   add_foreign_key "mcp_tool_calls", "oauth_grants", on_delete: :cascade
   add_foreign_key "notification_preferences", "users", on_delete: :cascade
@@ -707,4 +720,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_11_100000) do
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "waitlist_entries", "forms"
+  add_foreign_key "workspaces", "users", on_delete: :cascade
 end

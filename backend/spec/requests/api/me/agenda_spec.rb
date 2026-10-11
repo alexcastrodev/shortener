@@ -170,6 +170,49 @@ RSpec.describe("GET /api/me/agenda", type: :request) do
     expect(json["sessions"].map { |session| [session["starts_at"], session["form_title"]] }).to(eq([["2026-11-03T09:00:00Z", "B"], ["2026-11-03T15:00:00Z", "A"]]))
   end
 
+  describe "workspaces" do
+    let(:other_workspace) { Workspace.create!(user: current_user, name: "Second") }
+
+    def form_in(workspace, title)
+      form = Form.create!(user: current_user, title: title, workspace: workspace)
+      Forms::Definition.add(form, { "type" => "booking", "label" => "When", "services" => [service] })
+      Forms::Definition.add(form.reload, { "type" => "short_text", "label" => "Name", "required" => true })
+      Forms::Definition.add(form.reload, { "type" => "email", "label" => "Email", "required" => true })
+      Forms::Publish.call(form: form.reload)
+      form.reload
+    end
+
+    def titles = json["sessions"].pluck("form_title").uniq
+
+    it "shows every workspace of the account when none is asked for" do
+      form_in(Workspace.default_for(current_user), "Main one")
+      form_in(other_workspace, "Second one")
+      agenda
+      expect(titles).to(contain_exactly("Main one", "Second one"))
+    end
+
+    it "shows only the forms of the workspace that is asked for" do
+      form_in(Workspace.default_for(current_user), "Main one")
+      form_in(other_workspace, "Second one")
+      get("/api/me/agenda", params: { from: "2026-11-02", to: "2026-11-06", workspace_id: other_workspace.id }, headers: auth_headers)
+      expect(response).to(have_http_status(:ok))
+      expect(titles).to(eq(["Second one"]))
+    end
+
+    it "answers 404 for a workspace of another account and shows nothing of it" do
+      foreign = Workspace.create!(user: other, name: "Theirs")
+      booking_form(owner: other, title: "Not yours")
+      get("/api/me/agenda", params: { from: "2026-11-02", to: "2026-11-06", workspace_id: foreign.id }, headers: auth_headers)
+      expect(response).to(have_http_status(:not_found))
+      expect(response.body).not_to(include("Not yours"))
+    end
+
+    it "answers 404 for a workspace that does not exist" do
+      get("/api/me/agenda", params: { from: "2026-11-02", to: "2026-11-06", workspace_id: 0 }, headers: auth_headers)
+      expect(response).to(have_http_status(:not_found))
+    end
+  end
+
   describe "range" do
     it "answers 422 for malformed, missing, reversed and over-62-day ranges" do
       [{ from: "x", to: "2026-11-06" }, { from: "2026-11-02" }, { from: "2026-11-06", to: "2026-11-02" }, { from: "2026-11-02", to: "2027-01-31" }].each do |params|

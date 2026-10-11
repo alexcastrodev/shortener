@@ -30,6 +30,14 @@ A service has a main `duration` and `price` and up to four `extra_durations`, ea
 
 The visitor picks a duration together with the time. Each session is stored with its own duration and price in the appointment snapshot, and the total is the sum of the prices of the chosen durations. `appointment_slots.duration` remembers how long the booking on that time lasts: a full time blocks the times its length covers (plus the buffer), a time with a long booking stops offering the durations that would run into it, and a partly booked time only offers the duration it was opened with.
 
+## Workspaces
+
+A workspace groups forms of one account and has a mode, fixed when it is created (`workspaces.mode`, validated against `Workspace::MODES`, no database check so a new mode needs no migration). The only mode today is `services`, the behaviour described on this page: every service has its own days and times.
+
+Every form belongs to a workspace of its owner, enforced by a composite foreign key `forms(workspace_id, user_id)` over `workspaces(id, user_id)`. A form created without one joins the oldest workspace of the account, created on the spot (`Main`) when there is none. An account can have up to 10.
+
+`GET /api/me/agenda` accepts an optional `workspace_id`; another account's workspace answers 404. Without it the agenda still shows every form of the account, and so do the MCP tools and the calendar feed.
+
 ## Booking
 
 A booking is created **inside** `Forms::SubmitResponse`, in the same transaction as the response. There is no separate public "create appointment" endpoint, because the visitor's name and email are answers to the form's own questions.
