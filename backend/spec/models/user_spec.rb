@@ -44,4 +44,21 @@ RSpec.describe(User, type: :model) do
       expect(user.email).to(eq("test@example.com"))
     end
   end
+
+  describe "time zone" do
+    it "is Europe/Lisbon until the user chooses another one, and is still any zone that exists" do
+      user = User.create!(email: "zone@example.com")
+      expect(user.time_zone).to(eq("Europe/Lisbon"))
+
+      expect(user.update(time_zone: "America/Sao_Paulo")).to(be(true))
+      expect(user.update(time_zone: "UTC")).to(be(true))
+      expect(user.update(time_zone: "Mars/Olympus")).to(be(false))
+    end
+
+    it "is the zone a new booking question starts with" do
+      user = User.create!(email: "owner@example.com")
+
+      expect(Forms::BookingSchema.defaults({}, user)["rules"]["time_zone"]).to(eq("Europe/Lisbon"))
+    end
+  end
 end

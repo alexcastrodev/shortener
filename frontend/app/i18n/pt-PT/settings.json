@@ -1,3 +1,7 @@
 {
-  "language": "Idioma"
+  "language": "Idioma",
+  "time_zone": "Fuso horário",
+  "time_zone_hint": "Usado para mostrar as horas na agenda e nos e-mails que recebe. Os formulários que já criou mantêm o fuso com que foram criados.",
+  "time_zone_saved": "Fuso horário guardado",
+  "time_zone_failed": "Não foi possível guardar o fuso horário"
 }

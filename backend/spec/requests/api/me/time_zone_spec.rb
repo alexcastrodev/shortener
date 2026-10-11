@@ -11,9 +11,10 @@ RSpec.describe("PATCH /api/me time zone", type: :request) do
     patch("/api/me", params: params, headers: auth_headers, as: :json)
   end
 
-  it "defaults to UTC" do
-    get("/api/me", headers: auth_headers)
-    expect(json.dig("user", "time_zone")).to(eq("UTC"))
+  it "is Europe/Lisbon for a user who has not chosen one" do
+    fresh = User.create!(email: "fresh+#{SecureRandom.hex(4)}@example.com")
+    get("/api/me", headers: { "Authorization" => "Bearer #{SessionToken.issue(fresh)}" })
+    expect(json.dig("user", "time_zone")).to(eq("Europe/Lisbon"))
   end
 
   it "saves a valid IANA zone and returns it" do

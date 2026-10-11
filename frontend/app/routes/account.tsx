@@ -33,6 +33,7 @@ import { useLogout } from '../modules/auth/use-logout';
 import { NoticeSettings } from '../modules/notices/notice-settings';
 import { CalendarFeedCard } from '../modules/calendar-feed';
 import { LanguageCard } from '../i18n/language-switcher';
+import { TimeZoneCard } from '../i18n/time-zone-card';
 import { useSubmitLock } from '../modules/auth/use-submit-lock';
 import {
   NewPasswordFields,
@@ -455,6 +456,7 @@ export default function AccountPage() {
         )}
 
         <LanguageCard />
+        <TimeZoneCard zone={user.time_zone} />
 
         <NoticeSettings />
         <CalendarFeedCard />
