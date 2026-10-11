@@ -1,4 +1,5 @@
 import type {
+  BookingAvailability,
   BookingRules,
   FormField,
   FormFieldInput,
@@ -14,7 +15,15 @@ export const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export type CategoryValues = { id: string; name: string };
 
-export type ServiceValues = {
+export type ScheduleValues = {
+  days: string[];
+  times: { key: string; value: string }[];
+  byDay: Record<string, { key: string; value: string }[]>;
+};
+
+export type SchedulePath = 'availability' | `services.${number}`;
+
+export type ServiceValues = ScheduleValues & {
   key: string;
   id?: string;
   categoryId: string;
@@ -23,9 +32,6 @@ export type ServiceValues = {
   price: number | '';
   currency: string;
   capacity: number | '';
-  days: string[];
-  times: { key: string; value: string }[];
-  byDay: Record<string, { key: string; value: string }[]>;
   extraDurations: { key: string; duration: number | ''; price: number | '' }[];
   monthly: boolean;
   monthlyPrice: number | '';
@@ -46,6 +52,8 @@ export type ExceptionValues = {
 export type Values = {
   label: string;
   help: string;
+  mode: 'services' | 'individual';
+  availability: ScheduleValues;
   categories: CategoryValues[];
   services: ServiceValues[];
   exceptions: ExceptionValues[];
@@ -66,6 +74,47 @@ export type Values = {
 };
 
 export const newKey = () => Math.random().toString(36).slice(2);
+
+export const scheduleAt = (
+  values: Values,
+  path: SchedulePath
+): ScheduleValues =>
+  path === 'availability'
+    ? values.availability
+    : values.services[Number(path.slice('services.'.length))];
+
+const toSchedule = (
+  source: Partial<BookingAvailability> | undefined
+): ScheduleValues => ({
+  days: source?.days ?? [],
+  times: (source?.times ?? []).map(value => ({ key: newKey(), value })),
+  byDay: Object.fromEntries(
+    Object.entries(source?.times_by_day ?? {}).map(([day, list]) => [
+      day,
+      list.map(value => ({ key: newKey(), value })),
+    ])
+  ),
+});
+
+const fromSchedule = (schedule: ScheduleValues): BookingAvailability => {
+  const ownDays = DAYS.filter(
+    day => schedule.days.includes(day) && schedule.byDay[day]
+  );
+  return {
+    days: DAYS.filter(day => schedule.days.includes(day)),
+    times: [...new Set(schedule.times.map(time => time.value))].sort(),
+    ...(ownDays.length
+      ? {
+          times_by_day: Object.fromEntries(
+            ownDays.map(day => [
+              day,
+              [...new Set(schedule.byDay[day].map(time => time.value))].sort(),
+            ])
+          ),
+        }
+      : {}),
+  };
+};
 
 const ALPHANUMERIC =
   'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -127,6 +176,13 @@ export const blankException = (): ExceptionValues => ({
 export const DEFAULT_CURRENCY = 'EUR';
 export const EXTRA_DURATIONS_MAX = 4;
 const DEFAULT_DURATION = 30;
+export const LESSON_DURATION = 60;
+
+export const blankSchedule = (duration: number): ScheduleValues => ({
+  days: ['mon', 'tue', 'wed', 'thu', 'fri'],
+  times: defaultTimes(duration).map(value => ({ key: newKey(), value })),
+  byDay: {},
+});
 
 export const blankService = (name: string, categoryId = ''): ServiceValues => ({
   key: newKey(),
@@ -136,16 +192,18 @@ export const blankService = (name: string, categoryId = ''): ServiceValues => ({
   price: '',
   currency: DEFAULT_CURRENCY,
   capacity: 1,
-  days: ['mon', 'tue', 'wed', 'thu', 'fri'],
-  times: defaultTimes(DEFAULT_DURATION).map(value => ({
-    key: newKey(),
-    value,
-  })),
-  byDay: {},
+  ...blankSchedule(DEFAULT_DURATION),
   extraDurations: [],
   monthly: false,
   monthlyPrice: '',
   monthlyDuration: '',
+});
+
+export const blankLesson = (name: string): ServiceValues => ({
+  ...blankService(name),
+  duration: LESSON_DURATION,
+  days: [],
+  times: [],
 });
 
 export function initialValues(field?: FormField): Values {
@@ -153,6 +211,8 @@ export function initialValues(field?: FormField): Values {
   return {
     label: field?.label ?? '',
     help: field?.help ?? '',
+    mode: field?.mode === 'individual' ? 'individual' : 'services',
+    availability: toSchedule(field?.availability),
     categories: (field?.categories ?? []).map(item => ({
       id: item.id,
       name: item.name,
@@ -166,8 +226,7 @@ export function initialValues(field?: FormField): Values {
       price: service.price ?? '',
       currency: service.currency || DEFAULT_CURRENCY,
       capacity: service.capacity ?? '',
-      days: service.days,
-      times: service.times.map(value => ({ key: newKey(), value })),
+      ...toSchedule(service),
       extraDurations: (service.extra_durations ?? []).map(item => ({
         key: newKey(),
         duration: item.duration,
@@ -176,12 +235,6 @@ export function initialValues(field?: FormField): Values {
       monthly: Boolean(service.monthly),
       monthlyPrice: service.monthly?.price ?? '',
       monthlyDuration: service.monthly?.duration ?? '',
-      byDay: Object.fromEntries(
-        Object.entries(service.times_by_day ?? {}).map(([day, list]) => [
-          day,
-          list.map(value => ({ key: newKey(), value })),
-        ])
-      ),
     })),
     exceptions: (field?.exceptions ?? []).map(item => ({
       key: item.id,
@@ -250,10 +303,17 @@ export function toBookingInput(
   const maxPerDay = orNull(values.max_per_day);
   if (maxPerDay !== null) rules.max_per_day = maxPerDay;
 
-  const grouped = isGrouped(values);
+  const individual = values.mode === 'individual';
+  const grouped = !individual && isGrouped(values);
   const input: FormFieldInput = {
     label: values.label.trim(),
     help: values.help.trim() || (creating ? undefined : null),
+    ...(individual
+      ? {
+          ...(creating ? { mode: 'individual' as const } : {}),
+          availability: fromSchedule(values.availability),
+        }
+      : {}),
     categories: grouped
       ? values.categories.map(item => ({
           id: item.id,
@@ -269,17 +329,6 @@ export function toBookingInput(
           duration: Number(item.duration),
           ...(price !== null && item.price !== '' ? { price: item.price } : {}),
         }));
-      const ownDays = DAYS.filter(
-        day => service.days.includes(day) && service.byDay[day]
-      );
-      const byDay = ownDays.length
-        ? Object.fromEntries(
-            ownDays.map(day => [
-              day,
-              [...new Set(service.byDay[day].map(time => time.value))].sort(),
-            ])
-          )
-        : undefined;
       return {
         ...(service.id ? { id: service.id } : {}),
         ...(grouped ? { category_id: service.categoryId } : {}),
@@ -289,9 +338,7 @@ export function toBookingInput(
           ? { price, currency: service.currency.trim().toUpperCase() }
           : {}),
         ...(capacity !== null ? { capacity } : {}),
-        days: DAYS.filter(day => service.days.includes(day)),
-        times: [...new Set(service.times.map(time => time.value))].sort(),
-        ...(byDay ? { times_by_day: byDay } : {}),
+        ...(individual ? {} : fromSchedule(service)),
         ...(extras.length ? { extra_durations: extras } : {}),
         ...(service.monthly
           ? {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { FormField } from '@internal/core/types/Form';
+import type { BookingService, FormField } from '@internal/core/types/Form';
 import {
   blankException,
   blankService,
@@ -159,7 +159,7 @@ test('a new service lasts 30 minutes, has 1 place, euros, weekdays and times fro
   const [sent] = toBookingInput(values, true).services!;
   assert.equal(sent.capacity, 1);
   assert.equal('currency' in sent, false);
-  assert.equal(sent.times.length, 18);
+  assert.equal(sent.times?.length, 18);
 });
 
 test('a saved service without a currency loads with euros, and a saved code is kept', () => {
@@ -508,4 +508,97 @@ test('an empty monthly duration is left out so the service duration applies', ()
   const values = initialValues(piano);
   values.services[0].monthlyDuration = '';
   assert.deepEqual(toBookingInput(values, false).services![0].monthly, { price: 120 });
+});
+
+const teacher: FormField = {
+  id: 'teach001',
+  type: 'booking',
+  label: 'Book a lesson',
+  mode: 'individual',
+  availability: {
+    days: ['wed', 'mon'],
+    times: ['10:00', '09:00'],
+    times_by_day: { wed: ['15:00'] },
+  },
+  categories: [],
+  services: [
+    {
+      id: 'lesson01',
+      name: 'Maths',
+      duration: 60,
+      price: 30,
+      currency: 'EUR',
+      capacity: 1,
+      extra_durations: [{ duration: 90, price: 40 }],
+      monthly: { price: 100 },
+    },
+    { id: 'lesson02', name: 'Physics', duration: 45 },
+  ] as BookingService[],
+  rules: { time_zone: 'Europe/Lisbon', approval: 'auto' },
+};
+
+test('a teacher question loads its mode and availability and saves lessons without a schedule', () => {
+  const values = initialValues(teacher);
+  assert.equal(values.mode, 'individual');
+  assert.deepEqual(values.availability.days, ['wed', 'mon']);
+  assert.deepEqual(
+    values.availability.byDay.wed.map(time => time.value),
+    ['15:00']
+  );
+  assert.deepEqual(values.services[1].days, []);
+
+  const input = toBookingInput(values, false);
+  assert.equal('mode' in input, false);
+  assert.deepEqual(input.availability, {
+    days: ['mon', 'wed'],
+    times: ['09:00', '10:00'],
+    times_by_day: { wed: ['15:00'] },
+  });
+  assert.deepEqual(input.categories, []);
+  assert.deepEqual(input.services, [
+    {
+      id: 'lesson01',
+      name: 'Maths',
+      duration: 60,
+      price: 30,
+      currency: 'EUR',
+      capacity: 1,
+      extra_durations: [{ duration: 90, price: 40 }],
+      monthly: { price: 100 },
+    },
+    { id: 'lesson02', name: 'Physics', duration: 45 },
+  ]);
+  assert.deepEqual(initialValues({ ...teacher, ...input } as FormField).availability.days, ['mon', 'wed']);
+});
+
+test('creating a teacher question sends the mode, and new lessons get no days, times or category', () => {
+  const values = initialValues(teacher);
+  values.services.push({ ...blankService('Chemistry'), categoryId: 'cat00001' });
+  values.categories = [
+    { id: 'cat00001', name: 'A' },
+    { id: 'cat00002', name: 'B' },
+  ];
+  const input = toBookingInput(values, true);
+  assert.equal(input.mode, 'individual');
+  assert.equal(input.type, 'booking');
+  assert.deepEqual(input.categories, []);
+  const added = input.services?.at(-1) ?? {};
+  for (const key of ['days', 'times', 'times_by_day', 'category_id']) {
+    assert.equal(key in added, false, key);
+  }
+});
+
+test('a services question round-trips with no mode and no availability', () => {
+  const values = initialValues(field);
+  assert.equal(values.mode, 'services');
+  for (const creating of [true, false]) {
+    const input = toBookingInput(values, creating);
+    assert.equal('mode' in input, false);
+    assert.equal('availability' in input, false);
+    const again = toBookingInput(
+      initialValues({ ...field, ...input } as FormField),
+      creating
+    );
+    assert.deepEqual(again, input);
+  }
 });

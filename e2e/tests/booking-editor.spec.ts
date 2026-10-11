@@ -10,6 +10,7 @@ test('adding the booking question creates a ready service and the preview shows 
   await page.goto(`/app/forms/${form.id}`);
 
   await page.getByRole('button', { name: 'Marcação de serviço' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: /^Serviços/ }).click();
 
   const editor = new BookingEditor(page);
   await expect(editor.services.getByText('30 min · 1 vaga por horário')).toBeVisible();
@@ -212,6 +213,7 @@ test('on a phone, adding a question does not scroll the screen to the preview', 
   await add.scrollIntoViewIfNeeded();
   const before = (await preview.boundingBox())!.y;
   await add.click();
+  await page.getByRole('dialog').getByRole('button', { name: /^Serviços/ }).click();
   await expect(page.getByRole('region', { name: 'Serviços' })).toBeAttached();
   await page.waitForTimeout(800);
   expect(Math.abs((await preview.boundingBox())!.y - before)).toBeLessThan(80);

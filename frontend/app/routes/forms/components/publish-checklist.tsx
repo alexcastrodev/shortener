@@ -33,7 +33,7 @@ export function PublishChecklist({
         label: tb('checklist_set_up'),
         run: () => onSelect(booking.id, serviceId),
       };
-    if ((code === 'no_service' || code === 'service_incomplete') && booking)
+    if (['no_service', 'service_incomplete', 'availability_incomplete'].includes(code) && booking)
       return { label: t('ed_checklist_open_booking'), run: () => onSelect(booking.id) };
     return null;
   };

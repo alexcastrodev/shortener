@@ -185,29 +185,33 @@ export function RulesSection({
             </div>
           )}
         </Stack>
-        <Stack gap="xs">
-          <Switch
-            label={t('waitlist')}
-            description={t('waitlist_hint')}
-            checked={form.values.waitlist}
-            onChange={event =>
-              form.setFieldValue('waitlist', event.currentTarget.checked)
-            }
-          />
-          {form.values.waitlist && (
-            <TimeoutInput
-              label={t('waitlist_confirm')}
-              hint={t('waitlist_confirm_range')}
-              min={15}
-              max={4320}
-              minutes={form.values.waitlist_confirm_minutes}
-              error={form.errors.waitlist_confirm_minutes as string | undefined}
-              onChange={value =>
-                form.setFieldValue('waitlist_confirm_minutes', value)
+        {form.values.mode !== 'individual' && (
+          <Stack gap="xs">
+            <Switch
+              label={t('waitlist')}
+              description={t('waitlist_hint')}
+              checked={form.values.waitlist}
+              onChange={event =>
+                form.setFieldValue('waitlist', event.currentTarget.checked)
               }
             />
-          )}
-        </Stack>
+            {form.values.waitlist && (
+              <TimeoutInput
+                label={t('waitlist_confirm')}
+                hint={t('waitlist_confirm_range')}
+                min={15}
+                max={4320}
+                minutes={form.values.waitlist_confirm_minutes}
+                error={
+                  form.errors.waitlist_confirm_minutes as string | undefined
+                }
+                onChange={value =>
+                  form.setFieldValue('waitlist_confirm_minutes', value)
+                }
+              />
+            )}
+          </Stack>
+        )}
         <div>
           <p className="mb-1 text-sm font-medium">{t('reminders')}</p>
           <Chip.Group

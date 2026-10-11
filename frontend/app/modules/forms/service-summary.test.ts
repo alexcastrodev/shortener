@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { blankService } from './booking-config.ts';
+import { blankSchedule, blankService } from './booking-config.ts';
 import {
   dayList,
+  scheduleSummary,
   serviceProblem,
   serviceSummary,
   type SummaryWords,
@@ -120,4 +121,16 @@ test('the monthly offer shows its own duration and price', () => {
     serviceSummary(service, words).details,
     '30 min · 40 EUR · 1 places · Monthly 45 min 120 EUR'
   );
+});
+
+test('the availability of a teacher reads as its weekdays, its times and the days with own times', () => {
+  const availability = {
+    ...blankSchedule(60),
+    byDay: { wed: [{ key: 'a', value: '15:00' }] },
+  };
+  assert.equal(
+    scheduleSummary(availability, words),
+    'Mon–Fri · 9 times · Wed own times'
+  );
+  assert.equal(serviceProblem({ ...availability, times: [] }), 'times');
 });

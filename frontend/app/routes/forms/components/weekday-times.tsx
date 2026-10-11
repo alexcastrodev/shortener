@@ -6,36 +6,38 @@ import { useTranslation } from 'react-i18next';
 import {
   DAYS,
   newKey,
+  scheduleAt,
+  type SchedulePath,
   type Values,
 } from '../../../modules/forms/booking-config.ts';
 
 export function WeekdayTimes({
   form,
-  index,
+  path: schedulePath,
   dayLabels,
 }: {
   form: UseFormReturnType<Values>;
-  index: number;
+  path: SchedulePath;
   dayLabels: Record<(typeof DAYS)[number], string>;
 }) {
   const { t } = useTranslation('booking');
-  const service = form.values.services[index];
-  const days = DAYS.filter(day => service.days.includes(day));
-  const hasOwn = days.some(day => service.byDay[day] !== undefined);
+  const schedule = scheduleAt(form.values, schedulePath);
+  const days = DAYS.filter(day => schedule.days.includes(day));
+  const hasOwn = days.some(day => schedule.byDay[day] !== undefined);
   const [on, setOn] = useState(hasOwn);
 
-  const path = (day: string) => `services.${index}.byDay.${day}` as const;
+  const path = (day: string) => `${schedulePath}.byDay.${day}` as const;
   const setOwn = (
     day: string,
     own: { key: string; value: string }[] | null
   ) => {
-    const rest = { ...service.byDay };
+    const rest = { ...schedule.byDay };
     if (own) rest[day] = own;
     else delete rest[day];
-    form.setFieldValue(`services.${index}.byDay`, rest);
+    form.setFieldValue(`${schedulePath}.byDay`, rest);
   };
   const copyGeneral = () =>
-    service.times.map(time => ({ key: newKey(), value: time.value }));
+    schedule.times.map(time => ({ key: newKey(), value: time.value }));
 
   return (
     <div>
@@ -47,13 +49,13 @@ export function WeekdayTimes({
         onChange={event => {
           const checked = event.currentTarget.checked;
           setOn(checked);
-          if (!checked) form.setFieldValue(`services.${index}.byDay`, {});
+          if (!checked) form.setFieldValue(`${schedulePath}.byDay`, {});
         }}
       />
       {(on || hasOwn) && days.length > 0 && (
         <ul className="mt-3 space-y-2">
           {days.map(day => {
-            const own = service.byDay[day];
+            const own = schedule.byDay[day];
             return (
               <li
                 key={day}

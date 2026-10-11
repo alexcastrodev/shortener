@@ -1,4 +1,9 @@
-import { DAYS, TIME, type ServiceValues } from './booking-config.ts';
+import {
+  DAYS,
+  TIME,
+  type ScheduleValues,
+  type ServiceValues,
+} from './booking-config.ts';
 
 export type Day = (typeof DAYS)[number];
 
@@ -34,10 +39,10 @@ export function dayList(days: readonly string[], label: (day: Day) => string) {
 }
 
 export function serviceProblem(
-  service: ServiceValues
+  schedule: ScheduleValues
 ): 'days' | 'times' | null {
-  if (service.days.length === 0) return 'days';
-  if (!service.times.some(time => TIME.test(time.value))) return 'times';
+  if (schedule.days.length === 0) return 'days';
+  if (!schedule.times.some(time => TIME.test(time.value))) return 'times';
   return null;
 }
 
@@ -74,16 +79,22 @@ export function serviceSummary(service: ServiceValues, words: SummaryWords) {
         )
       : null,
   ]);
+  return { details, schedule: scheduleSummary(service, words) };
+}
+
+export function scheduleSummary(
+  schedule: ScheduleValues,
+  words: Pick<SummaryWords, 'times' | 'ownTimes' | 'day'>
+) {
   const times = new Set(
-    service.times.map(time => time.value).filter(value => TIME.test(value))
+    schedule.times.map(time => time.value).filter(value => TIME.test(value))
   ).size;
   const own = DAYS.filter(
-    day => service.days.includes(day) && service.byDay[day] !== undefined
+    day => schedule.days.includes(day) && schedule.byDay[day] !== undefined
   );
-  const schedule = joined([
-    dayList(service.days, words.day),
+  return joined([
+    dayList(schedule.days, words.day),
     words.times(times),
     own.length > 0 ? words.ownTimes(dayList(own, words.day)) : null,
   ]);
-  return { details, schedule };
 }

@@ -12,12 +12,20 @@ export type ServiceInput = {
   monthly?: { price?: number; duration?: number };
 };
 
+export type Availability = {
+  days: string[];
+  times: string[];
+  times_by_day?: Record<string, string[]>;
+};
+
 export type FormOptions = {
   title?: string;
   layout?: 'page' | 'one_at_a_time' | 'steps';
   name?: boolean;
   emails?: { label: string; required?: boolean }[];
   services?: ServiceInput[];
+  mode?: 'individual';
+  availability?: Availability;
   rules?: Record<string, unknown>;
   publish?: boolean;
   accepting?: boolean;
@@ -43,6 +51,13 @@ export async function deleteCreatedForms() {
 }
 
 export const uniqueTitle = (prefix = 'E2E') => `${prefix} ${Date.now().toString(36)}${counter++}`;
+
+export const lesson = (name: string, overrides: Partial<ServiceInput> = {}): ServiceInput => ({
+  name,
+  duration: 60,
+  capacity: 1,
+  ...overrides,
+});
 
 export const service = (name: string, overrides: Partial<ServiceInput> = {}): ServiceInput => ({
   name,
@@ -75,6 +90,7 @@ export async function createForm(options: FormOptions = {}): Promise<CreatedForm
       type: 'booking',
       label: 'Escolha um horário',
       services: options.services,
+      ...(options.mode ? { mode: options.mode, availability: options.availability } : {}),
       ...(options.bookingRequired ? { required: true } : {}),
       ...(options.rules ? { rules: options.rules } : {}),
     });
