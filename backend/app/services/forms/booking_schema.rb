@@ -21,6 +21,8 @@ module Forms
     TIMES_MAX = 96
     SCHEDULE_KEYS = ["category_id", "days", "times", "times_by_day"].freeze
     EXTRA_DURATIONS_MAX = 4
+    MONTHLY_KEYS = ["price", "duration", "sessions", "per"].freeze
+    ALLOWANCE_PERIODS = ["month", "week"].freeze
     NAME_MAX = 100
     DURATION = (5..600)
     CAPACITY = (1..1000)
@@ -251,16 +253,30 @@ module Forms
     def monthly_errors(service)
       monthly = service["monthly"]
       return [] if monthly.nil?
-      return ["monthly must be an object"] unless monthly.is_a?(Hash) && (monthly.keys - ["price", "duration"]).empty?
+      return ["monthly must be an object"] unless monthly.is_a?(Hash) && (monthly.keys - MONTHLY_KEYS).empty?
 
       result = []
       duration = monthly["duration"]
       result << "monthly duration must be between #{DURATION.min} and #{DURATION.max} minutes" unless duration.nil? || (duration.is_a?(Integer) && DURATION.cover?(duration))
+      result.concat(allowance_errors(monthly))
       price = monthly["price"]
       return result if price.nil?
 
       result << "monthly price must be between 0 and #{PRICE_MAX}" unless valid_price?(price)
       result << "monthly price needs a currency" unless service["currency"].is_a?(String) && service["currency"].match?(CURRENCY)
+      result
+    end
+
+    def allowance_errors(monthly)
+      sessions = monthly["sessions"]
+      per = monthly["per"]
+      result = []
+      result << "monthly per must be one of #{ALLOWANCE_PERIODS.join(", ")}" unless per.nil? || ALLOWANCE_PERIODS.include?(per)
+      return result << "monthly per needs the number of sessions" if sessions.nil? && !per.nil?
+      return result if sessions.nil?
+
+      limit = per == "week" ? 7 : 31
+      result << "monthly sessions must be a whole number from 1 to #{limit}" unless sessions.is_a?(Integer) && (1..limit).cover?(sessions)
       result
     end
 

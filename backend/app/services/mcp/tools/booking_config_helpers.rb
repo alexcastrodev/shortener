@@ -18,7 +18,7 @@ module Mcp
           times: TIME_LIST,
           times_by_day: { type: "object", properties: DAYS.to_h { |day| [day, TIME_LIST] }, additionalProperties: false },
           extra_durations: { type: "array", maxItems: 4, items: { type: "object", properties: { duration: { type: "integer", minimum: 5, maximum: 600 }, price: { type: "number", minimum: 0 } }, required: ["duration"], additionalProperties: false } },
-          monthly: { type: "object", properties: { price: { type: "number", minimum: 0 }, duration: { type: "integer", minimum: 5, maximum: 600 } }, additionalProperties: false },
+          monthly: { type: "object", properties: { price: { type: "number", minimum: 0 }, duration: { type: "integer", minimum: 5, maximum: 600 }, sessions: { type: "integer", minimum: 1, maximum: 31 }, per: { type: "string", enum: ["month", "week"] } }, additionalProperties: false },
         },
         required: ["name", "duration", "days", "times"],
         additionalProperties: false,
