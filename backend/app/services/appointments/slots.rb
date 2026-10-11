@@ -34,12 +34,12 @@ module Appointments
 
       capacity = service["capacity"]
       all = times.sort.filter_map { |time| build(zone, date, time, capacity, booked) }
-      busy = capacity ? all.select { |slot| slot[:remaining].zero? } : []
+      holders = holders_of(service, all, booked)
       wanted = context[:only] || Durations.minutes(service)
       buffer = rules.fetch("buffer_minutes", 0).minutes
       lengths = context[:lengths]
       taken = context[:occupied]
-      spans = busy.map { |other| [other[:starts_at], other[:starts_at] + lengths.fetch(other[:starts_at].to_i, service["duration"]).minutes + buffer] }
+      spans = holders.map { |at| [at, at + lengths.fetch(at.to_i, service["duration"]).minutes + buffer] }
       spans += taken.map { |other| [other[:starts_at], other[:starts_at] + other[:minutes].minutes + buffer] }
       all.filter_map do |slot|
         next if slot[:starts_at] < earliest || slot[:remaining]&.zero? || taken.any? { |other| other[:starts_at] == slot[:starts_at] }
@@ -48,6 +48,13 @@ module Appointments
         fits = open.select { |minutes| fits?(slot[:starts_at], slot[:starts_at] + minutes.minutes + buffer, spans) }
         slot.merge(durations: fits) if fits.any?
       end
+    end
+
+    def holders_of(service, all, booked)
+      return booked.select { |_, count| count.positive? }.keys.map { |at| Time.at(at).utc } if service["resource_key"].present?
+      return [] unless service["capacity"]
+
+      all.select { |slot| slot[:remaining].zero? }.map { |slot| slot[:starts_at] }
     end
 
     def fits?(starts_at, finish, spans)

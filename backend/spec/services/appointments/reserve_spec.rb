@@ -187,4 +187,52 @@ RSpec.describe(Appointments::Reserve) do
       expect(row.pick(:booked)).to(eq(1))
     end
   end
+
+  describe "overlapping time of a shared resource" do
+    def take(service, at, minutes, capacity: 1)
+      described_class.call(form: form, service_key: service, resource_key: "main", capacity: capacity, times: [at], durations: { at.to_i => minutes })
+    end
+
+    def rows = AppointmentSlot.where(form_id: form.id, resource_key: "main").order(:starts_at)
+
+    it "records when the booking ends" do
+      take("math", day, 90)
+      expect(rows.pick(:ends_at)).to(eq(day + 90.minutes))
+    end
+
+    it "refuses a start inside a booking of another service even though it is another row" do
+      take("math", day, 60)
+      expect { take("physics", day + 30.minutes, 60) }.to(raise_error(described_class::Full) { |error| expect(error.starts_at).to(eq(day + 30.minutes)) })
+      expect(rows.pluck(:service_key, :booked)).to(eq([["math", 1]]))
+    end
+
+    it "refuses it for the same service too, since it is the same teacher" do
+      take("math", day, 60, capacity: 2)
+      expect { take("math", day + 30.minutes, 60, capacity: 2) }.to(raise_error(described_class::Full))
+    end
+
+    it "accepts the start where the other booking ends" do
+      take("math", day, 60)
+      expect { take("physics", day + 60.minutes, 60) }.not_to(raise_error)
+    end
+
+    it "frees the time when the booking is released and the hour is taken again with another length" do
+      take("math", day, 60)
+      rows.update_all(booked: 0)
+      take("physics", day + 30.minutes, 60)
+      expect(rows.pluck(:service_key, :booked)).to(eq([["math", 0], ["physics", 1]]))
+    end
+
+    it "gives the time to exactly one of two overlapping bookings asked at once" do
+      results = concurrently(6) do |index|
+        index.even? ? take("math", day, 90) : take("physics", day + 30.minutes, 60)
+        :taken
+      rescue described_class::Full
+        :full
+      end
+
+      expect(results.tally).to(eq(taken: 1, full: 5))
+      expect(rows.where("booked > 0").count).to(eq(1))
+    end
+  end
 end
