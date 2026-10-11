@@ -14,18 +14,18 @@ import { ExceptionsSection } from './exceptions-section';
 import { RulesSection } from './rules-section';
 import { ScheduleFields } from './schedule-fields';
 import { ServiceCard } from './service-card';
-import { useBookingDraft } from '../../../modules/forms/booking-draft.ts';
-import { timeoutInRange } from '../../../modules/forms/duration-units.ts';
 import {
   DAYS,
   TIME,
   blankLesson,
   blankService,
   initialValues,
+  scheduleSummary,
+  timeoutInRange,
   toBookingInput,
   type Values,
-} from '../../../modules/forms/booking-config.ts';
-import { scheduleSummary } from '../../../modules/forms/service-summary.ts';
+} from '@internal/booking';
+import { useBookingDraft } from '../../../modules/forms/booking-draft.ts';
 
 const SERVICE_ERROR = /^services\.(\d+)\./;
 

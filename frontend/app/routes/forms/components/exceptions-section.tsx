@@ -15,10 +15,10 @@ import {
   TIME,
   blankException,
   newKey,
+  summarizeExceptions,
   type ExceptionValues,
   type Values,
-} from '../../../modules/forms/booking-config.ts';
-import { summarizeExceptions } from '../../../modules/forms/rules-summary.ts';
+} from '@internal/booking';
 import { SummarySection, useOpenOnErrors } from './summary-section';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;

@@ -9,7 +9,7 @@ import {
   scheduleAt,
   type SchedulePath,
   type Values,
-} from '../../../modules/forms/booking-config.ts';
+} from '@internal/booking';
 import { TimeGeneratorPanel } from './time-generator-panel';
 import { WeekdayTimes } from './weekday-times';
 

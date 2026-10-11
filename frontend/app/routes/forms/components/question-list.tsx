@@ -46,7 +46,7 @@ import {
   blankService,
   initialValues,
   toBookingInput,
-} from '../../../modules/forms/booking-config.ts';
+} from '@internal/booking';
 import { formErrorMessage } from '../../../modules/forms/form-errors';
 import { PublishChecklist } from './publish-checklist';
 import { QuestionEditor } from './question-editor';

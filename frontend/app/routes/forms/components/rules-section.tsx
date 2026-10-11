@@ -11,10 +11,10 @@ import { useTranslation } from 'react-i18next';
 import {
   REMINDERS_MAX,
   REMINDER_CHOICES,
+  splitMinutes,
+  summarizeRules,
   type Values,
-} from '../../../modules/forms/booking-config.ts';
-import { splitMinutes } from '../../../modules/forms/duration-units.ts';
-import { summarizeRules } from '../../../modules/forms/rules-summary.ts';
+} from '@internal/booking';
 import { SummarySection, useOpenOnErrors } from './summary-section';
 import { TimeoutInput } from './timeout-input';
 

@@ -9,7 +9,7 @@ import {
   joinMinutes,
   splitMinutes,
   type Unit,
-} from '../../../modules/forms/duration-units.ts';
+} from '@internal/booking';
 
 export function TimeoutInput({
   minutes,

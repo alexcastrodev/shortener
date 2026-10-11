@@ -3,7 +3,7 @@ import {
   TIME,
   type ScheduleValues,
   type ServiceValues,
-} from './booking-config.ts';
+} from './config.ts';
 
 export type Day = (typeof DAYS)[number];
 

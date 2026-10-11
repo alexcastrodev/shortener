@@ -1,7 +1,7 @@
 import { NumberInput, Switch } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { useTranslation } from 'react-i18next';
-import type { Values } from '../../../modules/forms/booking-config.ts';
+import type { Values } from '@internal/booking';
 
 export function MonthlyOffer({
   form,

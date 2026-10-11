@@ -9,7 +9,7 @@ import {
   removeCategory,
   splitIntoCategories,
   toBookingInput,
-} from './booking-config.ts';
+} from './config.ts';
 
 const field: FormField = {
   id: 'abcd1234',

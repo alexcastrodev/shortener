@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { blankSchedule, blankService } from './booking-config.ts';
+import { blankSchedule, blankService } from './config.ts';
 import {
   dayList,
   scheduleSummary,
   serviceProblem,
   serviceSummary,
   type SummaryWords,
-} from './service-summary.ts';
+} from './summary.ts';
 
 const label = (day: string) => day[0].toUpperCase() + day.slice(1);
 

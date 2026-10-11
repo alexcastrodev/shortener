@@ -19,13 +19,11 @@ import {
   LESSON_DURATION,
   blankSchedule,
   isGrouped,
-  type Values,
-} from '../../../modules/forms/booking-config.ts';
-import {
   serviceProblem,
   serviceSummary,
   type SummaryWords,
-} from '../../../modules/forms/service-summary.ts';
+  type Values,
+} from '@internal/booking';
 import { ExtraDurations } from './extra-durations';
 import { MonthlyOffer } from './monthly-offer';
 import { ScheduleFields } from './schedule-fields';
