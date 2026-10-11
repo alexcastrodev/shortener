@@ -266,3 +266,15 @@ test('the checks every lesson shares still apply', () => {
     ['services.1.duration', 'error_duration'],
   ]);
 });
+
+test('several lessons in one booking needs one currency too, and is fine in the teacher mode otherwise', () => {
+  const values = individualMode.initialValues({
+    ...teacher,
+    rules: { ...teacher.rules!, multiple_services: true },
+  });
+  assert.deepEqual(issues(values), []);
+  values.services[1] = { ...values.services[1], price: 20, currency: 'USD' };
+  assert.deepEqual(issues(values), [
+    ['services.1.price', 'error_multiple_currency'],
+  ]);
+});

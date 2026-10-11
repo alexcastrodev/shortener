@@ -123,6 +123,40 @@ test('the booking rules persist after a reload and show in the summary', async (
   await expect(editor.rules.getByRole('textbox', { name: 'Tempo para confirmar um lugar' })).toHaveValue('12');
 });
 
+test('several services in one booking is off by default, persists when switched on and shows in the summary', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Guitarra', { price: 40, currency: 'EUR' }), service('Bateria', { price: 50, currency: 'EUR' })] });
+  await signIn('owner');
+  const editor = new BookingEditor(page);
+  await editor.open(form.id);
+  await editor.expand('rules');
+
+  const several = editor.rules.getByRole('switch', { name: 'Vários serviços na mesma marcação' });
+  await expect(several).not.toBeChecked();
+  await several.click();
+  await editor.save();
+  await expect(editor.saved).toBeVisible();
+  expect(bookingOf(await ownerForm(form.id)).rules.multiple_services).toBe(true);
+
+  await editor.open(form.id);
+  await expect(editor.rules.getByText(/Vários serviços/).first()).toBeVisible();
+  await editor.expand('rules');
+  await expect(several).toBeChecked();
+});
+
+test('several services in one booking needs one currency and is closed to questions with categories', async ({ page, signIn }) => {
+  const form = await createForm({ services: [service('Guitarra', { price: 40, currency: 'EUR' }), service('Bateria', { price: 50, currency: 'USD' })] });
+  await signIn('owner');
+  const editor = new BookingEditor(page);
+  await editor.open(form.id);
+  await editor.expand('rules');
+
+  await editor.rules.getByRole('switch', { name: 'Vários serviços na mesma marcação' }).click();
+  await editor.save();
+  await expect(editor.invalid).toBeVisible();
+  await expect(editor.services.getByText('Use a mesma moeda dos outros preços quando os clientes podem marcar vários de uma vez')).toBeVisible();
+  expect(bookingOf(await ownerForm(form.id)).rules.multiple_services).toBeFalsy();
+});
+
 test('a single category shows the hint that two are needed', async ({ page, signIn }) => {
   const form = await createForm({ services: [service('Corte')] });
   await signIn('owner');

@@ -46,6 +46,7 @@ test('saving sends the rules', () => {
     verify_email: false,
     waitlist: false,
     waitlist_confirm_minutes: null,
+    multiple_services: false,
     max_per_day: 8,
   });
 });
@@ -61,6 +62,7 @@ test('automatic approval sends no deadline', () => {
     verify_email: false,
     waitlist: false,
     waitlist_confirm_minutes: null,
+    multiple_services: false,
   });
 });
 
@@ -124,4 +126,13 @@ test('the waiting list is sent with its confirmation time, or cleared', () => {
   assert.equal(ruleInput(off).waitlist, false);
   assert.equal(ruleInput(off).waitlist_confirm_minutes, null);
   assert.equal(ruleValues(stored).waitlist_confirm_minutes, 120);
+});
+
+test('several services in one booking is off unless the question says so, and round-trips', () => {
+  assert.equal(ruleValues().multiple_services, false);
+  assert.equal(ruleValues({ ...stored, multiple_services: true }).multiple_services, true);
+  const on = { ...ruleValues(stored), multiple_services: true };
+  assert.equal(ruleInput(on).multiple_services, true);
+  assert.equal(ruleInput({ ...on, multiple_services: false }).multiple_services, false);
+  assert.ok(RULE_FIELDS.includes('multiple_services'));
 });

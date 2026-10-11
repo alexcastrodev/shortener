@@ -44,6 +44,7 @@ export function applyBookingDraft(
               help: draft.input.help ?? undefined,
               categories: draft.input.categories ?? field.categories,
               availability: draft.input.availability ?? field.availability,
+              rules: field.rules && { ...field.rules, ...draft.input.rules },
               services,
             }
           : field

@@ -57,11 +57,15 @@ export function RulesSection({
     reminderLabels[minutes as (typeof REMINDER_CHOICES)[number]] ??
     duration(minutes);
 
+  const words = editor.words(t);
+  const categorized = form.values.categories.length >= 2;
+
   const summary = summarizeRules(form.values, {
     auto: t('rules_sum_auto'),
     autoVerify: t('rules_sum_auto_verify'),
     manual: t('rules_sum_manual'),
     waitlist: t('rules_sum_waitlist'),
+    multiple: words.multipleSummary,
     reminders: minutes =>
       t('rules_sum_reminders', {
         count: minutes.length,
@@ -172,6 +176,18 @@ export function RulesSection({
           )}
         </Stack>
         {editor.RulesExtras && <editor.RulesExtras form={form} />}
+        <Switch
+          label={words.multiple}
+          description={
+            categorized ? t('multiple_categories_hint') : words.multipleHint
+          }
+          checked={form.values.multiple_services}
+          disabled={categorized}
+          error={form.errors.multiple_services as string | undefined}
+          onChange={event =>
+            form.setFieldValue('multiple_services', event.currentTarget.checked)
+          }
+        />
         <div>
           <p className="mb-1 text-sm font-medium">{t('reminders')}</p>
           <Chip.Group

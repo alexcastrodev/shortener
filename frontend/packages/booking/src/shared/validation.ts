@@ -12,6 +12,8 @@ export type ValidationKey =
   | 'error_duration'
   | 'error_extra_duration_repeated'
   | 'error_extra_price'
+  | 'error_multiple_categories'
+  | 'error_multiple_currency'
   | 'error_name'
   | 'error_price_currency'
   | 'error_time'
@@ -188,6 +190,7 @@ export const bookingSchema = (validation: ModeValidation, t: Translate) =>
       approval: z.enum(['auto', 'manual']),
       approval_timeout_minutes: z.union([z.number(), z.literal('')]),
       waitlist: z.boolean(),
+      multiple_services: z.boolean(),
       waitlist_confirm_minutes: z.union([z.number(), z.literal('')]),
       approval_soon_only: z.boolean(),
       approval_within_minutes: z.union([z.number(), z.literal('')]),
@@ -203,8 +206,36 @@ export const bookingSchema = (validation: ModeValidation, t: Translate) =>
         approval_timeout_minutes: minutes,
         waitlist,
         waitlist_confirm_minutes: confirm,
+        multiple_services: multiple,
+        services,
         exceptionDraft,
       } = ctx.value;
+      if (multiple) {
+        const categories = (ctx.value as { categories?: unknown[] }).categories;
+        if ((categories?.length ?? 0) >= 2) {
+          ctx.issues.push({
+            code: 'custom',
+            message: t('error_multiple_categories'),
+            path: ['multiple_services'],
+            input: multiple,
+          });
+        }
+        const priced = services.filter(service => service.price !== '');
+        const first = priced[0]?.currency.trim().toUpperCase();
+        services.forEach((service, at) => {
+          if (
+            service.price !== '' &&
+            service.currency.trim().toUpperCase() !== first
+          ) {
+            ctx.issues.push({
+              code: 'custom',
+              message: t('error_multiple_currency'),
+              path: ['services', at, 'price'],
+              input: service.price,
+            });
+          }
+        });
+      }
       if (exceptionDraft.from) {
         ctx.issues.push({
           code: 'custom',

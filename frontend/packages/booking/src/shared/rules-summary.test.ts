@@ -86,6 +86,7 @@ const ruleLabels = {
   autoVerify: 'Automatic with email check',
   manual: 'You approve',
   waitlist: 'Waiting list',
+  multiple: 'Several services',
   reminders: (minutes: number[]) =>
     `Reminder ${minutes.map(duration).join(', ')} before`,
   window: (days: number) => `Up to ${days} days`,
@@ -98,6 +99,7 @@ const rules: RulesSummaryValues = {
   approval: 'auto',
   verify_email: false,
   waitlist: true,
+  multiple_services: false,
   reminder_minutes: [1440],
   min_notice_minutes: 120,
   window_days: 60,
@@ -149,4 +151,11 @@ test('manual approval ignores the email check and reminders are listed largest f
     ruleLabels
   );
   assert.ok(text.startsWith('You approve · Reminder 1 days, 1 hours before'));
+});
+
+test('several services in one booking shows after the waiting list', () => {
+  assert.equal(
+    summarizeRules({ ...rules, multiple_services: true }, ruleLabels),
+    'Automatic · Waiting list · Several services · Reminder 1 days before · Up to 60 days · 2 hours notice'
+  );
 });

@@ -11,6 +11,7 @@ export function ruleValues(rules?: Partial<BookingRules>): RuleValues {
     verify_email: rules?.verify_email === true,
     waitlist: rules?.waitlist === true,
     waitlist_confirm_minutes: rules?.waitlist_confirm_minutes ?? 120,
+    multiple_services: rules?.multiple_services === true,
     reminder_minutes: [...(rules?.reminder_minutes ?? [1440])].sort(
       (a, b) => b - a
     ),
@@ -48,6 +49,7 @@ export function ruleInput(values: RuleValues): Partial<BookingRules> {
     values.waitlist && values.waitlist_confirm_minutes !== ''
       ? values.waitlist_confirm_minutes
       : null;
+  rules.multiple_services = values.multiple_services;
   rules.reminder_minutes = [...new Set(values.reminder_minutes)].sort(
     (a, b) => b - a
   );

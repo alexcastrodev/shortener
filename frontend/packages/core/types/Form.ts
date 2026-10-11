@@ -54,6 +54,7 @@ export type BookingRules = {
   verify_email?: boolean;
   waitlist?: boolean;
   waitlist_confirm_minutes?: number | null;
+  multiple_services?: boolean;
   min_notice_minutes?: number;
   window_days?: number;
   buffer_minutes?: number;
@@ -105,6 +106,7 @@ export type FormField = {
   exceptions?: BookingException[];
   time_zone?: string;
   waitlist?: boolean;
+  multiple_services?: boolean;
   verify_email?: boolean;
 };
 
