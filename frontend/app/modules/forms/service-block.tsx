@@ -9,7 +9,13 @@ import type { BioTheme } from '../bio-page/themes';
 import { formatCurrency, formatDate } from '../../i18n/format';
 import type { JoinWaitlist } from './waitlist-join';
 import { isPlan } from './booking-answer.ts';
-import { monthOf, type PickedSession } from './booking-calendar.ts';
+import {
+  bufferOf,
+  monthOf,
+  monthlyClash,
+  type PickedSession,
+} from './booking-calendar.ts';
+import { BookingNote } from './booking-note.tsx';
 import {
   allowanceOf,
   cheapestPrice,
@@ -184,6 +190,8 @@ export function ServiceBlock({
         <MonthlyPicker
           service={service}
           value={monthly && !isPlan(monthly) ? monthly : undefined}
+          others={others}
+          buffer={bufferOf(field)}
           theme={theme}
           chip={chip}
           onChange={choice =>
@@ -364,12 +372,16 @@ function PlanPicker({
 function MonthlyPicker({
   service,
   value,
+  others,
+  buffer,
   theme,
   chip,
   onChange,
 }: {
   service: Service;
   value: MonthlyPattern | undefined;
+  others: PickedSession[];
+  buffer: number;
   theme: BioTheme;
   chip: (selected: boolean) => string;
   onChange: (choice: MonthlyPattern | undefined) => void;
@@ -381,8 +393,14 @@ function MonthlyPicker({
   const [draft, setDraft] = useState<MonthlyPattern>(
     value ?? { month: months[0].value, weekdays: [], time: times[0] ?? '' }
   );
+  const [clash, setClash] = useState<PickedSession>();
   const update = (next: Partial<MonthlyPattern>) => {
     const merged = { ...draft, ...next };
+    const found = monthlyComplete(merged)
+      ? monthlyClash(merged, monthlyMinutes(service), others, buffer, new Date())
+      : undefined;
+    setClash(found);
+    if (found) return;
     setDraft(merged);
     onChange(monthlyComplete(merged) ? merged : undefined);
   };
@@ -435,6 +453,17 @@ function MonthlyPicker({
           </button>
         ))}
       </div>
+      <BookingNote
+        warning
+        message={
+          clash
+            ? t('booking_note_overlap_service', {
+                service: clash.service,
+                what: clash.time,
+              })
+            : undefined
+        }
+      />
       {value && (
         <div
           className="rounded-lg border border-current/20 px-3 py-2 text-sm"
