@@ -88,11 +88,11 @@ export function ZoneSelect({ theme }: { theme: BioTheme }) {
 
   return (
     <div className="flex min-w-0 items-center gap-2 text-xs">
-      <label htmlFor={id} className="shrink-0 opacity-70">
+      <span id={id} className="shrink-0 opacity-70">
         {t('booking_zone_label')}
-      </label>
+      </span>
       <select
-        id={id}
+        aria-labelledby={id}
         value={zone}
         onChange={event => setZone(event.target.value)}
         className={`min-h-9 min-w-0 max-w-full rounded-lg px-2 py-1 text-xs ${theme.button}`}
