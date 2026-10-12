@@ -1,3 +1,14 @@
+x-update: &update
+  parallelism: 1
+  order: start-first
+  delay: 10s
+  monitor: 30s
+  failure_action: rollback
+
+x-rollback: &rollback
+  parallelism: 1
+  order: start-first
+
 services:
   frontend:
     image: pizito:5001/shortener-frontend:latest
@@ -6,7 +17,15 @@ services:
       - SSR_FORWARD_SECRET=${SSR_FORWARD_SECRET:-}
     networks:
       - proxy_net
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:80/robots.txt"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     deploy:
+      update_config: *update
+      rollback_config: *rollback
       resources:
         limits:
           cpus: '0.5'

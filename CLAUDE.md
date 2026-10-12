@@ -116,3 +116,10 @@ Run every test, lint and typecheck in containers, never on the host: the host ha
 - **Backend** (`rspec`, `rubocop`, `brakeman`): image `kurz-backend-vips` (built from `Dockerfile.backend`, Ruby 4.0.7) with `backend` mounted at `/rails`, gems in a named volume (`BUNDLE_PATH=/bundle`, then `bundle install`), `RAILS_ENV=test`, a throwaway `postgres:17` and `valkey/valkey:8.1.4` on a private network, and `bin/rails db:create db:schema:load` before the specs.
 - **Frontend** (`npm run typecheck`, `npm test`): `node:22` with `frontend` mounted and `node_modules` in a named volume. The build needs `NODE_OPTIONS=--dns-result-order=ipv4first` (see `frontend/Dockerfile`).
 - **e2e**: the Playwright image that matches `e2e/package.json`, Rails with `RAILS_ENV=e2e`, the built frontend and Mailpit, all sharing the Rails container's network (`--network container:<rails>`) so `localhost:3000`, `3001` and `8025` work. Seed with `bin/rails runner ../e2e/support/seed.rb` first.
+
+## Deploys do not stop the site
+
+`deploy.sh` migrates first, then rolls every service with `order: start-first`: the new container must pass its healthcheck before the old one stops, and a failed update rolls back on its own (`.ci/stack.yml`, `.ci/fe-stack.yml`). `docker stack deploy --detach=false` exits 0 even after a rollback, so `deploy.sh` reads each service's update state and fails the deploy itself. For a few seconds, and again after a rollback, the previous release runs against the new schema.
+
+- Write migrations that the previous release survives: add, backfill and ship the code that uses it; drop or rename only in a later release, once nothing reads the old column.
+- A new service gets a `healthcheck` and the shared `update_config`/`rollback_config`; without a healthcheck swarm sends traffic to a container that is still booting.

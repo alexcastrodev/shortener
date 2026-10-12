@@ -7,6 +7,7 @@ STACKS=(
   "shortenerfe:.ci/fe-stack.yml"
 )
 ENV_PATH="/mnt/ssd/@docker/shortener/.env"
+DEPLOY_TIMEOUT="${DEPLOY_TIMEOUT:-15m}"
 
 set -a
 source "$ENV_PATH"
@@ -20,6 +21,22 @@ MIGRATE_ENV=(
   REDIS_URL RAILS_MASTER_KEY EDGE_API GMAIL_USERNAME GMAIL_APP_PASSWORD FRONTEND_URL
   SENTRY_DSN S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET S3_FORMS_BUCKET
 )
+
+rolled_back() {
+  local stack=$1 since=$2 service state started failed=1
+  for service in $(docker stack services --format '{{.Name}}' "$stack"); do
+    read -r state started <<<"$(docker service inspect --format '{{if .UpdateStatus}}{{.UpdateStatus.State}} {{.UpdateStatus.StartedAt.Unix}}{{end}}' "$service")"
+    case "$state" in
+      rollback_* | paused)
+        if [ "${started:-0}" -ge "$since" ]; then
+          echo "Error: $service could not be updated ($state); it runs the previous release."
+          failed=0
+        fi
+        ;;
+    esac
+  done
+  return "$failed"
+}
 
 migrate() {
   local args=(--rm --network proxy_net -e RAILS_ENV=production)
@@ -55,9 +72,14 @@ for entry in "${STACKS[@]}"; do
     migrate
   fi
 
-  echo "Deploying stack: $STACK_NAME (rolling update)"
-  if ! docker stack deploy --prune --with-registry-auth -c "$COMPOSE_FILE" "$STACK_NAME"; then
-    echo "Error: Stack deployment failed."
+  echo "Deploying stack: $STACK_NAME (rolling update, new tasks start before old ones stop)"
+  deploy_started=$(date +%s)
+  if ! timeout "$DEPLOY_TIMEOUT" docker stack deploy --detach=false --prune --with-registry-auth -c "$COMPOSE_FILE" "$STACK_NAME"; then
+    echo "Error: $STACK_NAME did not converge (a failed update rolls back to the previous release)."
+    docker stack ps --no-trunc --filter desired-state=shutdown "$STACK_NAME" | head -15 || true
+    exit 1
+  fi
+  if rolled_back "$STACK_NAME" "$deploy_started"; then
     exit 1
   fi
 done
