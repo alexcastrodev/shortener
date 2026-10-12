@@ -410,9 +410,9 @@ test('a refusal names the service and the time in the zone the visitor reads', a
   );
   const view = new PublicForm(page, form);
   await view.open();
-  await zoneSelect(page).selectOption(TOKYO);
   await view.tickService('Alfa');
   await view.tickService('Beta');
+  await zoneSelect(page).selectOption(TOKYO);
   const first = inZone((await slotsOf(form, day, day, form.serviceIds[0]))[0].starts_at, TOKYO);
   await view.pickSlotIn('Alfa', first.date, first.time);
   await view.pickSlotIn('Beta', there.date, there.time);
