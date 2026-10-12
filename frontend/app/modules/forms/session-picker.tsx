@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FormField } from '@internal/core/types/Form';
 import type {
@@ -217,14 +217,16 @@ export function SessionPicker({
     : failed === `${key}|${month}`
       ? 'error'
       : 'loading';
-  const offered = Object.values(months).flatMap(data => data.slots);
-  const byDay = groupByViewDay(
-    fixedMonth
-      ? offered.filter(slot => slot.date.startsWith(fixedMonth))
-      : offered,
-    formZone,
-    zone
-  );
+  const byDay = useMemo(() => {
+    const offered = Object.values(months).flatMap(data => data.slots);
+    return groupByViewDay(
+      fixedMonth
+        ? offered.filter(slot => slot.date.startsWith(fixedMonth))
+        : offered,
+      formZone,
+      zone
+    );
+  }, [months, fixedMonth, formZone, zone]);
   const monthDays = new Set([...byDay.keys()].filter(day => day.startsWith(month)));
   const shown =
     viewed && viewed.startsWith(month) && byDay.has(viewed) ? viewed : undefined;
