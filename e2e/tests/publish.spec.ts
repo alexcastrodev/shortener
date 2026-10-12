@@ -122,7 +122,8 @@ test('publishing succeeds once the incomplete service has times', async ({ page,
   await page.goto(`/app/forms/${form.id}`);
 
   await page.getByRole('button', { name: 'Publicar', exact: true }).click();
-  await expect(page.getByText('O serviço “Vazio” precisa de pelo menos um dia e um horário.')).toBeVisible();
+  const checklist = page.getByRole('status').filter({ hasText: 'Antes de publicar' });
+  await expect(checklist.getByText('O serviço “Vazio” precisa de pelo menos um dia e um horário.')).toBeVisible();
   expect((await ownerForm(form.id)).published).toBe(false);
   const blocked = await republish(form.id);
   expect(blocked.status).toBe(422);
