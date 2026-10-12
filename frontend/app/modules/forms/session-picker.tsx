@@ -30,7 +30,8 @@ import { useDurationWords } from './use-duration-words.ts';
 export type LoadSlots = (
   service: string,
   from: string,
-  to: string
+  to: string,
+  monthly?: boolean
 ) => Promise<LoadedSlots>;
 
 export const dayLabel = (iso: string) =>
@@ -128,7 +129,7 @@ export function SessionPicker({
     const range = monthRange(month, today);
     if (!range) return;
     let current = true;
-    loader.current(serviceId, range.from, range.to)
+    loader.current(serviceId, range.from, range.to, fixedDuration !== undefined)
       .then(loaded => {
         if (!current) return;
         setCache(previous => ({

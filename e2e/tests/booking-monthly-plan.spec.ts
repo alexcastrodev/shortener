@@ -1,9 +1,10 @@
 import type { Page } from '@playwright/test';
+import { pickDay, pickLockedDay } from '../support/calendar.ts';
 import { nextMonthWeek } from '../support/dates.ts';
 import { BookingEditor, bookingOf } from '../support/editor.ts';
 import { expect, test } from '../support/fixtures.ts';
 import { appointmentsOf, createForm, ownerForm, service } from '../support/forms.ts';
-import { bookingBar, monthLabel, PublicForm, uniqueEmail } from '../support/public-form.ts';
+import { bookingBar, bookViaApi, monthLabel, PublicForm, uniqueEmail } from '../support/public-form.ts';
 
 const times = ['09:00', '10:00', '11:00'];
 
@@ -251,4 +252,44 @@ test('a plan of one service and single sessions of another are booked together f
   expect(rows.filter(row => row.service_name === 'Massagem')).toHaveLength(2);
   expect(rows.filter(row => row.service_name === 'Guitarra')).toHaveLength(1);
   expect(new Set(rows.map(row => row.group_key)).size).toBe(1);
+});
+
+test('a plan with its own duration only offers the times where that duration fits', async ({ page }) => {
+  const form = await createForm({
+    services: [
+      service('Massagem', { duration: 60, price: 40, currency: 'EUR', times, monthly: { price: 150, sessions: 3, duration: 90 } }),
+    ],
+    publish: true,
+  });
+  const [mon, tue] = nextMonthWeek();
+  await bookViaApi(form, mon, '10:00');
+  const view = new PublicForm(page, form);
+  const time = (value: string) => page.getByRole('button', { name: value, exact: true });
+  await view.open();
+
+  await pickDay(page, mon);
+  await expect(time('09:00')).toBeVisible();
+  await expect(time('11:00')).toBeVisible();
+  await expect(time('10:00')).toHaveCount(0);
+
+  await openPlan(page, mon);
+  await pickLockedDay(page, mon);
+  await expect(time('11:00')).toBeVisible();
+  await expect(time('09:00')).toHaveCount(0);
+  await expect(time('10:00')).toHaveCount(0);
+
+  await pickLockedDay(page, tue);
+  await expect(time('09:00')).toBeVisible();
+  await expect(time('10:00')).toBeVisible();
+  await expect(time('11:00')).toBeVisible();
+
+  await view.pickPlanSlot(mon, '11:00');
+  await view.pickPlanSlot(tue, '09:00');
+  await view.nameBox().fill('Ana Teste');
+  const review = page.getByRole('group', { name: 'A sua marcação' });
+  await expect(review).toContainText('11:00–12:30');
+  await expect(review).toContainText('09:00–10:30');
+  await view.submit();
+  await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toBeVisible();
+  expect(await appointmentsOf(form.id)).toHaveLength(3);
 });

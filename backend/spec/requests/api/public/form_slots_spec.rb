@@ -24,8 +24,8 @@ RSpec.describe("GET /api/public/forms/:public_id/slots", type: :request) do
     JSON.parse(response.body)
   end
 
-  def slots(from: "2026-11-02", to: "2026-11-04", service: service_id, id: form.public_id, headers: {})
-    get("/api/public/forms/#{id}/slots", params: { service: service, from: from, to: to }, headers: { "CF-Connecting-IP" => "198.51.100.7" }.merge(headers))
+  def slots(from: "2026-11-02", to: "2026-11-04", service: service_id, id: form.public_id, headers: {}, **extra)
+    get("/api/public/forms/#{id}/slots", params: { service: service, from: from, to: to }.merge(extra), headers: { "CF-Connecting-IP" => "198.51.100.7" }.merge(headers))
   end
 
   def times
@@ -119,6 +119,61 @@ RSpec.describe("GET /api/public/forms/:public_id/slots", type: :request) do
       Forms::Publish.call(form: form.reload)
       slots(from: "2026-11-02", to: "2026-11-02")
       expect(json["slots"].first["remaining"]).to(be_nil)
+    end
+  end
+
+  describe "the monthly duration" do
+    let(:service) { super().merge("price" => 40, "currency" => "EUR", "monthly" => { "price" => 150, "duration" => 90, "sessions" => 3 }) }
+
+    before { AppointmentSlot.create!(form: form, service_key: service_id, starts_at: Time.utc(2026, 11, 2, 10), capacity: 1, booked: 1, duration: 60) }
+
+    it "offers only the times where the monthly duration fits, each with that duration alone" do
+      slots(from: "2026-11-02", to: "2026-11-03")
+      expect(json["slots"].select { |slot| slot["date"] == "2026-11-02" }.map { |slot| slot["time"] }).to(eq(["09:00", "11:00"]))
+      slots(from: "2026-11-02", to: "2026-11-03", monthly: "1")
+      expect(response).to(have_http_status(:ok))
+      expect(json["slots"].select { |slot| slot["date"] == "2026-11-02" }.map { |slot| slot["time"] }).to(eq(["11:00"]))
+      expect(json["slots"].map { |slot| slot["durations"] }.uniq).to(eq([[90]]))
+      expect(json["slots"].count { |slot| slot["date"] == "2026-11-03" }).to(eq(3))
+    end
+
+    it "offers exactly the times the booking of a plan accepts" do
+      booking = Forms::PublicDefinition.for(form.reload).fields.find { |field| field["type"] == "booking" }
+      cast = lambda do |time|
+        raw = { "service" => service_id, "monthly" => { "month" => "2026-11", "sessions" => [{ "date" => "2026-11-02", "time" => time }] } }
+        Appointments::Book.cast_item(form: form, booking: booking, raw: raw, now: Time.current, claim_at: nil).last
+      end
+      slots(from: "2026-11-02", to: "2026-11-02", monthly: "1")
+      offered = json["slots"].map { |slot| slot["time"] }
+      expect(["09:00", "10:00", "11:00"].select { |time| cast.call(time).nil? }).to(eq(offered))
+    end
+
+    it "uses the duration of the service when the offer has none of its own" do
+      Forms::Definition.update(form.reload, form.fields.first["id"], { "services" => [service.merge("id" => service_id, "monthly" => { "price" => 150, "sessions" => 3 })] })
+      Forms::Publish.call(form: form.reload)
+      slots(from: "2026-11-02", to: "2026-11-02", monthly: "1")
+      expect(json["slots"].map { |slot| [slot["time"], slot["durations"]] }).to(eq([["09:00", [60]], ["11:00", [60]]]))
+    end
+
+    it "answers 422 for a value other than 1, and for a service without a monthly offer" do
+      slots(monthly: "yes")
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(json["error"]).to(eq("invalid_monthly"))
+      slots(monthly: "")
+      expect(response).to(have_http_status(:unprocessable_content))
+      Forms::Definition.update(form.reload, form.fields.first["id"], { "services" => [service.merge("id" => service_id, "monthly" => nil)] })
+      Forms::Publish.call(form: form.reload)
+      slots(monthly: "1")
+      expect(response).to(have_http_status(:unprocessable_content))
+    end
+
+    it "leaves the waiting list out of a plan" do
+      Forms::Definition.update(form.reload, form.fields.first["id"], { "rules" => { "waitlist" => true } })
+      Forms::Publish.call(form: form.reload)
+      slots(from: "2026-11-02", to: "2026-11-02")
+      expect(json).to(have_key("full"))
+      slots(from: "2026-11-02", to: "2026-11-02", monthly: "1")
+      expect(json).not_to(have_key("full"))
     end
   end
 
