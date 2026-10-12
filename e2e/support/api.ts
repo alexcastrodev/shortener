@@ -3,6 +3,17 @@ import { tokenFor, type Role } from './auth.ts';
 
 export type ApiResult<T = any> = { status: number; body: T };
 
+async function result<T>(response: Response): Promise<ApiResult<T>> {
+  const text = await response.text();
+  let parsed: unknown = {};
+  try {
+    parsed = text ? JSON.parse(text) : {};
+  } catch {
+    parsed = { raw: text.slice(0, 200) };
+  }
+  return { status: response.status, body: parsed as T };
+}
+
 export class Api {
   constructor(private readonly role: Role | null) {}
 
@@ -17,14 +28,18 @@ export class Api {
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
-    const text = await response.text();
-    let parsed: unknown = {};
-    try {
-      parsed = text ? JSON.parse(text) : {};
-    } catch {
-      parsed = { raw: text.slice(0, 200) };
-    }
-    return { status: response.status, body: parsed as T };
+    return result<T>(response);
+  }
+
+  async upload<T = any>(path: string, file: { name: string; type: string; bytes: Uint8Array }): Promise<ApiResult<T>> {
+    const body = new FormData();
+    body.append('file', new Blob([file.bytes as BlobPart], { type: file.type }), file.name);
+    const response = await fetch(API_URL + path, {
+      method: 'PUT',
+      headers: { Accept: 'application/json', ...(this.role ? { Authorization: `Bearer ${tokenFor(this.role)}` } : {}) },
+      body,
+    });
+    return result<T>(response);
   }
 
   get<T = any>(path: string) {

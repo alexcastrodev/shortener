@@ -6,7 +6,7 @@ Accounts are created by `support/seed.rb` and signed in by injecting the `kurz_s
 
 ## Run in CI
 
-The `e2e` job in `.github/workflows/ci.yml` starts Postgres, Valkey and Mailpit as services, builds the frontend, seeds the accounts and lets Playwright start Rails (3000) and the frontend (3001) with `E2E_START_SERVERS=1`.
+The `e2e` job in `.github/workflows/ci.yml` starts Postgres, Valkey and Mailpit as services, builds the frontend, seeds the accounts and lets Playwright start Rails (3000), the image converter that form covers go through (8080) and the frontend (3001) with `E2E_START_SERVERS=1`.
 
 ## Run locally
 
@@ -20,6 +20,6 @@ cd ../e2e && npm ci && npx playwright install chromium
 E2E_START_SERVERS=1 npx playwright test
 ```
 
-Point the tests at servers that are already running with `E2E_API_URL`, `E2E_APP_URL`, `E2E_REDIS_URL` and `MAILPIT_URL`.
+Point the tests at servers that are already running with `E2E_API_URL`, `E2E_APP_URL`, `E2E_REDIS_URL` and `MAILPIT_URL`. Rails needs `IMGPROC_URL` pointing at `bundle exec puma -b tcp://127.0.0.1:8080 imgproc/config.ru` (run in `backend`) for the tests that upload a cover. The test that checks the front end forwards the visitor's IP runs only when `SSR_FORWARD_SECRET` has the same value in the test process, in Rails and in the front end.
 
 Every test starts with an empty cache and an empty mailbox, and deletes the forms it created: the public form limits submissions per address and an account can create only 20 forms a day.
