@@ -253,7 +253,7 @@ test.describe('a plan in Tokyo', () => {
   });
 });
 
-test('with several services every block follows the same zone', async ({ page }) => {
+test('with several services the control is said once and every block follows it', async ({ page }) => {
   const form = await zoneForm({
     rules: { time_zone: FORM_ZONE, multiple_services: true },
     services: [service('Alfa', { times: TIMES }), service('Beta', { times: TIMES })],
@@ -265,9 +265,9 @@ test('with several services every block follows the same zone', async ({ page })
   await view.tickService('Alfa');
   await view.tickService('Beta');
 
-  await expect(zoneSelect(page)).toHaveCount(2);
-  await zoneSelect(view.block('Alfa')).selectOption(SAO_PAULO);
-  await expect(zoneSelect(view.block('Beta'))).toHaveValue(SAO_PAULO);
+  await expect(zoneSelect(page)).toHaveCount(1);
+  await expect(zoneSelect(view.block('Alfa'))).toHaveCount(0);
+  await zoneSelect(page).selectOption(SAO_PAULO);
 
   const first = inZone(alfa.find(slot => slot.time === '17:30')!.starts_at, SAO_PAULO);
   const second = inZone(beta.find(slot => slot.time === '23:30')!.starts_at, SAO_PAULO);
@@ -387,4 +387,39 @@ test('with a teacher and a list of lessons the zone stays when the visitor chang
   await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toBeVisible();
   const [appointment] = await appointmentsOf(form.id);
   expect(new Date(appointment.starts_at).toISOString()).toBe(new Date(evening.starts_at).toISOString());
+});
+
+test('a refusal names the service and the time in the zone the visitor reads', async ({ page }) => {
+  const form = await zoneForm({
+    rules: { time_zone: FORM_ZONE, multiple_services: true },
+    services: [service('Alfa', { times: TIMES }), service('Beta', { times: TIMES })],
+  });
+  const [day] = nextWeekdays(1);
+  const beta = await slotsOf(form, day, day, form.serviceIds[1]);
+  const late = beta.find(slot => slot.time === '23:30')!;
+  const there = inZone(late.starts_at, TOKYO);
+  await page.route('**/api/public/forms/*/responses', route =>
+    route.fulfill({
+      status: 422,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        errors: { answers: { [form.bookingId]: ['unavailable'] } },
+        details: { [form.bookingId]: { service: form.serviceIds[1], date: day, time: '23:30' } },
+      }),
+    }),
+  );
+  const view = new PublicForm(page, form);
+  await view.open();
+  await zoneSelect(page).selectOption(TOKYO);
+  await view.tickService('Alfa');
+  await view.tickService('Beta');
+  const first = inZone((await slotsOf(form, day, day, form.serviceIds[0]))[0].starts_at, TOKYO);
+  await view.pickSlotIn('Alfa', first.date, first.time);
+  await view.pickSlotIn('Beta', there.date, there.time);
+  await fill(view);
+  await view.submit();
+
+  await expect(
+    page.getByRole('alert').filter({ hasText: new RegExp(`^A hora de Beta \\(.*${Number(there.date.slice(8))}.*às ${there.time}\\) já não está disponível`) }),
+  ).toBeVisible();
 });

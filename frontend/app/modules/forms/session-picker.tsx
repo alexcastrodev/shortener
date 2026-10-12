@@ -15,6 +15,7 @@ import {
   bufferOf,
   canGoNext,
   keepFree,
+  monthOf,
   monthRange,
   previewSlots,
   shiftMonth,
@@ -112,8 +113,10 @@ export function SessionPicker({
   const durationWords = useDurationWords();
   const serviceId = service.id;
   const { cache, setCache, seeking } = memory;
-  const month = fixedMonth ?? memory.month;
   const { zone, formZone, toView } = useViewZone();
+  const today = localToday(zone);
+  const month =
+    fixedMonth ?? (memory.month < monthOf(today) ? monthOf(today) : memory.month);
   const [viewed, setViewed] = useState<string>();
   const [attempt, setAttempt] = useState(0);
   const [dropped, setDropped] = useState(false);
@@ -136,9 +139,17 @@ export function SessionPicker({
 
   useEffect(() => {
     if (cached.current.key === key && cached.current.months[month]) return;
-    const today = localToday(zone);
     const range = monthRange(month, today);
-    if (!range) return;
+    if (!range) {
+      setCache(previous => ({
+        key,
+        months: {
+          ...(previous.key === key ? previous.months : {}),
+          [month]: { slots: [], full: [] },
+        },
+      }));
+      return;
+    }
     const asked = requestRange(range, formZone, zone);
     let current = true;
     loader.current(serviceId, asked.from, asked.to, fixedDuration !== undefined)
@@ -230,7 +241,6 @@ export function SessionPicker({
   const monthDays = new Set([...byDay.keys()].filter(day => day.startsWith(month)));
   const shown =
     viewed && viewed.startsWith(month) && byDay.has(viewed) ? viewed : undefined;
-  const today = localToday(zone);
   const several = fixedDuration === undefined && hasSeveralDurations(service);
   const priceText = (price: number | null | undefined, currency?: string | null) =>
     price ? formatCurrency(price, currency ?? 'EUR') : null;

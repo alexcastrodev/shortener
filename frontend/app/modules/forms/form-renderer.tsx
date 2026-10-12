@@ -79,7 +79,7 @@ function SequentialForm({
 }: Props) {
   const { t } = useTranslation('respond');
   const takenWords = useTakenWords();
-  const { zone } = useViewZone();
+  const { zone, toView } = useViewZone();
   const theme = getBioTheme(form.theme, form.custom_colors);
   const uid = useId();
   const questions = form.fields.filter(item => !isSection(item));
@@ -146,7 +146,7 @@ function SequentialForm({
         setError(
           invalid >= 0
             ? fieldErrors![questions[invalid].id][0] === 'unavailable'
-              ? takenMessage(takenWords, questions[invalid], details?.[questions[invalid].id])
+              ? takenMessage(takenWords, questions[invalid], details?.[questions[invalid].id], toView)
               : t('check_answer')
             : (message ?? t('send_failed'))
         );

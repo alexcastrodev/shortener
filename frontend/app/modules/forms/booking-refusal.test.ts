@@ -38,3 +38,18 @@ test('falls back to the plain message without details or for a service it does n
   );
   assert.equal(takenMessage(words, undefined, { service: 'gtr00001' }), 'taken');
 });
+
+test('prints the refused time in the zone the visitor reads', () => {
+  const toTokyo = (wall: { date: string; time: string }) => ({
+    date: '2026-11-04',
+    time: wall.time === '23:30' ? '07:30' : wall.time,
+  });
+  assert.equal(
+    takenMessage(words, field, { service: 'gtr00001', date: '2026-11-03', time: '23:30' }, toTokyo),
+    'taken Guitarra 2026-11-04 07:30'
+  );
+  assert.equal(
+    takenMessage(words, field, { service: 'bat00001' }, toTokyo),
+    'taken Bateria'
+  );
+});

@@ -167,7 +167,7 @@ export function PagedForm({
           setErrors({
             [failing.id]:
               fieldErrors![failing.id][0] === 'unavailable'
-                ? takenMessage(takenWords, failing, details?.[failing.id])
+                ? takenMessage(takenWords, failing, details?.[failing.id], toView)
                 : t('check_answer'),
           });
           setPage(Math.max(0, pages.findIndex(fields => fields.includes(failing))));
