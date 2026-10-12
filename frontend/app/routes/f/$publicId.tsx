@@ -47,7 +47,7 @@ export function HydrateFallback() {
 function failureFor(error: SubmitFormResponseError): SubmitFailure {
   const t = i18n.getFixedT(null, 'respond');
   if (error.status === 422 && error.errors?.answers && !Array.isArray(error.errors.answers)) {
-    return { fieldErrors: error.errors.answers };
+    return { fieldErrors: error.errors.answers, details: error.details };
   }
   if (error.status === 403) return { message: t('err_captcha') };
   if (error.status === 429) return { message: t('err_rate_limited') };

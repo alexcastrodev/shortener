@@ -14,6 +14,8 @@ import { SubmissionResult } from './submission-result';
 import { summarizeAll } from './booking-summary';
 import { FormCover } from './form-cover';
 import { QuestionHeading } from './question-heading';
+import { takenMessage } from './booking-refusal.ts';
+import { useTakenWords } from './use-taken-words.ts';
 
 const alertClass =
   'rounded-md bg-[#fee2e2] px-3 py-1.5 text-sm font-medium text-[#991b1b]';
@@ -44,6 +46,7 @@ export function PagedForm({
   previewServiceId,
 }: Props) {
   const { t } = useTranslation('respond');
+  const takenWords = useTakenWords();
   const theme = getBioTheme(form.theme, form.custom_colors);
   const uid = useId();
   const pages = splitPages(form.fields, form.layout);
@@ -148,12 +151,17 @@ export function PagedForm({
         setReceipt((await onSubmit(answers, { confirmFieldId })) ?? null);
         setDone(true);
       } catch (failure) {
-        const { message, fieldErrors } = (failure ?? {}) as SubmitFailure;
+        const { message, fieldErrors, details } = (failure ?? {}) as SubmitFailure;
         const failing = fieldErrors
           ? form.fields.find(item => fieldErrors[item.id])
           : undefined;
         if (failing) {
-          setErrors({ [failing.id]: fieldErrors![failing.id][0] === 'unavailable' ? t('booking_taken') : t('check_answer') });
+          setErrors({
+            [failing.id]:
+              fieldErrors![failing.id][0] === 'unavailable'
+                ? takenMessage(takenWords, failing, details?.[failing.id])
+                : t('check_answer'),
+          });
           setPage(Math.max(0, pages.findIndex(fields => fields.includes(failing))));
         }
         setFormError(

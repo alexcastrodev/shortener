@@ -51,6 +51,8 @@
   "booking_summary": "A sua marcação",
   "booking_preview_note": "Horários de exemplo com base no seu calendário. O formulário publicado mostra a disponibilidade real.",
   "booking_taken": "Esse horário acabou de ser ocupado. Escolha outro.",
+  "booking_taken_service": "A hora de {{service}} já não está disponível. Escolha outra.",
+  "booking_taken_service_at": "A hora de {{service}} ({{when}}) já não está disponível. Escolha outra.",
   "booking_load_failed": "Não conseguimos carregar os horários.",
   "booking_retry": "Tentar novamente",
   "receipt_pending": "O seu pedido de marcação aguarda aprovação. Avisamos quando houver resposta.",

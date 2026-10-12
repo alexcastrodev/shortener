@@ -51,6 +51,8 @@
   "booking_summary": "Your booking",
   "booking_preview_note": "Sample times based on your schedule. The published form shows real availability.",
   "booking_taken": "That time was just taken. Please pick another.",
+  "booking_taken_service": "The time for {{service}} is no longer available. Please pick another.",
+  "booking_taken_service_at": "The time for {{service}} ({{when}}) is no longer available. Please pick another.",
   "booking_load_failed": "We could not load the times.",
   "booking_retry": "Try again",
   "receipt_pending": "Your booking request is waiting for approval. We will let you know the outcome.",

@@ -25,12 +25,13 @@ module Appointments
 
       items = []
       entries.each do |entry|
-        item, error = cast_item(form: form, booking: booking, raw: entry, now: now, claim_at: claim_at)
-        return [nil, error] if error
+        item, error, detail = cast_item(form: form, booking: booking, raw: entry, now: now, claim_at: claim_at)
+        return [nil, error, detail] if error
 
         items << item
       end
-      return [nil, :unavailable] if clashing?(form, booking["rules"], items)
+      clash = clash_of(form, booking["rules"], items)
+      return [nil, :unavailable, clash.presence] if clash
 
       [{ "items" => items, "stored" => stored(raw, items) }, nil]
     rescue Date::Error
@@ -52,10 +53,15 @@ module Appointments
       items.first.slice("service", "sessions")
     end
 
-    def clashing?(form, rules, items)
-      starts = items.flat_map { |item| item["starts_at"] }
-      lengths = items.flat_map { |item| item["durations"] }
-      overlapping?(starts, lengths, rules.fetch("buffer_minutes", 0)) || over_daily_limit?(form, rules, items.flat_map { |item| item["sessions"] })
+    def clash_of(form, rules, items)
+      overlap = overlap_of(items, rules.fetch("buffer_minutes", 0))
+      return overlap if overlap
+
+      {} if over_daily_limit?(form, rules, items.flat_map { |item| item["sessions"] })
+    end
+
+    def refused(service, session)
+      [nil, :unavailable, { "service" => service["id"], "date" => session["date"], "time" => session["time"] }]
     end
 
     def cast_item(form:, booking:, raw:, now:, claim_at:)
@@ -73,7 +79,8 @@ module Appointments
       free = FreeSlots.call(form: form, booking: booking, service: service, from: dates.min, to: dates.max, now: now, releasing: claim_at)
       lengths = sessions.map { |session| session["duration"] || service["duration"] }
       times = sessions.zip(lengths).map { |session, minutes| free.find { |slot| slot[:date].iso8601 == session["date"] && slot[:time] == session["time"] && slot[:durations].include?(minutes) } }
-      return [nil, :unavailable] if times.any?(&:nil?)
+      missed = times.index(&:nil?)
+      return refused(service, sessions[missed]) if missed
 
       [{ "service" => service["id"], "sessions" => sessions.zip(lengths).map { |session, minutes| session.slice("date", "time").merge("duration" => minutes) }, "starts_at" => times.map { |slot| slot[:starts_at] }, "durations" => lengths, "capacity" => service["capacity"] }, nil]
     end
@@ -98,7 +105,8 @@ module Appointments
       minutes = Durations.monthly_minutes(service)
       free = FreeSlots.call(form: form, booking: booking, service: service, from: dates.min, to: dates.max, now: now, only: [minutes])
       found = picks.map { |pick| free.find { |slot| slot[:date].iso8601 == pick["date"] && slot[:time] == pick["time"] } }
-      return [nil, :unavailable] if found.any?(&:nil?)
+      missed = found.index(&:nil?)
+      return refused(service, picks[missed]) if missed
 
       slots = found.sort_by { |slot| slot[:starts_at] }
       [{ "service" => service["id"], "sessions" => slots.map { |slot| { "date" => slot[:date].iso8601, "time" => slot[:time], "duration" => minutes } }, "starts_at" => slots.map { |slot| slot[:starts_at] }, "durations" => slots.map { minutes }, "capacity" => service["capacity"], "monthly" => { "month" => raw["month"], "skipped" => [] } }, nil]
@@ -137,11 +145,11 @@ module Appointments
         next skipped << date.iso8601 unless offered.any? { |slot| slot[:date] == date && slot[:time] == raw["time"] }
 
         slot = free.find { |item| item[:date] == date && item[:time] == raw["time"] }
-        return [nil, :unavailable] unless slot
+        return refused(service, { "date" => date.iso8601, "time" => raw["time"] }) unless slot
 
         picked << slot
       end
-      return [nil, :unavailable] if picked.empty?
+      return [nil, :unavailable, { "service" => service["id"] }] if picked.empty?
 
       [{ "service" => service["id"], "sessions" => picked.map { |slot| { "date" => slot[:date].iso8601, "time" => slot[:time], "duration" => minutes } }, "starts_at" => picked.map { |slot| slot[:starts_at] }, "durations" => picked.map { minutes }, "capacity" => service["capacity"], "monthly" => { "month" => raw["month"], "skipped" => skipped } }, nil]
     rescue Date::Error
@@ -274,9 +282,12 @@ module Appointments
       ActiveRecord.after_all_transactions_commit { ids.each { |id| NotificationDeliveryJob.perform_later(id) } }
     end
 
-    def overlapping?(starts, lengths, buffer)
-      spans = starts.zip(lengths).map { |at, minutes| [at, at + (minutes + buffer).minutes] }
-      spans.combination(2).any? { |(from, to), (other_from, other_to)| from < other_to && other_from < to }
+    def overlap_of(items, buffer)
+      spans = items.flat_map do |item|
+        item["starts_at"].zip(item["durations"], item["sessions"]).map { |at, minutes, session| { from: at, to: at + (minutes + buffer).minutes, service: item["service"], session: session } }
+      end
+      _, later = spans.combination(2).find { |first, second| first[:from] < second[:to] && second[:from] < first[:to] }
+      { "service" => later[:service], "date" => later[:session]["date"], "time" => later[:session]["time"] } if later
     end
 
     def over_daily_limit?(form, rules, sessions)

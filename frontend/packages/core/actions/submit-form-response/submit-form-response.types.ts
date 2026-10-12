@@ -22,4 +22,5 @@ export interface SubmitFormResponseError {
   status?: number;
   error?: string;
   errors?: { answers?: Record<string, string[]> | string[] };
+  details?: Record<string, { service?: string; date?: string; time?: string }>;
 }

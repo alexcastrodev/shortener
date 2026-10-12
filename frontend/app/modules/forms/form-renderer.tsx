@@ -6,6 +6,8 @@ import { incompleteServices } from './booking-answer.ts';
 import { LinkedText } from './linked-text';
 import { FieldInput, focusFirstInput, isBlank, type Answer, type UploadImage } from './field-inputs';
 import type { JoinWaitlist, LoadSlots } from './booking-input';
+import { takenMessage, type Refusal } from './booking-refusal.ts';
+import { useTakenWords } from './use-taken-words.ts';
 import { isSection, sectionOf } from './field-types';
 import { useConfirmEmail } from './confirm-email';
 import { PagedForm } from './paged-form';
@@ -24,6 +26,7 @@ export type { SubmitFormReceipt };
 export type SubmitFailure = {
   message?: string;
   fieldErrors?: Record<string, string[]>;
+  details?: Record<string, Refusal>;
 };
 
 export type Props = {
@@ -69,6 +72,7 @@ function SequentialForm({
   previewServiceId,
 }: Props) {
   const { t } = useTranslation('respond');
+  const takenWords = useTakenWords();
   const theme = getBioTheme(form.theme, form.custom_colors);
   const uid = useId();
   const questions = form.fields.filter(item => !isSection(item));
@@ -125,7 +129,7 @@ function SequentialForm({
         setReceipt((await onSubmit(answers, { confirmFieldId })) ?? null);
         setStep(total);
       } catch (failure) {
-        const { message, fieldErrors } = (failure ?? {}) as SubmitFailure;
+        const { message, fieldErrors, details } = (failure ?? {}) as SubmitFailure;
         const invalid = fieldErrors
           ? questions.findIndex(item => fieldErrors[item.id])
           : -1;
@@ -133,7 +137,7 @@ function SequentialForm({
         setError(
           invalid >= 0
             ? fieldErrors![questions[invalid].id][0] === 'unavailable'
-              ? t('booking_taken')
+              ? takenMessage(takenWords, questions[invalid], details?.[questions[invalid].id])
               : t('check_answer')
             : (message ?? t('send_failed'))
         );

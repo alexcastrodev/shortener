@@ -180,10 +180,12 @@ RSpec.describe("fixed monthly booking", type: :request) do
       plan(["2026-11-03", "09:00"], ["2026-11-05", "10:00"])
       expect(response).to(have_http_status(:unprocessable_content))
       expect(json.dig("errors", "answers", booking_id)).to(eq(["unavailable"]))
+      expect(json.dig("details", booking_id)).to(eq("service" => service_id, "date" => "2026-11-03", "time" => "09:00"))
 
       plan(["2026-11-05", "10:00"], ["2026-11-11", "09:00"])
       expect(response).to(have_http_status(:unprocessable_content))
       expect(json.dig("errors", "answers", booking_id)).to(eq(["unavailable"]))
+      expect(json.dig("details", booking_id)).to(eq("service" => service_id, "date" => "2026-11-11", "time" => "09:00"))
       expect(Appointment.count).to(eq(1))
     end
 
