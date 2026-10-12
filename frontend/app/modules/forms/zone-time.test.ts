@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import type { FormField } from '@internal/core/types/Form';
 import {
   ZONE_KEY,
+  bookingZone,
   convertWall,
   distinct,
   groupByViewDay,
@@ -291,4 +293,15 @@ test('a browser without storage, or one that refuses it, does not break the choi
   assert.equal(readZone(refusing), undefined);
   assert.doesNotThrow(() => saveZone(refusing, 'Asia/Tokyo'));
   assert.doesNotThrow(() => saveZone(undefined, 'Asia/Tokyo'));
+});
+
+test('the zone of the form is the one of its booking question, public or from the editor', () => {
+  const booking = (extra: Partial<FormField>): FormField => ({ id: 'b', type: 'booking', ...extra });
+  const text: FormField = { id: 't', type: 'short_text' };
+  assert.equal(bookingZone([text, booking({ time_zone: 'Asia/Tokyo' })]), 'Asia/Tokyo');
+  assert.equal(
+    bookingZone([booking({ rules: { time_zone: 'Europe/Lisbon', approval: 'auto' } })]),
+    'Europe/Lisbon'
+  );
+  assert.equal(bookingZone([text]), undefined);
 });
