@@ -31,6 +31,8 @@ export type FormOptions = {
   accepting?: boolean;
   bookingRequired?: boolean;
   bookingLabel?: string | null;
+  description?: string;
+  cover?: boolean;
 };
 
 export type CreatedForm = {
@@ -42,6 +44,13 @@ export type CreatedForm = {
   emailIds: string[];
   serviceIds: string[];
 };
+
+export const COVER_PNG = Uint8Array.from(
+  Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC',
+    'base64',
+  ),
+);
 
 let counter = 0;
 
@@ -96,6 +105,14 @@ export async function createForm(options: FormOptions = {}): Promise<CreatedForm
       ...(options.rules ? { rules: options.rules } : {}),
     });
     if (booked.status !== 201) throw new Error(`booking field failed: ${booked.status}`);
+  }
+  if (options.description !== undefined) {
+    const described = await owner.patch(`/api/me/forms/${id}`, { description: options.description });
+    if (described.status !== 200) throw new Error(`description failed: ${described.status}`);
+  }
+  if (options.cover) {
+    const uploaded = await owner.upload(`/api/me/forms/${id}/cover`, { name: 'cover.png', type: 'image/png', bytes: COVER_PNG });
+    if (uploaded.status !== 200) throw new Error(`cover failed: ${uploaded.status}`);
   }
   if (options.publish) {
     const published = await owner.post(`/api/me/forms/${id}/publish`);

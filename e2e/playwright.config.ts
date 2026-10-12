@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 import { API_URL, APP_URL } from './support/env.ts';
 
 const startServers = process.env.E2E_START_SERVERS === '1';
+if (startServers) process.env.SSR_FORWARD_SECRET ??= 'e2e-ssr-forward-secret';
 
 export default defineConfig({
   testDir: './tests',
@@ -32,7 +33,15 @@ export default defineConfig({
             RAILS_ENV: 'e2e',
             FRONTEND_URL: APP_URL,
             E2E_SMTP_HOST: process.env.E2E_SMTP_HOST ?? 'localhost',
+            IMGPROC_URL: 'http://localhost:8080',
           },
+        },
+        {
+          command: 'bundle exec puma -b tcp://127.0.0.1:8080 -t 2:2 imgproc/config.ru',
+          cwd: '../backend',
+          url: 'http://localhost:8080/up',
+          reuseExistingServer: false,
+          timeout: 60_000,
         },
         {
           command: 'npm run start',

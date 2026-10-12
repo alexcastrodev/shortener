@@ -36,13 +36,6 @@ export function headers() {
   };
 }
 
-export function meta() {
-  return [
-    { title: 'Form - Kurz' },
-    { name: 'robots', content: 'noindex, nofollow' },
-  ];
-}
-
 export function HydrateFallback() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background">
