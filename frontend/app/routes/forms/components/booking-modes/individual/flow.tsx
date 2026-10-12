@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { scheduleSummary } from '@internal/booking';
+import { availabilityRequired, scheduleSummary } from '@internal/booking';
 import { ItemsSection } from '../../items-section';
 import { ScheduleFields } from '../../schedule-fields';
 import type { FlowProps } from '../editor-mode';
@@ -27,6 +27,11 @@ export function IndividualFlow(props: FlowProps) {
           <p className="text-xs text-muted-foreground">
             {t('availability_hint')}
           </p>
+          {services.length > 0 && !availabilityRequired(services) && (
+            <p className="text-xs text-muted-foreground">
+              {t('availability_optional')}
+            </p>
+          )}
           <p className="break-words text-xs text-muted-foreground">
             {availabilitySummary}
           </p>

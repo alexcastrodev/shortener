@@ -4,6 +4,7 @@ import i18n from '../../i18n';
 import type { BookingAnswer } from '@internal/core/types/Form';
 import { isEmptyItem, itemsOf } from './booking-answer.ts';
 import { BookingInput, type JoinWaitlist, type LoadSlots } from './booking-input';
+import { helpId } from './field-title.ts';
 import type { BioTheme } from '../bio-page/themes';
 import type { FormField } from '@internal/core/types/Form';
 
@@ -63,7 +64,7 @@ export function FieldInput({
   preselectBooking,
 }: Props) {
   const { t } = useTranslation('respond');
-  const common = { id: inputId, 'aria-describedby': `${inputId}-help` };
+  const common = { id: inputId, 'aria-describedby': helpId(inputId) };
 
   switch (field.type) {
     case 'short_text':
@@ -319,7 +320,7 @@ function ImageInput({
       <input
         ref={input}
         id={inputId}
-        aria-describedby={`${inputId}-help`}
+        aria-describedby={helpId(inputId)}
         type="file"
         accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
         disabled={busy || !upload}

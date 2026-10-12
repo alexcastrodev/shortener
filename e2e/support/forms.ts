@@ -33,6 +33,7 @@ export type FormOptions = {
   bookingLabel?: string | null;
   description?: string;
   cover?: boolean;
+  bookingHelp?: string;
 };
 
 export type CreatedForm = {
@@ -101,6 +102,7 @@ export async function createForm(options: FormOptions = {}): Promise<CreatedForm
       ...(options.bookingLabel === null ? {} : { label: options.bookingLabel ?? 'Escolha um horário' }),
       services: options.services,
       ...(options.mode ? { mode: options.mode, availability: options.availability } : {}),
+      ...(options.bookingHelp ? { help: options.bookingHelp } : {}),
       ...(options.bookingRequired ? { required: true } : {}),
       ...(options.rules ? { rules: options.rules } : {}),
     });

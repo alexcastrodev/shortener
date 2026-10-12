@@ -41,10 +41,11 @@ module Booking
         schema = Forms::BookingSchema
         booking = fields.find { |field| field["type"] == "booking" }
         availability = booking["availability"] || {}
+        lessons = booking["services"].to_a
         blocks = []
-        blocks << schema.block("no_service", "add at least one service") if booking["services"].to_a.empty?
-        blocks << schema.block("availability_incomplete", "add at least one day and one time you are available") if availability["days"].blank? || availability["times"].blank?
-        booking["services"].to_a.select { |service| own?(service) && (service["days"].blank? || service["times"].blank?) }.each do |service|
+        blocks << schema.block("no_service", "add at least one service") if lessons.empty?
+        blocks << schema.block("availability_incomplete", "add at least one day and one time you are available") if (availability["days"].blank? || availability["times"].blank?) && lessons.any? { |service| !own?(service) }
+        lessons.select { |service| own?(service) && (service["days"].blank? || service["times"].blank?) }.each do |service|
           blocks << schema.block("service_incomplete", "#{service["name"]} needs at least one day and one time", name: service["name"], service_id: service["id"])
         end
         blocks.concat(schema.common_blocks(fields, booking))

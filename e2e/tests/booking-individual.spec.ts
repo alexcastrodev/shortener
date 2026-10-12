@@ -201,3 +201,51 @@ test('the publish checklist asks for the hours of the teacher and publishing wor
   await expect(page.getByText('Publicado · versão 1')).toBeVisible();
   expect((await ownerForm(form.id)).published).toBe(true);
 });
+
+test('the availability of the teacher is optional, and publishing works, while every lesson has its own days and times', async ({ page, signIn }) => {
+  const form = await createForm({
+    mode: 'individual',
+    availability: { days: [], times: [] },
+    services: [
+      lesson('Matemática', { days: WEEK, times: ['09:00', '10:00'] }),
+      lesson('Física', { duration: 90, days: ['tue', 'thu'], times: ['14:00'] }),
+    ],
+  });
+  await signIn('owner');
+  await page.goto(`/app/forms/${form.id}`);
+
+  await expect(page.getByText('Escolha pelo menos um dia e um horário em que está disponível.')).toHaveCount(0);
+  await page.getByRole('button', { name: /Marcação de serviço$/ }).click();
+  const editor = new BookingEditor(page);
+  const availability = page.getByRole('region', { name: 'Disponibilidade' });
+  await expect(availability.getByText('Opcional enquanto todas as aulas tiverem os seus próprios dias e horários.')).toBeVisible();
+
+  await editor.save();
+  await expect(editor.saved).toBeVisible();
+  await expect(editor.invalid).toHaveCount(0);
+  await expect(availability.getByText('Adicione pelo menos um horário')).toHaveCount(0);
+  expect(bookingOf(await ownerForm(form.id)).availability).toEqual({ days: [], times: [] });
+
+  await page.getByRole('button', { name: 'Publicar', exact: true }).click();
+  await expect(page.getByText('Publicado · versão 1')).toBeVisible();
+  expect((await ownerForm(form.id)).published).toBe(true);
+});
+
+test('the availability of the teacher is asked for again as soon as one lesson has no days and times of its own', async ({ page, signIn }) => {
+  const form = await createForm({
+    mode: 'individual',
+    availability: { days: [], times: [] },
+    services: [lesson('Matemática', { days: WEEK, times: ['09:00'] }), lesson('Física')],
+  });
+  await signIn('owner');
+  await page.goto(`/app/forms/${form.id}`);
+
+  await expect(page.getByText('Escolha pelo menos um dia e um horário em que está disponível.')).toBeVisible();
+  await page.getByRole('button', { name: 'Abrir pergunta de marcação' }).click();
+  const editor = new BookingEditor(page);
+  const availability = page.getByRole('region', { name: 'Disponibilidade' });
+  await expect(availability.getByText('Opcional enquanto todas as aulas tiverem os seus próprios dias e horários.')).toHaveCount(0);
+  await editor.save();
+  await expect(editor.invalid).toBeVisible();
+  await expect(availability.getByText('Adicione pelo menos um horário')).toBeVisible();
+});

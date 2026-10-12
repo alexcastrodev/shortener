@@ -48,6 +48,12 @@ export const requiredSchedule = (t: Translate) => ({
 
 export type ScheduleShape = ReturnType<typeof requiredSchedule>;
 
+export const optionalSchedule = (t: Translate): ScheduleShape => ({
+  ...requiredSchedule(t),
+  days: z.array(z.string()),
+  times: z.array(z.object({ value: z.string().regex(TIME, t('error_time')) })),
+});
+
 export const looseSchedule: ScheduleShape = {
   days: z.array(z.string()),
   times: z.array(z.object({ value: z.string() })),
@@ -63,10 +69,13 @@ export const scheduleIssues = (
     .safeParse({ days, times, byDay })
     .error?.issues.map(({ message, path }) => ({ message, path })) ?? [];
 
+export type FormInput = { availability: ScheduleInput; services: ItemInput[] };
+
 export type ModeValidation = {
   fields: (t: Translate) => z.ZodRawShape;
   schedule: (t: Translate) => ScheduleShape;
   itemIssues: (item: ItemInput, t: Translate) => ItemIssue[];
+  formIssues?: (values: FormInput, t: Translate) => ItemIssue[];
 };
 
 const duration = (t: Translate) =>
@@ -242,6 +251,15 @@ export const bookingSchema = (validation: ModeValidation, t: Translate) =>
         services,
         exceptionDraft,
       } = ctx.value;
+      validation.formIssues?.(ctx.value as unknown as FormInput, t).forEach(
+        issue =>
+          ctx.issues.push({
+            code: 'custom',
+            message: issue.message,
+            path: issue.path,
+            input: ctx.value,
+          })
+      );
       if (multiple) {
         const categories = (ctx.value as { categories?: unknown[] }).categories;
         if ((categories?.length ?? 0) >= 2) {

@@ -1,6 +1,6 @@
 import type { FormField } from '@internal/core/types/Form';
 import type { BioTheme } from '../bio-page/themes';
-import { hasLabel } from './field-title.ts';
+import { hasLabel, helpId } from './field-title.ts';
 
 export function QuestionHeading({
   field,
@@ -27,7 +27,7 @@ export function QuestionHeading({
         </label>
       )}
       <p
-        id={`${inputId}-help`}
+        id={helpId(inputId)}
         className={`${labelled ? 'mt-1' : ''} ${gap} text-sm ${theme.bio}`}
       >
         {field.help}
