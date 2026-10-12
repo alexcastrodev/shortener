@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { pickDay, pickLockedDay } from '../support/calendar.ts';
+import { dayLabel, pickDay, pickLockedDay } from '../support/calendar.ts';
 import { nextMonthWeek } from '../support/dates.ts';
 import { BookingEditor, bookingOf } from '../support/editor.ts';
 import { expect, test } from '../support/fixtures.ts';
@@ -292,4 +292,37 @@ test('a plan with its own duration only offers the times where that duration fit
   await view.submit();
   await expect(page.getByRole('heading', { name: 'Marcação confirmada' })).toBeVisible();
   expect(await appointmentsOf(form.id)).toHaveLength(3);
+});
+
+test('switching between single sessions and the plan keeps the month being looked at and the times already loaded', async ({ page }) => {
+  const form = await createForm({ services: [massage({ sessions: 3 })], publish: true });
+  const [mon] = nextMonthWeek();
+  const asked: string[] = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname.endsWith('/slots')) asked.push(url.searchParams.has('monthly') ? 'plan' : 'days');
+  });
+  const count = (kind: string) => asked.filter(item => item === kind).length;
+  const day = page.getByRole('button', { name: new RegExp(`^${dayLabel(mon)}`) });
+  const view = new PublicForm(page, form);
+  await view.open();
+
+  await pickDay(page, mon);
+  await expect(page.getByText(monthLabel(mon), { exact: true })).toBeVisible();
+  const days = count('days');
+
+  await openPlan(page, mon);
+  await pickLockedDay(page, mon);
+  const plan = count('plan');
+  expect(plan).toBeGreaterThan(0);
+
+  await page.getByRole('radio', { name: /Sessões avulsas/ }).click();
+  await expect(page.getByText(monthLabel(mon), { exact: true })).toBeVisible();
+  await expect(day).toBeEnabled();
+  expect(count('days')).toBe(days);
+
+  await page.getByRole('radio', { name: /Reserva fixa mensal/ }).click();
+  await expect(page.getByRole('button', { name: monthLabel(mon), exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(day).toBeEnabled();
+  expect(count('plan')).toBe(plan);
 });

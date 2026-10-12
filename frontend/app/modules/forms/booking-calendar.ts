@@ -1,7 +1,7 @@
 import type { FormSlot } from '@internal/core/actions/get-form-slots/get-form-slots.types';
 import type { BookingService } from '@internal/core/types/Form';
 import { bookingOptions, type Allowance } from './booking-options.ts';
-import { pad } from './monthly-booking.ts';
+import { monthlyDates, pad } from './monthly-booking.ts';
 
 export const MAX_DAYS = 56;
 
@@ -104,6 +104,39 @@ export const mondayOf = (iso: string) => {
   return date.toISOString().slice(0, 10);
 };
 
+const clashOf = (
+  pick: PickedSession,
+  existing: PickedSession[],
+  buffer: number
+) => {
+  const start = minutesOf(pick.time);
+  return existing.find(
+    item =>
+      item.date === pick.date &&
+      start < minutesOf(item.time) + item.duration + buffer &&
+      minutesOf(item.time) < start + pick.duration + buffer
+  );
+};
+
+export function monthlyClash(
+  choice: { month: string; weekdays: string[]; time: string },
+  duration: number,
+  others: PickedSession[],
+  buffer: number,
+  today: Date
+): PickedSession | undefined {
+  for (const date of monthlyDates(choice.month, choice.weekdays, today)) {
+    const clash = clashOf({ date, time: choice.time, duration }, others, buffer);
+    if (clash) return clash;
+  }
+  return undefined;
+}
+
+export const bufferOf = (field: {
+  buffer_minutes?: number;
+  rules?: { buffer_minutes?: number };
+}) => field.buffer_minutes ?? field.rules?.buffer_minutes ?? 0;
+
 export function toggleSession(
   sessions: PickedSession[],
   pick: PickedSession,
@@ -120,13 +153,7 @@ export function toggleSession(
     return { kind: 'removed', sessions: sessions.filter(item => !sameTime(item)) };
 
   const rest = sessions.filter(item => !sameTime(item));
-  const start = minutesOf(pick.time);
-  const clash = [...rest, ...others].find(
-    item =>
-      item.date === pick.date &&
-      start < minutesOf(item.time) + item.duration + buffer &&
-      minutesOf(item.time) < start + pick.duration + buffer
-  );
+  const clash = clashOf(pick, [...rest, ...others], buffer);
   if (clash) return { kind: 'overlap', sessions, clash };
   if (cap) {
     const week = mondayOf(pick.date);

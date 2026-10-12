@@ -7,11 +7,13 @@ import {
   keepFree,
   lastBookable,
   monthGrid,
+  monthlyClash,
   monthRange,
   mondayOf,
   previewSlots,
   shiftMonth,
   toggleSession,
+  bufferOf,
 } from './booking-calendar.ts';
 
 test('the grid starts on Monday and pads whole weeks', () => {
@@ -246,4 +248,39 @@ test('a chosen session is kept only while its duration is still offered', () => 
     { date: '2026-10-12', time: '09:00', duration: 90 },
   ];
   assert.deepEqual(keepFree(sessions, slots, range), [sessions[0]]);
+});
+
+const pattern = (weekdays: string[], time: string, month = '2026-11') => ({ month, weekdays, time });
+const guitar = (date: string, time: string, duration = 60) => ({ date, time, duration, service: 'Guitarra' });
+const today = new Date(2026, 10, 2);
+
+test('a weekday pattern that lands on a session of another service is a clash, and says which', () => {
+  const others = [guitar('2026-11-18', '09:30')];
+  assert.deepEqual(monthlyClash(pattern(['wed'], '09:00'), 60, others, 0, today), others[0]);
+  assert.equal(monthlyClash(pattern(['mon', 'tue'], '09:00'), 60, others, 0, today), undefined);
+  assert.equal(monthlyClash(pattern(['wed'], '10:30'), 60, others, 0, today), undefined);
+});
+
+test('the gap between sessions counts for a weekday pattern too', () => {
+  const others = [guitar('2026-11-18', '10:00')];
+  assert.equal(monthlyClash(pattern(['wed'], '09:00'), 60, others, 0, today), undefined);
+  assert.deepEqual(monthlyClash(pattern(['wed'], '09:00'), 60, others, 30, today), others[0]);
+});
+
+test('a weekday pattern only looks at the days still to come in the month', () => {
+  const others = [guitar('2026-11-02', '09:00')];
+  assert.equal(monthlyClash(pattern(['mon'], '09:00'), 60, others, 0, new Date(2026, 10, 3)), undefined);
+  assert.deepEqual(monthlyClash(pattern(['mon'], '09:00'), 60, others, 0, today), others[0]);
+});
+
+test('a weekday pattern the other service never touches is not a clash', () => {
+  assert.equal(monthlyClash(pattern(['wed'], '09:00'), 60, [], 0, today), undefined);
+  assert.equal(monthlyClash(pattern([], '09:00'), 60, [guitar('2026-11-18', '09:00')], 0, today), undefined);
+  assert.equal(monthlyClash(pattern(['wed'], '09:00', '2026-12'), 60, [guitar('2026-11-18', '09:00')], 0, today), undefined);
+});
+
+test('the gap between sessions is read from the question or its rules', () => {
+  assert.equal(bufferOf({ buffer_minutes: 15, rules: { buffer_minutes: 30 } }), 15);
+  assert.equal(bufferOf({ rules: { buffer_minutes: 30 } }), 30);
+  assert.equal(bufferOf({}), 0);
 });

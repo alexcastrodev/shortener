@@ -9,7 +9,13 @@ import type { BioTheme } from '../bio-page/themes';
 import { formatCurrency, formatDate } from '../../i18n/format';
 import type { JoinWaitlist } from './waitlist-join';
 import { isPlan } from './booking-answer.ts';
-import type { PickedSession } from './booking-calendar.ts';
+import {
+  bufferOf,
+  monthOf,
+  monthlyClash,
+  type PickedSession,
+} from './booking-calendar.ts';
+import { BookingNote } from './booking-note.tsx';
 import {
   allowanceOf,
   cheapestPrice,
@@ -27,6 +33,7 @@ import {
   monthlyDates,
   toggleWeekday,
 } from './monthly-booking';
+import { usePickerMemory, type PickerMemory } from './picker-memory.ts';
 import { SessionPicker, type LoadSlots } from './session-picker.tsx';
 
 export type { LoadSlots };
@@ -69,6 +76,11 @@ export function ServiceBlock({
   const sessions = item?.sessions ?? [];
   const monthly = item?.monthly;
   const allowance = allowanceOf(service);
+  const daysMemory = usePickerMemory(monthOf(new Date()), true);
+  const planMemory = usePickerMemory(
+    monthly && isPlan(monthly) ? monthly.month : monthOptions(new Date())[0].value,
+    false
+  );
 
   const chooseMode = (next: 'days' | 'monthly') => {
     if (next === mode) return;
@@ -87,7 +99,10 @@ export function ServiceBlock({
     <>
       {service.monthly && (
         <div className="space-y-2">
-          <p id={modeId} className="text-xl font-semibold">
+          <p
+            id={modeId}
+            className={multiple ? 'sr-only' : 'text-xl font-semibold'}
+          >
             {t('booking_mode')}
           </p>
           <fieldset
@@ -178,6 +193,8 @@ export function ServiceBlock({
         <MonthlyPicker
           service={service}
           value={monthly && !isPlan(monthly) ? monthly : undefined}
+          others={others}
+          buffer={bufferOf(field)}
           theme={theme}
           chip={chip}
           onChange={choice =>
@@ -195,7 +212,7 @@ export function ServiceBlock({
           field={field}
           service={service}
           allowance={allowance}
-          month={monthly && isPlan(monthly) ? monthly.month : undefined}
+          memory={planMemory}
           picks={monthly && isPlan(monthly) ? monthly.sessions : []}
           others={others}
           onItem={onItem}
@@ -204,7 +221,7 @@ export function ServiceBlock({
           loadSlots={loadSlots}
           reloadKey={reloadKey}
           hideSummary={hideSummary}
-          named={multiple}
+          shared={multiple}
         />
       )}
 
@@ -225,7 +242,8 @@ export function ServiceBlock({
           joinWaitlist={joinWaitlist}
           reloadKey={reloadKey}
           hideSummary={hideSummary}
-          named={multiple}
+          memory={daysMemory}
+          shared={multiple}
         />
       )}
     </>
@@ -280,7 +298,7 @@ function PlanPicker({
   field,
   service,
   allowance,
-  month: chosenMonth,
+  memory,
   picks,
   others,
   onItem,
@@ -289,12 +307,12 @@ function PlanPicker({
   loadSlots,
   reloadKey,
   hideSummary,
-  named,
+  shared,
 }: {
   field: FormField;
   service: Service;
   allowance: Allowance;
-  month: string | undefined;
+  memory: PickerMemory;
   picks: { date: string; time: string }[];
   others: PickedSession[];
   onItem: (item: BookingItem | undefined) => void;
@@ -303,16 +321,14 @@ function PlanPicker({
   loadSlots?: LoadSlots;
   reloadKey?: string;
   hideSummary?: boolean;
-  named: boolean;
+  shared: boolean;
 }) {
   const plan = usePlanWords();
-  const [month, setMonth] = useState(
-    () => chosenMonth ?? monthOptions(new Date())[0].value
-  );
+  const month = memory.month;
 
   const chooseMonth = (next: string) => {
     if (next === month) return;
-    setMonth(next);
+    memory.setMonth(next);
     onItem(undefined);
   };
 
@@ -346,10 +362,11 @@ function PlanPicker({
         loadSlots={loadSlots}
         reloadKey={reloadKey}
         hideSummary={hideSummary}
+        memory={memory}
         month={month}
         duration={monthlyMinutes(service)}
         cap={allowance}
-        named={named}
+        shared={shared}
       />
     </div>
   );
@@ -358,12 +375,16 @@ function PlanPicker({
 function MonthlyPicker({
   service,
   value,
+  others,
+  buffer,
   theme,
   chip,
   onChange,
 }: {
   service: Service;
   value: MonthlyPattern | undefined;
+  others: PickedSession[];
+  buffer: number;
   theme: BioTheme;
   chip: (selected: boolean) => string;
   onChange: (choice: MonthlyPattern | undefined) => void;
@@ -375,8 +396,14 @@ function MonthlyPicker({
   const [draft, setDraft] = useState<MonthlyPattern>(
     value ?? { month: months[0].value, weekdays: [], time: times[0] ?? '' }
   );
+  const [clash, setClash] = useState<PickedSession>();
   const update = (next: Partial<MonthlyPattern>) => {
     const merged = { ...draft, ...next };
+    const found = monthlyComplete(merged)
+      ? monthlyClash(merged, monthlyMinutes(service), others, buffer, new Date())
+      : undefined;
+    setClash(found);
+    if (found) return;
     setDraft(merged);
     onChange(monthlyComplete(merged) ? merged : undefined);
   };
@@ -429,6 +456,17 @@ function MonthlyPicker({
           </button>
         ))}
       </div>
+      <BookingNote
+        warning
+        message={
+          clash
+            ? t('booking_note_overlap_service', {
+                service: clash.service,
+                what: clash.time,
+              })
+            : undefined
+        }
+      />
       {value && (
         <div
           className="rounded-lg border border-current/20 px-3 py-2 text-sm"

@@ -9,10 +9,12 @@ import type { BioTheme } from '../bio-page/themes';
 import { formatCurrency, formatDate } from '../../i18n/format';
 import { WaitlistJoin, type JoinWaitlist } from './waitlist-join';
 import { BookingCalendar } from './booking-calendar.tsx';
+import { BookingNote } from './booking-note.tsx';
+import { PickHeading } from './pick-heading.tsx';
 import {
+  bufferOf,
   canGoNext,
   keepFree,
-  monthOf,
   monthRange,
   previewSlots,
   shiftMonth,
@@ -26,6 +28,7 @@ import {
   type Allowance,
 } from './booking-options.ts';
 import { useDurationWords } from './use-duration-words.ts';
+import type { PickerMemory } from './picker-memory.ts';
 
 export type LoadSlots = (
   service: string,
@@ -49,8 +52,6 @@ const dayHeading = (iso: string) =>
     month: 'long',
     timeZone: 'UTC',
   });
-
-type Cache = { key: string; months: Record<string, LoadedSlots> };
 
 type Note = {
   kind: 'saved' | 'removed' | 'overlap' | 'limit';
@@ -77,10 +78,11 @@ export function SessionPicker({
   joinWaitlist,
   reloadKey,
   hideSummary,
+  memory,
   month: fixedMonth,
   duration: fixedDuration,
   cap,
-  named,
+  shared,
 }: {
   field: FormField;
   service: Service;
@@ -93,23 +95,22 @@ export function SessionPicker({
   joinWaitlist?: JoinWaitlist;
   reloadKey?: string;
   hideSummary?: boolean;
+  memory: PickerMemory;
   month?: string;
   duration?: number;
   cap?: Allowance;
-  named?: boolean;
+  shared?: boolean;
 }) {
   const { t } = useTranslation('respond');
   const durationWords = useDurationWords();
   const serviceId = service.id;
-  const [free, setFree] = useState(() => monthOf(new Date()));
-  const month = fixedMonth ?? free;
+  const { cache, setCache, seeking } = memory;
+  const month = fixedMonth ?? memory.month;
   const [viewed, setViewed] = useState<string>();
   const [attempt, setAttempt] = useState(0);
   const [dropped, setDropped] = useState(false);
   const [note, setNote] = useState<Note>();
-  const [cache, setCache] = useState<Cache>({ key: '', months: {} });
   const [failed, setFailed] = useState<string | null>(null);
-  const seeking = useRef(fixedMonth === undefined);
   const cached = useRef(cache);
   cached.current = cache;
   const key = `${reloadKey ?? ''}|${attempt}`;
@@ -149,7 +150,7 @@ export function SessionPicker({
         }
         if (seeking.current) {
           if (loaded.slots.length === 0 && canGoNext(month, today))
-            setFree(shiftMonth(month, 1));
+            memory.setMonth(shiftMonth(month, 1));
           else seeking.current = false;
         }
       })
@@ -161,7 +162,7 @@ export function SessionPicker({
 
   const goMonth = (next: string) => {
     seeking.current = false;
-    setFree(next);
+    memory.setMonth(next);
   };
 
   const toggle = (date: string, time: string, minutes: number) => {
@@ -169,7 +170,7 @@ export function SessionPicker({
     const result = toggleSession(
       picks.map(pick => ({ ...pick, duration: pick.duration ?? lasts })),
       { date, time, duration: minutes },
-      field.buffer_minutes ?? field.rules?.buffer_minutes ?? 0,
+      bufferOf(field),
       others,
       cap
     );
@@ -290,19 +291,12 @@ export function SessionPicker({
       <div className="space-y-3">
         {dropped && (
           <p role="alert" className="text-sm font-medium">
-            {named
+            {shared
               ? t('booking_taken_service', { service: service.name })
               : t('booking_taken')}
           </p>
         )}
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="text-xl font-semibold">{t('booking_pick')}</p>
-          {field.time_zone && (
-            <p className="text-xs opacity-70">
-              {t('booking_zone', { zone: field.time_zone })}
-            </p>
-          )}
-        </div>
+        {!shared && <PickHeading zone={field.time_zone} />}
         {status === 'error' ? (
           <div className="space-y-2">
             <p role="alert" className="text-sm">
@@ -394,34 +388,7 @@ export function SessionPicker({
                     })
                   )}
                 </div>
-                <div aria-live="polite">
-                  {message && (
-                    <p
-                      className={`flex items-start gap-2 rounded-lg border border-dashed p-3 text-sm font-medium ${
-                        warning
-                          ? 'border-amber-500/70 bg-amber-500/15'
-                          : 'border-teal-500/60 bg-teal-500/15'
-                      }`}
-                    >
-                      <svg
-                        aria-hidden="true"
-                        viewBox="0 0 16 16"
-                        className={`mt-0.5 h-4 w-4 shrink-0 fill-none stroke-2 ${
-                          warning ? 'stroke-amber-500' : 'stroke-teal-500'
-                        }`}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        {warning ? (
-                          <path d="M8 3v6M8 12.5v.01" />
-                        ) : (
-                          <path d="M3 8.5l3.2 3.2L13 4.5" />
-                        )}
-                      </svg>
-                      <span>{message}</span>
-                    </p>
-                  )}
-                </div>
+                <BookingNote message={message} warning={warning} />
                 <p className="text-xs opacity-70">
                   {cap ? t('plan_pick_hint') : t('booking_pick_hint')}
                 </p>
