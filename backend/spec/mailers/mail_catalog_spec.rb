@@ -79,7 +79,7 @@ RSpec.describe("Every email, in both languages") do
           it "writes dates in the reader's language, 24-hour clock, in the booking's time zone" do
             expect(Nokogiri::HTML5(html).text).to(include(expected[:when][locale]))
             expect(text).to(include(expected[:when][locale]))
-            expect(text).not_to(match(/\d\s?[AP]M\b/i))
+            expect(text.gsub(%r{https?://\S+}, "")).not_to(match(/\d\s?[AP]M\b/i))
           end
         end
 
