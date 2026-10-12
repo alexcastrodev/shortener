@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FormField } from '@internal/core/types/Form';
 import type {
@@ -15,6 +15,7 @@ import {
   bufferOf,
   canGoNext,
   keepFree,
+  monthOf,
   monthRange,
   previewSlots,
   shiftMonth,
@@ -29,6 +30,13 @@ import {
 } from './booking-options.ts';
 import { useDurationWords } from './use-duration-words.ts';
 import type { PickerMemory } from './picker-memory.ts';
+import { useViewZone } from './view-zone.tsx';
+import {
+  distinct,
+  groupByViewDay,
+  localToday,
+  requestRange,
+} from './zone-time.ts';
 
 export type LoadSlots = (
   service: string,
@@ -105,7 +113,10 @@ export function SessionPicker({
   const durationWords = useDurationWords();
   const serviceId = service.id;
   const { cache, setCache, seeking } = memory;
-  const month = fixedMonth ?? memory.month;
+  const { zone, formZone, toView } = useViewZone();
+  const today = localToday(zone);
+  const month =
+    fixedMonth ?? (memory.month < monthOf(today) ? monthOf(today) : memory.month);
   const [viewed, setViewed] = useState<string>();
   const [attempt, setAttempt] = useState(0);
   const [dropped, setDropped] = useState(false);
@@ -113,13 +124,13 @@ export function SessionPicker({
   const [failed, setFailed] = useState<string | null>(null);
   const cached = useRef(cache);
   cached.current = cache;
-  const key = `${reloadKey ?? ''}|${attempt}`;
+  const key = `${reloadKey ?? ''}|${attempt}|${zone ?? ''}`;
   const preview = !loadSlots;
   const loader = useRef<LoadSlots>(async () => ({ slots: [], full: [] }));
   loader.current =
     loadSlots ??
     (async (_id, from, to) => ({
-      slots: previewSlots(service, from, to, new Date()),
+      slots: previewSlots(service, from, to, localToday(formZone), formZone),
       full: [],
     }));
   const latest = useRef({ picks, onPicks });
@@ -128,11 +139,20 @@ export function SessionPicker({
 
   useEffect(() => {
     if (cached.current.key === key && cached.current.months[month]) return;
-    const today = new Date();
     const range = monthRange(month, today);
-    if (!range) return;
+    if (!range) {
+      setCache(previous => ({
+        key,
+        months: {
+          ...(previous.key === key ? previous.months : {}),
+          [month]: { slots: [], full: [] },
+        },
+      }));
+      return;
+    }
+    const asked = requestRange(range, formZone, zone);
     let current = true;
-    loader.current(serviceId, range.from, range.to, fixedDuration !== undefined)
+    loader.current(serviceId, asked.from, asked.to, fixedDuration !== undefined)
       .then(loaded => {
         if (!current) return;
         setCache(previous => ({
@@ -143,13 +163,16 @@ export function SessionPicker({
           },
         }));
         const { picks: chosen, onPicks: update } = latest.current;
-        const kept = keepFree(chosen, loaded.slots, range);
+        const kept = keepFree(chosen, loaded.slots, asked);
         if (kept.length !== chosen.length) {
           setDropped(true);
           update(kept);
         }
         if (seeking.current) {
-          if (loaded.slots.length === 0 && canGoNext(month, today))
+          const open = [
+            ...groupByViewDay(loaded.slots, formZone, zone).keys(),
+          ].some(day => day.startsWith(month));
+          if (!open && canGoNext(month, today))
             memory.setMonth(shiftMonth(month, 1));
           else seeking.current = false;
         }
@@ -205,13 +228,19 @@ export function SessionPicker({
     : failed === `${key}|${month}`
       ? 'error'
       : 'loading';
-  const byDay = new Map<string, FormSlot[]>();
-  for (const data of Object.values(months))
-    for (const slot of data.slots)
-      byDay.set(slot.date, [...(byDay.get(slot.date) ?? []), slot]);
+  const byDay = useMemo(() => {
+    const offered = Object.values(months).flatMap(data => data.slots);
+    return groupByViewDay(
+      fixedMonth
+        ? offered.filter(slot => slot.date.startsWith(fixedMonth))
+        : offered,
+      formZone,
+      zone
+    );
+  }, [months, fixedMonth, formZone, zone]);
+  const monthDays = new Set([...byDay.keys()].filter(day => day.startsWith(month)));
   const shown =
     viewed && viewed.startsWith(month) && byDay.has(viewed) ? viewed : undefined;
-  const today = new Date();
   const several = fixedDuration === undefined && hasSeveralDurations(service);
   const priceText = (price: number | null | undefined, currency?: string | null) =>
     price ? formatCurrency(price, currency ?? 'EUR') : null;
@@ -220,8 +249,10 @@ export function SessionPicker({
       .filter(Boolean)
       .join(' · ');
   const picked = new Map<string, string[]>();
-  for (const pick of picks)
-    picked.set(pick.date, [...(picked.get(pick.date) ?? []), pick.time]);
+  for (const pick of picks) {
+    const view = toView(pick);
+    picked.set(view.date, [...(picked.get(view.date) ?? []), view.time]);
+  }
   const isPicked = (date: string, time: string, minutes: number) =>
     picks.some(
       pick =>
@@ -243,24 +274,27 @@ export function SessionPicker({
     minutes === service.duration
       ? service.price
       : service.extra_durations?.find(entry => entry.duration === minutes)?.price;
-  const noteWhen = (entry: Note) =>
-    t('booking_when', { date: dayLabel(entry.date), time: entry.time });
+  const noteWhen = (entry: Note) => {
+    const view = toView(entry);
+    return t('booking_when', { date: dayLabel(view.date), time: view.time });
+  };
   const overlapText = (clash: PickedSession) =>
     clash.service
       ? t('booking_note_overlap_service', {
           service: clash.service,
-          what: clash.time,
+          what: toView(clash).time,
         })
       : t('booking_note_overlap', {
-          what: sessionText(clash.time, clash.duration),
+          what: sessionText(toView(clash).time, clash.duration),
         });
   const limitText = (per: Allowance['per'] | undefined) =>
     per === 'week'
       ? t('plan_week_full', { count: cap?.limit })
       : t('plan_full', { count: cap?.limit });
+  const noteDay = note && toView(note).date;
   let message: string | undefined;
   if (shown) {
-    if (note && note.date === shown) {
+    if (note && noteDay === shown) {
       message =
         note.kind === 'saved'
           ? t('booking_note_saved', {
@@ -274,17 +308,17 @@ export function SessionPicker({
               ? limitText(note.per)
               : overlapText(note.clash!);
     } else if (picked.has(shown)) {
-      const sameDay = picks.filter(pick => pick.date === shown);
+      const sameDay = picks.filter(pick => toView(pick).date === shown);
       message = t('booking_note_kept', {
         count: sameDay.length,
         what: sameDay
-          .map(pick => sessionText(pick.time, pick.duration))
+          .map(pick => sessionText(toView(pick).time, pick.duration))
           .join(', '),
       });
     }
   }
   const warning =
-    (note?.kind === 'overlap' || note?.kind === 'limit') && note.date === shown;
+    (note?.kind === 'overlap' || note?.kind === 'limit') && noteDay === shown;
 
   return (
     <>
@@ -296,7 +330,7 @@ export function SessionPicker({
               : t('booking_taken')}
           </p>
         )}
-        {!shared && <PickHeading zone={field.time_zone} />}
+        {!shared && <PickHeading theme={theme} />}
         {status === 'error' ? (
           <div className="space-y-2">
             <p role="alert" className="text-sm">
@@ -315,7 +349,7 @@ export function SessionPicker({
             <BookingCalendar
               month={month}
               today={today}
-              available={new Set(loaded?.slots.map(slot => slot.date))}
+              available={monthDays}
               chosen={picked}
               viewed={shown}
               theme={theme}
@@ -328,7 +362,7 @@ export function SessionPicker({
             {status === 'loading' && (
               <p className="text-sm opacity-80">{t('booking_loading')}</p>
             )}
-            {status === 'ready' && loaded.slots.length === 0 && (
+            {status === 'ready' && monthDays.size === 0 && (
               <p className="text-sm opacity-80">{t('booking_none')}</p>
             )}
             {preview && (
@@ -364,24 +398,24 @@ export function SessionPicker({
                 >
                   {byDay.get(shown)!.flatMap(slot =>
                     offeredDurations(slot).map(minutes => {
-                      const selected = isPicked(shown, slot.time, minutes);
+                      const selected = isPicked(slot.date, slot.time, minutes);
                       return (
                         <button
                           key={`${slot.starts_at}-${minutes}`}
                           type="button"
                           aria-pressed={selected}
                           className={`${chip(false, 'text-[15px]!')} min-h-12 ${selected ? 'ring-2 ring-teal-500' : ''}`}
-                          onClick={() => toggle(shown, slot.time, minutes)}
+                          onClick={() => toggle(slot.date, slot.time, minutes)}
                         >
                           {several ? (
                             <span className="flex flex-col items-center leading-tight">
-                              <span>{slot.time}</span>
+                              <span>{slot.viewTime}</span>
                               <span className="text-xs font-normal opacity-80">
                                 {optionText(minutes, priceOf(minutes))}
                               </span>
                             </span>
                           ) : (
-                            slot.time
+                            slot.viewTime
                           )}
                         </button>
                       );
@@ -395,7 +429,7 @@ export function SessionPicker({
               </div>
             ) : (
               status === 'ready' &&
-              loaded.slots.length > 0 && (
+              monthDays.size > 0 && (
                 <p className="rounded-lg border border-dashed border-current/30 p-4 text-center text-[13px] opacity-80">
                   {t('booking_choose_day')}
                 </p>
@@ -405,7 +439,7 @@ export function SessionPicker({
               <WaitlistJoin
                 key={serviceId}
                 serviceId={serviceId}
-                full={Object.values(months).flatMap(data => data.full)}
+                full={distinct(Object.values(months).flatMap(data => data.full))}
                 theme={theme}
                 chip={chip}
                 dayLabel={dayLabel}
@@ -425,7 +459,7 @@ export function SessionPicker({
           <ul className="mt-1 space-y-0.5">
             {picks.map(pick => (
               <li key={`${pick.date}-${pick.time}`}>
-                {dayLabel(pick.date)} · {pick.time}
+                {dayLabel(toView(pick).date)} · {toView(pick).time}
                 {several && pick.duration
                   ? ` · ${optionText(pick.duration, priceOf(pick.duration))}`
                   : ''}

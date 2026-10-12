@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { BookingService } from '@internal/core/types/Form';
-import { summarize, summarizeAll } from './booking-summary.ts';
+import { inZone, summarize, summarizeAll } from './booking-summary.ts';
+import { convertWall } from './zone-time.ts';
 
 const service = (extra: Partial<BookingService> = {}): BookingService => ({
   id: 's1',
@@ -290,4 +291,76 @@ test('items that are empty or of an unknown service are left out, and nothing le
   );
   assert.equal(all, null);
   assert.equal(summarizeAll([guitar()], undefined, today), null);
+});
+
+const toTokyo = (wall: { date: string; time: string }) =>
+  convertWall(wall, 'Europe/Lisbon', 'Asia/Tokyo');
+
+test('single sessions are shown in the view zone and the answer keeps the form zone', () => {
+  const today = new Date(2026, 9, 9);
+  const answer = {
+    service: 's1',
+    sessions: [{ date: '2026-10-13', time: '23:30' }],
+  };
+  const all = summarizeAll([service()], { items: [answer] }, today);
+  const shown = inZone(all, toTokyo)!;
+  assert.deepEqual(
+    shown.items[0].summary.sessions.map(session => [session.date, session.time]),
+    [['2026-10-14', '07:30']]
+  );
+  assert.deepEqual(
+    all!.items[0].summary.sessions.map(session => [session.date, session.time]),
+    [['2026-10-13', '23:30']]
+  );
+  assert.equal(shown.total, all!.total);
+  assert.equal(shown.count, all!.count);
+});
+
+test('a plan is converted like single sessions', () => {
+  const today = new Date(2026, 9, 9);
+  const plan = service({ monthly: { price: 100, sessions: 4 } });
+  const all = summarizeAll(
+    [plan],
+    {
+      items: [
+        {
+          service: 's1',
+          sessions: [],
+          monthly: { month: '2026-10', sessions: [{ date: '2026-10-13', time: '23:30' }] },
+        },
+      ],
+    },
+    today
+  );
+  const [session] = inZone(all, toTokyo)!.items[0].summary.sessions;
+  assert.deepEqual([session.date, session.time], ['2026-10-14', '07:30']);
+});
+
+test('a weekday pattern is defined by the form zone, so it is not converted and says so', () => {
+  const today = new Date(2026, 9, 9);
+  const all = summarizeAll(
+    [service({ monthly: { price: 200 } })],
+    {
+      items: [
+        {
+          service: 's1',
+          sessions: [],
+          monthly: { month: '2026-11', weekdays: ['mon'], time: '23:30' },
+        },
+      ],
+    },
+    today
+  );
+  const [item] = inZone(all, toTokyo, 'hora do formulário: Europe/Lisbon')!.items;
+  assert.equal(item.summary.sessions[0].time, '23:30');
+  assert.equal(item.summary.sessions[0].date, all!.items[0].summary.sessions[0].date);
+  assert.equal(item.summary.note, 'hora do formulário: Europe/Lisbon');
+  assert.equal(inZone(all, toTokyo)!.items[0].summary.note, undefined);
+});
+
+test('nothing to show stays nothing and an identity zone changes no value', () => {
+  const today = new Date(2026, 9, 9);
+  assert.equal(inZone(null, toTokyo), null);
+  const all = summarizeAll([service()], { items: [days(2)] }, today);
+  assert.deepEqual(inZone(all, wall => wall), all);
 });

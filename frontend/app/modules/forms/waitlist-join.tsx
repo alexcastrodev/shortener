@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FullSlot } from '@internal/core/actions/get-form-slots/get-form-slots.types';
 import type { BioTheme } from '../bio-page/themes';
+import { useViewZone } from './view-zone.tsx';
 
 export type JoinWaitlist = (params: {
   service: string;
@@ -9,6 +10,7 @@ export type JoinWaitlist = (params: {
   time: string;
   name: string;
   email: string;
+  timeZone?: string;
 }) => Promise<void>;
 
 type Chosen = { date: string; time: string };
@@ -29,6 +31,7 @@ export function WaitlistJoin({
   join: JoinWaitlist;
 }) {
   const { t } = useTranslation('respond');
+  const { zone, toView } = useViewZone();
   const [chosen, setChosen] = useState<Chosen | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -36,6 +39,11 @@ export function WaitlistJoin({
   const [problem, setProblem] = useState<string | null>(null);
 
   if (full.length === 0) return null;
+
+  const when = (slot: Chosen) => {
+    const view = toView(slot);
+    return `${dayLabel(view.date)} · ${view.time}`;
+  };
 
   const submit = async () => {
     if (!chosen || state === 'busy') return;
@@ -47,6 +55,7 @@ export function WaitlistJoin({
         ...chosen,
         name: name.trim(),
         email: email.trim(),
+        timeZone: zone,
       });
       setState('done');
     } catch (error) {
@@ -70,7 +79,7 @@ export function WaitlistJoin({
         className="rounded-lg border border-current/20 px-3 py-2 text-sm"
       >
         {t('waitlist_joined', {
-          when: `${dayLabel(chosen.date)} · ${chosen.time}`,
+          when: when(chosen),
         })}
       </p>
     );
@@ -92,7 +101,7 @@ export function WaitlistJoin({
               className={chip(selected)}
               onClick={() => setChosen({ date: slot.date, time: slot.time })}
             >
-              {dayLabel(slot.date)} · {slot.time}
+              {when(slot)}
             </button>
           );
         })}

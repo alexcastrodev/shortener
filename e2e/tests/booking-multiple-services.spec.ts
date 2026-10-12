@@ -309,7 +309,7 @@ test('with several services the day question and the time zone are said once, an
   await view.tickService('Bateria');
 
   await expect(page.getByText('Escolha dia e hora', { exact: true })).toHaveCount(1);
-  await expect(page.getByText(/^Horas em /)).toHaveCount(1);
+  await expect(page.getByRole('combobox', { name: 'Horas em' })).toHaveCount(1);
   const drawn = await page
     .getByText('Como quer marcar?', { exact: true })
     .evaluateAll(nodes => nodes.filter(node => node.getBoundingClientRect().width > 2).length);

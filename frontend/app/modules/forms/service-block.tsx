@@ -35,6 +35,8 @@ import {
 } from './monthly-booking';
 import { usePickerMemory, type PickerMemory } from './picker-memory.ts';
 import { SessionPicker, type LoadSlots } from './session-picker.tsx';
+import { useViewZone } from './view-zone.tsx';
+import { localToday } from './zone-time.ts';
 
 export type { LoadSlots };
 
@@ -76,7 +78,8 @@ export function ServiceBlock({
   const sessions = item?.sessions ?? [];
   const monthly = item?.monthly;
   const allowance = allowanceOf(service);
-  const daysMemory = usePickerMemory(monthOf(new Date()), true);
+  const { zone } = useViewZone();
+  const daysMemory = usePickerMemory(monthOf(localToday(zone)), true);
   const planMemory = usePickerMemory(
     monthly && isPlan(monthly) ? monthly.month : monthOptions(new Date())[0].value,
     false
@@ -391,6 +394,7 @@ function MonthlyPicker({
 }) {
   const { t } = useTranslation('respond');
   const durationWords = useDurationWords();
+  const { formZone, shifted, toView } = useViewZone();
   const months = monthOptions(new Date());
   const times = [...service.times].sort();
   const [draft, setDraft] = useState<MonthlyPattern>(
@@ -443,6 +447,11 @@ function MonthlyPicker({
         ))}
       </div>
       <p className="text-sm font-medium">{t('monthly_time')}</p>
+      {shifted && (
+        <p className="text-xs opacity-70">
+          {t('monthly_form_zone', { zone: formZone })}
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
         {times.map(time => (
           <button
@@ -462,7 +471,7 @@ function MonthlyPicker({
           clash
             ? t('booking_note_overlap_service', {
                 service: clash.service,
-                what: clash.time,
+                what: toView(clash).time,
               })
             : undefined
         }

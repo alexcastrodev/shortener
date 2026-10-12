@@ -34,7 +34,8 @@ export function monthlyText(
   ]
     .sort(([a], [b]) => a - b)
     .map(([, date]) => weekdayText(date));
-  return `${month} · ${weekdays.join(', ')} · ${first.time}`;
+  const note = summary.note ? ` (${summary.note})` : '';
+  return `${month} · ${weekdays.join(', ')} · ${first.time}${note}`;
 }
 
 export function daysText(summary: BookingSummary) {

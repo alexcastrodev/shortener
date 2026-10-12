@@ -12,6 +12,8 @@ import { isSection, sectionOf } from './field-types';
 import { useConfirmEmail } from './confirm-email';
 import { PagedForm } from './paged-form';
 import { SubmissionResult } from './submission-result';
+import { ViewZoneProvider, useViewZone } from './view-zone.tsx';
+import { bookingZone } from './zone-time.ts';
 import { FormCover } from './form-cover';
 import { QuestionHeading } from './question-heading';
 import type { SubmitFormReceipt } from '@internal/core/actions/submit-form-response/submit-form-response.types';
@@ -35,7 +37,7 @@ export type Props = {
   mode: 'preview' | 'live';
   onSubmit?: (
     answers: Record<string, Answer>,
-    options: { confirmFieldId: string | null }
+    options: { confirmFieldId: string | null; timeZone?: string }
   ) => Promise<SubmitFormReceipt | void> | SubmitFormReceipt | void;
   onUploadImage?: UploadImage;
   loadSlots?: LoadSlots;
@@ -49,10 +51,14 @@ export type Props = {
 };
 
 export function FormRenderer(props: Props) {
-  return props.form.layout === 'one_at_a_time' ? (
-    <SequentialForm {...props} />
-  ) : (
-    <PagedForm {...props} />
+  return (
+    <ViewZoneProvider formZone={bookingZone(props.form.fields)}>
+      {props.form.layout === 'one_at_a_time' ? (
+        <SequentialForm {...props} />
+      ) : (
+        <PagedForm {...props} />
+      )}
+    </ViewZoneProvider>
   );
 }
 
@@ -73,6 +79,7 @@ function SequentialForm({
 }: Props) {
   const { t } = useTranslation('respond');
   const takenWords = useTakenWords();
+  const { zone, toView } = useViewZone();
   const theme = getBioTheme(form.theme, form.custom_colors);
   const uid = useId();
   const questions = form.fields.filter(item => !isSection(item));
@@ -126,7 +133,9 @@ function SequentialForm({
     if (mode === 'live' && onSubmit) {
       setSubmitting(true);
       try {
-        setReceipt((await onSubmit(answers, { confirmFieldId })) ?? null);
+        setReceipt(
+          (await onSubmit(answers, { confirmFieldId, timeZone: zone })) ?? null
+        );
         setStep(total);
       } catch (failure) {
         const { message, fieldErrors, details } = (failure ?? {}) as SubmitFailure;
@@ -137,7 +146,7 @@ function SequentialForm({
         setError(
           invalid >= 0
             ? fieldErrors![questions[invalid].id][0] === 'unavailable'
-              ? takenMessage(takenWords, questions[invalid], details?.[questions[invalid].id])
+              ? takenMessage(takenWords, questions[invalid], details?.[questions[invalid].id], toView)
               : t('check_answer')
             : (message ?? t('send_failed'))
         );
@@ -205,7 +214,7 @@ function SequentialForm({
           receipt={receipt}
           message={form.thank_you_message}
           theme={theme}
-          timeZone={form.fields.find(item => item.type === 'booking')?.time_zone}
+          timeZone={zone}
         />
         {mode === 'preview' && (
           <div className="mt-8">
