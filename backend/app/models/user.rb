@@ -117,7 +117,10 @@ class User < ApplicationRecord
   def cancel_deletion!
     paused_since = deactivated_at
     update!(deactivated_at: nil, deletion_requested_at: nil)
-    shortlinks.where(inactive_at: paused_since..(paused_since + RESTORE_WINDOW)).update_all(inactive_at: nil)
+    shortlinks.where(inactive_at: paused_since..(paused_since + RESTORE_WINDOW)).find_each do |shortlink|
+      shortlink.update!(inactive_at: nil)
+      shortlink.save_cache if shortlink.servable?
+    end
   end
 
   def deletion_due_at

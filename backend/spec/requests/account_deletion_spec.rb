@@ -74,8 +74,16 @@ RSpec.describe("Account deletion", type: :request) do
   end
 
   describe "changing your mind" do
+    def cached?(shortlink)
+      Rails.cache.redis.with { |conn| conn.exists?(shortlink.cache_key) }
+    end
+
     it "restores the account and its links when the user signs in again with an emailed code" do
+      earlier = user.shortlinks.create!(original_url: "https://example.com/old", inactive_at: 2.days.ago)
+      earlier.remove_cache
+      expect(cached?(link)).to(be(true))
       delete_account
+      expect(cached?(link)).to(be(false))
       user.reload.generate_login_token!
 
       post("/api/login_verify", params: { email: user.email, code: user.login_token }, as: :json)
@@ -86,6 +94,8 @@ RSpec.describe("Account deletion", type: :request) do
       expect(user).not_to(be_pending_deletion)
       expect(user.deactivated_at).to(be_nil)
       expect(link.reload.inactive_at).to(be_nil)
+      expect(cached?(link)).to(be(true))
+      expect(cached?(earlier)).to(be(false))
     end
 
     it "does not claim a cancellation when there was nothing to cancel" do
