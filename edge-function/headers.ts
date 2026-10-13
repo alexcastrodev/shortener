@@ -11,8 +11,7 @@ function extractIpAddress(req: Request, info: Deno.ServeHandlerInfo): string {
 }
 
 // cf-ipcountry is always sent by Cloudflare; cf-region only when the
-// "Add visitor location headers" managed transform is enabled. Missing values
-// are filled later by the backend's IpaddrJob.
+// "Add visitor location headers" managed transform is enabled.
 export function extractLocation(headers: Headers) {
   const country = headers.get("cf-ipcountry")?.trim().toUpperCase();
   // XX = unknown location, T1 = Tor exit node
