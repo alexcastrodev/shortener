@@ -64,7 +64,7 @@ class Shortlink < ApplicationRecord
   # Associations
   # ===============
   belongs_to :user
-  counter_culture :user
+  counter_culture :user, column_name: ->(link) { "shortlinks_count" if link.deleted_at.nil? }
   has_many :events
 
   # ===============
