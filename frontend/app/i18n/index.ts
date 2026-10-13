@@ -1,4 +1,4 @@
-import i18n from 'i18next';
+import i18n, { type ReadCallback } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { DEFAULT_LOCALE, type Locale } from './locales';
 import menu from './en/menu.json';
@@ -28,47 +28,32 @@ import waitlist from './en/waitlist.json';
 import unlock from './en/unlock.json';
 import calendarFeed from './en/calendarFeed.json';
 import decide from './en/decide.json';
-import menuPt from './pt-PT/menu.json';
-import homePt from './pt-PT/home.json';
-import dashboardPt from './pt-PT/dashboard.json';
-import adminPt from './pt-PT/admin.json';
-import linksPt from './pt-PT/links.json';
-import authPt from './pt-PT/auth.json';
-import pagesPt from './pt-PT/pages.json';
-import formsPt from './pt-PT/forms.json';
-import respondPt from './pt-PT/respond.json';
-import settingsPt from './pt-PT/settings.json';
-import accountPt from './pt-PT/account.json';
-import oauthPt from './pt-PT/oauth.json';
-import responsesPt from './pt-PT/responses.json';
-import templatesPt from './pt-PT/templates.json';
-import landingPt from './pt-PT/landing.json';
-import notificationsPt from './pt-PT/notifications.json';
-import managePt from './pt-PT/manage.json';
-import bookingPt from './pt-PT/booking.json';
-import agendaPt from './pt-PT/agenda.json';
-import noticesPt from './pt-PT/notices.json';
-import appointmentsPt from './pt-PT/appointments.json';
-import coverPt from './pt-PT/cover.json';
-import verifyPt from './pt-PT/verify.json';
-import waitlistPt from './pt-PT/waitlist.json';
-import unlockPt from './pt-PT/unlock.json';
-import calendarFeedPt from './pt-PT/calendarFeed.json';
-import decidePt from './pt-PT/decide.json';
 
 export const resources = {
   en: { menu, home, dashboard, admin, links, auth, pages, forms, respond, settings, account, oauth, responses, templates, landing, notifications, manage, decide, booking, agenda, notices, appointments, cover, calendarFeed, verify, waitlist, unlock },
-  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt, settings: settingsPt, account: accountPt, oauth: oauthPt, responses: responsesPt, templates: templatesPt, landing: landingPt, notifications: notificationsPt, manage: managePt, decide: decidePt, booking: bookingPt, agenda: agendaPt, notices: noticesPt, appointments: appointmentsPt, cover: coverPt, calendarFeed: calendarFeedPt, verify: verifyPt, waitlist: waitlistPt, unlock: unlockPt },
 } as const;
 
-i18n.use(initReactI18next).init({
-  resources,
-  lng: DEFAULT_LOCALE,
-  fallbackLng: DEFAULT_LOCALE,
-  interpolation: {
-    escapeValue: false,
-  },
-});
+i18n
+  .use({
+    type: 'backend',
+    read(language: string, namespace: string, callback: ReadCallback) {
+      import('./translations').then(
+        ({ default: files }) => callback(null, files[`./${language}/${namespace}.json`]),
+        error => callback(error, null)
+      );
+    },
+  })
+  .use(initReactI18next)
+  .init({
+    resources,
+    partialBundledLanguages: true,
+    ns: Object.keys(resources.en),
+    lng: DEFAULT_LOCALE,
+    fallbackLng: DEFAULT_LOCALE,
+    interpolation: {
+      escapeValue: false,
+    },
+  });
 
 export function activeLocale(): Locale {
   return i18n.resolvedLanguage === 'pt-PT' ? 'pt-PT' : DEFAULT_LOCALE;

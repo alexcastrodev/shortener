@@ -7,8 +7,12 @@ import { ServerRouter } from 'react-router';
 import { isbot } from 'isbot';
 import type { RenderToPipeableStreamOptions } from 'react-dom/server';
 import { renderToPipeableStream } from 'react-dom/server';
+import i18n from './i18n';
+import { LOCALES } from './i18n/locales';
 import { NonceProvider } from './utils/nonce';
 import { needsStrictCsp, strictCsp } from './utils/content-security-policy';
+
+await i18n.loadLanguages(LOCALES);
 
 export const streamTimeout = 5_000;
 

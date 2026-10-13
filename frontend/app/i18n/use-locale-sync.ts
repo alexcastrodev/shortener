@@ -14,15 +14,19 @@ export function applyLocale(locale: Locale) {
   void i18n.changeLanguage(locale);
 }
 
+export function browserLocale(preference?: string | null) {
+  return resolveLocale({
+    cookie: readCookie(document.cookie),
+    preference,
+    acceptLanguage: navigator.languages?.join(',') ?? navigator.language,
+  });
+}
+
 export function useLocaleSync() {
   const preference = useUserState(state => state.user?.locale);
 
   useEffect(() => {
-    const locale = resolveLocale({
-      cookie: readCookie(document.cookie),
-      preference,
-      acceptLanguage: navigator.languages?.join(',') ?? navigator.language,
-    });
+    const locale = browserLocale(preference);
     document.documentElement.lang = locale;
     if (i18n.language !== locale) void i18n.changeLanguage(locale);
   }, [preference]);
