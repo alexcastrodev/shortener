@@ -1,24 +1,39 @@
-# README
+# Backend
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Rails API (Ruby 4.0.7, Postgres, Valkey). No views: the frontend is a separate app.
 
-Things you may want to cover:
+## What runs
 
-* Ruby version
+| Process | Command | Does |
+|---|---|---|
+| web | `bin/rails server` | the API, `/mcp` and `/oauth/*` |
+| jobs | `bin/jobs` | Solid Queue: cleanups, notifications, reminders, appointment expiry |
+| workers | `rake workers:run` | Sneakers consumers of the RabbitMQ click events (`app/workers`) |
+| imgproc | `bundle exec puma -b tcp://127.0.0.1:8080 imgproc/config.ru` | sandboxed image converter for form covers and avatars |
 
-* System dependencies
+`Procfile.dev` lists web, worker and jobs.
 
-* Configuration
+## Where things live
 
-* Database creation
+- `app/controllers/api/{public,me,admin}`: routes are in `config/routes.rb`.
+- `app/contracts`: input validation.
+- `app/services`: the business logic (`forms`, `booking`, `appointments`, `pages`, `notifications`, `mcp`, `oauth`, ...).
+- `app/serializers`, `app/policies`, `app/jobs`, `app/mailers`.
 
-* Database initialization
+## Tests, lint, security
 
-* How to run the test suite
+Run them in containers, never on the host (see `CLAUDE.md` at the root): image built from `Dockerfile.backend`, `backend` mounted at `/rails`, `RAILS_ENV=test`, a throwaway `postgres:17` and `valkey/valkey:8.1.4`, then:
 
-* Services (job queues, cache servers, search engines, etc.)
+```
+bin/rails db:create db:schema:load
+bundle exec rspec
+bundle exec rubocop
+bundle exec brakeman --no-pager --quiet
+```
 
-* Deployment instructions
+## Docs
 
-* ...
+- [Appointments](../docs/appointments.md)
+- [MCP server](../docs/mcp.md)
+- [Postgres roles](../docs/postgres-roles.md)
+- [i18n](../docs/i18n.md)

@@ -28,8 +28,28 @@ This project is not too small to use interesting solutions like PGMQ, Solid Queu
 
 Data aggregation here doesn't need to be real-time, so it doesn't matter if it's a few seconds delayed. Therefore, the server can be on a VPS, self-hosted, or on any App Service.
 
-# Passwordless Authentication
+# Authentication
 
-Let's keep Authentication simple.
+Sign in with a password, with Google, or with a code sent by e-mail; sign up and password reset use e-mail too. Sessions are a cookie (`kurz_session`).
 
 ![passwordless](./.github/assets/passwordless.png)
+
+# What is in the box
+
+- **Short links**: the redirect flow above, with statistics, expiry, scheduling and password-locked links.
+- **Pages**: bio pages with links, templates and a safety check on every link.
+- **Forms**: public forms with questions, covers, file uploads and responses; a form can carry a booking question (appointments, a waiting list, an `.ics` feed). See [docs/appointments.md](./docs/appointments.md).
+- **Notifications**: in the app, by e-mail and by Web Push.
+- **MCP server**: AI apps manage links, pages and forms over OAuth. See [docs/mcp.md](./docs/mcp.md).
+
+Per-part notes: [backend](./backend/README.md), [frontend](./frontend/README.md), [i18n](./docs/i18n.md), [e2e](./e2e/README.md).
+
+# Run it locally
+
+`docker-compose.yml` starts RabbitMQ, Postgres, Valkey, the backend (port 3000, `.env.development`) and the edge function (port 8000). It reads a root `.env` for RabbitMQ, Valkey and the edge function: create it first.
+
+```
+docker compose up --build
+```
+
+Run the frontend with `cd frontend && npm ci && npm run dev`. Tests run in containers; the recipes are in [CLAUDE.md](./CLAUDE.md) and [e2e/README.md](./e2e/README.md).
