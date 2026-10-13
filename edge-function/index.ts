@@ -1,7 +1,7 @@
 import { connect } from "@nashaddams/amqp";
 import { createClient } from "redis";
 import { getHeaders } from "./headers.ts";
-import { resolveCacheValue } from "./cache.ts";
+import { lookupShortlink, unavailableResponse } from "./lookup.ts";
 
 const RABBITMQ_HOST = Deno.env.get("RABBITMQ_HOST") ?? "127.0.0.1";
 const RABBITMQ_PORT = Number(Deno.env.get("RABBITMQ_PORT") ?? 5672);
@@ -103,29 +103,32 @@ Deno.serve({ port: 8000 }, async (req, info) => {
   const cache_key = `shortlink:${key}`;
 
   if (key) {
-    try {
-      const value = await valkeyClient.get(cache_key);
-      const action = resolveCacheValue(value, key, FRONTEND_URL);
+    const action = await lookupShortlink(
+      (k) => valkeyClient.get(k),
+      key,
+      FRONTEND_URL,
+    );
 
-      if (action.kind === "not_found") {
-        console.log(`[REDIS] Key not found or unreadable: ${cache_key}`);
-        return Response.redirect(notFoundUrl, 302);
-      }
+    if (action.kind === "unavailable") {
+      console.error("[REDIS] Error fetching key:", cache_key, action.error);
+      return unavailableResponse();
+    }
 
-      if (action.track) {
-        // Fire and forget: the redirect must not wait for the broker.
-        publishMessage({
-          ...getHeaders(req, info),
-          shortlink_code: key,
-          timestamp: new Date().toISOString(),
-        }).catch((err) => console.error("[AMQP] Background publish error:", err));
-      }
-
-      return Response.redirect(action.url, 302);
-    } catch (err) {
-      console.error("[REDIS] Error fetching key:", err);
+    if (action.kind === "not_found") {
+      console.log(`[REDIS] Key not found or unreadable: ${cache_key}`);
       return Response.redirect(notFoundUrl, 302);
     }
+
+    if (action.track) {
+      // Fire and forget: the redirect must not wait for the broker.
+      publishMessage({
+        ...getHeaders(req, info),
+        shortlink_code: key,
+        timestamp: new Date().toISOString(),
+      }).catch((err) => console.error("[AMQP] Background publish error:", err));
+    }
+
+    return Response.redirect(action.url, 302);
   }
 
   return Response.redirect(notFoundUrl, 302);
