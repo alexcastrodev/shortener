@@ -32,7 +32,7 @@ Rails.application.configure do
   # null store otherwise. The cache is flushed between examples in rails_helper.
   config.cache_store =
     if ENV["REDIS_URL"].present?
-      [:redis_cache_store, { url: ENV["REDIS_URL"] }]
+      [:redis_cache_store, { url: ENV["REDIS_URL"], namespace: "kurz" }]
     else
       :null_store
     end
