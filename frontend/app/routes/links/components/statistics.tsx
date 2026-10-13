@@ -1,3 +1,4 @@
+import '@mantine/charts/styles.css';
 import { Alert, Card, SimpleGrid } from '@mantine/core';
 import { BarChart, DonutChart } from '@mantine/charts';
 import { useEventStatistics } from 'packages/core/actions/get-event-statistics/get-event-statistics.hook';

@@ -1,3 +1,4 @@
+import '@mantine/charts/styles.css';
 import { AreaChart } from '@mantine/charts';
 import {
   Button,

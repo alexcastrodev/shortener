@@ -1,3 +1,4 @@
+import '@mantine/schedule/styles.css';
 import 'dayjs/locale/en';
 import 'dayjs/locale/pt';
 import { DayView, MonthView, WeekView } from '@mantine/schedule';
