@@ -13,8 +13,10 @@ set -a
 source "$ENV_PATH"
 set +a
 
-# Same variables the web service gets in .ci/stack.yml (the app boots fully for
-# db:prepare). Passed by name from the sourced .env: --env-file would keep quotes.
+# The app boots fully for db:prepare. These names are a subset of web's environment in
+# .ci/stack.yml (x-env-base, x-env-jobs, then web's own): a variable every service needs
+# goes there once, and here only if booting fails without it. Passed by name from the
+# sourced .env: --env-file would keep quotes.
 MIGRATE_ENV=(
   POSTGRES_HOST POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB
   RABBITMQ_HOST RABBITMQ_DEFAULT_USER RABBITMQ_DEFAULT_PASS RABBITMQ_PORT

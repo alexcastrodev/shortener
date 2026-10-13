@@ -9,60 +9,66 @@ x-rollback: &rollback
   parallelism: 1
   order: start-first
 
+x-env-base: &env-base
+  RAILS_ENV: production
+  # deploy.sh migrates before the rollout (see bin/docker-entrypoint).
+  SKIP_DB_PREPARE: "1"
+  POSTGRES_HOST: ${POSTGRES_HOST}
+  POSTGRES_USER: ${POSTGRES_USER}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  POSTGRES_DB: ${POSTGRES_DB}
+  RABBITMQ_HOST: ${RABBITMQ_HOST}
+  RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+  RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+  RABBITMQ_PORT: ${RABBITMQ_PORT}
+  REDIS_URL: ${REDIS_URL}
+  RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+  GMAIL_USERNAME: ${GMAIL_USERNAME}
+  GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+  FRONTEND_URL: ${FRONTEND_URL}
+  SENTRY_DSN: ${SENTRY_DSN}
+
+x-env-jobs: &env-jobs
+  <<: *env-base
+  # Resend replaces Gmail when MAIL_PROVIDER=resend (backend/config/mail_settings.rb).
+  MAIL_PROVIDER: ${MAIL_PROVIDER:-gmail}
+  # Web push for the owner's devices. Empty keys leave the channel off (see Push::Config).
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+  VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+  RESEND_API_KEY: ${RESEND_API_KEY:-}
+  MAIL_FROM: ${MAIL_FROM:-Kurz <login@kurz.fyi>}
+  MAIL_DAILY_LIMIT: ${MAIL_DAILY_LIMIT:-100}
+  MAIL_MONTHLY_LIMIT: ${MAIL_MONTHLY_LIMIT:-3000}
+  MAIL_NEW_ADDRESS_DAILY_LIMIT: ${MAIL_NEW_ADDRESS_DAILY_LIMIT:-40}
+  TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+  TURNSTILE_HOSTNAMES: kurz.fyi
+  S3_ENDPOINT: ${S3_ENDPOINT}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+  S3_BUCKET: ${S3_BUCKET}
+  S3_FORMS_BUCKET: ${S3_FORMS_BUCKET:-}
+
 services:
   web:
     image: pizito:5001/shortener:latest
     environment:
-      - RAILS_ENV=production
-      - LOG_REQUESTS=false
-      # deploy.sh migrates before the rollout (see bin/docker-entrypoint).
-      - SKIP_DB_PREPARE=1
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - RABBITMQ_HOST=${RABBITMQ_HOST}
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-      - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - REDIS_URL=${REDIS_URL}
-      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
-      - EDGE_API=${EDGE_API}
-      - GMAIL_USERNAME=${GMAIL_USERNAME}
-      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
-      # Resend replaces Gmail when MAIL_PROVIDER=resend (backend/config/mail_settings.rb).
-      - MAIL_PROVIDER=${MAIL_PROVIDER:-gmail}
-      # Web push for the owner's devices. Empty keys leave the channel off (see Push::Config).
-      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
-      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
-      - VAPID_SUBJECT=${VAPID_SUBJECT:-}
-      - RESEND_API_KEY=${RESEND_API_KEY:-}
-      - MAIL_FROM=${MAIL_FROM:-Kurz <login@kurz.fyi>}
-      - MAIL_DAILY_LIMIT=${MAIL_DAILY_LIMIT:-100}
-      - MAIL_MONTHLY_LIMIT=${MAIL_MONTHLY_LIMIT:-3000}
-      - MAIL_NEW_ADDRESS_DAILY_LIMIT=${MAIL_NEW_ADDRESS_DAILY_LIMIT:-40}
-      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
-      - TURNSTILE_HOSTNAMES=kurz.fyi
+      <<: *env-jobs
+      LOG_REQUESTS: "false"
+      EDGE_API: ${EDGE_API}
       # Sign in with Google: the OAuth client id the ID tokens must be issued for.
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       # Comma-separated OAuth client ids of the native apps (iOS/macOS); their ID tokens are accepted too.
-      - GOOGLE_NATIVE_CLIENT_IDS=${GOOGLE_NATIVE_CLIENT_IDS:-}
+      GOOGLE_NATIVE_CLIENT_IDS: ${GOOGLE_NATIVE_CLIENT_IDS:-}
       # Exchanges the popup's one-time code for the ID token (never sent to the browser).
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - SENTRY_DSN=${SENTRY_DSN}
-      - SENTRY_LOGGER=1
-      - S3_ENDPOINT=${S3_ENDPOINT}
-      - S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}
-      - S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
-      - S3_BUCKET=${S3_BUCKET}
-      - S3_FORMS_BUCKET=${S3_FORMS_BUCKET:-}
-      - IMGPROC_URL=http://imgproc:8080
-      - MCP_ENABLED=${MCP_ENABLED:-}
-      - SSR_FORWARD_SECRET=${SSR_FORWARD_SECRET:-}
-      - OAUTH_ISSUER=${OAUTH_ISSUER:-https://api.kurz.fyi}
-      - MCP_REDIRECT_HOSTS=${MCP_REDIRECT_HOSTS:-claude.ai,claude.com,chatgpt.com}
-      - MCP_ALLOWED_ORIGINS=${MCP_ALLOWED_ORIGINS:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      SENTRY_LOGGER: "1"
+      IMGPROC_URL: http://imgproc:8080
+      MCP_ENABLED: ${MCP_ENABLED:-}
+      SSR_FORWARD_SECRET: ${SSR_FORWARD_SECRET:-}
+      OAUTH_ISSUER: ${OAUTH_ISSUER:-https://api.kurz.fyi}
+      MCP_REDIRECT_HOSTS: ${MCP_REDIRECT_HOSTS:-claude.ai,claude.com,chatgpt.com}
+      MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-}
     networks:
       - proxy_net
       - imgnet
@@ -87,24 +93,7 @@ services:
     command: bundle exec rake workers:run
     networks:
       - proxy_net
-    environment:
-      - RAILS_ENV=production
-      # deploy.sh migrates before the rollout (see bin/docker-entrypoint).
-      - SKIP_DB_PREPARE=1
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - RABBITMQ_HOST=${RABBITMQ_HOST}
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-      - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - REDIS_URL=${REDIS_URL}
-      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
-      - GMAIL_USERNAME=${GMAIL_USERNAME}
-      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - SENTRY_DSN=${SENTRY_DSN}
+    environment: *env-base
     deploy:
       update_config: *update
       rollback_config: *rollback
@@ -118,42 +107,7 @@ services:
     command: bin/jobs
     networks:
       - proxy_net
-    environment:
-      - RAILS_ENV=production
-      # deploy.sh migrates before the rollout (see bin/docker-entrypoint).
-      - SKIP_DB_PREPARE=1
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - RABBITMQ_HOST=${RABBITMQ_HOST}
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-      - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - REDIS_URL=${REDIS_URL}
-      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
-      - GMAIL_USERNAME=${GMAIL_USERNAME}
-      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
-      # Resend replaces Gmail when MAIL_PROVIDER=resend (backend/config/mail_settings.rb).
-      - MAIL_PROVIDER=${MAIL_PROVIDER:-gmail}
-      # Web push for the owner's devices. Empty keys leave the channel off (see Push::Config).
-      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
-      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
-      - VAPID_SUBJECT=${VAPID_SUBJECT:-}
-      - RESEND_API_KEY=${RESEND_API_KEY:-}
-      - MAIL_FROM=${MAIL_FROM:-Kurz <login@kurz.fyi>}
-      - MAIL_DAILY_LIMIT=${MAIL_DAILY_LIMIT:-100}
-      - MAIL_MONTHLY_LIMIT=${MAIL_MONTHLY_LIMIT:-3000}
-      - MAIL_NEW_ADDRESS_DAILY_LIMIT=${MAIL_NEW_ADDRESS_DAILY_LIMIT:-40}
-      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
-      - TURNSTILE_HOSTNAMES=kurz.fyi
-      - FRONTEND_URL=${FRONTEND_URL}
-      - SENTRY_DSN=${SENTRY_DSN}
-      - S3_ENDPOINT=${S3_ENDPOINT}
-      - S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}
-      - S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
-      - S3_BUCKET=${S3_BUCKET}
-      - S3_FORMS_BUCKET=${S3_FORMS_BUCKET:-}
+    environment: *env-jobs
     deploy:
       update_config: *update
       rollback_config: *rollback
