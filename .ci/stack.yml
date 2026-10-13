@@ -126,7 +126,7 @@ services:
       resources:
         limits:
           cpus: '1'
-          memory: 1024M
+          memory: 2048M
   
   imgproc:
     image: pizito:5001/shortener:latest
