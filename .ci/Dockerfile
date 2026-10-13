@@ -6,13 +6,7 @@ WORKDIR /rails
 
 # Install base packages
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3 libpq-dev zlib1g-dev && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-# Install Node.js and Yarn
-RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
-    apt-get install --no-install-recommends -y nodejs && \
-    npm install -g yarn && \
+    apt-get install --no-install-recommends -y curl libjemalloc2 libvips libpq-dev zlib1g-dev && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Set production environment
@@ -20,7 +14,7 @@ ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BE_FOLDER="./backend" \
-    BUNDLE_WITHOUT="development"
+    BUNDLE_WITHOUT="development:test"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
@@ -41,9 +35,6 @@ COPY ${BE_FOLDER} .
 
 # Precompile bootsnap code
 RUN bundle exec bootsnap precompile app/ lib/
-
-# Precompile assets for production
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 # Final stage for app image
 FROM base
