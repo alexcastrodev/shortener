@@ -70,7 +70,7 @@ RSpec.configure do |config|
 
   config.before(:each) do
     DatabaseCleaner.clean
-    Rails.cache.clear
+    Rails.cache.redis.with(&:flushdb) if ENV["REDIS_URL"].present?
   end
 
   # You can uncomment this line to turn off ActiveRecord support entirely.

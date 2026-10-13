@@ -38,6 +38,7 @@ module Backend
 
     config.cache_store = :redis_cache_store, {
       url: ENV["REDIS_URL"],
+      namespace: "kurz",
       ssl_params: {
         verify_mode: OpenSSL::SSL::VERIFY_NONE,
       },

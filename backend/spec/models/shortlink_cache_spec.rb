@@ -32,6 +32,16 @@ RSpec.describe(Shortlink, "redirect cache") do
     expect(shortlink.reload.inactive_at).to(be_present)
   end
 
+  it "keeps the entry when the Rails cache is cleared" do
+    shortlink = FactoryBot.create(:shortlink, original_url: "https://example.com/kept")
+    Rails.cache.write("cache-namespace-probe", 1)
+
+    Rails.cache.clear
+
+    expect(Rails.cache.read("cache-namespace-probe")).to(be_nil)
+    expect(cached(shortlink)).to(eq({ "t" => "url", "v" => "https://example.com/kept" }))
+  end
+
   it "does not reactivate an expired link when it is marked safe" do
     shortlink = FactoryBot.create(:shortlink)
     shortlink.update_columns(expires_at: 1.minute.ago)
