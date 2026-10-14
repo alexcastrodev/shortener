@@ -272,7 +272,7 @@ GEM
       net-pop
       net-smtp
     marcel (1.2.1)
-    mcp (1.6.1)
+    mcp (1.7.0)
       json_schemer (>= 2.4)
     mini_magick (5.3.1)
       logger
@@ -400,7 +400,7 @@ GEM
       redis-client (>= 0.22.0)
     redis-client (0.26.1)
       connection_pool
-    regexp_parser (2.11.3)
+    regexp_parser (2.13.1)
     reline (0.7.0)
       io-console (~> 0.5)
     rexml (3.4.4)
@@ -553,7 +553,7 @@ DEPENDENCIES
   image_processing (~> 1.2)
   json (~> 3.0)
   jwt
-  mcp (~> 1.6)
+  mcp (~> 1.7)
   oj
   pg (~> 1.5)
   pg_search
