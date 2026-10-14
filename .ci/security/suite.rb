@@ -224,7 +224,7 @@ end
 
 check("B04", "Valkey: unique-view keys hold no IP or user agent and expire within 25 h; the visitor IP lives only in short rate-limit keys") do
   anonymous(:post, "/api/public/forms/#{PUBLIC['public_id']}/events", { event: "view" }, ip: CANARY_IP, headers: { "User-Agent" => "CNRY-agent-0001" })
-  unique = valkey.scan_each(match: "fv:*").to_a
+  unique = valkey.scan_each(match: "kurz:fv:*").to_a
   expect(!unique.empty?, "no unique-view keys: the scan cannot see them")
   unique.each do |key|
     expect(!key.include?(CANARY_IP) && !key.include?("CNRY"), "visitor data in #{key}")
