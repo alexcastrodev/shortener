@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_13_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_13_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -704,6 +704,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_13_130000) do
   add_foreign_key "page_templates", "users", on_delete: :cascade
   add_foreign_key "pages", "users"
   add_foreign_key "push_subscriptions", "users", on_delete: :cascade
+  add_foreign_key "shortlinks", "users", validate: false
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
