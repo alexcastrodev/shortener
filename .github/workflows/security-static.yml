@@ -40,17 +40,20 @@ jobs:
       # Runtime dependencies only; fixes ship in a PR of their own.
       - run: npm audit --package-lock-only --omit=dev --audit-level=high
 
-  deno-audit:
+  nuget-audit:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: edge-function
     steps:
       - uses: actions/checkout@v7
-      - uses: denoland/setup-deno@v2
+      - uses: actions/setup-dotnet@v6
         with:
-          deno-version: v2.x
-      - run: deno audit
+          global-json-file: edge-function/global.json
+      - run: >-
+          dotnet restore Edge.Tests/Edge.Tests.csproj --force-evaluate
+          -p:NuGetAudit=true -p:NuGetAuditMode=all -p:NuGetAuditLevel=low
+          -p:WarningsAsErrors=NU1901%3BNU1902%3BNU1903%3BNU1904
 
   gitleaks:
     runs-on: ubuntu-latest

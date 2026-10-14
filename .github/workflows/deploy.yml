@@ -53,7 +53,7 @@ jobs:
           }
           build shortener .ci/Dockerfile
           build shortener-frontend .ci/Dockerfile.frontend
-          build shortener-edge .ci/Dockerfile.deno
+          build shortener-edge .ci/Dockerfile.edge
 
       - name: Push images
         run: |

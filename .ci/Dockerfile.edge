@@ -1,0 +1,13 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa AS build
+WORKDIR /src
+COPY edge-function/global.json edge-function/Edge.csproj edge-function/packages.lock.json ./
+RUN dotnet restore Edge.csproj --locked-mode
+COPY edge-function/ ./
+RUN dotnet publish Edge.csproj -c Release -o /out --no-restore -p:UseAppHost=true
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled@sha256:84def277556c2843a44fdeefbd3145d0a2e32d8f736d0c1a7b0a96b2880b0187
+WORKDIR /app
+COPY --from=build /out .
+ENV ASPNETCORE_HTTP_PORTS=8000
+USER app
+ENTRYPOINT ["/app/Edge"]

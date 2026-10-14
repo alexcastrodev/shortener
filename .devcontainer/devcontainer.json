@@ -9,7 +9,7 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "denoland.vscode-deno"
+                "ms-dotnettools.csharp"
             ]
         }
     }

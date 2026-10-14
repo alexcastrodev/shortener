@@ -169,17 +169,42 @@ jobs:
 
   edge-function:
     runs-on: ubuntu-latest
+    services:
+      valkey:
+        image: valkey/valkey:8.1.4
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      rabbitmq:
+        image: rabbitmq:3
+        ports: ["5672:5672"]
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q check_port_connectivity"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 10
     defaults:
       run:
         working-directory: edge-function
     steps:
       - uses: actions/checkout@v7
-      - uses: denoland/setup-deno@v2
+      - uses: actions/setup-dotnet@v6
         with:
-          deno-version: v2.x
-      - name: Lint
-        run: deno lint
-      - name: Typecheck
-        run: deno check index.ts
+          global-json-file: edge-function/global.json
+      - name: Restore
+        run: dotnet restore Edge.Tests/Edge.Tests.csproj --locked-mode
+      - name: Format
+        run: |
+          dotnet format Edge.csproj --no-restore --verify-no-changes
+          dotnet format Edge.Tests/Edge.Tests.csproj --no-restore --verify-no-changes
+      - name: Build
+        run: dotnet build Edge.csproj --no-restore
       - name: Test
-        run: deno test
+        run: dotnet test Edge.Tests/Edge.Tests.csproj --no-restore
+        env:
+          REDIS_URL: redis://localhost:6379
+          RABBITMQ_HOST: localhost
+          RABBITMQ_PORT: 5672

@@ -1,4 +1,4 @@
-# Mirrors detectBrowser/detectPlatform in edge-function/headers.ts so clicks
+# Mirrors detectBrowser/detectPlatform in edge-function/Headers.cs so clicks
 # on bio page links are bucketed the same way as shortlink clicks.
 module UserAgentParser
   extend self
