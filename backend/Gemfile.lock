@@ -274,7 +274,7 @@ GEM
       net-pop
       net-smtp
     marcel (1.2.1)
-    mcp (1.6.1)
+    mcp (1.7.0)
       json_schemer (>= 2.4)
     mini_magick (5.3.1)
       logger
@@ -555,7 +555,7 @@ DEPENDENCIES
   image_processing (~> 1.2)
   json (~> 3.0)
   jwt
-  mcp (~> 1.6)
+  mcp (~> 1.7)
   oj
   pg (~> 1.5)
   pg_search
