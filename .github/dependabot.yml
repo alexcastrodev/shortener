@@ -12,6 +12,9 @@ updates:
     open-pull-requests-limit: 3
     groups:
       minor-and-patch: { update-types: [minor, patch] }
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: nuget
     directories: [/edge-function, /edge-function/Edge.Tests]
     schedule: { interval: weekly }
