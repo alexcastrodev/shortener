@@ -17,3 +17,28 @@ Este projeto não é pequeno demais para usar soluções interessantes como PGMQ
 
 A agregação dos dados aqui, não precisa ser em tempo real, então não importa se estiver alguns segundos atrasados. Então o servidor pode estar em uma VPS, self hosted ou em um App Service qualquer.
 
+# Autenticação
+
+Entra-se com senha, com Google ou com um código enviado por e-mail; o cadastro e a recuperação de senha também usam e-mail. A sessão é um cookie (`kurz_session`).
+
+![passwordless](./.github/assets/passwordless.png)
+
+# O que tem aqui
+
+- **Links curtos**: o fluxo de redirecionamento acima, com estatísticas, expiração, agendamento e links protegidos por senha.
+- **Páginas**: páginas de bio com links, modelos e verificação de segurança de cada link.
+- **Formulários**: formulários públicos com perguntas, capas, envio de arquivos e respostas; um formulário pode ter uma pergunta de agendamento (marcações, lista de espera, feed `.ics`). Veja [docs/appointments.md](./docs/appointments.md).
+- **Notificações**: no app, por e-mail e por Web Push.
+- **Servidor MCP**: apps de IA gerenciam links, páginas e formulários via OAuth. Veja [docs/mcp.md](./docs/mcp.md).
+
+Notas por parte: [backend](./backend/README.md), [frontend](./frontend/README.md), [i18n](./docs/i18n.md), [e2e](./e2e/README.md).
+
+# Rodando localmente
+
+O `docker-compose.yml` sobe RabbitMQ, Postgres, Valkey, o backend (porta 3000, `.env.development`) e a edge function (porta 8000). Ele lê um `.env` na raiz para RabbitMQ, Valkey e a edge function: crie-o antes.
+
+```
+docker compose up --build
+```
+
+Rode o frontend com `cd frontend && npm ci && npm run dev`. Os testes rodam em containers; as receitas estão em [CLAUDE.md](./CLAUDE.md) e [e2e/README.md](./e2e/README.md).
