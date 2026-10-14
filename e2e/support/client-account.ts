@@ -51,7 +51,7 @@ export const ownerAppointments = async (formId: number) =>
 export async function openAgendaDay(page: Page, iso: string) {
   await page.goto('/app/agenda');
   await expect(page.getByRole('button', { name: /-feira, \d+ de/ }).first()).toBeVisible();
-  await expect(page.getByText(/^\d+ sessões?$/)).toBeVisible();
+  await expect(page.getByText(/^\d+ (sessão|sessões)$/)).toBeVisible();
   const target = page.getByRole('button', { name: new RegExp(`^${dayLabel(iso)}`) });
   for (let step = 0; step < 3 && (await target.count()) === 0; step++) {
     await page.getByRole('button', { name: 'Mês seguinte' }).click();
