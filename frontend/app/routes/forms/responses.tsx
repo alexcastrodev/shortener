@@ -1,3 +1,4 @@
+import '@mantine/charts/styles.css';
 import { BarChart } from '@mantine/charts';
 import {
   ActionIcon,
