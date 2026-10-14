@@ -67,7 +67,7 @@ gem "pg_search"
 # =================
 # Caching
 # =================
-# Use the database-backed adapters for Active Job and Action Cable
+# Use the database-backed adapter for Active Job
 gem "solid_queue", "~> 1.7.0"
 # Valkey
 gem "redis"
