@@ -14,10 +14,10 @@
 class GoogleSignIn
   include Callable
 
-  PROVIDER = "google"
+  PROVIDER = "google".freeze
   TOKEN_URL = URI("https://oauth2.googleapis.com/token")
   # The popup flow of Google Identity Services has no real redirect.
-  POPUP_REDIRECT_URI = "postmessage"
+  POPUP_REDIRECT_URI = "postmessage".freeze
 
   Result = Data.define(:user, :error)
 

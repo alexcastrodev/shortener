@@ -4,7 +4,7 @@
 module BuiltInPageTemplates
   extend self
 
-  PLACEHOLDER = "https://example.com/replace-me"
+  PLACEHOLDER = "https://example.com/replace-me".freeze
 
   def self.social(icon, url = PageLink::NETWORKS.fetch(icon)[:placeholder])
     { "kind" => "social", "label" => PageLink::NETWORKS.fetch(icon)[:name], "url" => url, "icon" => icon, "active" => false }

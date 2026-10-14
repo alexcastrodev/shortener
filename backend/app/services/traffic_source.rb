@@ -27,8 +27,8 @@ module TrafficSource
     "Kurz" => ["kurz.fyi"],
   }.freeze
 
-  DIRECT = "Direct"
-  OTHER = "Other"
+  DIRECT = "Direct".freeze
+  OTHER = "Other".freeze
 
   def call(user_agent:, referer:)
     app = in_app(user_agent)

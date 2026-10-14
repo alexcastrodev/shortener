@@ -9,7 +9,7 @@ module PasswordPolicy
   MIN_LENGTH = 8
   # Argon2 accepts more, but hashing megabytes on request is a free DoS.
   MAX_LENGTH = 128
-  RANGE_URL = "https://api.pwnedpasswords.com/range/"
+  RANGE_URL = "https://api.pwnedpasswords.com/range/".freeze
 
   # nil when acceptable, otherwise an error code for the client.
   def error_for(password, email: nil)

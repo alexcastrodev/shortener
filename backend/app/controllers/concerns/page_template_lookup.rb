@@ -4,8 +4,8 @@
 module PageTemplateLookup
   extend ActiveSupport::Concern
 
-  CUSTOM_PREFIX = "custom-"
-  COMMUNITY_PREFIX = "community-"
+  CUSTOM_PREFIX = "custom-".freeze
+  COMMUNITY_PREFIX = "community-".freeze
 
   private
 

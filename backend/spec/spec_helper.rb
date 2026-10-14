@@ -1,7 +1,7 @@
 require "vcr"
 require "webmock/rspec"
 
-UNSAFE_URL = "https://testsafebrowsing.appspot.com/s/malware.html"
+UNSAFE_URL = "https://testsafebrowsing.appspot.com/s/malware.html".freeze
 
 # Ensure a Safe Browsing API key is always present in the test suite so the
 # Google client issues the request (and VCR replays the cassette) instead of
