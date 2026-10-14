@@ -12,6 +12,12 @@ updates:
     open-pull-requests-limit: 3
     groups:
       minor-and-patch: { update-types: [minor, patch] }
+  - package-ecosystem: nuget
+    directories: [/edge-function, /edge-function/Edge.Tests]
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
+    groups:
+      minor-and-patch: { update-types: [minor, patch] }
   - package-ecosystem: docker
     directory: /.ci
     schedule: { interval: weekly }

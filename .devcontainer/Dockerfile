@@ -13,9 +13,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
     npm install -g yarn && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Install Deno
-RUN curl -fsSL https://deno.land/install.sh | sh && \
-    mv /root/.deno/bin/deno /usr/local/bin/
+# Install .NET SDK
+RUN curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0 --install-dir /usr/share/dotnet && \
+    ln -s /usr/share/dotnet/dotnet /usr/local/bin/dotnet
 
 RUN gem install rails bundler
 

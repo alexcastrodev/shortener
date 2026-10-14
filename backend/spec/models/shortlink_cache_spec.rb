@@ -1,7 +1,7 @@
 require "rails_helper"
 
 # The value under shortlink:<code> is the contract with the edge function
-# (edge-function/cache.ts). Needs a real Redis (REDIS_URL, as in CI).
+# (edge-function/Cache.cs). Needs a real Redis (REDIS_URL, as in CI).
 RSpec.describe(Shortlink, "redirect cache") do
   before { skip("requires REDIS_URL") if ENV["REDIS_URL"].blank? }
 

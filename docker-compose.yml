@@ -35,12 +35,18 @@ services:
       - default
 
   serveless:
-    image: denoland/deno:2.5.3
+    image: mcr.microsoft.com/dotnet/sdk:10.0
     working_dir: /app
     ports:
       - "${SERVERLESS_PORT:-8000}:8000"
     volumes:
       - ./edge-function:/app
+      - /app/bin
+      - /app/obj
+      - nuget_cache:/root/.nuget/packages
     env_file:
       - .env
-    command: deno run --allow-net --allow-env --allow-read index.ts
+    command: dotnet run --project Edge.csproj
+
+volumes:
+  nuget_cache:

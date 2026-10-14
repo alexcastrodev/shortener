@@ -163,7 +163,6 @@ services:
     image: pizito:5001/shortener-edge:latest
     working_dir: /app
     environment:
-      - RAILS_ENV=production
       - FRONTEND_URL=${FRONTEND_URL}
       - RABBITMQ_HOST=${RABBITMQ_HOST}
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
@@ -173,11 +172,12 @@ services:
     networks:
       - proxy_net
     healthcheck:
-      test: ["CMD", "deno", "eval", "--allow-net=localhost:8000", "const r = await fetch('http://localhost:8000/404'); Deno.exit(r.status < 500 ? 0 : 1)"]
+      test: ["CMD", "/app/Edge", "--healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 20s
+    stop_grace_period: 20s
     deploy:
       update_config: *update
       rollback_config: *rollback
