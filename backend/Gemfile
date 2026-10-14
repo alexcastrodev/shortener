@@ -9,7 +9,7 @@ gem "bootsnap", require: false
 gem "rails", "~> 8.1.4"
 # Use the Puma web server [https://github.com/puma/puma]
 # Kept on 7.x: 7.2.1+ has the PROXY protocol fixes without the 8.0 major bump
-gem "puma", "~> 7.2", ">= 7.2.1"
+gem "puma", "~> 8.0"
 # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
 gem "brakeman", require: false, group: [:development, :test]
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
