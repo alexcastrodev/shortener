@@ -35,9 +35,6 @@ internal	GET	/rails/conductor/action_mailbox/inbound_emails/:id
 internal	GET	/rails/conductor/action_mailbox/inbound_emails/new
 internal	POST	/rails/conductor/action_mailbox/inbound_emails/sources
 internal	GET	/rails/conductor/action_mailbox/inbound_emails/sources/new
-internal	GET	/recede_historical_location
-internal	GET	/refresh_historical_location
-internal	GET	/resume_historical_location
 mcp	DELETE	/mcp
 mcp	GET	/mcp
 mcp	POST	/mcp
