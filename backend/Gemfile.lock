@@ -477,11 +477,6 @@ GEM
       rake
       serverengine (~> 2.0.5)
       thor
-    solid_cable (3.0.12)
-      actioncable (>= 7.2)
-      activejob (>= 7.2)
-      activerecord (>= 7.2)
-      railties (>= 7.2)
     solid_queue (1.7.0)
       activejob (>= 7.1)
       activerecord (>= 7.1)
@@ -575,7 +570,6 @@ DEPENDENCIES
   sentry-rails
   sentry-ruby
   sneakers
-  solid_cable (~> 3.0.12)
   solid_queue (~> 1.7.0)
   stackprof
   thruster
