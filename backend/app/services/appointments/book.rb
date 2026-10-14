@@ -160,6 +160,7 @@ module Appointments
       items = value["items"]
       booking = Forms::PublicDefinition.for(form).fields.find { |field| field["type"] == "booking" }
       rules = booking["rules"] || {}
+      hold_daily_limit(form, rules, items)
       reserved = items.sort_by { |item| item["starts_at"].min }.map { |item| reserve(form, booking, item, held) }
       starts = reserved.flat_map { |entry| entry[:starts] }
       manual = needs_approval?(rules, starts)
@@ -298,10 +299,24 @@ module Appointments
       sessions.group_by { |session| session["date"] }.any? do |date, group|
         next false if group.size == 1
 
-        day = Date.iso8601(date)
-        start = zone.local(day.year, day.month, day.day)
-        AppointmentSlot.where(form_id: form.id, starts_at: start.utc..start.end_of_day.utc).sum(:booked) + group.size > limit
+        day_total(form, zone, Date.iso8601(date)) + group.size > limit
       end
+    end
+
+    def hold_daily_limit(form, rules, items)
+      limit = rules["max_per_day"]
+      return unless limit
+
+      zone = Time.find_zone!(rules["time_zone"])
+      items.flat_map { |item| item["starts_at"] }.group_by { |time| time.in_time_zone(zone).to_date }.sort.each do |day, times|
+        AppointmentSlot.connection.execute(AppointmentSlot.sanitize_sql_array(["SELECT pg_advisory_xact_lock(hashtextextended(?, 0))", "max_per_day:#{form.id}:#{day.iso8601}"]))
+        raise Full, times.min if day_total(form, zone, day) + times.size > limit
+      end
+    end
+
+    def day_total(form, zone, day)
+      start = zone.local(day.year, day.month, day.day)
+      AppointmentSlot.where(form_id: form.id, starts_at: start.utc..start.end_of_day.utc).sum(:booked)
     end
 
     def valid_sessions?(sessions, service)
