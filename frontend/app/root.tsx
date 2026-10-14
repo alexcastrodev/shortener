@@ -1,7 +1,12 @@
 import './app.css';
 import { ColorSchemeScript } from '@mantine/core';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
+import { useState } from 'react';
+import { I18nextProvider } from 'react-i18next';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router';
 import type { Route } from './+types/root';
+import i18n, { i18nFor, loadNamespaces, loadResources, type I18nData } from './i18n';
+import { readCookie, resolveLocale } from './i18n/locales';
+import { namespacesFor } from './i18n/namespaces';
 import { Providers } from './layout/providers';
 import { useNonce } from './utils/nonce';
 
@@ -20,11 +25,34 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+export async function loader({ request, pattern }: Route.LoaderArgs): Promise<I18nData> {
+  const locale = resolveLocale({
+    cookie: readCookie(request.headers.get('cookie')),
+    acceptLanguage: request.headers.get('accept-language'),
+  });
+
+  return { locale, resources: await loadResources(locale, namespacesFor(pattern)) };
+}
+
+export const shouldRevalidate = () => false;
+
+export const clientMiddleware: Route.ClientMiddlewareFunction[] = [
+  async ({ pattern, url }, next) => {
+    if (i18n.isInitialized && !(await loadNamespaces(i18n.language, namespacesFor(pattern)))) {
+      window.location.assign(url);
+      await new Promise(() => {});
+    }
+    return next();
+  },
+];
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const nonce = useNonce();
+  const data = useRouteLoaderData<typeof loader>('root');
+  const [instance] = useState(() => i18nFor(data));
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={instance.language} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta
@@ -71,7 +99,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        <I18nextProvider i18n={instance}>
+          <Providers>{children}</Providers>
+        </I18nextProvider>
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
       </body>

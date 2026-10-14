@@ -71,7 +71,7 @@ export function meta({}: Route.MetaArgs) {
 export const ssr = false;
 
 const schema = z.object({
-  title: z.string().trim().min(1, i18n.t('forms:ed_title_required')).max(120),
+  title: z.string().trim().min(1, { error: () => i18n.t('forms:ed_title_required') }).max(120),
   description: z.string().max(1000),
   thank_you_message: z.string().max(500),
   theme: z.enum(PAGE_THEMES),

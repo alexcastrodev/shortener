@@ -1,7 +1,6 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import '@mantine/dates/styles.css';
-import '../i18n';
 
 import { MantineProvider } from '@mantine/core';
 import { ServiceProvider } from '@internal/core/service-provider';

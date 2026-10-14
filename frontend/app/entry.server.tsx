@@ -34,6 +34,7 @@ export default function handleRequest(
   const pathname = new URL(request.url).pathname;
   const strict = import.meta.env.PROD && needsStrictCsp(pathname);
   const nonce = strict ? randomBytes(16).toString('base64') : undefined;
+  responseHeaders.append('Vary', 'Cookie, Accept-Language');
   if (nonce) {
     responseHeaders.set('Content-Security-Policy', strictCsp(nonce, pathname));
     responseHeaders.set('Cache-Control', 'no-store');

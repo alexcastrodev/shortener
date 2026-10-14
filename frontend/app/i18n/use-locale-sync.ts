@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useUpdateProfile } from '@internal/core/actions/update-profile/update-profile.hook';
 import { useUserState } from '@internal/core/states/use-user-state';
 import type { User } from '@internal/core/types/User';
-import i18n from './index';
+import i18n, { switchLanguage } from './index';
 import { LOCALE_COOKIE, localeToSave, readCookie, resolveLocale, type Locale } from './locales';
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
@@ -10,8 +10,11 @@ const saving = new Set<string>();
 
 export function applyLocale(locale: Locale) {
   document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=${ONE_YEAR}; SameSite=Lax`;
-  document.documentElement.lang = locale;
-  void i18n.changeLanguage(locale);
+  void showLocale(locale);
+}
+
+async function showLocale(locale: Locale) {
+  if (await switchLanguage(locale)) document.documentElement.lang = locale;
 }
 
 export function useLocaleSync() {
@@ -23,8 +26,7 @@ export function useLocaleSync() {
       preference,
       acceptLanguage: navigator.languages?.join(',') ?? navigator.language,
     });
-    document.documentElement.lang = locale;
-    if (i18n.language !== locale) void i18n.changeLanguage(locale);
+    if (i18n.language !== locale) void showLocale(locale);
   }, [preference]);
 }
 
