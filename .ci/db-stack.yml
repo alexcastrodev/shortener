@@ -49,6 +49,16 @@ services:
   cache:
     image: valkey/valkey:8.1.4@sha256:81db6d39e1bba3b3ff32bd3a1b19a6d69690f94a3954ec131277b9a26b95b3aa
     container_name: valkey
+    command:
+      - valkey-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory
+      - 768mb
+      - --maxmemory-policy
+      - volatile-lru
     volumes:
       - /mnt/ssd/@docker/shortener/valkey:/data
     deploy:
