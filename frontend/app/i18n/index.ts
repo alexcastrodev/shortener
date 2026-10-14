@@ -1,74 +1,79 @@
-import i18n from 'i18next';
+import i18n, { createInstance, type BackendModule, type InitOptions, type ResourceKey } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { DEFAULT_LOCALE, type Locale } from './locales';
-import menu from './en/menu.json';
-import home from './en/home.json';
-import dashboard from './en/dashboard.json';
-import admin from './en/admin.json';
-import links from './en/links.json';
-import auth from './en/auth.json';
-import pages from './en/pages.json';
-import forms from './en/forms.json';
-import respond from './en/respond.json';
-import settings from './en/settings.json';
-import account from './en/account.json';
-import oauth from './en/oauth.json';
-import responses from './en/responses.json';
-import templates from './en/templates.json';
-import landing from './en/landing.json';
-import notifications from './en/notifications.json';
-import manage from './en/manage.json';
-import booking from './en/booking.json';
-import agenda from './en/agenda.json';
-import notices from './en/notices.json';
-import appointments from './en/appointments.json';
-import cover from './en/cover.json';
-import verify from './en/verify.json';
-import waitlist from './en/waitlist.json';
-import unlock from './en/unlock.json';
-import calendarFeed from './en/calendarFeed.json';
-import decide from './en/decide.json';
-import menuPt from './pt-PT/menu.json';
-import homePt from './pt-PT/home.json';
-import dashboardPt from './pt-PT/dashboard.json';
-import adminPt from './pt-PT/admin.json';
-import linksPt from './pt-PT/links.json';
-import authPt from './pt-PT/auth.json';
-import pagesPt from './pt-PT/pages.json';
-import formsPt from './pt-PT/forms.json';
-import respondPt from './pt-PT/respond.json';
-import settingsPt from './pt-PT/settings.json';
-import accountPt from './pt-PT/account.json';
-import oauthPt from './pt-PT/oauth.json';
-import responsesPt from './pt-PT/responses.json';
-import templatesPt from './pt-PT/templates.json';
-import landingPt from './pt-PT/landing.json';
-import notificationsPt from './pt-PT/notifications.json';
-import managePt from './pt-PT/manage.json';
-import bookingPt from './pt-PT/booking.json';
-import agendaPt from './pt-PT/agenda.json';
-import noticesPt from './pt-PT/notices.json';
-import appointmentsPt from './pt-PT/appointments.json';
-import coverPt from './pt-PT/cover.json';
-import verifyPt from './pt-PT/verify.json';
-import waitlistPt from './pt-PT/waitlist.json';
-import unlockPt from './pt-PT/unlock.json';
-import calendarFeedPt from './pt-PT/calendarFeed.json';
-import decidePt from './pt-PT/decide.json';
+import type { Namespace } from './namespaces';
 
-export const resources = {
-  en: { menu, home, dashboard, admin, links, auth, pages, forms, respond, settings, account, oauth, responses, templates, landing, notifications, manage, decide, booking, agenda, notices, appointments, cover, calendarFeed, verify, waitlist, unlock },
-  'pt-PT': { menu: menuPt, home: homePt, dashboard: dashboardPt, admin: adminPt, links: linksPt, auth: authPt, pages: pagesPt, forms: formsPt, respond: respondPt, settings: settingsPt, account: accountPt, oauth: oauthPt, responses: responsesPt, templates: templatesPt, landing: landingPt, notifications: notificationsPt, manage: managePt, decide: decidePt, booking: bookingPt, agenda: agendaPt, notices: noticesPt, appointments: appointmentsPt, cover: coverPt, calendarFeed: calendarFeedPt, verify: verifyPt, waitlist: waitlistPt, unlock: unlockPt },
-} as const;
+export type I18nData = { locale: Locale; resources: Partial<Record<Namespace, ResourceKey>> };
 
-i18n.use(initReactI18next).init({
-  resources,
-  lng: DEFAULT_LOCALE,
-  fallbackLng: DEFAULT_LOCALE,
-  interpolation: {
-    escapeValue: false,
+const files = import.meta.glob<ResourceKey>('./*/*.json', { import: 'default' });
+
+function read(locale: string, namespace: string) {
+  const file = files[`./${locale}/${namespace}.json`];
+  return file ? file() : Promise.reject(new Error(`No ${locale}/${namespace}.json`));
+}
+
+export async function loadResources(locale: Locale, namespaces: readonly Namespace[]) {
+  const bundles = await Promise.all(namespaces.map(namespace => read(locale, namespace)));
+  return Object.fromEntries(namespaces.map((namespace, i) => [namespace, bundles[i]]));
+}
+
+const backend: BackendModule = {
+  type: 'backend',
+  init() {},
+  read(locale, namespace, callback) {
+    read(locale, namespace).then(
+      bundle => callback(null, bundle),
+      error => callback(error, false)
+    );
   },
-});
+};
+
+function options({ locale, resources }: I18nData): InitOptions {
+  return {
+    lng: locale,
+    ns: Object.keys(resources),
+    defaultNS: 'menu',
+    resources: { [locale]: resources },
+    partialBundledLanguages: true,
+    fallbackLng: false,
+    load: 'currentOnly',
+    initAsync: false,
+    interpolation: { escapeValue: false },
+  };
+}
+
+const EMPTY: I18nData = { locale: DEFAULT_LOCALE, resources: {} };
+
+export function i18nFor(data: I18nData = EMPTY) {
+  if (import.meta.env.SSR) {
+    const instance = createInstance().use(backend);
+    instance.init(options(data));
+    return instance;
+  }
+  if (!i18n.isInitialized) i18n.use(backend).use(initReactI18next).init(options(data));
+  return i18n;
+}
+
+export async function loadNamespaces(locale: string, namespaces: readonly string[]) {
+  const missing = namespaces.filter(namespace => !i18n.hasResourceBundle(locale, namespace));
+  try {
+    const bundles = await Promise.all(missing.map(namespace => read(locale, namespace)));
+    missing.forEach((namespace, i) => i18n.addResourceBundle(locale, namespace, bundles[i]));
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+let wanted: Locale | undefined;
+
+export async function switchLanguage(locale: Locale) {
+  wanted = locale;
+  const loaded = Object.keys(i18n.store.data[i18n.language] ?? {});
+  if ((await loadNamespaces(locale, loaded)) && wanted === locale) await i18n.changeLanguage(locale);
+  return i18n.language === locale;
+}
 
 export function activeLocale(): Locale {
   return i18n.resolvedLanguage === 'pt-PT' ? 'pt-PT' : DEFAULT_LOCALE;
