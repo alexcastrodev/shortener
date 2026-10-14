@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+require_relative "../config/boot"
+require "sneakers"
+require_relative "../config/initializers/sneakers"
+require_relative "../app/workers/analytics_worker"
+
+amqp_port = URI(Sneakers::CONFIG[:amqp]).port || 5672
+connected = Dir["/proc/net/tcp{,6}"].flat_map { |table| File.readlines(table).drop(1) }.any? do |line|
+  _, _, remote, state = line.split
+  state == "01" && remote.split(":").last.to_i(16) == amqp_port
+end
+abort("no AMQP connection open from this container") unless connected
+
+connection = Bunny.new(
+  Sneakers::CONFIG[:amqp],
+  vhost: Sneakers::CONFIG[:vhost],
+  automatically_recover: false,
+  connection_timeout: 5,
+  logger: Logger.new(nil),
+).start
+consumers = connection.create_channel.queue_declare(AnalyticsWorker.queue_name, passive: true).consumer_count
+connection.close
+abort("#{AnalyticsWorker.queue_name} has no consumers") if consumers.zero?

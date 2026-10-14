@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+require_relative "../config/boot"
+require "erb"
+require "pg"
+require "socket"
+require "yaml"
+
+database = YAML.safe_load(ERB.new(File.read(File.expand_path("../config/database.yml", __dir__))).result, aliases: true)
+  .fetch(ENV.fetch("RAILS_ENV", "development"))
+connection = PG.connect(
+  host: database["host"],
+  port: database["port"],
+  user: database["username"],
+  password: database["password"],
+  dbname: database["database"],
+  connect_timeout: 5,
+)
+alive = connection.exec_params(<<~SQL, [Socket.gethostname]).ntuples.positive?
+  SELECT 1 FROM solid_queue_processes
+  WHERE hostname = $1 AND kind LIKE 'Supervisor%'
+    AND last_heartbeat_at > (now() AT TIME ZONE 'UTC') - interval '3 minutes'
+SQL
+abort("no Solid Queue supervisor on #{Socket.gethostname} with a heartbeat in the last 3 minutes") unless alive
