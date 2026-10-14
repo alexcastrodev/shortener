@@ -5,7 +5,7 @@
 module SessionCookie
   extend ActiveSupport::Concern
 
-  NAME = "kurz_session"
+  NAME = "kurz_session".freeze
 
   private
 

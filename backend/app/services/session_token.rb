@@ -5,7 +5,7 @@ module SessionToken
   extend self
 
   TTL = 2.days
-  ALGORITHM = "HS256"
+  ALGORITHM = "HS256".freeze
 
   class Revoked < JWT::DecodeError; end
 
