@@ -24,7 +24,6 @@
 # Indexes
 #
 #  index_users_on_deletion_requested_at       (deletion_requested_at) WHERE (deletion_requested_at IS NOT NULL)
-#  index_users_on_login_token                 (login_token) UNIQUE
 #  index_users_on_lower_email                 (lower((email)::text)) UNIQUE
 #  index_users_on_verified_at_and_created_at  (verified_at,created_at)
 #

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_13_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_13_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -647,7 +647,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_13_120000) do
     t.string "locale"
     t.index "lower((email)::text)", name: "index_users_on_lower_email", unique: true
     t.index ["deletion_requested_at"], name: "index_users_on_deletion_requested_at", where: "(deletion_requested_at IS NOT NULL)"
-    t.index ["login_token"], name: "index_users_on_login_token", unique: true
     t.index ["verified_at", "created_at"], name: "index_users_on_verified_at_and_created_at"
   end
 

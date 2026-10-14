@@ -22,7 +22,6 @@
 #
 # Indexes
 #
-#  index_users_on_login_token                 (login_token) UNIQUE
 #  index_users_on_lower_email                 (lower((email)::text)) UNIQUE
 #  index_users_on_verified_at_and_created_at  (verified_at,created_at)
 #
@@ -42,6 +41,17 @@ RSpec.describe(User, type: :model) do
       user = User.create!(email: "Test@Example.COM")
 
       expect(user.email).to(eq("test@example.com"))
+    end
+  end
+
+  describe "login token" do
+    it "may be the same code for two users" do
+      a = User.create!(email: "a@example.com")
+      b = User.create!(email: "b@example.com")
+      allow(SecureRandom).to(receive(:random_number).and_return(1234567))
+      a.generate_login_token!
+      expect { b.generate_login_token! }.not_to(raise_error)
+      expect(b.reload.login_token).to(eq(a.reload.login_token))
     end
   end
 

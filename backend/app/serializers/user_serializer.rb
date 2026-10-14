@@ -22,7 +22,6 @@
 #
 # Indexes
 #
-#  index_users_on_login_token                 (login_token) UNIQUE
 #  index_users_on_lower_email                 (lower((email)::text)) UNIQUE
 #  index_users_on_verified_at_and_created_at  (verified_at,created_at)
 #
