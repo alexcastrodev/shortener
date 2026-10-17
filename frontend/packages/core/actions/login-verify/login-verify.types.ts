@@ -3,9 +3,10 @@ import type { User } from '../../types/User';
 export interface LoginVerifyRequestBody {
   email: string;
   code: string;
-  // "sign_up" confirms a new account and turns on the password chosen at
-  // sign-up; a plain sign-in discards it.
+  // "sign_up" with a password confirms the account and sets that password; a
+  // plain sign-in ignores it.
   purpose?: 'sign_in' | 'sign_up';
+  password?: string;
   locale?: string;
 }
 

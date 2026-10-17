@@ -96,9 +96,6 @@ class GoogleSignIn
 
     User.transaction do
       user = User.find_by(email: email) || User.create!(email: email)
-      # An unconfirmed account may carry a password someone else chose at
-      # sign-up; Google just proved who owns the address, so drop it.
-      user.discard_pending_password!
       user.mark_verified!
       user.identities.create!(provider: PROVIDER, uid: uid, email: email, last_used_at: Time.current)
       user

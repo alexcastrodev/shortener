@@ -31,6 +31,8 @@ class User < ApplicationRecord
   include PgSearch::Model
   include PasswordAuthenticatable
 
+  self.ignored_columns += ["pending_password_digest"]
+
   MAX_LOGIN_ATTEMPTS = 5
   LOGIN_TOKEN_TTL = 15.minutes
   MAGIC_LINK_COOLDOWN = 1.minute

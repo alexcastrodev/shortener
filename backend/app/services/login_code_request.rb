@@ -4,23 +4,20 @@
 # (deactivated account, code sent a moment ago) never reach the queue, and
 # the rest must fit in MailBudget.
 #
-# Purposes: :sign_in (passwordless), :sign_up (also stages the chosen
-# password until the code confirms it) and :password_reset (only for existing
-# accounts; unknown addresses get the same answer and no email).
+# Purposes: :sign_in (passwordless), :sign_up and :password_reset (only for
+# existing accounts; unknown addresses get the same answer and no email).
 class LoginCodeRequest
   include Callable
 
   PURPOSES = [:sign_in, :sign_up, :password_reset].freeze
-  STAGES_PASSWORD = [:sign_up, :sign_up_existing].freeze
 
   # :sent also covers requests that were quietly skipped, so the response
   # never tells whether an account exists or is deactivated.
   Result = Data.define(:status, :reason)
 
-  def initialize(email:, purpose: :sign_in, password: nil, locale: nil)
+  def initialize(email:, purpose: :sign_in, locale: nil)
     @email = email.to_s.strip.downcase
     @purpose = PURPOSES.include?(purpose) ? purpose : :sign_in
-    @password = password
     @locale = locale
   end
 
@@ -31,12 +28,9 @@ class LoginCodeRequest
     return result(:sent) if user && !user.can_sign_in?
     return result(:sent) if purpose == :password_reset && !user&.verified?
 
-    # Signing up with an address that already has an account (made with
-    # Google, or before passwords existed) gets the same answer. The chosen
-    # password waits for the emailed code, which proves the address like a
-    # password reset does; the email says the account already exists.
+    # Signing up with an address that already has an account gets the same
+    # answer; the email says the account already exists.
     mail_purpose = purpose == :sign_up && user&.verified? ? :sign_up_existing : purpose
-    user&.stage_pending_password!(password) if STAGES_PASSWORD.include?(mail_purpose)
     return result(:sent) if user&.magic_link_recently_sent?
 
     new_address = !user&.verified?
@@ -45,17 +39,14 @@ class LoginCodeRequest
     budget = MailBudget.reserve(new_address: new_address)
     return result(:budget_exhausted, budget.reason) unless budget.ok?
 
-    unless user
-      user = User.create_or_find_by!(email: email) { |created| created.locale = locale if User::LOCALES.include?(locale.to_s) }
-      user.stage_pending_password!(password) if STAGES_PASSWORD.include?(mail_purpose)
-    end
+    user ||= User.create_or_find_by!(email: email) { |created| created.locale = locale if User::LOCALES.include?(locale.to_s) }
     user.send_magic_link(purpose: mail_purpose, locale: locale)
     result(:sent)
   end
 
   private
 
-  attr_reader :email, :purpose, :password, :locale
+  attr_reader :email, :purpose, :locale
 
   def result(status, reason = nil)
     Result.new(status: status, reason: reason)

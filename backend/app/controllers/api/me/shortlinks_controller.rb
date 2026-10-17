@@ -50,7 +50,7 @@ class Api::Me::ShortlinksController < ApplicationController
     validate_contract(ShortlinkUpdateContract) do |validated_params|
       if @link.update(password_params(validated_params))
         if @link.saved_change_to_original_url?
-          SafetyUrlJob.perform_later(@link.id) if ENV["ENABLE_GOOGLE_SAFE_LINK"].present?
+          SafetyUrlJob.perform_later(@link.id) if GoogleLib::SafeBrowsing::V4::Services.enabled?
         end
         refresh_cache if cache_affected?
         render(json: ShortlinkSerializer.new(@link).serialize, status: :ok)

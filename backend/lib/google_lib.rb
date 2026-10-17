@@ -9,15 +9,17 @@ module GoogleLib
         # threatMatches:find accepts at most 500 entries per request.
         MAX_BATCH = 500
 
-        def self.check_url(url)
-          find_matches(url).fetch("matches", []).empty?
-        rescue StandardError
-          false
+        def self.enabled?
+          ENV["GOOGLE_SAFE_LINK_KEY"].present?
         end
 
-        # The subset of urls that Safe Browsing flags. Unlike check_url, a
-        # failed request raises instead of reporting everything as unsafe, so
-        # callers can retry later rather than act on a transient error.
+        def self.check_url(url)
+          unsafe_urls([url]).empty?
+        end
+
+        # The subset of urls that Safe Browsing flags. A failed request raises
+        # instead of reporting everything as safe or unsafe, so callers can
+        # retry later rather than act on a transient error.
         def self.unsafe_urls(urls)
           urls = Array(urls)
           raise ArgumentError, "at most #{MAX_BATCH} urls per request" if urls.size > MAX_BATCH

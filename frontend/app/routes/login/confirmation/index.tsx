@@ -11,6 +11,10 @@ import { useUserState } from '@internal/core/states/use-user-state';
 import { AuthShell } from '../../../modules/auth/auth-shell';
 import { announceRestore } from '../../../modules/auth/deletion-notice';
 import type { AuthError } from '../../../modules/auth/auth-errors';
+import {
+  dropSignupPassword,
+  heldSignupPassword,
+} from '../../../modules/auth/signup-password';
 
 export const ssr = false;
 
@@ -29,13 +33,19 @@ export default function LoginConfirmation() {
   const purpose: 'sign_in' | 'sign_up' =
     location.state?.purpose === 'sign_up' ? 'sign_up' : 'sign_in';
   const [code, setCode] = useState('');
+  const [password] = useState(() =>
+    purpose === 'sign_up' ? heldSignupPassword() : null
+  );
 
   useEffect(() => {
     if (!email) navigate('/login', { replace: true });
-  }, [email, navigate]);
+    else if (purpose === 'sign_up' && !password)
+      navigate('/signup', { replace: true });
+  }, [email, purpose, password, navigate]);
 
   const verify = useLoginVerifyRequest({
     onSuccess: response => {
+      dropSignupPassword();
       setUser(response.user);
       announceRestore(response);
       goAfterLogin(navigate);
@@ -63,7 +73,13 @@ export default function LoginConfirmation() {
 
   function submit(value: string) {
     if (!email || value.length !== CODE_LENGTH || verify.isPending) return;
-    verify.mutate({ email, code: value, purpose, locale: i18n.language });
+    verify.mutate({
+      email,
+      code: value,
+      purpose,
+      password: password ?? undefined,
+      locale: i18n.language,
+    });
   }
 
   return (

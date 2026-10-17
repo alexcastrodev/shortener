@@ -103,7 +103,7 @@ class PageLink < ApplicationRecord
   end
 
   def verify_safety
-    PageLinkSafetyJob.perform_later([id]) if ENV["ENABLE_GOOGLE_SAFE_LINK"].present?
+    PageLinkSafetyJob.perform_later([id]) if GoogleLib::SafeBrowsing::V4::Services.enabled?
   end
 
   def set_position

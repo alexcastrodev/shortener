@@ -159,7 +159,7 @@ class Shortlink < ApplicationRecord
   # Callbacks
   # ============
   def verify_safety
-    SafetyUrlJob.perform_later(id) if ENV["ENABLE_GOOGLE_SAFE_LINK"].present?
+    SafetyUrlJob.perform_later(id) if GoogleLib::SafeBrowsing::V4::Services.enabled?
   end
 
   def generate_short_code

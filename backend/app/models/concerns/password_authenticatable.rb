@@ -56,35 +56,11 @@ module PasswordAuthenticatable
     now = Time.current
     update!(
       password_digest: self.class.hash_password(password),
-      pending_password_digest: nil,
       password_changed_at: now,
       failed_password_attempts: 0,
       password_locked_until: nil,
       sessions_revoked_at: now,
     )
-  end
-
-  def stage_pending_password!(password)
-    update!(pending_password_digest: self.class.hash_password(password))
-  end
-
-  # Confirming the sign-up proves the person who chose this password owns the
-  # address. A plain code sign-in discards it instead: otherwise someone could
-  # sign up with another person's email, and once the owner signed in with a
-  # code the account would carry the stranger's password.
-  def activate_pending_password!
-    return if pending_password_digest.blank?
-
-    now = Time.current
-    attributes = { password_digest: pending_password_digest, pending_password_digest: nil, password_changed_at: now }
-    # On an account that was already in use this is a password change: every
-    # other session ends, as with a reset.
-    attributes.merge!(sessions_revoked_at: now, failed_password_attempts: 0, password_locked_until: nil) if verified?
-    update!(attributes)
-  end
-
-  def discard_pending_password!
-    update!(pending_password_digest: nil) if pending_password_digest.present?
   end
 
   # Tokens issued before the last password change (or "sign out everywhere")

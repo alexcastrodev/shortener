@@ -89,10 +89,8 @@ class Api::SessionsController < ApplicationController
     end
   end
 
-  # POST /api/login_verify  { email, code, purpose }
-  # purpose "sign_up" confirms a new account and turns on the password chosen
-  # when signing up; any other code sign-in drops that pending password (see
-  # PasswordAuthenticatable#activate_pending_password!).
+  # POST /api/login_verify  { email, code, purpose, password }
+  # purpose "sign_up" with a password sets it, as the code proves the address.
   def verify
     user = User.find_by(email: normalized_email)
 
@@ -102,8 +100,12 @@ class Api::SessionsController < ApplicationController
         return
       end
 
+      password = params[:password].to_s if params[:purpose] == "sign_up"
+      error = PasswordPolicy.error_for(password, email: user.email) if password.present?
+      return render(json: { error: error }, status: :unprocessable_content) if error
+
       user.clear_login_token!
-      params[:purpose] == "sign_up" ? user.activate_pending_password! : user.discard_pending_password!
+      user.change_password!(password) if password.present?
       user.mark_verified!
       start_session(user)
     else

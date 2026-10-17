@@ -6,7 +6,7 @@ class RecheckPageLinksSafetyJob < ApplicationJob
   RECHECK_AFTER = 1.day
 
   def perform
-    return if ENV["ENABLE_GOOGLE_SAFE_LINK"].blank?
+    return unless GoogleLib::SafeBrowsing::V4::Services.enabled?
 
     PageLink
       .where.not(url: nil)

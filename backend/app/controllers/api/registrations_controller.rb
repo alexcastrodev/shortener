@@ -1,6 +1,7 @@
 # Sign-up with email and password. The account only exists for real once the
 # emailed code is confirmed (POST /api/login_verify with purpose "sign_up"),
-# and the password only takes effect then.
+# and the password is only set there, sent along with the code. Nothing chosen
+# here is stored.
 class Api::RegistrationsController < ApplicationController
   include SessionCookie
   include ClientIp
@@ -20,6 +21,6 @@ class Api::RegistrationsController < ApplicationController
     error = PasswordPolicy.error_for(params[:password], email: params[:email])
     return render(json: { error: error }, status: :unprocessable_content) if error
 
-    render_code_request(LoginCodeRequest.call(email: params[:email], purpose: :sign_up, password: params[:password], locale: params[:locale]))
+    render_code_request(LoginCodeRequest.call(email: params[:email], purpose: :sign_up, locale: params[:locale]))
   end
 end

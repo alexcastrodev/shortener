@@ -22,7 +22,7 @@ module Mcp
         link.update(Mcp::Guards.contract!(ShortlinkUpdateContract, changes))
         raise Mcp::ToolError.new("invalid_input", link.errors.full_messages.to_sentence) if link.errors.any?
 
-        SafetyUrlJob.perform_later(link.id) if link.saved_change_to_original_url? && ENV["ENABLE_GOOGLE_SAFE_LINK"].present?
+        SafetyUrlJob.perform_later(link.id) if link.saved_change_to_original_url? && GoogleLib::SafeBrowsing::V4::Services.enabled?
         refresh_cache(link) if link.saved_change_to_original_url? || link.saved_change_to_expires_at?
         Mcp::Tools.shortlink(link)
       end

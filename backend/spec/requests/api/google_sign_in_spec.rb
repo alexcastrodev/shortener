@@ -54,17 +54,6 @@ RSpec.describe("Sign in with Google", type: :request) do
     expect(User.count).to(eq(1))
   end
 
-  it "drops a password someone else staged on an unconfirmed account" do
-    squatted = User.create!(email: "marina@gmail.com").tap { |user| user.stage_pending_password!("attacker password") }
-    google_says
-
-    sign_in
-
-    expect(squatted.reload).to(be_verified)
-    expect(squatted.pending_password_digest).to(be_nil)
-    expect(squatted.password?).to(be(false))
-  end
-
   it "refuses tokens Google cannot vouch for" do
     allow(Google::Auth::IDTokens).to(receive(:verify_oidc).and_raise(Google::Auth::IDTokens::SignatureError))
     sign_in

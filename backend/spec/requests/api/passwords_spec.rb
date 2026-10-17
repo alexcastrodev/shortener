@@ -36,7 +36,7 @@ RSpec.describe("Passwords", type: :request) do
 
     it "gives one answer for a wrong password, an unknown email and an unconfirmed account" do
       verified_user
-      User.create!(email: "pending@example.com").tap { |user| user.stage_pending_password!(password) }
+      User.create!(email: "pending@example.com").tap { |user| user.change_password!(password) }
 
       [["owner@example.com", "wrong password!!"], ["nobody@example.com", password], ["pending@example.com", password]].each do |email, attempt|
         post "/api/login/password", params: { email: email, password: attempt }, as: :json
@@ -70,41 +70,97 @@ RSpec.describe("Passwords", type: :request) do
   end
 
   describe "sign-up" do
-    it "creates an unconfirmed account and turns the password on only when the code confirms it" do
+    def confirm_sign_up(user, password)
+      post "/api/login_verify", params: { email: user.email, code: user.reload.login_token, purpose: "sign_up", password: password }, as: :json
+    end
+
+    it "creates an unconfirmed account without a password and sets it only when the code comes with it" do
       expect { post("/api/signup", params: { email: "new@example.com", password: password }, as: :json) }
         .to(have_enqueued_job(MailDeliveryJob))
       user = User.find_by!(email: "new@example.com")
       expect(user).not_to(be_verified)
       expect(user.password?).to(be(false))
 
-      post "/api/login_verify", params: { email: user.email, code: user.login_token, purpose: "sign_up" }, as: :json
+      confirm_sign_up(user, password)
 
       expect(response).to(have_http_status(:ok))
       expect(user.reload).to(be_verified)
-      expect(user.password?).to(be(true))
+      expect(user.authenticate_password(password)).to(be(true))
     end
 
-    it "drops a password someone else chose when the owner signs in with a plain code" do
+    it "keeps a password the sign-up request carried out of the account" do
       post "/api/signup", params: { email: "victim@example.com", password: "attacker password" }, as: :json
       user = User.find_by!(email: "victim@example.com")
 
-      post "/api/login_verify", params: { email: user.email, code: user.login_token }, as: :json
+      post "/api/login_verify", params: { email: user.email, code: user.login_token, purpose: "sign_up" }, as: :json
 
       expect(response).to(have_http_status(:ok))
       expect(user.reload.password?).to(be(false))
-      expect(user.pending_password_digest).to(be_nil)
     end
 
-    it "only changes an existing account's password once the owner confirms the emailed code" do
+    it "drops the password sent with a plain code sign-in" do
+      user = User.create!(email: "plain@example.com", verified_at: 1.day.ago)
+      user.send_magic_link
+      post "/api/login_verify", params: { email: user.email, code: user.reload.login_token, password: "sneaky password" }, as: :json
+
+      expect(response).to(have_http_status(:ok))
+      expect(user.reload.password?).to(be(false))
+    end
+
+    it "lets a second sign-up for the same address, inside the cooldown, change nothing" do
+      post "/api/signup", params: { email: "victim@example.com", password: "victim password 1" }, as: :json
+      user = User.find_by!(email: "victim@example.com")
+      victim_code = user.login_token
+
+      travel_to(20.seconds.from_now) do
+        expect { post("/api/signup", params: { email: user.email, password: "attacker password 2" }, as: :json) }
+          .not_to(have_enqueued_job(MailDeliveryJob))
+        post "/api/login_verify", params: { email: user.email, code: victim_code, purpose: "sign_up", password: "victim password 1" }, as: :json
+      end
+
+      expect(response).to(have_http_status(:ok))
+      expect(user.reload.authenticate_password("victim password 1")).to(be(true))
+      expect(user.authenticate_password("attacker password 2")).to(be(false))
+    end
+
+    it "lets a second sign-up after the cooldown email a new code but never choose the password" do
+      post "/api/signup", params: { email: "victim@example.com", password: "victim password 1" }, as: :json
+      user = User.find_by!(email: "victim@example.com")
+
+      travel_to(90.seconds.from_now) do
+        post "/api/signup", params: { email: user.email, password: "attacker password 2" }, as: :json
+        confirm_sign_up(user, "victim password 1")
+      end
+
+      expect(response).to(have_http_status(:ok))
+      expect(user.reload.authenticate_password("victim password 1")).to(be(true))
+      expect(user.authenticate_password("attacker password 2")).to(be(false))
+    end
+
+    it "refuses a weak password at confirmation and keeps the code usable" do
+      post "/api/signup", params: { email: "weak@example.com", password: password }, as: :json
+      user = User.find_by!(email: "weak@example.com")
+
+      confirm_sign_up(user, "short")
+      expect(response).to(have_http_status(:unprocessable_content))
+      expect(json["error"]).to(eq("password_too_short"))
+      expect(user.reload).not_to(be_verified)
+
+      confirm_sign_up(user, password)
+      expect(response).to(have_http_status(:ok))
+      expect(user.reload.authenticate_password(password)).to(be(true))
+    end
+
+    it "only changes an existing account's password once the owner confirms the emailed code with it" do
       user = verified_user
       old_token = SessionToken.issue(user)
 
-      post "/api/signup", params: { email: user.email, password: "brand new password" }, as: :json
+      post "/api/signup", params: { email: user.email, password: "attacker password" }, as: :json
       expect(response).to(have_http_status(:ok))
       expect(user.reload.authenticate_password(password)).to(be(true))
 
       travel_to(2.seconds.from_now) do
-        post "/api/login_verify", params: { email: user.email, code: user.reload.login_token, purpose: "sign_up" }, as: :json
+        confirm_sign_up(user, "brand new password")
 
         expect(response).to(have_http_status(:ok))
         expect(user.reload.authenticate_password("brand new password")).to(be(true))
@@ -120,7 +176,6 @@ RSpec.describe("Passwords", type: :request) do
       post "/api/login_verify", params: { email: user.email, code: user.reload.login_token }, as: :json
 
       expect(user.reload.authenticate_password(password)).to(be(true))
-      expect(user.pending_password_digest).to(be_nil)
     end
 
     it "adds a password to an account created with Google" do
@@ -129,7 +184,7 @@ RSpec.describe("Passwords", type: :request) do
 
       expect { post("/api/signup", params: { email: user.email, password: password }, as: :json) }
         .to(have_enqueued_job(MailDeliveryJob).with("LoginMailer", "magic_link", "deliver_now", hash_including(params: hash_including(purpose: "sign_up_existing"))))
-      post "/api/login_verify", params: { email: user.email, code: user.reload.login_token, purpose: "sign_up" }, as: :json
+      confirm_sign_up(user, password)
 
       expect(response).to(have_http_status(:ok))
       expect(JSON.parse(response.body)["user"]).to(include("has_password" => true, "google_connected" => true))

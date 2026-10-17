@@ -1,6 +1,8 @@
 class SafetyUrlJob < ApplicationJob
   queue_as :safety
 
+  retry_on GoogleLib::SafeBrowsing::V4::Services::Error, wait: :polynomially_longer, attempts: 3
+
   def perform(shortlink_id)
     shortlink = Shortlink.find_by(id: shortlink_id)
     Rails.logger.info("[SafetyUrlJob]: Checking URL safety for Shortlink ID: #{shortlink_id}")

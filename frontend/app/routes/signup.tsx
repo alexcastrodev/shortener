@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router';
 import { useSignup } from '@internal/core/actions/signup/signup.hook';
 import { notifyError } from '@internal/core/utils/notify';
 import { useSubmitLock } from '../modules/auth/use-submit-lock';
+import { holdSignupPassword } from '../modules/auth/signup-password';
 import { AuthDivider, AuthShell } from '../modules/auth/auth-shell';
 import { GOOGLE_CLIENT_ID, GoogleButton } from '../modules/auth/google-button';
 import { useGoogleSignIn } from '../modules/auth/use-google-sign-in';
@@ -39,10 +40,12 @@ export default function Signup() {
   const checking = !!TURNSTILE_SITE_KEY && !turnstileToken;
 
   const signup = useSignup({
-    onSuccess: () =>
+    onSuccess: () => {
+      holdSignupPassword(password);
       navigate('/login-confirmation', {
         state: { email: email.trim(), purpose: 'sign_up' },
-      }),
+      });
+    },
     onError: error => {
       const [message, title] = explainAuthError(error as AuthError);
       notifyError(message, title);

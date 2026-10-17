@@ -25,8 +25,6 @@ RSpec.describe(PageLinkSafetyJob, type: :job) do
   end
 
   it "is enqueued when a link's URL changes" do
-    stub_const("ENV", ENV.to_h.merge("ENABLE_GOOGLE_SAFE_LINK" => "1"))
-
     expect { good.update!(url: "https://example.org") }.to(have_enqueued_job(described_class).with([good.id]))
     expect { good.update!(label: "Renamed") }.not_to(have_enqueued_job(described_class))
   end
@@ -34,7 +32,6 @@ end
 
 RSpec.describe(RecheckPageLinksSafetyJob, type: :job) do
   it "rechecks links not checked in the last day" do
-    stub_const("ENV", ENV.to_h.merge("ENABLE_GOOGLE_SAFE_LINK" => "1"))
     stale = FactoryBot.create(:page_link)
     stale.update_columns(safe_checked_at: 2.days.ago)
     never = FactoryBot.create(:page_link)
@@ -67,5 +64,38 @@ RSpec.describe(GoogleLib::SafeBrowsing::V4::Services, ".unsafe_urls") do
     stub_request(:post, %r{\Ahttps://safebrowsing\.googleapis\.com/}).to_return(status: 503)
 
     expect { described_class.unsafe_urls(["https://ok.example.com"]) }.to(raise_error(described_class::Error))
+  end
+
+  it "does not approve a URL when the key is rejected or the API is down" do
+    [400, 503].each do |status|
+      stub_request(:post, %r{\Ahttps://safebrowsing\.googleapis\.com/}).to_return(status: status, headers: { "Content-Type" => "application/json" }, body: { error: { code: status } }.to_json)
+
+      expect { described_class.check_url("https://ok.example.com") }.to(raise_error(described_class::Error))
+    end
+  end
+
+  it "is on only when a key is configured" do
+    expect(described_class.enabled?).to(be(true))
+
+    stub_const("ENV", ENV.to_h.merge("GOOGLE_SAFE_LINK_KEY" => ""))
+    expect(described_class.enabled?).to(be(false))
+  end
+end
+
+RSpec.describe(SafetyUrlJob, type: :job) do
+  let(:link) { FactoryBot.create(:shortlink) }
+
+  it "leaves the link as it was when Safe Browsing fails" do
+    allow(GoogleLib::SafeBrowsing::V4::Services).to(receive(:check_url).and_raise(GoogleLib::SafeBrowsing::V4::Services::Error))
+
+    described_class.perform_now(link.id)
+
+    expect(link.reload).to(have_attributes(safe: true, inactive_at: nil))
+  end
+
+  it "does not enqueue without a Safe Browsing key" do
+    stub_const("ENV", ENV.to_h.merge("GOOGLE_SAFE_LINK_KEY" => ""))
+
+    expect { FactoryBot.create(:shortlink) }.not_to(have_enqueued_job(described_class))
   end
 end
