@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { FormField } from '@internal/core/types/Form';
+import { Loading } from '@internal/ui';
 import type {
   FormSlot,
   LoadedSlots,
@@ -346,22 +347,24 @@ export function SessionPicker({
           </div>
         ) : (
           <>
-            <BookingCalendar
-              month={month}
-              today={today}
-              available={monthDays}
-              chosen={picked}
-              viewed={shown}
-              theme={theme}
-              onView={iso => {
-                setViewed(iso);
-                setNote(undefined);
-              }}
-              onMonth={fixedMonth === undefined ? goMonth : undefined}
-            />
-            {status === 'loading' && (
-              <p className="text-sm opacity-80">{t('booking_loading')}</p>
-            )}
+            <Loading
+              loading={status === 'loading'}
+              label={t('booking_loading')}
+            >
+              <BookingCalendar
+                month={month}
+                today={today}
+                available={monthDays}
+                chosen={picked}
+                viewed={shown}
+                theme={theme}
+                onView={iso => {
+                  setViewed(iso);
+                  setNote(undefined);
+                }}
+                onMonth={fixedMonth === undefined ? goMonth : undefined}
+              />
+            </Loading>
             {status === 'ready' && monthDays.size === 0 && (
               <p className="text-sm opacity-80">{t('booking_none')}</p>
             )}
