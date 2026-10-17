@@ -159,6 +159,58 @@ RSpec.describe("sessions with several durations", type: :request) do
     end
   end
 
+  describe "a group class whose October times were opened at 90 minutes and November at 60" do
+    let(:now) { Time.utc(2026, 10, 11, 23) }
+    let(:service) do
+      {
+        "name" => "Group",
+        "duration" => 60,
+        "price" => 15,
+        "currency" => "EUR",
+        "days" => ["tue", "fri"],
+        "times" => ["19:30"],
+        "times_by_day" => { "fri" => ["20:00"] },
+        "monthly" => { "price" => 50, "sessions" => 4 },
+      }
+    end
+
+    before do
+      (Date.new(2026, 10, 12)..Date.new(2026, 11, 30)).select { |day| day.tuesday? || day.friday? }.each do |day|
+        starts_at = Time.utc(day.year, day.month, day.day, 19, 30) + (day.friday? ? 30.minutes : 0)
+        minutes = day.month == 10 ? 90 : 60
+        AppointmentSlot.create!(form: form, service_key: service_id, resource_key: service_id, starts_at: starts_at, capacity: nil, booked: 2, duration: minutes, ends_at: starts_at + minutes.minutes)
+      end
+    end
+
+    def days(from, to, **params)
+      get("/api/public/forms/#{form.public_id}/slots", params: { service: service_id, from: from, to: to, **params })
+      json["slots"].pluck("date").uniq
+    end
+
+    let(:october) { ["2026-10-13", "2026-10-16", "2026-10-20", "2026-10-23", "2026-10-27", "2026-10-30"] }
+    let(:november) { ["2026-11-03", "2026-11-06", "2026-11-10", "2026-11-13", "2026-11-17", "2026-11-20", "2026-11-24", "2026-11-27"] }
+
+    shared_examples "every Tuesday and Friday of both months" do
+      it "are offered to a single session" do
+        expect(days("2026-10-12", "2026-10-31")).to(eq(october))
+        expect(days("2026-11-01", "2026-11-30")).to(eq(november))
+      end
+
+      it "are offered to the monthly plan" do
+        expect(days("2026-10-12", "2026-10-31", monthly: 1)).to(eq(october))
+        expect(days("2026-11-01", "2026-11-30", monthly: 1)).to(eq(november))
+      end
+    end
+
+    include_examples "every Tuesday and Friday of both months"
+
+    context "when the monthly plan has a length of its own" do
+      let(:service) { super().merge("monthly" => { "price" => 50, "sessions" => 4, "duration" => 90 }) }
+
+      include_examples "every Tuesday and Friday of both months"
+    end
+  end
+
   describe "the fixed monthly booking" do
     it "uses its own duration and its own price" do
       monthly

@@ -13,6 +13,7 @@ export {
 } from './card';
 export { PageBackground, PageContainer } from './background';
 export { Alert } from './alert';
+export { Loading } from './loading';
 export { IconBadge } from './icon-badge';
 export { BrandMark } from './brand-mark';
 export { KurzLogo } from './kurz-logo';
