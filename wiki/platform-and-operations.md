@@ -81,7 +81,7 @@ In e2e CI the stack is smaller: Rails (`RAILS_ENV=e2e`, jobs inline), imgproc on
 - **OP-22** Optional migration role: when `MIGRATE_POSTGRES_USER` is set (and then `MIGRATE_POSTGRES_PASSWORD` is mandatory) `db:prepare` runs with that owner role, while services run as the DML-only role `kurz_app`. Setup and rollback are in [postgres-roles](../docs/postgres-roles.md). — `deploy.sh:48-50`; commit `9c050ab` (#79).
 - **OP-23** Every service rolls with `parallelism: 1`, `order: start-first`, `delay: 10s`, `monitor: 30s`, `failure_action: rollback`; rollback itself is `parallelism: 1`, `order: start-first`. One anchor per stack file (`x-update`, `x-rollback`). The previous release serves traffic until the new task is healthy. — `.ci/stack.yml:1-10`; `.ci/fe-stack.yml:1-10`; commit `79debd9` (#291).
 - **OP-24** Every rolled service has a healthcheck, otherwise Swarm sends traffic to a task as soon as the process starts. Probes: `web` `curl http://localhost:3000/up` (10 s, 3 retries, 60 s start period); `workers` `bin/workers-healthcheck`; `jobs` `bin/jobs-healthcheck`; `imgproc` `curl :8080/up`; `serveless` `/app/Edge --healthcheck` (GET `/404`, healthy below 500); `frontend` `curl :80/robots.txt`. — `.ci/stack.yml:76-82,97-103,117-123,145-151,174-179`; `.ci/fe-stack.yml:20-26`; `edge-function/Program.cs:4-16`.
-- **OP-25** `bin/jobs-healthcheck` is healthy when `solid_queue_processes` has a `Supervisor%` row for this container's hostname with a heartbeat newer than 3 minutes (Solid Queue beats every 60 s and prunes at 5 minutes). It reads `config/database.yml`, so it uses the app's own role. — `backend/bin/jobs-healthcheck:18-23`; commit `2003584` (#308).
+- **OP-25** `bin/jobs-healthcheck` is healthy when `solid_queue_processes` has a `Supervisor%` row for this container's hostname with a heartbeat newer than 3 minutes (Solid Queue beats every 60 s and prunes at 5 minutes). It reads `backend/config/database.yml`, so it uses the app's own role. — `backend/bin/jobs-healthcheck:18-23`; commit `2003584` (#308).
 - **OP-26** `bin/workers-healthcheck` is healthy when this container holds an established TCP connection to the AMQP port (read from `/proc/net/tcp`) and the `analytics` queue has at least one consumer (passive declare). The consumer count alone would pass a bad release during start-first because the old task's consumers are still attached. — `backend/bin/workers-healthcheck:7-23`; commit `2003584` (#308).
 - **OP-27** `web` gets `stop_grace_period: 30s` so Puma drains in-flight requests; `serveless` 20 s. — `.ci/stack.yml:75,180`.
 - **OP-28** `deploy.sh` deploys with `docker stack deploy --detach=false --prune --with-registry-auth` under `timeout $DEPLOY_TIMEOUT` (default 15m), then reads each service's `UpdateStatus`. `--detach=false` exits 0 even after Swarm rolled back, so any service whose state is `rollback_*` or `paused` and whose `StartedAt` is not older than this deploy's start makes the script print an error and exit 1. Older rollback states left on untouched services are ignored. — `deploy.sh:27-41,77-86`; commit `79debd9` (#291).
@@ -98,7 +98,7 @@ In e2e CI the stack is smaller: Rails (`RAILS_ENV=e2e`, jobs inline), imgproc on
 - **OP-43** `Security harness` runs nightly at 03:17 UTC, on demand, and on pull requests that touch `.ci/security/**`, `.ci/compose.security.yml` or its own workflow. It builds the production image, needs about 6 GB RAM, has 30 minutes, never runs on the production runner and has no secrets. ZAP runs only outside pull requests (`ZAP=0` on PRs, it pulls about 1 GB). Results are uploaded as the `security-results` artifact. — `.github/workflows/security.yml:3-42`.
 - **OP-44** Dependabot runs weekly with at most 3 open PRs per ecosystem: bundler (Rails packages grouped), npm (minor and patch grouped, TypeScript majors ignored until typescript-eslint supports TS 7), NuGet (two directories), Docker (`/.ci` only), GitHub Actions. — `.github/dependabot.yml:1-31`; commit `fa0df71` (#326).
 - **OP-45** Required status checks and branch protection are not defined in the repository, so which of the checks above actually block a merge is not verifiable from the code. The deploy does not wait for any of them (OP-20).
-- **OP-46** Lint rules: RuboCop inherits `rubocop-shopify` plus `rubocop-erb`; migrations, `db/schema.rb`, `Gemfile.lock` and `bin/*` are excluded; 2-space indentation; `Style/FrozenStringLiteralComment`, `Style/SymbolProc`, `Style/ClassAndModuleChildren` and `Style/ClassMethodsDefinitions` are off. Frontend ESLint and Prettier exist (`npm run lint`, `npm run format`) but CI runs neither. — `backend/.rubocop.yml:1-34`; `frontend/package.json:11-12`.
+- **OP-46** Lint rules: RuboCop inherits `rubocop-shopify` plus `rubocop-erb`; migrations, `backend/db/schema.rb`, `Gemfile.lock` and `bin/*` are excluded; 2-space indentation; `Style/FrozenStringLiteralComment`, `Style/SymbolProc`, `Style/ClassAndModuleChildren` and `Style/ClassMethodsDefinitions` are off. Frontend ESLint and Prettier exist (`npm run lint`, `npm run format`) but CI runs neither. — `backend/.rubocop.yml:1-34`; `frontend/package.json:11-12`.
 
 ### Security harness
 
@@ -234,15 +234,15 @@ All limits are per `by` key, in the Rails cache (Valkey). `IP` means `client_ip`
 | Endpoint | Limit | Window | Key | Owner page | Source; test |
 |---|---|---|---|---|---|
 | `POST /api/login_request` | 10 | 10 min | IP | [accounts-and-auth](accounts-and-auth.md) | `backend/app/controllers/api/sessions_controller.rb:8`; `backend/spec/requests/api/login_request_protection_spec.rb:95` |
-| `POST /api/login_request` | 30 | 1 day | IP | accounts-and-auth | `sessions_controller.rb:14` |
-| `POST /api/login_request` | 5 | 10 min | normalized e-mail | accounts-and-auth | `sessions_controller.rb:41` |
-| `POST /api/login_verify` | 10 | 15 min | normalized e-mail | accounts-and-auth | `sessions_controller.rb:47`; `backend/spec/requests/api/sessions_spec.rb:125` |
-| `POST /api/login/password` | 20 | 10 min | IP | accounts-and-auth | `sessions_controller.rb:22` |
-| `POST /api/login/password` | 10 | 15 min | normalized e-mail | accounts-and-auth | `sessions_controller.rb:28` |
-| `POST /api/login/google` | 20 | 10 min | IP | accounts-and-auth | `sessions_controller.rb:34` |
+| `POST /api/login_request` | 30 | 1 day | IP | accounts-and-auth | `backend/app/controllers/api/sessions_controller.rb:14` |
+| `POST /api/login_request` | 5 | 10 min | normalized e-mail | accounts-and-auth | `backend/app/controllers/api/sessions_controller.rb:41` |
+| `POST /api/login_verify` | 10 | 15 min | normalized e-mail | accounts-and-auth | `backend/app/controllers/api/sessions_controller.rb:47`; `backend/spec/requests/api/sessions_spec.rb:125` |
+| `POST /api/login/password` | 20 | 10 min | IP | accounts-and-auth | `backend/app/controllers/api/sessions_controller.rb:22` |
+| `POST /api/login/password` | 10 | 15 min | normalized e-mail | accounts-and-auth | `backend/app/controllers/api/sessions_controller.rb:28` |
+| `POST /api/login/google` | 20 | 10 min | IP | accounts-and-auth | `backend/app/controllers/api/sessions_controller.rb:34` |
 | `POST /api/signup` | 10 | 1 h | IP | accounts-and-auth | `backend/app/controllers/api/registrations_controller.rb:9` |
 | `POST /api/password/forgot` | 10 | 1 h | IP | accounts-and-auth | `backend/app/controllers/api/password_resets_controller.rb:8` |
-| `POST /api/password/reset` | 10 | 15 min | e-mail param | accounts-and-auth | `password_resets_controller.rb:14` |
+| `POST /api/password/reset` | 10 | 15 min | e-mail param | accounts-and-auth | `backend/app/controllers/api/password_resets_controller.rb:14` |
 | `PATCH/PUT /api/me/password` | 10 | 15 min | user | accounts-and-auth | `backend/app/controllers/api/me/passwords_controller.rb:12` |
 | `DELETE /api/me` | 5 | 1 h | user | accounts-and-auth | `backend/app/controllers/api/me/users_controller.rb:8` |
 | `POST /api/me/data_export` | 1 | 1 week | user | accounts-and-auth | `users_controller.rb:36` (cache write `unless_exist`, error `export_weekly_limit`); `backend/spec/requests/data_export_spec.rb:132` |
@@ -269,11 +269,11 @@ All limits are per `by` key, in the Rails cache (Valkey). `IP` means `client_ip`
 | `GET /api/public/appointments/:token` | 60 | 1 min | IP | [appointments-lifecycle](appointments-lifecycle.md) | `backend/app/controllers/api/public/appointments_controller.rb:4` |
 | `POST /api/public/appointments/:token/cancel` | 20 | 1 min | IP | appointments-lifecycle | `appointments_controller.rb:11` |
 | `GET /api/public/appointment_verifications/:token` | 60 | 1 min | IP | appointments-lifecycle | `backend/app/controllers/api/public/appointment_verifications_controller.rb:4` |
-| `POST /api/public/appointment_verifications/:token` | 20 | 1 min | IP | appointments-lifecycle | `appointment_verifications_controller.rb:11` |
+| `POST /api/public/appointment_verifications/:token` | 20 | 1 min | IP | appointments-lifecycle | `backend/app/controllers/api/public/appointment_verifications_controller.rb:11` |
 | `GET /api/public/appointment_decisions/:token` | 60 | 1 min | IP | appointments-lifecycle | `backend/app/controllers/api/public/appointment_decisions_controller.rb:4` |
-| `POST /api/public/appointment_decisions/:token` | 20 | 1 min | IP | appointments-lifecycle | `appointment_decisions_controller.rb:11` |
+| `POST /api/public/appointment_decisions/:token` | 20 | 1 min | IP | appointments-lifecycle | `backend/app/controllers/api/public/appointment_decisions_controller.rb:11` |
 | `GET /api/public/waitlist/:token` | 60 | 1 min | IP | appointments-lifecycle | `backend/app/controllers/api/public/waitlist_entries_controller.rb:4` |
-| `POST /api/public/waitlist/:token/claim`, `/leave` | 20 | 1 min | IP | appointments-lifecycle | `waitlist_entries_controller.rb:11` |
+| `POST /api/public/waitlist/:token/claim`, `/leave` | 20 | 1 min | IP | appointments-lifecycle | `backend/app/controllers/api/public/waitlist_entries_controller.rb:11` |
 | `POST /api/public/forms/:public_id/waitlist` | 10 | 10 min | IP | appointments-lifecycle | `backend/app/controllers/api/public/waitlists_controller.rb:5`; `backend/spec/requests/api/public/waitlist_spec.rb:131,150` |
 | `GET /api/public/calendar/:token` | 60 | 1 min | IP | appointments-lifecycle | `backend/app/controllers/api/public/calendars_controller.rb:4` |
 | `POST /api/me/bookings/:group_key/manage_link` | 20 | 1 min | user | appointments-lifecycle | `backend/app/controllers/api/me/bookings_controller.rb:5` |
@@ -296,55 +296,55 @@ Mail budget (all cache counters, shared by web and jobs): daily `MAIL_DAILY_LIMI
 | Name | Component | Required? | Default | Purpose |
 |---|---|---|---|---|
 | `RAILS_ENV` | backend | yes | `production` in stack; `development` in puma when unset | environment; `e2e` and `test` exist (`backend/config/puma.rb:32`) |
-| `RAILS_MASTER_KEY` | web, jobs, workers | yes in production | none | decrypts `config/credentials/production.yml.enc` (stack:25) |
-| `SECRET_KEY_BASE` | backend | alternative to the master key | none | read natively by Rails; used by the harness and e2e CI (`.ci/compose.security.yml:9`, `ci.yml:113`) |
+| `RAILS_MASTER_KEY` | web, jobs, workers | yes in production | none | decrypts `backend/config/credentials/production.yml.enc` (stack:25) |
+| `SECRET_KEY_BASE` | backend | alternative to the master key | none | read natively by Rails; used by the harness and e2e CI (`.ci/compose.security.yml:9`, `.github/workflows/ci.yml:113`) |
 | `SKIP_DB_PREPARE` | backend entrypoint | no | unset (migrate on boot) | `1` skips `db:prepare` (`backend/bin/docker-entrypoint:12`) |
 | `POSTGRES_HOST`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | backend | yes | none | connection (`backend/config/database.yml:5-7`) |
-| `POSTGRES_PORT` | backend | no | 5432 | `database.yml:8` (not in stack) |
-| `POSTGRES_DB` | stack, Postgres image | stack only | none | not read by Rails: database names are hardcoded per environment (`development`, `test`, `e2e`, `production`, `database.yml:13-25`) |
-| `RAILS_MAX_THREADS` | backend | no | Puma 3, DB pool 5 | thread and pool size (`puma.rb:27`; `database.yml:4`) |
-| `WEB_CONCURRENCY` | web | no | 2 in production, 0 elsewhere | Puma workers (`puma.rb:33`) |
-| `PORT`, `PIDFILE` | web | no | 3000, none | `puma.rb:40,50` |
-| `SOLID_QUEUE_IN_PUMA` | web | no | unset | run the Solid Queue supervisor inside Puma (`puma.rb:46`); unused in production |
-| `JOB_CONCURRENCY` | jobs | no | 1 | processes of the shared worker group (`queue.yml:12`) |
-| `REDIS_URL` | web, jobs, workers, edge | yes | none (edge: `redis://127.0.0.1:6379`) | cache store, rate limits, redirect keys (`application.rb:47`) |
+| `POSTGRES_PORT` | backend | no | 5432 | `backend/config/database.yml:8` (not in stack) |
+| `POSTGRES_DB` | stack, Postgres image | stack only | none | not read by Rails: database names are hardcoded per environment (`development`, `test`, `e2e`, `production`, `backend/config/database.yml:13-25`) |
+| `RAILS_MAX_THREADS` | backend | no | Puma 3, DB pool 5 | thread and pool size (`backend/config/puma.rb:27`; `backend/config/database.yml:4`) |
+| `WEB_CONCURRENCY` | web | no | 2 in production, 0 elsewhere | Puma workers (`backend/config/puma.rb:33`) |
+| `PORT`, `PIDFILE` | web | no | 3000, none | `backend/config/puma.rb:40,50` |
+| `SOLID_QUEUE_IN_PUMA` | web | no | unset | run the Solid Queue supervisor inside Puma (`backend/config/puma.rb:46`); unused in production |
+| `JOB_CONCURRENCY` | jobs | no | 1 | processes of the shared worker group (`backend/config/queue.yml:12`) |
+| `REDIS_URL` | web, jobs, workers, edge | yes | none (edge: `redis://127.0.0.1:6379`) | cache store, rate limits, redirect keys (`backend/config/application.rb:47`) |
 | `RABBITMQ_HOST`, `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS`, `RABBITMQ_PORT` | workers, web, jobs, edge | yes (port defaults 5672) | edge: `127.0.0.1`, `guest` user | AMQP (`backend/config/initializers/sneakers.rb:4`; `edge-function/Analytics.cs:32-35`) |
-| `SNEAKERS_LOG_LEVEL` | workers | no | `error` | `sneakers.rb:15` |
-| `FRONTEND_URL` | backend, edge | yes | backend `https://kurz.fyi`; e2e `http://localhost:3001` | CORS origin, links in e-mail and tools, OAuth authorize URL, edge fallback (`cors.rb:12`; `application_mailer.rb:20`; `oauth/config.rb:18`; `Program.cs:40`) |
-| `API_HOSTS` | web | no | `api.kurz.fyi` | Host allow-list (`production.rb:76`); not in stack |
+| `SNEAKERS_LOG_LEVEL` | workers | no | `error` | `backend/config/initializers/sneakers.rb:15` |
+| `FRONTEND_URL` | backend, edge | yes | backend `https://kurz.fyi`; e2e `http://localhost:3001` | CORS origin, links in e-mail and tools, OAuth authorize URL, edge fallback (`backend/config/initializers/cors.rb:12`; `backend/app/mailers/application_mailer.rb:20`; `backend/app/services/oauth/config.rb:18`; `edge-function/Program.cs:40`) |
+| `API_HOSTS` | web | no | `api.kurz.fyi` | Host allow-list (`backend/config/environments/production.rb:76`); not in stack |
 | `EDGE_API` | web | yes | none | base of short URLs (`backend/app/models/shortlink.rb:153`) |
 | `IMGPROC_URL` | web | yes for form uploads and covers | none (stack sets `http://imgproc:8080`) | image converter; jobs do not get it (see drift) (`backend/app/services/imgproc.rb:13`) |
-| `GMAIL_USERNAME`, `GMAIL_APP_PASSWORD` | web, jobs, workers | yes unless Resend | username falls back to `kurz.fyi@gmail.com` in `from` | SMTP login (`mail_settings.rb:31-32,47`) |
-| `MAIL_PROVIDER`, `RESEND_API_KEY`, `MAIL_FROM` | web, jobs | no | provider `gmail`; from `Kurz <login@kurz.fyi>` | Resend switch (`mail_settings.rb:11,20,45`) |
-| `MAIL_DAILY_LIMIT`, `MAIL_MONTHLY_LIMIT`, `MAIL_NEW_ADDRESS_DAILY_LIMIT` | web, jobs | no | 100, 3000, 40 | mail budget (`mail_budget.rb:16-18`) |
+| `GMAIL_USERNAME`, `GMAIL_APP_PASSWORD` | web, jobs, workers | yes unless Resend | username falls back to `kurz.fyi@gmail.com` in `from` | SMTP login (`backend/config/mail_settings.rb:31-32,47`) |
+| `MAIL_PROVIDER`, `RESEND_API_KEY`, `MAIL_FROM` | web, jobs | no | provider `gmail`; from `Kurz <login@kurz.fyi>` | Resend switch (`backend/config/mail_settings.rb:11,20,45`) |
+| `MAIL_DAILY_LIMIT`, `MAIL_MONTHLY_LIMIT`, `MAIL_NEW_ADDRESS_DAILY_LIMIT` | web, jobs | no | 100, 3000, 40 | mail budget (`backend/app/services/mail_budget.rb:16-18`) |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | web, jobs | no | empty (push off) | Web Push; all three needed (`backend/app/services/push/config.rb:5-12`) |
 | `TURNSTILE_SECRET_KEY` | web, jobs | no | empty | Turnstile verification (`backend/app/services/turnstile.rb:85`) |
-| `TURNSTILE_HOSTNAMES` | web, jobs | no | stack fixes `kurz.fyi` | allowed hostnames in the Turnstile answer (`turnstile.rb:80`) |
-| `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET` | web, jobs | for S3 | none | storage service `seaweedfs`; unset `S3_BUCKET` means local disk (`storage.yml:13-29`; `production.rb:24`) |
-| `S3_FORMS_BUCKET` | web, jobs | no | empty | private bucket for form uploads (`form_upload.rb:8`) |
-| `SENTRY_DSN` | web, jobs, workers | no | none | enables Sentry (`sentry.rb:3`) |
-| `SENTRY_LOGGER` | web | no | unset | forward Rails logs to Sentry (`sentry.rb:12`) |
-| `SENTRY_TRACES_SAMPLE_RATE`, `SENTRY_PROFILES_SAMPLE_RATE` | backend | no | 0.1, 0.5 | sampling (`sentry.rb:7,9`); not in stack |
-| `RAILS_LOG_LEVEL` | backend | no | `info` | `production.rb:40`; `e2e.rb:9` |
+| `TURNSTILE_HOSTNAMES` | web, jobs | no | stack fixes `kurz.fyi` | allowed hostnames in the Turnstile answer (`backend/app/services/turnstile.rb:80`) |
+| `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET` | web, jobs | for S3 | none | storage service `seaweedfs`; unset `S3_BUCKET` means local disk (`backend/config/storage.yml:13-29`; `backend/config/environments/production.rb:24`) |
+| `S3_FORMS_BUCKET` | web, jobs | no | empty | private bucket for form uploads (`backend/app/models/form_upload.rb:8`) |
+| `SENTRY_DSN` | web, jobs, workers | no | none | enables Sentry (`backend/config/initializers/sentry.rb:3`) |
+| `SENTRY_LOGGER` | web | no | unset | forward Rails logs to Sentry (`backend/config/initializers/sentry.rb:12`) |
+| `SENTRY_TRACES_SAMPLE_RATE`, `SENTRY_PROFILES_SAMPLE_RATE` | backend | no | 0.1, 0.5 | sampling (`backend/config/initializers/sentry.rb:7,9`); not in stack |
+| `RAILS_LOG_LEVEL` | backend | no | `info` | `backend/config/environments/production.rb:40`; `backend/config/environments/e2e.rb:9` |
 | `LOG_REQUESTS` | web | no | stack sets `"false"` | read by no code (dead setting; `.ci/stack.yml:57`, `.ci/compose.security.yml:17`) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_NATIVE_CLIENT_IDS`, `GOOGLE_CLIENT_SECRET` | web | no | empty (Google sign-in off) | ID token audience, native client ids, popup code exchange (`backend/app/services/google_sign_in.rb:25,63,64,73`) |
-| `MCP_ENABLED` | web | no | off | must equal `true` to serve `/mcp`, `/oauth/*`, `/.well-known/*` (`oauth/config.rb:6`) |
-| `OAUTH_ISSUER` | web | no | `https://api.kurz.fyi` | issuer and MCP resource (`oauth/config.rb:10`) |
+| `MCP_ENABLED` | web | no | off | must equal `true` to serve `/mcp`, `/oauth/*`, `/.well-known/*` (`backend/app/services/oauth/config.rb:6`) |
+| `OAUTH_ISSUER` | web | no | `https://api.kurz.fyi` | issuer and MCP resource (`backend/app/services/oauth/config.rb:10`) |
 | `MCP_REDIRECT_HOSTS` | web | no | `claude.ai,claude.com,chatgpt.com` | allowed OAuth redirect hosts (`backend/app/services/oauth/redirect_uri.rb:10`) |
-| `MCP_ALLOWED_ORIGINS` | web | no | empty | extra `Origin` values for `/mcp` (`mcp/server_factory.rb:19`) |
+| `MCP_ALLOWED_ORIGINS` | web | no | empty | extra `Origin` values for `/mcp` (`backend/app/services/mcp/server_factory.rb:19`) |
 | `SSR_FORWARD_SECRET` | web, frontend | no | empty (forwarding off) | shared secret that lets the SSR frontend forward the visitor IP (OP-81); must be identical in both stacks |
-| `ENABLE_GOOGLE_SAFE_LINK` | web, jobs | no | unset (checks off) | any value turns on Safe Browsing checks (`shortlink.rb:162`; `page_link.rb:106`; `recheck_page_links_safety_job.rb:9`); not in stack |
+| `ENABLE_GOOGLE_SAFE_LINK` | web, jobs | no | unset (checks off) | any value turns on Safe Browsing checks (`backend/app/models/shortlink.rb:162`; `backend/app/models/page_link.rb:106`; `backend/app/jobs/recheck_page_links_safety_job.rb:9`); not in stack |
 | `GOOGLE_SAFE_LINK_KEY` | web, jobs | when the flag is on | none (`KeyError`) | API key (`backend/lib/google_lib.rb:34`); not in stack |
-| `BASE_URL` | web, jobs | no | `http://localhost` | `Referer` sent to Safe Browsing (`google_lib.rb:39`); not in stack |
-| `E2E_SMTP_HOST`, `E2E_SMTP_PORT` | e2e Rails | no | `localhost`, 1025 | Mailpit SMTP (`e2e.rb:18-19`) |
-| `E2E_START_SERVERS`, `E2E_API_URL`, `E2E_APP_URL`, `E2E_REDIS_URL`, `MAILPIT_URL` | e2e Playwright | no | `0`/unset, `http://localhost:3000`, `:3001`, `REDIS_URL` or `redis://localhost:6379/0`, `http://localhost:8025` | `e2e/support/env.ts:1-5`; `playwright.config.ts:29` |
-| `CI` | test | no | unset | eager load in test (`test.rb:22`); Playwright retries |
+| `BASE_URL` | web, jobs | no | `http://localhost` | `Referer` sent to Safe Browsing (`backend/lib/google_lib.rb:39`); not in stack |
+| `E2E_SMTP_HOST`, `E2E_SMTP_PORT` | e2e Rails | no | `localhost`, 1025 | Mailpit SMTP (`backend/config/environments/e2e.rb:18-19`) |
+| `E2E_START_SERVERS`, `E2E_API_URL`, `E2E_APP_URL`, `E2E_REDIS_URL`, `MAILPIT_URL` | e2e Playwright | no | `0`/unset, `http://localhost:3000`, `:3001`, `REDIS_URL` or `redis://localhost:6379/0`, `http://localhost:8025` | `e2e/support/env.ts:1-5`; `e2e/playwright.config.ts:29` |
+| `CI` | test | no | unset | eager load in test (`backend/config/environments/test.rb:22`); Playwright retries |
 | `MIGRATE_POSTGRES_USER`, `MIGRATE_POSTGRES_PASSWORD` | `deploy.sh` host `.env` | no | unset | owner role for `db:prepare` (`deploy.sh:48-50`) |
 | `DEPLOY_TIMEOUT` | `deploy.sh` | no | `15m` | stack convergence timeout (`deploy.sh:10`) |
 | `RABBITMQ_PORT`, `VALKEY_PORT`, `SERVERLESS_PORT` | root `docker-compose.yml` | no | 5672, 6379, 8000 | published ports in local dev |
 | `VITE_BASE_URL` | frontend build | yes at build | image default `https://api.kurz.fyi` | API origin baked into the bundle and the CSP (`.ci/Dockerfile.frontend:18`; `frontend/app/utils/content-security-policy.ts:14`) |
 | `VITE_TURNSTILE_SITE_KEY` | frontend build | no | image default (public key) | widget hidden when empty (`frontend/app/modules/auth/turnstile.tsx:9`) |
-| `VITE_GOOGLE_CLIENT_ID` | frontend build | no | image default (public id) | Google button hidden when empty (`google-button.tsx:12`) |
+| `VITE_GOOGLE_CLIENT_ID` | frontend build | no | image default (public id) | Google button hidden when empty (`frontend/app/modules/auth/google-button.tsx:12`) |
 | `PORT` | frontend runtime | no | stack sets 80; e2e 3001 | `react-router-serve` port (`.ci/fe-stack.yml:16`) |
 | `NODE_OPTIONS` | frontend build | yes in builds | `--dns-result-order=ipv4first` | prerender fetch to the IPv4-only preview server (`.ci/Dockerfile.frontend:26-29`) |
 | `ASPNETCORE_HTTP_PORTS` | edge | image | `8000` | `.ci/Dockerfile.edge:11` |
@@ -381,7 +381,7 @@ Rails credentials keys: the application code reads none by name (`grep credentia
 | `GET /404` | edge | liveness through `Edge --healthcheck` |
 | `GET /robots.txt` | frontend | liveness |
 | `GET /api/admin/appointments_health` | web | health numbers for admins |
-| `/rails/active_storage/direct_uploads`, `/rails/active_storage/disk/*rest` | web | explicitly answer 404 (`routes.rb:11-12`) |
+| `/rails/active_storage/direct_uploads`, `/rails/active_storage/disk/*rest` | web | explicitly answer 404 (`backend/config/routes.rb:11-12`) |
 | `bin/jobs`, `bin/jobs-healthcheck` | jobs | Solid Queue supervisor and probe |
 | `bundle exec rake workers:run`, `bin/workers-healthcheck` | workers | Sneakers runner (exits 1 if no worker class is found) and probe; `backend/lib/tasks/workers.rake:3-26` |
 | `rake shortlink:clear_policy`, `rake shortlink:update_cache` | maintenance | run the inactivity job by hand; rewrite every redirect key in place without flushing (`backend/lib/tasks/shortlink.rake:2-20`) |
@@ -421,7 +421,7 @@ Rails credentials keys: the application code reads none by name (`grep credentia
 
 ## Change impact
 
-- Add a migration: write it for the previous release (OP-30); regenerate nothing by hand in `db/schema.rb` (CI loads the schema); update [data-model](data-model.md); if it adds a table, the DML role gets it by default privileges (see postgres-roles).
+- Add a migration: write it for the previous release (OP-30); regenerate nothing by hand in `backend/db/schema.rb` (CI loads the schema); update [data-model](data-model.md); if it adds a table, the DML role gets it by default privileges (see postgres-roles).
 - Add a route: add a row to `.ci/security/matrix.tsv` (A00), pick the class that matches the auth (public, owner, admin, auth, mcp); decide its rate limit and add it to the catalogue above; add an e2e or request spec.
 - Add a public endpoint that accepts JSON: include `PublicJsonEndpoint` (64 KB and JSON-only), add a `rate_limit` keyed by `client_ip`, keep IP, user agent and answers out of logs (filter parameter list, harness canaries).
 - Add an environment variable: add it to the right anchor in `.ci/stack.yml` (OP-31), to `fe-stack.yml` for the frontend, to `MIGRATE_ENV` if boot needs it, to `.env.development` if local dev needs it, and to the table above. Frontend variables prefixed `VITE_` are baked at build time: add an `ARG` to `.ci/Dockerfile.frontend`.
@@ -452,7 +452,7 @@ Rails credentials keys: the application code reads none by name (`grep credentia
 - **Medium** `IMGPROC_URL` is set on `web` only. `jobs` (x-env-jobs) has no `IMGPROC_URL`; `OptimizeAvatarJob` therefore decodes in `jobs` with libvips directly (consistent with commit `2003584`), so avatars bypass the sandbox the harness proves. Confirm intent. (`.ci/stack.yml:66`; `backend/app/jobs/optimize_avatar_job.rb`; `Imgproc.convert` is called only from `backend/app/controllers/api/public/form_uploads_controller.rb:30` and `backend/app/controllers/api/me/form_covers_controller.rb:33`, while `backend/README.md` says imgproc serves avatars too)
 - **Medium** The Valkey and RabbitMQ management ports are published (`6379`, `15672`) in `.ci/db-stack.yml:8,76` and the stack file sets no password for Valkey; exposure depends on the host firewall, which is outside the repo. The `shortenerdb` stack has no healthcheck, no resource-managed update and is deployed by hand.
 - **Medium** `deploy.yml` does not depend on `CI`; since #331 nothing re-runs specs on `main`, so a merge with a red or skipped check deploys. Branch protection is not in the repo (OP-45).
-- **Medium** `CLAUDE.md` says the backend test image `kurz-backend-vips` is built from `Dockerfile.backend`, but `Dockerfile.backend` installs no libvips while `config/initializers/vips.rb` loads libvips at boot (CI installs `libvips` and `libheif-plugin-libde265`). The image must add libvips; the recipe is incomplete. (`CLAUDE.md`; `Dockerfile.backend:3-7`; `.github/workflows/ci.yml:42-45`)
+- **Medium** `CLAUDE.md` says the backend test image `kurz-backend-vips` is built from `Dockerfile.backend`, but `Dockerfile.backend` installs no libvips while `backend/config/initializers/vips.rb` loads libvips at boot (CI installs `libvips` and `libheif-plugin-libde265`). The image must add libvips; the recipe is incomplete. (`CLAUDE.md`; `Dockerfile.backend:3-7`; `.github/workflows/ci.yml:42-45`)
 - **Medium** Node versions diverge: CI and `frontend/Dockerfile` use Node 22 (and `CLAUDE.md` mandates `node:22`) while the deployed image uses `node:26-bookworm` (Dependabot bump #17). Tests do not run on the version that ships. (`.ci/Dockerfile.frontend:1`; `.github/workflows/ci.yml:68`)
 - **Low** `.ci/nginx.conf` (static SPA config) is referenced by nothing in the repo; the frontend is now SSR. `frontend/Dockerfile` and `frontend/docker-compose.yml` are also unused by deploy. The reverse proxy config lives outside the repo, so the real proxy routing and Cloudflare setup cannot be verified.
 - **Low** `LOG_REQUESTS` is set in the stack and the harness but read by no code (the IP-free request line is unconditional, `backend/config/initializers/request_log.rb`).

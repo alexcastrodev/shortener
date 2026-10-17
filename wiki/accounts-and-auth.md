@@ -161,7 +161,7 @@ Audit: `User` is audited only on `email, admin, deactivated_at, deletion_request
 - **AU-81** `request_deletion!` runs `deactivate!` (links come out of the cache and become inactive). It then sets `deletion_requested_at = deactivated_at` and `sessions_revoked_at = now`, and revokes every OAuth grant. Afterwards the endpoint queues `AccountMailer.deletion_scheduled`, clears the cookie and answers `202 {deletion_due_at}`. — `backend/app/models/user.rb:110-114`; test `backend/spec/requests/account_deletion_spec.rb:17,32`.
 - **AU-82** The grace period is 30 days (`DELETION_GRACE`). A successful sign-in of any kind during the grace period (code, password, Google, reset) calls `cancel_deletion!`. It clears both flags and re-activates, and writes back to the cache, only the short links whose `inactive_at` falls in `[deactivated_at, deactivated_at + 10 min]` (`RESTORE_WINDOW`). The sign-in response carries `deletion_cancelled: true`. Links that were inactive before the request stay inactive. — `backend/app/models/user.rb:37-39,116-123`, `backend/app/controllers/concerns/code_request_response.rb:29-36`; test `backend/spec/requests/account_deletion_spec.rb:81,101,111,132`.
 - **AU-83** `PurgeDeletedAccountsJob` runs daily at 04:30. It runs `purge!` on users with `deletion_requested_at` more than 30 days ago and `deactivated_at` not null. `purge!` runs in one transaction. It hard-destroys short links and pages, including soft-deleted ones, and their page links. `destroy!` on the user cascades to forms (with their responses, uploads and blobs, waitlist entries, daily stats and appointments), identities, OAuth grants, palettes, templates, push subscriptions, notification preferences, notifications, template reports and the calendar feed. It deletes every audit row about those records, every audit with `associated` set to those pages, and every audit made by the user. — `backend/app/jobs/purge_deleted_accounts_job.rb:4-6`, `backend/app/models/user.rb:65-75,129-149`, `backend/config/recurring.yml:32-35`; test `backend/spec/requests/account_deletion_spec.rb:158,183`.
-- **AU-84** After a purge, the user's e-mail survives as `client_email` on appointments the user booked on other owners' forms. Those rows belong to those owners. Mail logs at the provider are outside the app. (inferred from `Appointments::ForClient.live`, `backend/app/services/appointments/for_client.rb:56`.)
+- **AU-84** After a purge, the user's e-mail survives as `client_email` on appointments the user booked on other owners' forms. Those rows belong to those owners. Mail logs at the provider are outside the app. (inferred from `Appointments::ForClient.live`, `backend/app/services/appointments/for_client.rb:49-50`.)
 
 ### Data export
 
@@ -180,7 +180,7 @@ Audit: `User` is audited only on `email, admin, deactivated_at, deletion_request
 
 ### Client account
 
-- **AU-95** A client account is any active, verified user whose e-mail equals the booking's `client_email`, case-insensitively. Booking never creates an account and never links one by id. The link is recomputed from the e-mail every time. — `backend/app/models/notification.rb:47-49`, `backend/app/services/appointments/for_client.rb:55-57`; test `e2e/tests/client-account.spec.ts` ("a booking with an e-mail that is not an account notifies only the owner").
+- **AU-95** A client account is any active, verified user whose e-mail equals the booking's `client_email`, case-insensitively. Booking never creates an account and never links one by id. The link is recomputed from the e-mail every time. — `backend/app/models/notification.rb:47-49`, `backend/app/services/appointments/for_client.rb:49-50`; test `e2e/tests/client-account.spec.ts` ("a booking with an e-mail that is not an account notifies only the owner").
 - **AU-96** A client account sees its bookings at `GET /api/me/bookings` (the 50 newest groups, or a range of fewer than `Agenda::MAX_RANGE_DAYS` days with at most 200 groups), and can request a manage link (`POST /api/me/bookings/:group_key/manage_link`, 20 a minute, UUID keys only, `404` when the booking is someone else's). Client notifications are mirrored in-app to the account, except `appointment_verify`. — `backend/app/controllers/api/me/bookings_controller.rb:5-29`, `backend/app/services/appointments/for_client.rb:5-26`, `backend/app/models/notification.rb:25-45`; test `backend/spec/requests/api/me/bookings_spec.rb:66-173`, `e2e/tests/client-account.spec.ts`. Lifecycle: [appointments-lifecycle](appointments-lifecycle.md).
 
 ### Errors and input hygiene (application-wide)
@@ -246,41 +246,41 @@ Password lock: `failed_password_attempts` 0..4 → locked from the 5th failure o
 | Name | Value | Where | Notes |
 |---|---|---|---|
 | `login_request_ip` | 10 / 10 min per IP | `backend/app/controllers/api/sessions_controller.rb:8` | `POST /api/login_request` |
-| `login_request_ip_daily` | 30 / day per IP | `sessions_controller.rb:14` | same |
-| `login_request` | 5 / 10 min per e-mail | `sessions_controller.rb:41` | same |
-| `login_password_ip` | 20 / 10 min per IP | `sessions_controller.rb:22` | `POST /api/login/password` |
-| `login_password_email` | 10 / 15 min per e-mail | `sessions_controller.rb:28` | same |
-| `login_google_ip` | 20 / 10 min per IP | `sessions_controller.rb:34` | `POST /api/login/google` |
-| `login_verify` | 10 / 15 min per e-mail | `sessions_controller.rb:47` | `POST /api/login_verify` |
+| `login_request_ip_daily` | 30 / day per IP | `backend/app/controllers/api/sessions_controller.rb:14` | same |
+| `login_request` | 5 / 10 min per e-mail | `backend/app/controllers/api/sessions_controller.rb:41` | same |
+| `login_password_ip` | 20 / 10 min per IP | `backend/app/controllers/api/sessions_controller.rb:22` | `POST /api/login/password` |
+| `login_password_email` | 10 / 15 min per e-mail | `backend/app/controllers/api/sessions_controller.rb:28` | same |
+| `login_google_ip` | 20 / 10 min per IP | `backend/app/controllers/api/sessions_controller.rb:34` | `POST /api/login/google` |
+| `login_verify` | 10 / 15 min per e-mail | `backend/app/controllers/api/sessions_controller.rb:47` | `POST /api/login_verify` |
 | `signup_ip` | 10 / hour per IP | `backend/app/controllers/api/registrations_controller.rb:9` | `POST /api/signup` |
 | `password_forgot_ip` | 10 / hour per IP | `backend/app/controllers/api/password_resets_controller.rb:8` | |
-| `password_reset_email` | 10 / 15 min per e-mail | `password_resets_controller.rb:14` | |
+| `password_reset_email` | 10 / 15 min per e-mail | `backend/app/controllers/api/password_resets_controller.rb:14` | |
 | `me_password` | 10 / 15 min per user | `backend/app/controllers/api/me/passwords_controller.rb:12` | |
 | `me_delete_account` | 5 / hour per user | `backend/app/controllers/api/me/users_controller.rb:8` | |
 | Data export | 1 / week per user | `users_controller.rb:36` | `429 export_weekly_limit` |
 | `my_booking_manage_link` | 20 / min per user | `backend/app/controllers/api/me/bookings_controller.rb:5` | |
 | Rate-limit answer | `429 {"error":"Too many attempts, please try again later"}` | | The frontend maps any 429 to `err_rate_limited`. |
 | `LOGIN_TOKEN_TTL` | 15 min | `backend/app/models/user.rb:35` | |
-| `MAX_LOGIN_ATTEMPTS` | 5 | `user.rb:34` | per code |
-| `MAGIC_LINK_COOLDOWN` | 1 min | `user.rb:36` | |
-| Code length | 7 digits | `user.rb:153`; `frontend/app/routes/login/confirmation/index.tsx:21` | Duplicated in both layers. |
+| `MAX_LOGIN_ATTEMPTS` | 5 | `backend/app/models/user.rb:34` | per code |
+| `MAGIC_LINK_COOLDOWN` | 1 min | `backend/app/models/user.rb:36` | |
+| Code length | 7 digits | `backend/app/models/user.rb:153`; `frontend/app/routes/login/confirmation/index.tsx:21` | Duplicated in both layers. |
 | `SessionToken::TTL` | 2 days | `backend/app/services/session_token.rb:7` | Cookie expiry too. |
-| `RECENT_SIGN_IN` | 15 min | `users_controller.rb:4`, `passwords_controller.rb:8` | Two separate constants. |
+| `RECENT_SIGN_IN` | 15 min | `users_controller.rb:4`, `backend/app/controllers/api/me/passwords_controller.rb:8` | Two separate constants. |
 | `FREE_ATTEMPTS` / `MAX_LOCK` | 5 / 1 h | `backend/app/models/concerns/password_authenticatable.rb:12-13` | |
-| Argon2 | t=2, m=2^15 KiB, p=1 | `password_authenticatable.rb:11` | |
+| Argon2 | t=2, m=2^15 KiB, p=1 | `backend/app/models/concerns/password_authenticatable.rb:11` | |
 | `PasswordPolicy` | 8..128 chars | `backend/app/services/password_policy.rb:9-11` | |
-| `DELETION_GRACE` | 30 days | `user.rb:37` | |
-| `RESTORE_WINDOW` | 10 min | `user.rb:39` | |
+| `DELETION_GRACE` | 30 days | `backend/app/models/user.rb:37` | |
+| `RESTORE_WINDOW` | 10 min | `backend/app/models/user.rb:39` | |
 | Unverified grace | 1 day | `backend/app/jobs/cleanup_unverified_users_job.rb:7` | |
 | `MAX_RESPONSES` / `MAX_BYTES` | 50,000 / 15 MB | `backend/app/services/users/data_export.rb:5`, `backend/app/jobs/send_data_export_job.rb:4` | |
-| Export budget share | 0.5 | `send_data_export_job.rb:5` | |
+| Export budget share | 0.5 | `backend/app/jobs/send_data_export_job.rb:5` | |
 | `MAIL_DAILY_LIMIT` / `MAIL_MONTHLY_LIMIT` / `MAIL_NEW_ADDRESS_DAILY_LIMIT` | env (defaults 100 / 3000 / 40) | `backend/app/services/mail_budget.rb:16-18` | |
 | `TURNSTILE_SECRET_KEY`, `TURNSTILE_HOSTNAMES` | env | `backend/app/services/turnstile.rb:80,85` | unset = off |
 | `VITE_TURNSTILE_SITE_KEY` | env (frontend build) | `frontend/app/modules/auth/turnstile.tsx:11` | |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_NATIVE_CLIENT_IDS` | env | `backend/app/services/google_sign_in.rb:25,63` | The frontend reads `VITE_GOOGLE_CLIENT_ID` (`frontend/app/modules/auth/google-button.tsx:12`) and hides the button when it is unset. |
 | `SSR_FORWARD_SECRET` | env (backend and frontend) | `backend/app/controllers/concerns/client_ip.rb:15` | Trusts `X-Visitor-Ip`. |
 | `FRONTEND_URL` | env | `backend/config/initializers/cors.rb:12`, `backend/app/mailers/application_mailer.rb:20` | |
-| `secret_key_base` | credentials | `session_token.rb:45` | Rotating it signs every user out. |
+| `secret_key_base` | credentials | `backend/app/services/session_token.rb:45` | Rotating it signs every user out. |
 
 ## Authorization and privacy
 
@@ -315,7 +315,7 @@ Password lock: `failed_password_attempts` 0..4 → locked from the 5th failure o
 
 Routes: `backend/config/routes.rb:25-32,56-67`.
 
-Frontend routes: `/login` (`frontend/app/routes/login/index.tsx`), `/login-confirmation` (`routes/login/confirmation/index.tsx`), `/signup`, `/password/forgot`, `/password/reset`, and `/app/account` (`routes/account.tsx`), whose cards are profile, language, time zone, calendar feed, notices, password, connected apps, download data and delete account. All of them have `ssr = false`.
+Frontend routes: `/login` (`frontend/app/routes/login/index.tsx`), `/login-confirmation` (`frontend/app/routes/login/confirmation/index.tsx`), `/signup`, `/password/forgot`, `/password/reset`, and `/app/account` (`frontend/app/routes/account.tsx`), whose cards are profile, language, time zone, calendar feed, notices, password, connected apps, download data and delete account. All of them have `ssr = false`.
 
 Mailers: `LoginMailer#magic_link` (4 purposes), `AccountMailer#deletion_scheduled`, `#data_export`, `#data_export_too_large`. Catalogue: [notifications-and-email](notifications-and-email.md).
 
@@ -335,13 +335,13 @@ Note: `backend/lib/google_lib.rb` is the Google Safe Browsing client, not sign-i
 **Decision.** Argon2id at 32 MiB with t=2, and an upgrade on the next successful check. **Why.** OWASP minimum of 19 MiB and t=2 (`backend/app/models/concerns/password_authenticatable.rb:1-3`). **Consequence.** Raising `ARGON2_COSTS` upgrades hashes gradually and adds CPU and memory per sign-in.
 
 ### D-AU-04 Lock the password, never the account
-**Decision.** Wrong passwords lock only the password, with a doubling wait. Codes keep working. **Why.** "A stranger guessing passwords cannot lock the owner out" (`password_authenticatable.rb:5-7`).
+**Decision.** Wrong passwords lock only the password, with a doubling wait. Codes keep working. **Why.** "A stranger guessing passwords cannot lock the owner out" (`backend/app/models/concerns/password_authenticatable.rb:5-7`).
 
 ### D-AU-05 One answer and constant work for every credential failure
 **Decision.** A single `invalid_credentials`, a dummy Argon2 check, and silent skips on code requests. **Why.** Neither the message nor the timing reveals whether an account exists (`backend/app/controllers/api/sessions_controller.rb:62-65`, `backend/app/services/login_code_request.rb:16-17`).
 
 ### D-AU-06 Sign-up password waits for the code
-**Decision.** The password is staged and activates only on a `sign_up` confirmation. A plain code sign-in or Google drops it. **Why.** Otherwise someone could sign up with another person's e-mail and the account would carry the stranger's password (`password_authenticatable.rb:71-74`; spec `backend/spec/requests/api/passwords_spec.rb:87`).
+**Decision.** The password is staged and activates only on a `sign_up` confirmation. A plain code sign-in or Google drops it. **Why.** Otherwise someone could sign up with another person's e-mail and the account would carry the stranger's password (`backend/app/models/concerns/password_authenticatable.rb:71-74`; spec `backend/spec/requests/api/passwords_spec.rb:87`).
 
 ### D-AU-07 NIST-style password policy that fails open
 **Decision.** Length 8..128, a check against the e-mail, and HIBP k-anonymity, accepted when HIBP is unreachable. **Why.** NIST 800-63B prefers length over composition rules. 128 is the maximum because hashing megabytes per request is a free DoS (`backend/app/services/password_policy.rb:1-11`).

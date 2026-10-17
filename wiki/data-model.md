@@ -39,12 +39,12 @@ Conventions: every table has a `bigint` auto-increment primary key `id` unless s
 #### users
 Purpose: one row per account. Lines 628-651; model `user.rb`.
 - PK `bigint`.
-- `email` string NOT NULL, normalised to `strip.downcase` (`user.rb:56`); unique through the expression index `index_users_on_lower_email` on `lower(email)`.
-- `admin` bool default false. `verified_at` (set on first successful sign-in; unverified accounts are cleaned up by `CleanupUnverifiedUsersJob`). `deactivated_at`, `deletion_requested_at` (30-day grace, `User::DELETION_GRACE`, `user.rb:36`).
+- `email` string NOT NULL, normalised to `strip.downcase` (`backend/app/models/user.rb:56`); unique through the expression index `index_users_on_lower_email` on `lower(email)`.
+- `admin` bool default false. `verified_at` (set on first successful sign-in; unverified accounts are cleaned up by `CleanupUnverifiedUsersJob`). `deactivated_at`, `deletion_requested_at` (30-day grace, `User::DELETION_GRACE`, `backend/app/models/user.rb:36`).
 - `login_token` string and `login_token_sent_at`, `login_attempts` int default 0: the 7-digit emailed code. No unique index since `20261013130000` (see section 6).
 - `password_digest`, `pending_password_digest`, `password_changed_at`, `failed_password_attempts` int default 0, `password_locked_until`, `sessions_revoked_at` (older session tokens refused).
-- `shortlinks_count` int default 0 NOT NULL: counter cache of visible (not soft-deleted) links, maintained by `counter_culture` on `Shortlink` (`shortlink.rb:67`).
-- `time_zone` string default `Europe/Lisbon` NOT NULL (validated against `TZInfo`, `user.rb:59`). `locale` string nullable (`en` or `pt-PT`, `user.rb:60`).
+- `shortlinks_count` int default 0 NOT NULL: counter cache of visible (not soft-deleted) links, maintained by `counter_culture` on `Shortlink` (`backend/app/models/shortlink.rb:67`).
+- `time_zone` string default `Europe/Lisbon` NOT NULL (validated against `TZInfo`, `backend/app/models/user.rb:59`). `locale` string nullable (`en` or `pt-PT`, `backend/app/models/user.rb:60`).
 - Indexes: `index_users_on_verified_at_and_created_at`; partial `index_users_on_deletion_requested_at WHERE deletion_requested_at IS NOT NULL`.
 - Referenced by (DB action): `calendar_feeds` none, `color_palettes` cascade, `forms` cascade, `identities` cascade, `notification_preferences` cascade, `notifications` cascade, `oauth_grants` cascade, `page_template_reports` cascade, `page_templates` cascade, `pages` none, `push_subscriptions` cascade, `shortlinks` none.
 - Annotation comment at the top of `user.rb` is stale (lacks `time_zone`, `locale`).
@@ -59,18 +59,18 @@ Purpose: external sign-in accounts (Google) linked to a user. Lines 253-264; mod
 
 #### shortlinks
 Purpose: a short code pointing to a URL. Lines 465-484; model `shortlink.rb`.
-- `short_code` string NOT NULL, unique index `index_shortlinks_on_short_code` over all rows including soft-deleted ones; generation checks `with_deleted` (`shortlink.rb:168`).
-- `original_url` NOT NULL, `title`, `password_digest` (bcrypt via `has_secure_password validations: false`, `shortlink.rb:60`; password length 4..72, `shortlink.rb:61`).
+- `short_code` string NOT NULL, unique index `index_shortlinks_on_short_code` over all rows including soft-deleted ones; generation checks `with_deleted` (`backend/app/models/shortlink.rb:168`).
+- `original_url` NOT NULL, `title`, `password_digest` (bcrypt via `has_secure_password validations: false`, `backend/app/models/shortlink.rb:60`; password length 4..72, `backend/app/models/shortlink.rb:61`).
 - `expires_at`, `inactive_at` (set by expiry/deactivation/danger marking), `deleted_at` (soft delete), `last_accessed_at`.
 - `safe` bool default true, `safe_checked_at`: Google Safe Browsing result.
-- `events_count` int default 0: counter cache from `Event` (`event.rb:29`).
+- `events_count` int default 0: counter cache from `Event` (`backend/app/models/event.rb:29`).
 - FK `user_id` -> users, NO ACTION, added NOT VALID then validated in 2026-10 (`20261013140000`, `20261014130000`).
 - Indexes: `deleted_at`, `user_id`, partial `index_shortlinks_on_expires_at WHERE expires_at IS NOT NULL AND inactive_at IS NULL` (feeds the expiry jobs).
-- Audited except `short_code`, `events_count`, `last_accessed_at`, `deleted_at`, `password_digest` (`shortlink.rb:34`).
+- Audited except `short_code`, `events_count`, `last_accessed_at`, `deleted_at`, `password_digest` (`backend/app/models/shortlink.rb:34`).
 
 #### events
 Purpose: one row per click on a short link (statistics). Lines 172-184; model `event.rb`.
-- `clicked_at` NOT NULL; `ip_address`, `user_agent`, `referer`, `country_code`, `region`, `platform`, `browser` (all strings, max 255 in the model, `event.rb:36`). IP, user agent and referer are nulled after 90 days (`PurgeOldIpAddressesJob::RETENTION`).
+- `clicked_at` NOT NULL; `ip_address`, `user_agent`, `referer`, `country_code`, `region`, `platform`, `browser` (all strings, max 255 in the model, `backend/app/models/event.rb:36`). IP, user agent and referer are nulled after 90 days (`PurgeOldIpAddressesJob::RETENTION`).
 - FK `shortlink_id` -> shortlinks, CASCADE (`20260613000100`).
 - Indexes: `shortlink_id`; partial `index_events_ip_retention (clicked_at) WHERE ip_address IS NOT NULL`.
 - No `updated_at`. Created by the analytics worker, not only by Rails.
@@ -79,17 +79,17 @@ Purpose: one row per click on a short link (statistics). Lines 172-184; model `e
 
 #### pages
 Purpose: a public bio page at `/u/<slug>`. Lines 435-450; model `page.rb`.
-- `slug` string NOT NULL, unique over all rows including soft-deleted (`Page.with_deleted` is used by `slug_not_taken`, `page.rb:137`); format `SLUG_FORMAT`, reserved list `RESERVED_SLUGS` (`page.rb:42-44`).
+- `slug` string NOT NULL, unique over all rows including soft-deleted (`Page.with_deleted` is used by `slug_not_taken`, `backend/app/models/page.rb:137`); format `SLUG_FORMAT`, reserved list `RESERVED_SLUGS` (`backend/app/models/page.rb:42-44`).
 - `display_title` (max 80), `bio` text (max 300), `theme` default `default`, `published` bool default true, `expires_at`, `deleted_at`, `custom_colors` jsonb nullable.
 - FK `user_id` -> users, NO ACTION.
-- Avatar: Active Storage `avatar` and `avatar_upload` (`page.rb:97-102`).
+- Avatar: Active Storage `avatar` and `avatar_upload` (`backend/app/models/page.rb:97-102`).
 
 #### page_links
 Purpose: ordered items of a page (button, social icon, section header). Lines 388-402; model `page_link.rb`.
-- `kind` default `link` (`link|social|header`, validated at `page_link.rb:62`, no CHECK). `label` NOT NULL (max 80), `url` nullable (required unless `header`, absent for `header`, `page_link.rb:64-65`), `icon`, `position` int default 0, `active` default true.
-- `clicks_count` int default 0: counter cache from `PageLinkClick` (`page_link_click.rb:30`).
+- `kind` default `link` (`link|social|header`, validated at `backend/app/models/page_link.rb:62`, no CHECK). `label` NOT NULL (max 80), `url` nullable (required unless `header`, absent for `header`, `backend/app/models/page_link.rb:64-65`), `icon`, `position` int default 0, `active` default true.
+- `clicks_count` int default 0: counter cache from `PageLinkClick` (`backend/app/models/page_link_click.rb:30`).
 - `safe` default true, `safe_checked_at`: link safety result.
-- FK `page_id` -> pages, CASCADE. Index `(page_id, position)`. At most 50 per page (`PageLink::MAX_PER_PAGE`, `page_link.rb:28`; model-only).
+- FK `page_id` -> pages, CASCADE. Index `(page_id, position)`. At most 50 per page (`PageLink::MAX_PER_PAGE`, `backend/app/models/page_link.rb:28`; model-only).
 
 #### page_link_clicks
 Purpose: one row per click on a page link. Lines 373-386; model `page_link_click.rb`.
@@ -98,9 +98,9 @@ Purpose: one row per click on a page link. Lines 373-386; model `page_link_click
 
 #### page_templates
 Purpose: templates saved from a page; `visibility` private or public (community). Lines 415-433; model `page_template.rb`.
-- `name` NOT NULL (max 60), `description` (max 140), `theme`, `items` jsonb default `[]` (shape: section 5), `visibility` default `private`, `author_page_id`, `author_label` (text snapshot of "Title - @slug"), `published_at`, `hidden_at`, `uses_count` and `reports_count` int default 0 (plain columns updated by `update_counters`/`increment!`, not `counter_culture`: `page_template_lookup.rb:32`, `page_template.rb:117`).
+- `name` NOT NULL (max 60), `description` (max 140), `theme`, `items` jsonb default `[]` (shape: section 5), `visibility` default `private`, `author_page_id`, `author_label` (text snapshot of "Title - @slug"), `published_at`, `hidden_at`, `uses_count` and `reports_count` int default 0 (plain columns updated by `update_counters`/`increment!`, not `counter_culture`: `backend/app/controllers/concerns/page_template_lookup.rb:32`, `backend/app/models/page_template.rb:117`).
 - FKs: `user_id` -> users CASCADE; `author_page_id` -> pages NULLIFY.
-- Index `idx_on_visibility_hidden_at_uses_count_757c1d2d8f (visibility, hidden_at, uses_count)` (auto-generated name) for the community listing. Max 20 templates per user (`page_template.rb:33`, model-only).
+- Index `idx_on_visibility_hidden_at_uses_count_757c1d2d8f (visibility, hidden_at, uses_count)` (auto-generated name) for the community listing. Max 20 templates per user (`backend/app/models/page_template.rb:33`, model-only).
 
 #### page_template_reports
 Purpose: a user's report against a community template. Lines 404-413; model `page_template_report.rb`.
@@ -108,25 +108,25 @@ Purpose: a user's report against a community template. Lines 404-413; model `pag
 
 #### color_palettes
 Purpose: saved custom colour sets. Lines 163-170; model `color_palette.rb`.
-- `name` NOT NULL (max 40), `custom_colors` jsonb NOT NULL (shape: section 5). FK `user_id` -> users CASCADE. Max 20 per user (`color_palette.rb:4`, model-only).
+- `name` NOT NULL (max 40), `custom_colors` jsonb NOT NULL (shape: section 5). FK `user_id` -> users CASCADE. Max 20 per user (`backend/app/models/color_palette.rb:4`, model-only).
 - Owner page: [bio-pages](bio-pages.md) (also used by forms).
 
 ### Forms (owner: [forms](forms.md))
 
 #### forms
 Purpose: a form or booking form. Lines 223-251; model `form.rb`.
-- `public_id` string NOT NULL unique (12 alphanumerics, `form.rb:11`). `title` NOT NULL (max 120), `description`, `thank_you_message`, `theme`, `custom_colors` jsonb nullable, `layout` default `page` (`page|one_at_a_time|steps`, `form.rb:5`, no CHECK).
+- `public_id` string NOT NULL unique (12 alphanumerics, `backend/app/models/form.rb:11`). `title` NOT NULL (max 120), `description`, `thank_you_message`, `theme`, `custom_colors` jsonb nullable, `layout` default `page` (`page|one_at_a_time|steps`, `backend/app/models/form.rb:5`, no CHECK).
 - `published` bool default false; `accepting_responses` bool default true.
 - `fields` jsonb NOT NULL default `[]`, `CHECK jsonb_typeof(fields) = 'array'` (`forms_fields_is_array`). Content shape: `Forms::FieldSchema` (section 5).
 - `published_snapshot` jsonb nullable, `published_version` int default 0 NOT NULL, `published_digest` string (SHA-256 hex of the snapshot text).
-- `responses_count` int default 0: counter cache from `FormResponse` (`form_response.rb:5`).
+- `responses_count` int default 0: counter cache from `FormResponse` (`backend/app/models/form_response.rb:5`).
 - `cover_token` (limit 24), `cover_position` int default 50 (0..100), `intro_enabled` bool default false, `start_label` (limit 40).
 - `shortlink_id` nullable. FKs: `user_id` -> users CASCADE; `shortlink_id` -> shortlinks NULLIFY.
 - Indexes: unique `public_id`; `(user_id, created_at)`; `user_id`; `shortlink_id`.
 
 #### form_responses
 Purpose: one submission. Lines 195-209; model `form_response.rb`.
-- `answers` jsonb NOT NULL default `{}` with `CHECK jsonb_typeof(answers) = 'object' AND octet_length(answers::text) <= 65536` (`form_responses_answers_object_max_64kb`). The model limit is stricter: 32 KB of JSON (`ANSWERS_MAX_BYTES`, `form_response.rb:2,18`).
+- `answers` jsonb NOT NULL default `{}` with `CHECK jsonb_typeof(answers) = 'object' AND octet_length(answers::text) <= 65536` (`form_responses_answers_object_max_64kb`). The model limit is stricter: 32 KB of JSON (`ANSWERS_MAX_BYTES`, `backend/app/models/form_response.rb:2,18`).
 - `country` (limit 2, `[A-Z]{2}`), `platform`, `browser`, `source`, `published_version` (the form version answered).
 - `idempotency_key` (limit 64); unique partial index `index_form_responses_on_form_and_idempotency_key (form_id, idempotency_key) WHERE idempotency_key IS NOT NULL`.
 - FK `form_id` -> forms CASCADE. Indexes `(form_id, created_at)`, `(form_id, id)`. No `updated_at`.
@@ -137,15 +137,15 @@ Purpose: per form and day counters of views, unique views and starts. Lines 186-
 
 #### form_uploads
 Purpose: a file uploaded for a form (answer image or cover); the file itself is in Active Storage. Lines 211-221; model `form_upload.rb`.
-- `field_id` (limit 8) NOT NULL: the form field id, or `coverimg` for the cover. `token` (limit 24) NOT NULL unique (`has_secure_token`, `form_upload.rb:9`). `response_id` nullable until the response is stored.
+- `field_id` (limit 8) NOT NULL: the form field id, or `coverimg` for the cover. `token` (limit 24) NOT NULL unique (`has_secure_token`, `backend/app/models/form_upload.rb:9`). `response_id` nullable until the response is stored.
 - FKs: `form_id` -> forms NO ACTION; `response_id` -> form_responses NULLIFY.
-- Partial index `index_form_uploads_orphans (created_at) WHERE response_id IS NULL` (feeds `CleanupOrphanFormUploadsJob`, every 15 minutes). Total size cap 20 GB (`MAX_TOTAL_BYTES`, `form_upload.rb:4`).
+- Partial index `index_form_uploads_orphans (created_at) WHERE response_id IS NULL` (feeds `CleanupOrphanFormUploadsJob`, every 15 minutes). Total size cap 20 GB (`MAX_TOTAL_BYTES`, `backend/app/models/form_upload.rb:4`).
 
 ### Booking and appointments (owners: [booking-engine](booking-engine.md) for slots, [appointments-lifecycle](appointments-lifecycle.md) for the rest)
 
 #### appointment_slots
 Purpose: one bookable start time of one service/resource of a form, with a capacity counter. Lines 61-80; model `appointment_slot.rb`. Owner: [booking-engine](booking-engine.md).
-- `service_key` NOT NULL, `resource_key` NOT NULL (`before_validation` defaults it to `service_key`, `appointment_slot.rb:2`), `starts_at` NOT NULL, `ends_at` nullable (kept by `Reserve`), `duration` int nullable (minutes), `capacity` int nullable (NULL means unlimited), `booked` int default 0, `held` int default 0 (places offered to the waiting list).
+- `service_key` NOT NULL, `resource_key` NOT NULL (`before_validation` defaults it to `service_key`, `backend/app/models/appointment_slot.rb:2`), `starts_at` NOT NULL, `ends_at` nullable (kept by `Reserve`), `duration` int nullable (minutes), `capacity` int nullable (NULL means unlimited), `booked` int default 0, `held` int default 0 (places offered to the waiting list).
 - FK `form_id` -> forms CASCADE.
 - Unique `(form_id, service_key, starts_at)` and unique `(form_id, resource_key, starts_at)`.
 - CHECKs: `booked >= 0`; `held >= 0`; `capacity IS NULL OR (booked + held) <= capacity`.
@@ -154,7 +154,7 @@ Purpose: one bookable start time of one service/resource of a form, with a capac
 
 #### appointments
 Purpose: one booked session; several rows share a `group_key` for one booking of many sessions. Lines 94-129; model `appointment.rb`. Owner: [appointments-lifecycle](appointments-lifecycle.md).
-- `status` string NOT NULL, no CHECK. Values in use: `pending`, `unverified`, `confirmed`, `cancelled`, `declined`, `expired`, `rescheduled` (`Appointments::Search::STATUSES`, `search.rb:5`); `Appointment::HOLDING = pending, unverified, confirmed` (`appointment.rb:2`).
+- `status` string NOT NULL, no CHECK. Values in use: `pending`, `unverified`, `confirmed`, `cancelled`, `declined`, `expired`, `rescheduled` (`Appointments::Search::STATUSES`, `backend/app/services/appointments/search.rb:5`); `Appointment::HOLDING = pending, unverified, confirmed` (`backend/app/models/appointment.rb:2`).
 - `group_key` uuid NOT NULL. `snapshot` jsonb NOT NULL default `{}` with `CHECK jsonb_typeof(snapshot) = 'object'`.
 - `client_name`, `client_email`, `client_phone`, `client_time_zone`, `client_locale`; `published_version`; `expires_at`; `decided_at`; `decided_by` (CHECK in `owner|timeout|client` or NULL); `decision_message`; `cancel_reason`; `cancelled_by` (CHECK in `owner|client|system` or NULL).
 - `reminders_sent` integer[] default `{}` NOT NULL: the reminder offsets (minutes) already sent. `reminder_sent_at` is the older single-reminder column (kept; see Drift). `owner_nudged_at`.
@@ -184,7 +184,7 @@ Purpose: one row per delivery to one channel (in-app, e-mail, push), also the de
 - CHECK `notifications_has_recipient`: `(recipient_kind='owner' AND user_id IS NOT NULL) OR (recipient_kind='client' AND recipient_email IS NOT NULL)`.
 - FKs: `user_id` -> users CASCADE (nullable); `appointment_id` -> appointments CASCADE (nullable).
 - Unique expression index `index_notifications_uniqueness` on `(kind, event_key, channel, recipient_kind, COALESCE(user_id::text, recipient_email::text))`: the same event is never notified twice to the same recipient on the same channel.
-- Partial `index_notifications_pending (status, next_attempt_at) WHERE status = 'pending'`; `(user_id, channel, id)`; `created_at`. Retention 90 days (`Notification::RETENTION`, `notification.rb:2`, `PurgeOldNotificationsJob`).
+- Partial `index_notifications_pending (status, next_attempt_at) WHERE status = 'pending'`; `(user_id, channel, id)`; `created_at`. Retention 90 days (`Notification::RETENTION`, `backend/app/models/notification.rb:2`, `PurgeOldNotificationsJob`).
 
 #### notification_preferences
 Purpose: per user opt-in/out per event kind and channel. Lines 278-288; model `notification_preference.rb`.
@@ -192,18 +192,18 @@ Purpose: per user opt-in/out per event kind and channel. Lines 278-288; model `n
 
 #### push_subscriptions
 Purpose: Web Push endpoints of a user. Lines 452-463; model `push_subscription.rb`.
-- `endpoint` (limit 2048) NOT NULL unique, `p256dh` NOT NULL, `auth` NOT NULL, `user_agent_label`, `last_used_at`. FK `user_id` CASCADE. Max 5 per user (`push_subscription.rb:2`, model-only).
+- `endpoint` (limit 2048) NOT NULL unique, `p256dh` NOT NULL, `auth` NOT NULL, `user_agent_label`, `last_used_at`. FK `user_id` CASCADE. Max 5 per user (`backend/app/models/push_subscription.rb:2`, model-only).
 
 ### MCP and OAuth (owner: [mcp-and-oauth](mcp-and-oauth.md))
 
 #### oauth_clients
 Purpose: dynamically registered OAuth clients. Lines 340-347; model `oauth_client.rb`.
-- `client_id` NOT NULL unique (`SecureRandom.urlsafe_base64(24)`, `oauth_client.rb:7`), `client_name` NOT NULL (max 100), `redirect_uris` jsonb NOT NULL default `[]` (1..5 entries, `oauth_client.rb:2,20`).
+- `client_id` NOT NULL unique (`SecureRandom.urlsafe_base64(24)`, `backend/app/models/oauth_client.rb:7`), `client_name` NOT NULL (max 100), `redirect_uris` jsonb NOT NULL default `[]` (1..5 entries, `backend/app/models/oauth_client.rb:2,20`).
 
 #### oauth_grants
 Purpose: a user's consent for a client: scopes and resource. Lines 349-360; model `oauth_grant.rb`.
-- `scopes` jsonb NOT NULL default `[]` (array of the 13 values of `OauthGrant::SCOPES`, `oauth_grant.rb:2`), `resource` NOT NULL, `revoked_at`, `last_used_at`.
-- FKs: `user_id` -> users CASCADE; `oauth_client_id` -> oauth_clients CASCADE. Audited on `scopes`, `revoked_at` (`oauth_grant.rb:8`).
+- `scopes` jsonb NOT NULL default `[]` (array of the 13 values of `OauthGrant::SCOPES`, `backend/app/models/oauth_grant.rb:2`), `resource` NOT NULL, `revoked_at`, `last_used_at`.
+- FKs: `user_id` -> users CASCADE; `oauth_client_id` -> oauth_clients CASCADE. Audited on `scopes`, `revoked_at` (`backend/app/models/oauth_grant.rb:8`).
 
 #### oauth_authorization_codes, oauth_access_tokens, oauth_refresh_tokens
 Purpose: short-lived credentials of a grant; only digests are stored. Lines 328-338, 319-326, 362-371.
@@ -218,7 +218,7 @@ Purpose: log of MCP tool calls per grant. Lines 266-276; model `mcp_tool_call.rb
 
 #### abuse_signals
 Purpose: admin flags for repeated content or form flooding. Lines 18-31; model `abuse_signal.rb`.
-- `kind` (`same_text|same_links|form_flood`, model-only, `abuse_signal.rb:26`), `fingerprint` NOT NULL, `status` default `open` (`open|dismissed`, model-only), `first_seen_at`, `last_seen_at`, `user_ids`, `page_ids`, `form_ids` (jsonb arrays of ids, default `[]`; no FK, so ids may point at deleted rows).
+- `kind` (`same_text|same_links|form_flood`, model-only, `backend/app/models/abuse_signal.rb:26`), `fingerprint` NOT NULL, `status` default `open` (`open|dismissed`, model-only), `first_seen_at`, `last_seen_at`, `user_ids`, `page_ids`, `form_ids` (jsonb arrays of ids, default `[]`; no FK, so ids may point at deleted rows).
 - Unique `(kind, fingerprint)`; index `status`.
 
 #### audits
@@ -278,19 +278,19 @@ Two layers act. The database layer is `ON DELETE` on the FKs above and runs for 
 
 | Deleted | Effect | Layer |
 |---|---|---|
-| **User** (`User#purge!`, `user.rb:129-148`; called by `PurgeDeletedAccountsJob` after the 30-day grace) | In one transaction: every shortlink (including soft-deleted) is destroyed, then every page (including soft-deleted), then the user. `purge!` does this explicitly because `has_many :shortlinks` and `:pages` use the default scope and would skip soft-deleted rows, which the `NO ACTION` FKs on `shortlinks.user_id` and `pages.user_id` would then reject. Then audits of the owned shortlinks, pages, page links, forms, grants and the user, and audits written by the user, are deleted by `delete_all` (no FK exists on `audits`). | model + FK |
-| User, remaining children | `forms` (model `destroy`, also DB cascade), `page_templates` (model `destroy`, also cascade), `color_palettes` (model `destroy`, also cascade), `oauth_grants` (model `destroy`, also cascade), `push_subscriptions`, `notification_preferences`, `page_template_reports`, `identities` (model `delete_all`, also cascade), `calendar_feeds` (model `delete`; the FK is `NO ACTION`, so only the model layer removes it, `user.rb:68`). `notifications` are removed by the DB cascade only (no `has_many`). `mcp_tool_calls` and OAuth tokens go through the grant cascade. | model + FK (`calendar_feeds` model only; `notifications` DB only) |
-| **Shortlink** soft delete (`Shortlink#soft_delete!`, `shortlink.rb:106-111`) | Removes the Valkey cache entry, sets `deleted_at`, enqueues `PurgeShortlinkJob`. `counter_culture` decrements `users.shortlinks_count` because the column lambda returns nil once `deleted_at` is set (`shortlink.rb:67`; fix #298). | model |
-| Shortlink hard delete (`PurgeShortlinkJob`, batches of 5,000 events, then `shortlink.delete`; or `destroy!` inside `User#purge!`) | `events` cascade at the database (`has_many :events` has no `dependent:`, `shortlink.rb:68`). `forms.shortlink_id` is set to NULL by the database. Audits of the link are not deleted by the job. | FK |
-| **Page** soft delete (`Page#soft_delete!`, `page.rb:104-106`) | Only sets `deleted_at`; links and clicks stay; the slug stays reserved. | model |
-| Page destroy (`User#purge!`) | `page_links` destroyed (`dependent: :destroy`, `page.rb:96`), each deleting its `page_link_clicks` with `delete_all` (`page_link.rb:75`); the DB also cascades. `page_templates.author_page_id` set NULL by the database. Active Storage avatar blobs are purged by Rails' default `has_one_attached` behaviour. | model + FK |
-| **Form** destroy (`Form#destroy`, `form.rb:15-20`) | `before_destroy` soft-deletes the form's short link (`form.rb:15`). `uploads` destroyed first (`FormUpload` destroy purges the file); then `responses`, `waitlist_entries`, `daily_stats` removed by `delete_all`. The database cascades `appointment_slots`, `appointments` (and through them `appointment_tokens` and `notifications`) from `form_id`. `appointments` has `dependent: nil` because the DB does it. Slot counters are not released (the slots are going too). | model + FK |
-| **Form response** destroy (`FormResponse`, `form_response.rb:5-9`) | `before_destroy` calls `Appointments::Release` for the slots of its holding appointments (restores `booked`). Its uploads are destroyed (`dependent: :destroy`). The DB cascades its `appointments`, then their `appointment_tokens` and `notifications`; `appointments.rescheduled_from_id` pointing at them is set NULL. `counter_culture` decrements `forms.responses_count`. | model + FK |
-| Form responses `delete_all` (bulk "delete all responses", `me/form_responses_controller.rb:48`, MCP `delete_all_responses.rb:16`) | No callbacks: slot counters are NOT released by the model layer, uploads are NOT destroyed (the DB sets `form_uploads.response_id` to NULL; `CleanupOrphanFormUploadsJob` later removes the orphans), `responses_count` is not decremented by `counter_culture`. Appointments, tokens and notifications cascade at the DB. | FK only (see Drift) |
-| **Appointment slot** | Cannot be deleted while any appointment references it (`appointments.slot_id` is `NO ACTION`; `appointment_slot.rb:7` has `dependent: nil`). No application code deletes a slot; slots disappear only when their form is deleted. | FK (blocks); spec `backend/spec/db/appointment_tables_spec.rb:63` |
+| **User** (`User#purge!`, `backend/app/models/user.rb:129-148`; called by `PurgeDeletedAccountsJob` after the 30-day grace) | In one transaction: every shortlink (including soft-deleted) is destroyed, then every page (including soft-deleted), then the user. `purge!` does this explicitly because `has_many :shortlinks` and `:pages` use the default scope and would skip soft-deleted rows, which the `NO ACTION` FKs on `shortlinks.user_id` and `pages.user_id` would then reject. Then audits of the owned shortlinks, pages, page links, forms, grants and the user, and audits written by the user, are deleted by `delete_all` (no FK exists on `audits`). | model + FK |
+| User, remaining children | `forms` (model `destroy`, also DB cascade), `page_templates` (model `destroy`, also cascade), `color_palettes` (model `destroy`, also cascade), `oauth_grants` (model `destroy`, also cascade), `push_subscriptions`, `notification_preferences`, `page_template_reports`, `identities` (model `delete_all`, also cascade), `calendar_feeds` (model `delete`; the FK is `NO ACTION`, so only the model layer removes it, `backend/app/models/user.rb:68`). `notifications` are removed by the DB cascade only (no `has_many`). `mcp_tool_calls` and OAuth tokens go through the grant cascade. | model + FK (`calendar_feeds` model only; `notifications` DB only) |
+| **Shortlink** soft delete (`Shortlink#soft_delete!`, `backend/app/models/shortlink.rb:106-111`) | Removes the Valkey cache entry, sets `deleted_at`, enqueues `PurgeShortlinkJob`. `counter_culture` decrements `users.shortlinks_count` because the column lambda returns nil once `deleted_at` is set (`backend/app/models/shortlink.rb:67`; fix #298). | model |
+| Shortlink hard delete (`PurgeShortlinkJob`, batches of 5,000 events, then `shortlink.delete`; or `destroy!` inside `User#purge!`) | `events` cascade at the database (`has_many :events` has no `dependent:`, `backend/app/models/shortlink.rb:68`). `forms.shortlink_id` is set to NULL by the database. Audits of the link are not deleted by the job. | FK |
+| **Page** soft delete (`Page#soft_delete!`, `backend/app/models/page.rb:104-106`) | Only sets `deleted_at`; links and clicks stay; the slug stays reserved. | model |
+| Page destroy (`User#purge!`) | `page_links` destroyed (`dependent: :destroy`, `backend/app/models/page.rb:96`), each deleting its `page_link_clicks` with `delete_all` (`backend/app/models/page_link.rb:75`); the DB also cascades. `page_templates.author_page_id` set NULL by the database. Active Storage avatar blobs are purged by Rails' default `has_one_attached` behaviour. | model + FK |
+| **Form** destroy (`Form#destroy`, `backend/app/models/form.rb:15-20`) | `before_destroy` soft-deletes the form's short link (`backend/app/models/form.rb:15`). `uploads` destroyed first (`FormUpload` destroy purges the file); then `responses`, `waitlist_entries`, `daily_stats` removed by `delete_all`. The database cascades `appointment_slots`, `appointments` (and through them `appointment_tokens` and `notifications`) from `form_id`. `appointments` has `dependent: nil` because the DB does it. Slot counters are not released (the slots are going too). | model + FK |
+| **Form response** destroy (`FormResponse`, `backend/app/models/form_response.rb:5-9`) | `before_destroy` calls `Appointments::Release` for the slots of its holding appointments (restores `booked`). Its uploads are destroyed (`dependent: :destroy`). The DB cascades its `appointments`, then their `appointment_tokens` and `notifications`; `appointments.rescheduled_from_id` pointing at them is set NULL. `counter_culture` decrements `forms.responses_count`. | model + FK |
+| Form responses `delete_all` (bulk "delete all responses", `backend/app/controllers/api/me/form_responses_controller.rb:48`, MCP `backend/app/services/mcp/tools/delete_all_responses.rb:16`) | No callbacks: slot counters are NOT released by the model layer, uploads are NOT destroyed (the DB sets `form_uploads.response_id` to NULL; `CleanupOrphanFormUploadsJob` later removes the orphans), `responses_count` is not decremented by `counter_culture`. Appointments, tokens and notifications cascade at the DB. | FK only (see Drift) |
+| **Appointment slot** | Cannot be deleted while any appointment references it (`appointments.slot_id` is `NO ACTION`; `backend/app/models/appointment_slot.rb:7` has `dependent: nil`). No application code deletes a slot; slots disappear only when their form is deleted. | FK (blocks); spec `backend/spec/db/appointment_tables_spec.rb:63` |
 | **Appointment** | No application delete path. Via cascades: its `appointment_tokens` and `notifications` are deleted; appointments that point at it with `rescheduled_from_id` keep existing with NULL. | FK |
-| **OAuth grant** destroy | `authorization_codes`, `access_tokens`, `refresh_tokens` removed with `delete_all` (`oauth_grant.rb:12-14`), `mcp_tool_calls` by DB cascade only. Deleting an `OauthClient` destroys its grants (`oauth_client.rb:5`). | model + FK |
-| **Page template** destroy | `reports` removed (`dependent: :delete_all`, `page_template.rb:43`). | model + FK |
+| **OAuth grant** destroy | `authorization_codes`, `access_tokens`, `refresh_tokens` removed with `delete_all` (`backend/app/models/oauth_grant.rb:12-14`), `mcp_tool_calls` by DB cascade only. Deleting an `OauthClient` destroys its grants (`backend/app/models/oauth_client.rb:5`). | model + FK |
+| **Page template** destroy | `reports` removed (`dependent: :delete_all`, `backend/app/models/page_template.rb:43`). | model + FK |
 
 Retention deletes (not cascades): `events`/`page_link_clicks`/`audits` IP fields nulled after 90 days; `notifications` deleted after 90 days; `mcp_tool_calls` purged daily; unverified users destroyed after one day.
 
@@ -298,15 +298,15 @@ Retention deletes (not cascades): `events`/`page_link_clicks`/`audits` IP fields
 
 | Column | Shape | Validated by |
 |---|---|---|
-| `forms.fields` | Array of field objects. Common keys `id` (8 alphanumerics), `type`, `label`, `help`, `required`. Types: `short_text`, `long_text`, `email`, `number`, `single_choice`, `multiple_choice`, `yes_no`, `rating`, `date`, `image`, `section`, `booking`. Extra keys per type: `choices`, `max_choices`, `scale`, `min`/`max`, and for `booking` `mode`, `availability`, `services`, `categories`, `rules`, `exceptions`. | DB: array type only (`forms_fields_is_array`, schema:250). App: `Forms::FieldSchema.definition_errors` (`backend/app/services/forms/field_schema.rb:30`, via `Form#field_definitions`, `form.rb:51`); booking part `Forms::BookingSchema`. See [forms](forms.md), [booking-engine](booking-engine.md). |
-| `forms.published_snapshot` | Object with the keys `title`, `description`, `thank_you_message`, `theme`, `custom_colors`, `layout`, `fields`, `cover_token`, `cover_position`, `intro_enabled`, `start_label`. Older snapshots lack the last four; `Snapshot::DEFAULTS` fills them. | App only: `Forms::Snapshot::KEYS` (`backend/app/services/forms/snapshot.rb:5`), written by `Forms::Publish` (`publish.rb:48`). `published_digest` is the SHA-256 of `published_snapshot::text` (`publish.rb:24`). |
-| `form_responses.answers` | Object keyed by field id. Max 65,536 bytes of `answers::text` (DB) and 32 KB of JSON (model). | DB check `form_responses_answers_object_max_64kb` (schema:208); `FormResponse#answers_is_object`, `#answers_size` (`form_response.rb:12-18`); per-field rules in `Forms::SubmitResponse`. |
+| `forms.fields` | Array of field objects. Common keys `id` (8 alphanumerics), `type`, `label`, `help`, `required`. Types: `short_text`, `long_text`, `email`, `number`, `single_choice`, `multiple_choice`, `yes_no`, `rating`, `date`, `image`, `section`, `booking`. Extra keys per type: `choices`, `max_choices`, `scale`, `min`/`max`, and for `booking` `mode`, `availability`, `services`, `categories`, `rules`, `exceptions`. | DB: array type only (`forms_fields_is_array`, schema:250). App: `Forms::FieldSchema.definition_errors` (`backend/app/services/forms/field_schema.rb:30`, via `Form#field_definitions`, `backend/app/models/form.rb:51`); booking part `Forms::BookingSchema`. See [forms](forms.md), [booking-engine](booking-engine.md). |
+| `forms.published_snapshot` | Object with the keys `title`, `description`, `thank_you_message`, `theme`, `custom_colors`, `layout`, `fields`, `cover_token`, `cover_position`, `intro_enabled`, `start_label`. Older snapshots lack the last four; `Snapshot::DEFAULTS` fills them. | App only: `Forms::Snapshot::KEYS` (`backend/app/services/forms/snapshot.rb:5`), written by `Forms::Publish` (`backend/app/services/forms/publish.rb:48`). `published_digest` is the SHA-256 of `published_snapshot::text` (`backend/app/services/forms/publish.rb:24`). |
+| `form_responses.answers` | Object keyed by field id. Max 65,536 bytes of `answers::text` (DB) and 32 KB of JSON (model). | DB check `form_responses_answers_object_max_64kb` (schema:208); `FormResponse#answers_is_object`, `#answers_size` (`backend/app/models/form_response.rb:12-18`); per-field rules in `Forms::SubmitResponse`. |
 | `appointments.snapshot` | Object copied at booking: `name`, `duration` (minutes of the session), `price`, `currency`, `on_timeout` (manual approval rule), and for multi-session bookings `total`, `sessions`, `monthly` (with `skipped`). | DB: object type only (`appointments_snapshot_is_object`, schema:128). App: built in `Appointments::Book` (`backend/app/services/appointments/book.rb:45-50`), read by `Appointments::Book::Receipt`. |
-| `pages.custom_colors`, `forms.custom_colors`, `color_palettes.custom_colors` | `{ "background": "#rrggbb", "text": "#rrggbb", "accent": "#rrggbb" }`, exactly these three keys, lower-cased hex. NULL on pages/forms means "use the theme". | App only: `CustomColors#custom_colors_shape` (`backend/app/models/concerns/custom_colors.rb:19`); `ColorPalette` requires presence (`color_palette.rb:9`). |
-| `page_templates.items` | Array of at most 50 objects (page link attributes). | App: `PageTemplate#items_shape` (`page_template.rb:133`); content built by `ApplyPageTemplate`. |
+| `pages.custom_colors`, `forms.custom_colors`, `color_palettes.custom_colors` | `{ "background": "#rrggbb", "text": "#rrggbb", "accent": "#rrggbb" }`, exactly these three keys, lower-cased hex. NULL on pages/forms means "use the theme". | App only: `CustomColors#custom_colors_shape` (`backend/app/models/concerns/custom_colors.rb:19`); `ColorPalette` requires presence (`backend/app/models/color_palette.rb:9`). |
+| `page_templates.items` | Array of at most 50 objects (page link attributes). | App: `PageTemplate#items_shape` (`backend/app/models/page_template.rb:133`); content built by `ApplyPageTemplate`. |
 | `notifications.payload` | Object. Keys depend on `kind`; appointment events carry `form_id`, `response_id`, `group_key`, `sessions`, optional `expires_at`; the waitlist adds `waitlist_entry_id`. | DB: object type only (`notifications_payload_is_object`, schema:313). Writers in `Notifications::*`. See [notifications-and-email](notifications-and-email.md). |
-| `oauth_grants.scopes` | Non-empty array of unique values from `OauthGrant::SCOPES`; may not mix a personal-data scope with a publish scope. | App only: `scopes_known`, `publish_apart_from_responses` (`oauth_grant.rb:36-44`). |
-| `oauth_clients.redirect_uris` | Array of 1..5 URIs. | App only: `OauthClient#redirect_uris_allowed` (`oauth_client.rb:20`). |
+| `oauth_grants.scopes` | Non-empty array of unique values from `OauthGrant::SCOPES`; may not mix a personal-data scope with a publish scope. | App only: `scopes_known`, `publish_apart_from_responses` (`backend/app/models/oauth_grant.rb:36-44`). |
+| `oauth_clients.redirect_uris` | Array of 1..5 URIs. | App only: `OauthClient#redirect_uris_allowed` (`backend/app/models/oauth_client.rb:20`). |
 | `abuse_signals.user_ids`, `page_ids`, `form_ids` | Arrays of integers. | None (no validation, no FK). |
 | `audits.audited_changes` | Hash of attribute to value or `[old, new]` (gem format). | `audited` gem. |
 
@@ -475,7 +475,7 @@ Seeds: `backend/db/seeds.rb` is the empty Rails template; the only seed is `rake
 | 1 | `docs/postgres-roles.md` says "tables created by future migrations are readable and writable" by default privileges; this holds only if migrations run as `<owner>`. Consistent with `deploy.sh`, but nothing checks that `MIGRATE_POSTGRES_USER` equals `<owner>`. | low |
 | 2 | Annotation headers: 20 of 30 models have none (all models added from 2026-10-04), and `backend/app/models/user.rb` lacks `time_zone` and `locale`. `.annotaterb.yml` has `skip_on_db_migrate: false`, so a development `db:migrate` would rewrite them; they are not in CI. | low |
 | 3 | `solid_cache_entries` and `solid_cable_messages` exist but are unused (cache is Redis, no cable adapter). Dead tables. | low |
-| 4 | Bulk response deletion (`form.responses.delete_all`, `me/form_responses_controller.rb:48`, MCP `delete_all_responses.rb:16`) skips `FormResponse#before_destroy` (slot release), upload destruction and `counter_culture`. `forms.responses_count` and `appointment_slots.booked` can disagree with reality afterwards. Confirm whether `Release` is called elsewhere in those paths. | medium |
+| 4 | Bulk response deletion (`form.responses.delete_all`, `backend/app/controllers/api/me/form_responses_controller.rb:48`, MCP `backend/app/services/mcp/tools/delete_all_responses.rb:16`) skips `FormResponse#before_destroy` (slot release), upload destruction and `counter_culture`. `forms.responses_count` and `appointment_slots.booked` can disagree with reality afterwards. Confirm whether `Release` is called elsewhere in those paths. | medium |
 | 5 | `appointments.status`, `forms.layout`, `shortlinks`/`pages` themes, `abuse_signals.kind/status`, `page_links.kind`, `notifications.kind`, `mcp_tool_calls.status` have no CHECK, unlike the other 2026-10 status columns. Values are guarded in Ruby only. | medium |
 | 6 | `appointments.reminder_sent_at` is the pre-`reminders_sent` column (`20261007110000`). Still in the schema; whether any code writes it was not verified. | low |
 | 7 | `form_responses.answers` limit: 64 KB in the database, 32 KB in the model. Intentional slack (inferred) but undocumented. | low |

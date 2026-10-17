@@ -239,17 +239,17 @@ Re-implemented in `backend/app/services/mcp/` (a change in the dashboard control
 
 | MCP code | Dashboard twin | Difference today |
 |---|---|---|
-| `delete_all_responses.rb:11-18` | `api/me/form_responses_controller.rb:45-51` | MCP omits `Appointments::Release` of holding appointments (see drift). |
-| `update_shortlink.rb:25-34` | `api/me/shortlinks_controller.rb:52-55`, `:94-102` | Same logic; MCP ignores `password_digest` (no password input). |
-| `create_shortlink.rb:21-30` | `api/me/shortlinks_controller.rb:37-46` | MCP has its own throttle (20/h, 100/day) instead of 60 per 10 min; no password. |
-| `create_page.rb:22-30` | `api/me/pages_controller.rb:52-67` | MCP forces `published: false`, no community templates, own throttle 10/h + 50/day. |
-| `page_tool_helpers.rb:39-49` | `concerns/page_template_lookup.rb:14-25` | Community branch removed; no `uses_count`. |
-| `reorder_page_links.rb:13-17` | `api/me/page_links_controller.rb:37-52` | Copy. |
-| `duplicate_form.rb:11-24` | `api/me/forms_controller.rb:105-115` | Copy. |
-| `mark_notification_read.rb:12-13` | `api/me/notifications_controller.rb:17` | Copy. |
-| `appointment_tool_helpers.rb:11` | `api/me/appointments_controller.rb:59` | Same ownership query. |
+| `backend/app/services/mcp/tools/delete_all_responses.rb:11-18` | `backend/app/controllers/api/me/form_responses_controller.rb:45-51` | MCP omits `Appointments::Release` of holding appointments (see drift). |
+| `backend/app/services/mcp/tools/update_shortlink.rb:25-34` | `backend/app/controllers/api/me/shortlinks_controller.rb:52-55`, `:94-102` | Same logic; MCP ignores `password_digest` (no password input). |
+| `backend/app/services/mcp/tools/create_shortlink.rb:21-30` | `backend/app/controllers/api/me/shortlinks_controller.rb:37-46` | MCP has its own throttle (20/h, 100/day) instead of 60 per 10 min; no password. |
+| `backend/app/services/mcp/tools/create_page.rb:22-30` | `backend/app/controllers/api/me/pages_controller.rb:52-67` | MCP forces `published: false`, no community templates, own throttle 10/h + 50/day. |
+| `backend/app/services/mcp/tools/page_tool_helpers.rb:39-49` | `backend/app/controllers/concerns/page_template_lookup.rb:14-25` | Community branch removed; no `uses_count`. |
+| `backend/app/services/mcp/tools/reorder_page_links.rb:13-17` | `backend/app/controllers/api/me/page_links_controller.rb:37-52` | Copy. |
+| `backend/app/services/mcp/tools/duplicate_form.rb:11-24` | `backend/app/controllers/api/me/forms_controller.rb:105-115` | Copy. |
+| `backend/app/services/mcp/tools/mark_notification_read.rb:12-13` | `backend/app/controllers/api/me/notifications_controller.rb:17` | Copy. |
+| `backend/app/services/mcp/tools/appointment_tool_helpers.rb:11` | `backend/app/controllers/api/me/appointments_controller.rb:59` | Same ownership query. |
 | `response_tool_helpers.rb`, `form_tool_helpers.rb`, `page_tool_helpers.rb`, `Mcp::Tools.shortlink` | `*Serializer` classes | Separate serializers: a new column is not exposed to MCP (or leaked) unless added here. |
-| `create_form_from_template.rb:12`, `apply_form_template.rb:13` | `api/me/forms_controller.rb:95-97`, `:122` | MCP builds templates without the user's locale. |
+| `backend/app/services/mcp/tools/create_form_from_template.rb:12`, `backend/app/services/mcp/tools/apply_form_template.rb:13` | `backend/app/controllers/api/me/forms_controller.rb:95-97`, `:122` | MCP builds templates without the user's locale. |
 
 ## Flows
 
@@ -413,7 +413,7 @@ Routes: `backend/config/routes.rb:14-22`, `:66-67`. Frontend: `/oauth/authorize`
 
 ## Drift and open questions
 
-1. **High.** `delete_all_responses` deletes responses with `delete_all` and never calls `Appointments::Release`, unlike the dashboard (`backend/app/controllers/api/me/form_responses_controller.rb:47`). Appointments vanish by FK cascade (`backend/db/schema.rb:678`) but `appointment_slots.booked` keeps the places and the waitlist is not offered. The release was added to the dashboard in `58ad7e6` (#111) after the tool (`201f345`, #88). Spec `mcp_full_tools_spec.rb:84` does not check slots. — `backend/app/services/mcp/tools/delete_all_responses.rb:15-17`.
+1. **High.** `delete_all_responses` deletes responses with `delete_all` and never calls `Appointments::Release`, unlike the dashboard (`backend/app/controllers/api/me/form_responses_controller.rb:47`). Appointments vanish by FK cascade (`backend/db/schema.rb:678`) but `appointment_slots.booked` keeps the places and the waitlist is not offered. The release was added to the dashboard in `58ad7e6` (#111) after the tool (`201f345`, #88). Spec `backend/spec/requests/mcp_full_tools_spec.rb:84` does not check slots. — `backend/app/services/mcp/tools/delete_all_responses.rb:15-17`.
 2. **Medium.** docs/mcp.md says appointments scopes are offered "when appointments are enabled for the account"; the allow-list was removed in `c61b24f` (#196) and no code filters them now.
 3. **Medium.** docs/mcp.md says deleting tools need the exact code, slug or title and are limited to 10 an hour; `delete_response` has no confirm and allows 100/h, 500/day; the others also have 30/day.
 4. **Medium.** docs/mcp.md does not mention that loopback `http://127.0.0.1|[::1]|localhost` redirect URIs on any port are always accepted (`backend/app/services/oauth/redirect_uri.rb:35`), nor that allowed hosts are exact (no subdomains) and https only.

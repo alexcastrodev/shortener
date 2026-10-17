@@ -10,7 +10,7 @@ A bio page is a public link-in-bio page owned by one user and served at `/u/:slu
 ## Glossary
 
 - **Page** (`Page`): one bio page; the table is `pages`. A user can own many.
-- **Slug** (`Page#slug`): the address segment in `/u/:slug`. Called "username" in the frontend route (`routes/bio/$username.tsx`) and "address" in the editor.
+- **Slug** (`Page#slug`): the address segment in `/u/:slug`. Called "username" in the frontend route (`frontend/app/routes/bio/$username.tsx`) and "address" in the editor.
 - **Page link / item** (`PageLink`): one entry of a page. `kind` is `link` (button), `social` (icon in the row under the title) or `header` (section title, no URL).
 - **Network** (`PageLink::NETWORKS`): one of nine brand icons the frontend can draw: instagram, tiktok, facebook, linkedin, snapchat, youtube, x, onlyfans, whatsapp. Stored in `PageLink#icon`.
 - **Theme** (`Page::THEMES`): one of six presets: default, midnight, sunset, forest, ocean, paper.
@@ -40,7 +40,7 @@ Full catalogue in [data-model](data-model.md). Tables owned by this domain:
 - `clicks_count` on `page_links` is kept by `counter_culture` (`backend/app/models/page_link_click.rb:30`). `PageLinkClick` rows are never updated except by the IP purge.
 - Cache keys: `page_link_click:<link_id>:<ip>` (TTL 10 s, click dedup). Rate limit counters use the names in [Limits and configuration](#limits-and-configuration).
 - Queues: `safety` (link checks), `images` (avatar optimization, one thread cluster-wide, `backend/config/queue.yml:36`), `default` (avatar cleanup).
-- The `Schema Information` comments in `page.rb`, `page_serializer.rb` and the factory omit the `custom_colors` column added by `backend/db/migrate/20261006000000_add_custom_colors_to_pages_and_forms.rb`; the column exists in `schema.rb:435`.
+- The `Schema Information` comments in `page.rb`, `page_serializer.rb` and the factory omit the `custom_colors` column added by `backend/db/migrate/20261006000000_add_custom_colors_to_pages_and_forms.rb`; the column exists in `backend/db/schema.rb:435`.
 - Related table: `abuse_signals` (written by `DetectPageAbuseJob`, owned by [admin-and-moderation](admin-and-moderation.md)).
 
 ## Business rules
@@ -49,10 +49,10 @@ Full catalogue in [data-model](data-model.md). Tables owned by this domain:
 
 - **BP-01** The slug is stripped and downcased on assignment (`normalizes`), so `"  Alex.Castro "` is stored as `alex.castro` and lookups are case-insensitive (the public controller also downcases the URL parameter). — `backend/app/models/page.rb:85`, `backend/app/controllers/api/public/pages_controller.rb:14`; test `backend/spec/requests/api/me/pages_spec.rb:53`, `backend/spec/requests/api/public/pages_spec.rb:8`.
 - **BP-02** Allowed slugs match `\A[a-z0-9][a-z0-9_.-]{1,28}[a-z0-9]\z`: 3 to 30 characters, lowercase ASCII letters and digits plus `_`, `.` and `-`, starting and ending with a letter or digit. Dots, repeated separators and all-digit slugs are allowed. Unicode, spaces and a leading dash are rejected. — `backend/app/models/page.rb:42,86`; test `backend/spec/requests/api/me/pages_spec.rb:68`.
-- **BP-03** These 19 slugs are reserved: `about admin api app dashboard help kurz login logout me new pages report settings signup status support u www`. The check runs after normalization, so `Admin` is also rejected. — `backend/app/models/page.rb:44-64,86`; test `backend/spec/requests/mcp_page_tools_spec.rb:59`. Rationale: "would be confusing as /u/:slug or collide with product words" (code comment, `page.rb:43`, commit `5a12219`).
+- **BP-03** These 19 slugs are reserved: `about admin api app dashboard help kurz login logout me new pages report settings signup status support u www`. The check runs after normalization, so `Admin` is also rejected. — `backend/app/models/page.rb:44-64,86`; test `backend/spec/requests/mcp_page_tools_spec.rb:59`. Rationale: "would be confusing as /u/:slug or collide with product words" (code comment, `backend/app/models/page.rb:43`, commit `5a12219`).
 - **BP-04** A slug is globally unique across all users, including soft-deleted pages. The model checks `Page.with_deleted` to return a validation error instead of a database exception; the unique index `index_pages_on_slug` is the backstop. A race that reaches the index returns 409 `{"message":"Conflict"}`. — `backend/app/models/page.rb:87,132-139`, `backend/db/schema.rb:447`, `backend/app/controllers/application_controller.rb:45`; test `backend/spec/requests/api/me/pages_spec.rb:60`.
 - **BP-05** The slug can be changed at any time with `PATCH /api/me/pages/:id`, also while the page is published. The old slug is released at once and nobody is redirected from it, so printed QR codes and shared links to the old address stop working. There is no slug history. — `backend/app/contracts/page_update_contract.rb:3`, `backend/app/models/page.rb:132`. Not recorded: why renaming is free.
-- **BP-06** The slug is checked by the model and the frontend only. The contracts only require a non-empty string. The frontend repeats the regex in `routes/pages/index.tsx:34` and `routes/pages/$id.tsx:72`. The slug is a database-unique column but the case-insensitivity depends on the model normalization.
+- **BP-06** The slug is checked by the model and the frontend only. The contracts only require a non-empty string. The frontend repeats the regex in `frontend/app/routes/pages/index.tsx:34` and `frontend/app/routes/pages/$id.tsx:72`. The slug is a database-unique column but the case-insensitivity depends on the model normalization.
 
 ### Pages per user, states and visibility
 
@@ -70,7 +70,7 @@ Full catalogue in [data-model](data-model.md). Tables owned by this domain:
 - **BP-15** `label` is required and at most 80 characters (model). The contract only requires a non-empty string. — `backend/app/models/page_link.rb:63`, `backend/app/contracts/page_link_contract.rb:4`.
 - **BP-16** `link` and `social` items require a `url` of at most 2048 characters. A `header` must have no URL and one with a URL is rejected. — `backend/app/models/page_link.rb:64-65`, `backend/app/contracts/page_link_contract.rb:13-17`; tests `backend/spec/requests/api/me/page_link_kinds_spec.rb:17,22,26`.
 - **BP-17** Only `http` and `https` URLs with a host are accepted (macro `http_url`: `URI.parse(value.strip)` must be `URI::HTTP` with a host). `javascript:`, `data:`, `vbscript:`, `//host`, `https://` and strings with spaces are rejected on create and update. The contract validates the stripped value but the model stores the value as sent (no `strip`), so surrounding whitespace is kept. — `backend/app/contracts/application_contract.rb:16-24`, `backend/app/contracts/page_link_update_contract.rb:11`; tests `backend/spec/requests/api/me/page_links_spec.rb:23`, `backend/spec/requests/security/injection_spec.rb:29,40`, `backend/spec/requests/mcp_page_tools_spec.rb:149`.
-- **BP-18** The frontend repeats the scheme rule twice: the editor form uses `z.url({protocol: /^https?$/})` and the label max 80 (`page-content-editor.tsx:56-57`), and the public view only sets `href` for URLs that start with `http://` or `https://`, as "a second line of defense" (`bio-page-view.tsx:8-13`).
+- **BP-18** The frontend repeats the scheme rule twice: the editor form uses `z.url({protocol: /^https?$/})` and the label max 80 (`frontend/app/routes/pages/components/page-content-editor.tsx:56-57`), and the public view only sets `href` for URLs that start with `http://` or `https://`, as "a second line of defense" (`frontend/app/modules/bio-page/bio-page-view.tsx:8-13`).
 - **BP-19** Nothing blocks private, local or non-public hosts, shortener URLs or the page's own URL; the only content check is Safe Browsing (BP-46 to BP-51).
 - **BP-20** A `social` item requires `icon` to be one of the nine networks. For other kinds `icon` is optional but, when present, must be a known network (a `link` with an icon is drawn as a button with the brand icon). — `backend/app/models/page_link.rb:66-67`, `backend/app/contracts/page_link_contract.rb:19-21`; tests `backend/spec/requests/api/me/page_link_kinds_spec.rb:30,35,40`.
 - **BP-21** The backend never checks that the icon matches the URL host. The frontend does: shortcuts build the URL from a handle (`socialLinkUrl`), `isValidSocialValue` requires a pasted URL to belong to the chosen network's hosts, and the generic "add button" form sets `icon` from the URL host via `detectSocialNetwork` (frontend only). — `frontend/app/modules/bio-page/social-networks.tsx:120,134,142`, `frontend/app/routes/pages/components/page-content-editor.tsx:159-161`.
@@ -89,7 +89,7 @@ Full catalogue in [data-model](data-model.md). Tables owned by this domain:
 
 - **BP-29** `theme` must be one of the six presets; the default is `default`. The same list validates `PageTemplate#theme` and `Form#theme`. — `backend/app/models/page.rb:30,88`, `backend/app/models/page_template.rb:47`, `backend/app/models/form.rb:26`; tests `backend/spec/requests/api/me/pages_spec.rb:78,85`.
 - **BP-30** `custom_colors` is either `null` or exactly the keys `background`, `text` and `accent`, each `#` plus six hex digits. Values are lowercased on assignment. Anything else (3-digit hex, names, `url(...)`, a missing or extra key) is rejected by the model. Sending `null` clears it. — `backend/app/models/concerns/custom_colors.rb:4-5,15,21-26`; tests `backend/spec/models/custom_colors_spec.rb:12`, `backend/spec/requests/api/me/color_palettes_spec.rb:50`, `backend/spec/requests/mcp_page_tools_spec.rb:159`.
-- **BP-31** When `custom_colors` is present the frontend renders it and ignores `theme`; `theme` stays stored. The theme picker clears the colors when a preset is chosen. The text/background contrast is only warned about in the editor (ratio below 4.5) and never enforced by the backend. — `frontend/app/modules/bio-page/themes.ts:132-137`, `frontend/app/modules/bio-page/theme-picker.tsx:83,101-105`. Presets were picked "to keep text and buttons readable (WCAG AA contrast)" (comment, `themes.ts:16-18`).
+- **BP-31** When `custom_colors` is present the frontend renders it and ignores `theme`; `theme` stays stored. The theme picker clears the colors when a preset is chosen. The text/background contrast is only warned about in the editor (ratio below 4.5) and never enforced by the backend. — `frontend/app/modules/bio-page/themes.ts:132-137`, `frontend/app/modules/bio-page/theme-picker.tsx:83,101-105`. Presets were picked "to keep text and buttons readable (WCAG AA contrast)" (comment, `frontend/app/modules/bio-page/themes.ts:16-18`).
 - **BP-32** Each user can save up to 20 palettes (`ColorPalette::MAX_PER_USER`); a palette needs a name of at most 40 characters and valid custom colors. Palettes are private (list, create, delete only for the owner), are not tied to a page, and have no update endpoint. They are not part of the account data export. — `backend/app/models/color_palette.rb:4-16`, `backend/app/contracts/color_palette_contract.rb`, `backend/app/controllers/api/me/color_palettes_controller.rb`; tests `backend/spec/requests/api/me/color_palettes_spec.rb:16,29,41`. Added by #84 (`dd7ab38`) together with forms colors.
 
 ### Templates
@@ -111,7 +111,7 @@ Full catalogue in [data-model](data-model.md). Tables owned by this domain:
 ### Link safety (Safe Browsing)
 
 - **BP-46** Provider: Google Safe Browsing v4 `threatMatches:find`, threat types `MALWARE` and `SOCIAL_ENGINEERING`, platform `WINDOWS`, entry type `URL`, up to 500 URLs per request, key from `GOOGLE_SAFE_LINK_KEY`. — `backend/lib/google_lib.rb:9,21-56`.
-- **BP-47** The whole feature is on only when `ENABLE_GOOGLE_SAFE_LINK` is non-empty. An `after_commit` on create and update, when `url` changed and is present, enqueues `PageLinkSafetyJob.perform_later([id])` on queue `safety`. A header never has a URL and is never checked. — `backend/app/models/page_link.rb:84,105-107`; tests `backend/spec/requests/api/me/page_link_kinds_spec.rb:77`, `backend/spec/jobs/page_link_safety_job_spec.rb:27`. Rationale: "a link approved once can later be swapped for something malicious" (comment, `page_link.rb:81-83`).
+- **BP-47** The whole feature is on only when `ENABLE_GOOGLE_SAFE_LINK` is non-empty. An `after_commit` on create and update, when `url` changed and is present, enqueues `PageLinkSafetyJob.perform_later([id])` on queue `safety`. A header never has a URL and is never checked. — `backend/app/models/page_link.rb:84,105-107`; tests `backend/spec/requests/api/me/page_link_kinds_spec.rb:77`, `backend/spec/jobs/page_link_safety_job_spec.rb:27`. Rationale: "a link approved once can later be swapped for something malicious" (comment, `backend/app/models/page_link.rb:81-83`).
 - **BP-48** `PageLinkSafetyJob` sets `safe = false` and `safe_checked_at = now` on the URLs Safe Browsing returns (exact string match against the stored URL) and `safe = true` plus `safe_checked_at` on the rest. A failed API call raises `GoogleLib::SafeBrowsing::V4::Services::Error`, which is retried (`wait: :polynomially_longer`, 3 attempts) and leaves the links as they were: "Hiding every link on a transient API error would take down pages that did nothing wrong." — `backend/app/jobs/page_link_safety_job.rb:7-20`, `backend/lib/google_lib.rb:21-30`; tests `backend/spec/jobs/page_link_safety_job_spec.rb:8,19,51,66`.
 - **BP-49** `RecheckPageLinksSafetyJob` runs daily at 4am on queue `safety`, selects every link with a URL whose `safe_checked_at` is null or older than 1 day (no filter on page state: drafts, expired and deleted pages included) and enqueues one `PageLinkSafetyJob` per 500 ids. It returns at once when `ENABLE_GOOGLE_SAFE_LINK` is blank. — `backend/app/jobs/recheck_page_links_safety_job.rb:6-17`, `backend/config/recurring.yml:48-51`; test `backend/spec/jobs/page_link_safety_job_spec.rb:36`.
 - **BP-50** What an unsafe link does: `safe: false` links are filtered out of the public JSON, cannot be clicked (the click endpoint 404s them), and are shown to the owner in the editor with a red ring and a warning icon (`pc_flagged`). They stay in the owner's list, statistics and template snapshots. The owner cannot clear the flag; it changes only when the URL is edited and the next check returns it clean, or at the next recheck. There is no notification to the owner. — `backend/app/serializers/public_page_serializer.rb:11`, `backend/app/models/page_link.rb:55-56`, `frontend/app/routes/pages/components/page-content-editor.tsx:571-600`; test `backend/spec/requests/api/public/pages_spec.rb:31`.
@@ -158,13 +158,13 @@ Full catalogue in [data-model](data-model.md). Tables owned by this domain:
 ## Flows
 
 1. **Create a page (dashboard).** `POST /api/me/pages {slug, display_title?, template?}` -> `PageContract` -> template lookup (`PageTemplateLookup#find_template`) -> `Page.transaction { page.save!; ApplyPageTemplate }` -> `count_template_use` (Community only) -> 201 with links. The page is published immediately (BP-08). Validation failures: 422 (contract errors as a hash, model errors as an array).
-2. **Edit content.** The editor (`routes/pages/$id.tsx`) saves the page card with `PATCH /api/me/pages/:id` (always sends slug, title, bio, theme, custom colors, published and `expires_at`). Items are edited in the phone preview with `POST/PATCH/DELETE .../links` and `PATCH .../links/reorder`. A changed URL enqueues `PageLinkSafetyJob` after commit when safety is enabled.
+2. **Edit content.** The editor (`frontend/app/routes/pages/$id.tsx`) saves the page card with `PATCH /api/me/pages/:id` (always sends slug, title, bio, theme, custom colors, published and `expires_at`). Items are edited in the phone preview with `POST/PATCH/DELETE .../links` and `PATCH .../links/reorder`. A changed URL enqueues `PageLinkSafetyJob` after commit when safety is enabled.
 3. **Visitor opens `/u/:slug`.** The SSR loader calls `GET /api/public/pages/:slug` (120 per minute per IP, using the forwarded visitor IP) -> 404 page with "This page does not exist or is no longer available." or the rendered page. The route sets `frame-ancestors 'none'` and `X-Frame-Options: DENY`, adds the canonical URL and Open Graph tags (avatar as `og:image`, otherwise the Kurz preview image), and adds a footer "Made with Kurz" plus a "Report" link to `/report?page=<slug>`. — `frontend/app/routes/bio/$username.tsx:8-51`, `frontend/app/modules/bio-page/bio-page-view.tsx:174-191`.
 4. **Visitor clicks a link.** The browser POSTs the click (BP-60..63) and follows the link; `rel="noopener noreferrer nofollow"`.
 5. **Upload an avatar.** Validate -> attach raw -> enqueue `OptimizeAvatarJob` (queue `images`) -> 202. The job swaps the avatar in and renders the thumb; the editor polls the page until `avatar_processing` is false. `CleanupStaleAvatarUploadsJob` is the safety net.
 6. **Save and publish a template.** Save: `POST /api/me/page_templates` (private). Publish: `PATCH .../custom-<id>` (author page, description) -> gallery. Others use it with `community-<id>`; three reports hide it; an admin unhides or leaves it hidden.
 7. **Link safety.** Save/URL change -> job on `safety` -> Safe Browsing -> `safe` flag. Daily 4am recheck of anything not checked for a day.
-8. **Statistics.** The stats screen (`routes/pages/stats.tsx`) calls `GET .../statistics?days=` with a 7/30/90 selector.
+8. **Statistics.** The stats screen (`frontend/app/routes/pages/stats.tsx`) calls `GET .../statistics?days=` with a 7/30/90 selector.
 
 ## States and transitions
 
@@ -206,38 +206,38 @@ Avatar: `none` -> (upload) `processing` (raw `avatar_upload` attached) -> (job o
 
 | Name | Value | Where | Notes |
 |---|---|---|---|
-| Slug length / charset | 3-30, `[a-z0-9_.-]`, alnum at both ends | `page.rb:42` | Model and frontend only |
-| Reserved slugs | 19 words | `page.rb:44` | See BP-03 |
+| Slug length / charset | 3-30, `[a-z0-9_.-]`, alnum at both ends | `backend/app/models/page.rb:42` | Model and frontend only |
+| Reserved slugs | 19 words | `backend/app/models/page.rb:44` | See BP-03 |
 | Pages per user | unlimited | | Create limited to 10/hour (`pages_controller.rb:10`) |
-| `display_title` / `bio` | 80 / 300 characters | `page.rb:89-90` | Model only |
-| Items per page | 50 (`PageLink::MAX_PER_PAGE`) | `page_link.rb:28` | Checked on create only |
-| Item `label` / `url` | 80 / 2048 characters | `page_link.rb:63-64` | Model only (MCP schema repeats them) |
-| Templates per user | 20 | `page_template.rb:33` | Private and public together |
-| Template `name` / `description` | 60 / 140 characters | `page_template.rb:45-46` | Contract and model |
-| Template items | at most 50 hashes | `page_template.rb:134` | Shape only |
-| Palettes per user / name | 20 / 40 characters | `color_palette.rb:4,8` | |
-| Reports to auto-hide | 3 | `page_template.rb:36` | One per user per template |
+| `display_title` / `bio` | 80 / 300 characters | `backend/app/models/page.rb:89-90` | Model only |
+| Items per page | 50 (`PageLink::MAX_PER_PAGE`) | `backend/app/models/page_link.rb:28` | Checked on create only |
+| Item `label` / `url` | 80 / 2048 characters | `backend/app/models/page_link.rb:63-64` | Model only (MCP schema repeats them) |
+| Templates per user | 20 | `backend/app/models/page_template.rb:33` | Private and public together |
+| Template `name` / `description` | 60 / 140 characters | `backend/app/models/page_template.rb:45-46` | Contract and model |
+| Template items | at most 50 hashes | `backend/app/models/page_template.rb:134` | Shape only |
+| Palettes per user / name | 20 / 40 characters | `backend/app/models/color_palette.rb:4,8` | |
+| Reports to auto-hide | 3 | `backend/app/models/page_template.rb:36` | One per user per template |
 | `page_template_publish` | 5 per day per user | `page_templates_controller.rb:8` | Counts unpublish too |
-| `community_template_report` | 20 per hour per user | `community_templates_controller.rb:8` | |
-| Community page size | 12 default, 1..48 | `community_templates_controller.rb:18` | |
+| `community_template_report` | 20 per hour per user | `backend/app/controllers/api/me/community_templates_controller.rb:8` | |
+| Community page size | 12 default, 1..48 | `backend/app/controllers/api/me/community_templates_controller.rb:18` | |
 | `pages_create` | 10 per hour per user | `pages_controller.rb:10` | |
 | Avatar upload | 5 per 10 min and 20 per day per user; 20 per hour per IP | `pages_controller.rb:21-38` | 429 |
-| Avatar size / pixels | 50 MB; 12 000 px per side; 100 MP | `page.rb:34-39` | Header check |
-| Stored avatar / thumb | 1024 px max edge, WebP q85 / 400x400 WebP | `page.rb:41,98`, `optimize_avatar_job.rb:59-62` | |
-| Stale raw upload | 1 hour, sweep every 15 min | `cleanup_stale_avatar_uploads_job.rb:7` | |
-| `OptimizeAvatarJob` concurrency | 1 per user (5 min), 1 thread on `images` | `optimize_avatar_job.rb:14`, `queue.yml:36` | |
-| `public_pages_show` | 120 per minute per IP | `api/public/pages_controller.rb:6` | 429 |
-| `public_page_link_clicks` | 30 per minute per IP | `page_link_clicks_controller.rb:9` | 429, empty body |
-| Click dedup | 10 s per link and IP | `page_link_clicks_controller.rb:7` | Needs the Rails cache (Valkey) |
-| Click IP/UA/referer retention | 90 days | `purge_old_ip_addresses_job.rb:4` | Daily 04:15 |
+| Avatar size / pixels | 50 MB; 12 000 px per side; 100 MP | `backend/app/models/page.rb:34-39` | Header check |
+| Stored avatar / thumb | 1024 px max edge, WebP q85 / 400x400 WebP | `backend/app/models/page.rb:41,98`, `backend/app/jobs/optimize_avatar_job.rb:59-62` | |
+| Stale raw upload | 1 hour, sweep every 15 min | `backend/app/jobs/cleanup_stale_avatar_uploads_job.rb:7` | |
+| `OptimizeAvatarJob` concurrency | 1 per user (5 min), 1 thread on `images` | `backend/app/jobs/optimize_avatar_job.rb:14`, `backend/config/queue.yml:36` | |
+| `public_pages_show` | 120 per minute per IP | `backend/app/controllers/api/public/pages_controller.rb:6` | 429 |
+| `public_page_link_clicks` | 30 per minute per IP | `backend/app/controllers/api/public/page_link_clicks_controller.rb:9` | 429, empty body |
+| Click dedup | 10 s per link and IP | `backend/app/controllers/api/public/page_link_clicks_controller.rb:7` | Needs the Rails cache (Valkey) |
+| Click IP/UA/referer retention | 90 days | `backend/app/jobs/purge_old_ip_addresses_job.rb:4` | Daily 04:15 |
 | Statistics periods | 7, 30, 90 (default 30), top 8 | `statistics_service.rb:10-12` | UTC |
-| Safe Browsing batch | 500 URLs | `google_lib.rb:10` | |
-| Link recheck | daily 4am, older than 1 day | `recurring.yml:48`, `recheck_page_links_safety_job.rb:6` | |
-| Account purge grace | 30 days | `user.rb:37` | |
-| `ENABLE_GOOGLE_SAFE_LINK`, `GOOGLE_SAFE_LINK_KEY` | env, any non-empty value enables | `page_link.rb:106`, `google_lib.rb:34` | Not listed in `.ci/stack.yml` (see Drift) |
-| `FRONTEND_URL` | base of `public_url` and QR | `page.rb:109` | |
-| `SSR_FORWARD_SECRET` | trusts `X-Visitor-Ip` from SSR | `client_ip.rb:15` | |
-| `IMGPROC_URL`, `S3_BUCKET` | imgproc address; picks `seaweedfs` storage | `imgproc.rb:13`, `production.rb:24` | Imgproc is not used by bio pages |
+| Safe Browsing batch | 500 URLs | `backend/lib/google_lib.rb:10` | |
+| Link recheck | daily 4am, older than 1 day | `backend/config/recurring.yml:48`, `backend/app/jobs/recheck_page_links_safety_job.rb:6` | |
+| Account purge grace | 30 days | `backend/app/models/user.rb:37` | |
+| `ENABLE_GOOGLE_SAFE_LINK`, `GOOGLE_SAFE_LINK_KEY` | env, any non-empty value enables | `backend/app/models/page_link.rb:106`, `backend/lib/google_lib.rb:34` | Not listed in `.ci/stack.yml` (see Drift) |
+| `FRONTEND_URL` | base of `public_url` and QR | `backend/app/models/page.rb:109` | |
+| `SSR_FORWARD_SECRET` | trusts `X-Visitor-Ip` from SSR | `backend/app/controllers/concerns/client_ip.rb:15` | |
+| `IMGPROC_URL`, `S3_BUCKET` | imgproc address; picks `seaweedfs` storage | `backend/app/services/imgproc.rb:13`, `backend/config/environments/production.rb:24` | Imgproc is not used by bio pages |
 
 The `backend/imgproc` sandbox (`backend/imgproc/app.rb`) is a separate Rack app (`POST /convert`, `GET /up`): PNG/JPEG/WebP/HEIF by magic bytes, at most 10 MB, 10 000 px per side, 50 MP, output WebP with the longest side capped at 4096 and metadata stripped; the Rails client `Imgproc.convert` uses a 2 s open timeout and 25 s read timeout and maps 411/413/422 to `Rejected` and everything else to `Unavailable`. In this commit only the forms code calls it (`form_covers_controller.rb:33`, `form_uploads_controller.rb:30`); see [forms](forms.md). It was introduced by #74 (`433073f`), which also moved the magic-byte table into `ImageUpload` and made `AvatarUpload` delegate to it.
 
@@ -248,7 +248,7 @@ The `backend/imgproc` sandbox (`backend/imgproc/app.rb`) is a separate Rack app 
 - **Admin**: moderates Community templates (BP-44). Admins have no special read or write access to other users' pages in this domain (deactivation and abuse screens are in [admin-and-moderation](admin-and-moderation.md)).
 - **MCP**: scopes in BP-72..74.
 - **Personal data of visitors**: IP, user agent and referer for 90 days; country, region, platform and browser indefinitely (BP-61, BP-64). Visitors are not shown any notice on the page. Bio-page clicks are not subject to the shortlink analytics pipeline.
-- **Personal data of owners**: page content is public by design. Avatar metadata (EXIF, GPS) is stripped (BP-56). The Community gallery shows only the `author_label` (title and slug) and a link to the author's page while it is public; the e-mail is never serialized (test `page_templates_publish_spec.rb:38`) except to admins (`owner_email` in the admin template list).
+- **Personal data of owners**: page content is public by design. Avatar metadata (EXIF, GPS) is stripped (BP-56). The Community gallery shows only the `author_label` (title and slug) and a link to the author's page while it is public; the e-mail is never serialized (test `backend/spec/requests/api/me/page_templates_publish_spec.rb:38`) except to admins (`owner_email` in the admin template list).
 - **Clickjacking and XSS**: the bio route denies framing; text is rendered as React text; `href` only for `http(s)`; custom colors only reach CSS variables after the `#RRGGBB` check. Security spec: `backend/spec/requests/security/injection_spec.rb`.
 
 ## API and UI surface
@@ -273,7 +273,7 @@ Error shapes: contract failures are 422 `{errors: {field: [...]}}`; model failur
 
 MCP tools: see BP-72..74 (`backend/app/services/mcp/tools/`).
 
-Frontend routes: `/u/:username` (`routes/bio/$username.tsx`, layout `layout/bio-layout.tsx` without site header or footer, SSR), `/app/pages` (list and create, `ssr = false`), `/app/pages/:id` (editor with phone preview, theme picker, avatar, template gallery, QR modal), `/app/pages/:id/stats`, `/report?page=<slug>` (prerendered report page). Modules: `modules/bio-page` (`bio-page-view`, `themes` with `BIO_THEMES`, `social-networks`, `theme-picker`, `bio-showcase` and `illustrated-avatar` for the homepage demo, which uses inline SVG data URIs and no network request). Admin screen: `routes/admin/moderation/templates.tsx`. Texts: `frontend/app/i18n/{en,pt-PT}/pages.json` and `templates.json`.
+Frontend routes: `/u/:username` (`frontend/app/routes/bio/$username.tsx`, layout `frontend/app/layout/bio-layout.tsx` without site header or footer, SSR), `/app/pages` (list and create, `ssr = false`), `/app/pages/:id` (editor with phone preview, theme picker, avatar, template gallery, QR modal), `/app/pages/:id/stats`, `/report?page=<slug>` (prerendered report page). Modules: `modules/bio-page` (`bio-page-view`, `themes` with `BIO_THEMES`, `social-networks`, `theme-picker`, `bio-showcase` and `illustrated-avatar` for the homepage demo, which uses inline SVG data URIs and no network request). Admin screen: `frontend/app/routes/admin/moderation/templates.tsx`. Texts: `frontend/app/i18n/{en,pt-PT}/pages.json` and `templates.json`.
 
 Jobs:
 
@@ -310,7 +310,7 @@ Full schedule: [platform-and-operations](platform-and-operations.md).
 
 ## Change impact
 
-- **Slug rules** (`SLUG_FORMAT`, `RESERVED_SLUGS`): also change `routes/pages/index.tsx:34`, `routes/pages/$id.tsx:72`, the `slug_rule` strings in `i18n/*/pages.json`, MCP `maxLength: 30` in `create_page.rb`/`update_page.rb`, and `mcp_page_tools_spec.rb:59`. Existing slugs must stay valid (the previous release keeps running on the new schema).
+- **Slug rules** (`SLUG_FORMAT`, `RESERVED_SLUGS`): also change `frontend/app/routes/pages/index.tsx:34`, `frontend/app/routes/pages/$id.tsx:72`, the `slug_rule` strings in `i18n/*/pages.json`, MCP `maxLength: 30` in `create_page.rb`/`update_page.rb`, and `backend/spec/requests/mcp_page_tools_spec.rb:59`. Existing slugs must stay valid (the previous release keeps running on the new schema).
 - **Add a theme**: `Page::THEMES` (also validates forms and templates), `frontend/packages/core/types/Page.ts` `PAGE_THEMES`, `BIO_THEMES` in `themes.ts`, the form theme code, MCP enums (derived from the constant), i18n names.
 - **Add a network**: `PageLink::NETWORKS` (backend, drives `ICONS`, template placeholders and `DetectPageAbuseJob` placeholder list), `social-networks.tsx`, `HANDLE_KEYS` in the editor, `TrafficSource` if it is a traffic source, MCP enum.
 - **Add a link kind or field**: `PageLink::KINDS`, both contracts, `PublicPageSerializer` (explicit list), `PageTemplate::ITEM_KEYS`, `public_items`, `ApplyPageTemplate` (copies fields explicitly), the MCP `LINK_FIELDS` and `link_json`, data export, `bio-page-view.tsx` and the editor. Stored template `items` JSON from older releases must keep applying.
@@ -351,7 +351,7 @@ Full schedule: [platform-and-operations](platform-and-operations.md).
 - **Social icon vs URL is a frontend-only rule (low).** A client can store `icon: "instagram"` with any http(s) URL (BP-21).
 - **Whitespace in URLs (low).** The `http_url` macro validates the stripped value but the stored value is not stripped; the public view then fails the `^https?://` test and renders no `href` (BP-17).
 - **Expired page cannot be saved without changing `expires_at` (low, inferred for the UI).** The update contract rejects a past `expires_at` even if unchanged and the editor always sends the field.
-- **Hardcoded host in meta (low).** `routes/bio/$username.tsx:34` builds the canonical and `og:url` as `https://kurz.fyi/u/<param>` (raw URL param, not the normalized slug) while `Page#public_url` uses `FRONTEND_URL`; `routes/pages/index.tsx:101` also prints `kurz.fyi/u/`.
+- **Hardcoded host in meta (low).** `frontend/app/routes/bio/$username.tsx:34` builds the canonical and `og:url` as `https://kurz.fyi/u/<param>` (raw URL param, not the normalized slug) while `Page#public_url` uses `FRONTEND_URL`; `frontend/app/routes/pages/index.tsx:101` also prints `kurz.fyi/u/`.
 - **Avatars bypass the imgproc sandbox (low, inferred from chronology).** Avatars (since `6e4b4ce`, 2026-09-23) decode 50 MB / 100 MP files in the jobs container, while forms use the sandbox that limits 10 MB / 50 MP (`433073f`, 2026-10-05). `AvatarUpload` was refactored but not moved. Not recorded whether intentional.
 - **Silent avatar failure (low).** A corrupt but header-valid file is dropped without telling the owner (BP-56).
 - **Hidden template stays hidden through unpublish and republish (low),** and the owner is not told it is hidden except by the flag in their list (BP-40, BP-45).
