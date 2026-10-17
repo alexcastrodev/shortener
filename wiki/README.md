@@ -133,4 +133,5 @@ Terms used across pages. Each page has its own glossary for its domain.
 
 - A PR that changes a rule updates the rule on its page, keeps its id, and moves the page's state line to the new commit.
 - A new domain gets its own page with the same sections and a new two-letter prefix, and a row in the tables above.
+- The site is built with VitePress and published to GitHub Pages from `main` by `.github/workflows/wiki.yml`. To preview it: `cd wiki && npm ci && npm run dev`. The build fails on a dead link between pages.
 - References are `path:LINE`. Lines move: when you touch a file, fix the references to it in the pages that cite it.

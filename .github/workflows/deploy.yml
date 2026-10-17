@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    # The wiki is published by wiki.yml; a push that only changes it does not
+    # redeploy the app.
+    paths-ignore:
+      - "wiki/**"
+      - ".github/workflows/wiki.yml"
 
 permissions:
   contents: read
