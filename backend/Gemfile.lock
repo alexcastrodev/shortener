@@ -253,7 +253,7 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     jmespath (1.6.2)
-    json (3.0.2)
+    json (3.1.0)
     json_schemer (2.5.0)
       bigdecimal
       hana (~> 1.3)
@@ -554,7 +554,7 @@ DEPENDENCIES
   googleauth (~> 1.17)
   httparty
   image_processing (~> 1.2)
-  json (~> 3.0)
+  json (~> 3.1)
   jwt
   mcp (~> 1.7)
   oj

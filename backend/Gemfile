@@ -55,7 +55,7 @@ gem "httparty"
 gem "dry-validation"
 # Serializer Backend
 gem "oj"
-gem "json", "~> 3.0"
+gem "json", "~> 3.1"
 gem "sneakers"
 gem "jwt"
 # has_secure_password for password-protected shortlinks
