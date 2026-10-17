@@ -1,187 +1,154 @@
 # Short links
 
-> Scope: short links, the redirect path (edge function, Valkey, RabbitMQ, analytics worker), click events and statistics, expiry, password lock, QR codes, URL safety. State as of commit `bc7f65c` (2026-10-17).
-> Main code: `backend/app/models/shortlink.rb`, `backend/app/models/event.rb`, `backend/app/controllers/api/me/shortlinks_controller.rb`, `backend/app/controllers/api/public/shortlink_unlocks_controller.rb`, `backend/app/jobs/*shortlink*`, `backend/app/jobs/safety_url_job.rb`, `backend/app/workers/analytics_worker.rb`, `backend/lib/google_lib.rb`, `edge-function/*.cs`, `frontend/app/components/shortlink-card/`, `frontend/app/routes/{dashboard,links,unlock}/`.
+> Scope: short links, the redirect path, click events and statistics, expiry, password lock, QR codes, URL safety. State as of 2026-10-17.
 
 ## Summary
 
-A signed-in user turns an http(s) URL into `EDGE_API/<code>`, a random 6-character alphanumeric code. Rails stores the link in Postgres and writes a small JSON document under the raw Valkey key `shortlink:<code>`; the edge function (.NET 10, service `serveless`) reads only that key on every request and answers with a 302 to the destination, a 302 to the password page `/s/<code>`, a 302 to `/404`, or a 503 when Valkey fails. For tracked redirects the edge publishes a 9-key JSON click to the durable RabbitMQ queue `analytics`; a Sneakers worker (`AnalyticsWorker`) turns it into an `Event` row. Statistics are all-time `GROUP BY` counts over events. Expiry, deactivation, safety bans and deletion all work by removing the Valkey key, because the edge knows nothing else about a link. Anonymous creation was removed on 2026-07-13 (`2de5270`); the frontend still carries dead code for it.
+A signed-in user turns an http(s) URL into a short URL made of the public redirect address and a random 6-character code. Each link belongs to one user and carries the original URL, an optional title, an optional expiry date, an optional password, and a click count with a "last accessed" time.
+
+Visitors are served by a dedicated, fast redirect service. It looks up the link in a cache and answers with a redirect to the destination, a redirect to the password page for a locked link, a redirect to the "not found" page, or a temporary "service unavailable" answer when the cache cannot be read. For tracked redirects it hands a click record to a message queue; a background worker turns it into a click event. Statistics are all-time counts over those events.
+
+Expiry, deactivation, safety bans and deletion all work by removing the link's cache entry, because the redirect service knows nothing else about a link. Anonymous creation was removed on 2026-07-13: only signed-in users create links (the frontend still carries dead code for the old anonymous flow).
 
 ## Glossary
 
-- **Short link** (`Shortlink`): one row in `shortlinks`; owned by one user (`user_id NOT NULL`).
-- **Short code** (`short_code`): the path segment after the edge host; generated, never chosen by the user.
-- **Short URL** (`Shortlink#short_url`): `"#{ENV["EDGE_API"]}/#{short_code}"`.
-- **Cache entry**: the Valkey string `shortlink:<code>` written by `Shortlink#save_cache`; the contract with the edge.
-- **Servable** (`Shortlink#servable?`): `inactive_at IS NULL && safe && !expired?`; only servable links have a cache entry.
-- **Inactive** (`inactive_at`): a timestamp, not a status enum. Set by expiry, by 30 days without clicks, by a safety ban, by an admin, or by account deactivation; the reason is not stored.
-- **Locked link**: a link with a `password_digest`; the edge sends visitors to `/s/:code` instead of the destination.
-- **Event** (`Event`): one recorded click on a short link.
-- **Soft delete** (`deleted_at`): hides the link through `default_scope`; `PurgeShortlinkJob` removes the row and its events later.
-- **Edge** / **edge function**: `edge-function/`, the redirect service; image `shortener-edge`, swarm service `serveless`, port 8000.
-
-## Data
-
-See [data-model](data-model.md) for the full catalogue.
-
-**`shortlinks`** (`backend/db/schema.rb:465`)
-
-| Column | Type / default | Notes |
-|---|---|---|
-| `short_code` | string, not null | unique index `index_shortlinks_on_short_code` |
-| `original_url` | string, not null | stored as submitted (no normalisation) |
-| `title` | string | ≤ 255 (contract) |
-| `user_id` | bigint, not null | FK `shortlinks → users`, no `ON DELETE` (`backend/db/schema.rb:707`) |
-| `password_digest` | string | bcrypt via `has_secure_password` |
-| `expires_at` | datetime | partial index `index_shortlinks_on_expires_at WHERE expires_at IS NOT NULL AND inactive_at IS NULL` |
-| `inactive_at` | datetime | null = active |
-| `safe` | boolean, default `true`, not null | false = banned by Safe Browsing or admin |
-| `safe_checked_at` | datetime | admin-only in the serializer |
-| `last_accessed_at` | datetime | set from each event's `clicked_at` |
-| `events_count` | integer, default 0 | counter_culture from `Event` |
-| `deleted_at` | datetime | indexed; soft delete |
-
-**`events`** (`backend/db/schema.rb:172`): `shortlink_id` (not null, FK `ON DELETE CASCADE`, `backend/db/schema.rb:682`), `clicked_at` (not null), `ip_address`, `user_agent`, `referer`, `country_code`, `region`, `platform`, `browser` (all strings, ≤ 255 by model validation). Indexes: `shortlink_id`; partial `index_events_ip_retention (clicked_at) WHERE ip_address IS NOT NULL` for the IP purge (`a8f555f`, #89).
-
-**Counters**: `users.shortlinks_count` counts links with `deleted_at IS NULL` (dynamic counter_culture column, `9468489`, #298).
-
-**Valkey** (same DB as `Rails.cache`, which lives under the `kurz:` namespace):
-
-| Key | Value | TTL | Writer | Reader |
-|---|---|---|---|---|
-| `shortlink:<code>` | `{"t":"url","v":"<original_url>"}` | none | `Shortlink#save_cache` (raw connection, no namespace) | edge `Cache.LookupAsync` |
-| `shortlink:<code>` | `{"t":"locked"}` | none | same, when `password_digest` present | edge |
-| `shortlink:<code>` | legacy raw URL string | none | old releases only; rewritten by `shortlink:update_cache` | edge (still accepted) |
-| `kurz:*` rate-limit counters | `shortlink_create`, `shortlink_unlock` | rate window | Rails `rate_limit` | Rails |
-
-**RabbitMQ**: queue `analytics`, durable, non-exclusive, no auto-delete, default exchange, routing key `analytics` (`edge-function/Analytics.cs:23`, `:84`; `backend/app/workers/analytics_worker.rb:5`).
+- **Short link**: a link owned by exactly one user that redirects a short code to an original URL.
+- **Short code**: the path segment after the redirect address; generated, never chosen by the user.
+- **Short URL**: the public redirect address followed by the short code.
+- **Cache entry**: the small record the redirect service reads for each code. It says either "redirect to this URL" or "this link is locked". It is the only contract between the main application and the redirect service.
+- **Servable**: a link that will redirect — it is active, marked safe, and not past its expiry. Only servable links have a cache entry.
+- **Inactive**: a link that no longer redirects, recorded as a deactivation time rather than a status. Caused by expiry, by 30 days without clicks, by a safety ban, by an admin, or by account deactivation; the reason is not stored.
+- **Locked link**: a link protected by a password; visitors are sent to a password page instead of the destination.
+- **Event**: one recorded click on a short link.
+- **Soft delete**: deleting a link hides it at once; a background job removes the link and its events later.
+- **Redirect service**: the separate low-latency service that answers visits to short URLs.
 
 ## Business rules
 
 ### Short codes
 
-- **SL-01** A code is `SecureRandom.alphanumeric(6)`: 6 characters from `[A-Za-z0-9]`, case-sensitive (62^6 ≈ 5.7 × 10^10 codes). — `backend/app/models/shortlink.rb:165`.
-- **SL-02** The generator loops until the code is not used by any row, soft-deleted rows included; a purged link frees its code for reuse. The unique index is the final guard (a concurrent duplicate raises `ActiveRecord::RecordNotUnique`, not a validation error, inferred). — `backend/app/models/shortlink.rb:166-169`, `backend/db/schema.rb:482`, model `validates :short_code, uniqueness: true` `backend/app/models/shortlink.rb:57`.
-- **SL-03** There are no custom codes and no reserved-word list. `short_code` is not in either contract, so a client cannot set it. The edge reserves only `/` and `/404` (served as the 404 page); 6-character codes cannot collide with them. — `backend/app/contracts/shortlink_contract.rb:2-8`, `edge-function/Program.cs:50`.
-- **SL-04** The code never changes: updates keep it, so the short URL, QR code and analytics stay attached to the same record. `short_code` is excluded from audits. — `backend/app/models/shortlink.rb:34`; test `backend/spec/requests/api/me/shortlinks_update_spec.rb:37`, `:55`.
+- **SL-01** A short code is 6 characters drawn from A–Z, a–z and 0–9, case-sensitive (about 5.7 × 10¹⁰ possible codes).
+- **SL-02** A new code is regenerated until it is not used by any existing link, soft-deleted links included; a purged link frees its code for reuse. A uniqueness guarantee at storage level is the final protection against two links getting the same code at the same moment.
+- **SL-03** There are no custom codes and no reserved-word list: a client cannot set the code. The redirect service reserves only the bare root and the "not found" path, which 6-character codes cannot collide with.
+- **SL-04** The code never changes: updates keep it, so the short URL, QR code and analytics stay attached to the same link. Code changes are not part of the change history.
 
 ### URL validation and normalisation
 
-- **SL-05** `original_url` is required on create, ≤ 2048 characters, and must parse with Ruby `URI.parse(value.strip)` as `URI::HTTP` (http or https) with a non-empty host; `javascript:`, `data:`, `ftp:`, `https://` and free text are rejected with 422 `"must be a valid http or https URL"`. — `backend/app/contracts/application_contract.rb:16-24`, `backend/app/contracts/shortlink_contract.rb:3`, `:10`; test `backend/spec/requests/api/me/shortlinks_create_spec.rb:18`, `:28`.
-- **SL-06** Rails stores the URL as submitted: the `strip` is used only for the check, nothing is lower-cased, punycoded or re-encoded. — `backend/app/controllers/api/me/shortlinks_controller.rb:39`.
-- **SL-07** The edge normalises at redirect time with `System.Uri`: IDN hosts become punycode, scheme and host are lower-cased, default ports dropped, a bare host gets `/`, non-ASCII path/query bytes are percent-encoded; a value that is not absolute http(s) or that breaks IDN rules is treated as not found. — `edge-function/Cache.cs:91-106`; test `edge-function/Edge.Tests/CacheTests.cs:69`, `:85`. Rationale: the Deno edge used the WHATWG parser; `URI.parse` in Rails rejects every input whose outcome differs (`206c134`, #318).
-- **SL-08** Title is optional, ≤ 255 characters (REST) or ≤ 120 (MCP `create_shortlink`). — `backend/app/contracts/shortlink_contract.rb:4`, `backend/app/services/mcp/tools/create_shortlink.rb:4`. Rationale for the REST caps: bulk abuse and huge rows (`5935334`, #81).
-- **SL-09** The frontend checks URLs with zod `z.url()` only (any scheme); the backend contract is the real gate. — `frontend/app/modules/quick-create/use-quick-create.tsx:13`, `frontend/app/components/shortlink-card/edit-shortlink-form.tsx:24`.
+- **SL-05** The original URL is required on creation, at most 2048 characters, and must be an http or https URL with a non-empty host. `javascript:`, `data:`, `ftp:`, a bare `https://` and free text are rejected with the message "must be a valid http or https URL".
+- **SL-06** The URL is stored exactly as submitted: surrounding whitespace is ignored only for the check, and nothing is lower-cased, converted for international hosts or re-encoded.
+- **SL-07** The redirect service normalises the URL at redirect time: international host names are converted to their ASCII form, scheme and host are lower-cased, default ports are dropped, a bare host gets a trailing `/`, and non-ASCII characters in path and query are percent-encoded. A value that is not an absolute http(s) URL, or that breaks international host rules, is treated as not found. The reason: the application's validation rejects every input whose outcome would differ between the two parsers.
+- **SL-08** A title is optional, up to 255 characters (120 when a link is created by an AI app through MCP). The cap guards against abuse and oversized records.
+- **SL-09** The frontend checks that the URL looks like a URL (any scheme); the backend validation is the real gate.
 
 ### Who can create
 
-- **SL-10** Only signed-in users create links: `POST /api/me/shortlinks` (`authenticate_user!`) or the MCP tool `create_shortlink` (scope `shortlinks:write`). `POST /api/shortlinks` returns 404. — `backend/app/controllers/api/me/shortlinks_controller.rb:2`, `backend/config/routes.rb:59`; test `backend/spec/requests/api/shortlinks_spec.rb:8`. Anonymous creation, `created_by_guest` and `PublicShortlinkSerializer` were removed in `ef3973c` and `2de5270` (no body; Rationale: not recorded).
-- **SL-11** REST creation is limited to 60 per user per 10 minutes (`rate_limit name: "shortlink_create"`, keyed by user id), 429 `{"error":"Too many links created, please try again later"}`. — `shortlinks_controller.rb:5-10`; test `backend/spec/requests/api/me/shortlinks_create_spec.rb:39`. MCP creation has its own limits, 20/hour and 100/day, and does not count against the REST limit. — `backend/app/services/mcp/tools/create_shortlink.rb:19`.
-- **SL-12** Creating a form creates a short link for it (`original_url = FRONTEND_URL/f/<public_id>`, title cut to 120) through the same model callbacks; deleting the form soft-deletes it. See [forms](forms.md). — `backend/app/models/form.rb:15`, `:40-46`; test `backend/spec/requests/api/me/forms_spec.rb:108`, `e2e/tests/publish.spec.ts:52`.
-- **SL-13** On create a link can carry `title`, `password` and `expires_at` (REST) or `title` and `expires_at` (MCP; no password). The dashboard quick-create form sends only `original_url` and `title`. — `backend/app/contracts/shortlink_contract.rb:2-8`, `backend/app/services/mcp/tools/create_shortlink.rb:9-16`, `frontend/app/modules/quick-create/use-quick-create.tsx:11-14`.
+- **SL-10** Only signed-in users create links: through the dashboard/API, or through an AI app with write permission on short links. Anonymous creation no longer exists.
+- **SL-11** Creation through the dashboard/API is limited to 60 links per user per 10 minutes; beyond that the user gets "Too many links created, please try again later". Creation through MCP has its own limits, 20 per hour and 100 per day, and does not count against the dashboard/API limit.
+- **SL-12** Creating a form also creates a short link for it, pointing at the form's public page, with the title cut to 120 characters; deleting the form soft-deletes that link. See [forms](forms.md).
+- **SL-13** On creation a link can carry a title, a password and an expiry date (dashboard/API), or a title and an expiry date (MCP; no password). The dashboard quick-create form sends only the URL and a title.
 
 ### Expiry and deactivation
 
-- **SL-14** `expires_at` is optional; when given it must be in the future at validation time (`"must be in the future"`); `null` removes it. Enforced in the contract and in the edit form; the database accepts any value. — `backend/app/contracts/shortlink_contract.rb:16-18`, `backend/app/contracts/shortlink_update_contract.rb:16-18`, `frontend/app/components/shortlink-card/edit-shortlink-form.tsx:37-40`; test `backend/spec/requests/api/me/shortlinks_password_expiration_spec.rb:55`, `:65`, `:71`.
-- **SL-15** `ExpireScheduledShortlinksJob` runs every 5 minutes and calls `expire!` on each link in `Shortlink.expired` (`inactive_at IS NULL AND expires_at <= now`), one by one: the cache key is deleted, then `inactive_at = now`. A link therefore keeps redirecting at the edge for up to 5 minutes past `expires_at`; the unlock endpoint stops at once because it checks `servable?`. — `backend/app/jobs/expire_scheduled_shortlinks_job.rb:10`, `backend/app/models/shortlink.rb:51`, `:142-145`, `backend/config/recurring.yml:40-43`; test `backend/spec/jobs/expire_scheduled_shortlinks_job_spec.rb:4`, `:17`, `backend/spec/models/shortlink_cache_spec.rb:25`.
-- **SL-16** `ExpireInactiveShortlinksJob` runs daily at 03:00 and sets `inactive_at = now` on every active link whose `COALESCE(last_accessed_at, created_at)` is older than 30 days, with one `update_all`. It does not delete the cache keys and writes no audit rows (see Drift D1). — `backend/app/jobs/expire_inactive_shortlinks_job.rb:4-12`, `backend/config/recurring.yml:16-19`; rake `shortlink:clear_policy` runs it now (`backend/lib/tasks/shortlink.rake:3`); test `backend/spec/tasks/shortlink_task_spec.rb:19`.
-- **SL-17** There is no start date / "go live at" scheduling. "Scheduling" in the README and landing page means the scheduled expiration of SL-15. — `README.md:39`, `frontend/app/routes/index.tsx:64`.
-- **SL-18** An owner cannot deactivate or reactivate a link: no owner endpoint exists. Ways back to `inactive_at = nil`: admin `toggle_active`; `mark_as_safe!` (Safe Browsing or admin), which clears `inactive_at` unless the link is past `expires_at`; `User#cancel_deletion!`, which restores links deactivated within 10 minutes of the account pause. — `backend/app/controllers/api/admin/shortlinks_controller.rb:29-43`, `backend/app/models/shortlink.rb:119-122`, `backend/app/models/user.rb:116-123`; test `backend/spec/models/shortlink_cache_spec.rb:45`.
-- **SL-19** Account deactivation (`User#deactivate!`, also run on deletion request) deletes the cache key and sets `inactive_at` on each active link. See [accounts-and-auth](accounts-and-auth.md). — `backend/app/models/user.rb:98-104`.
-- **SL-20** Updating an inactive link never touches the cache (`refresh_cache` returns early), so editing the URL or expiry does not reactivate it, except through SL-18 when the URL changes and Safe Browsing answers safe. — `shortlinks_controller.rb:98-102`, `backend/app/services/mcp/tools/update_shortlink.rb:30-34`.
+- **SL-14** An expiry date is optional; when given it must be in the future ("must be in the future"), and clearing it removes the expiry. This is enforced when saving and in the edit form.
+- **SL-15** A background job runs every 5 minutes and expires every active link whose expiry has passed: the cache entry is removed, then the link is marked inactive, one link at a time. A link therefore keeps redirecting for up to 5 minutes past its expiry date; the password-unlock step stops at once because it checks that the link is servable.
+- **SL-16** A daily job at 03:00 marks inactive every active link not clicked for 30 days (counted from creation if it was never clicked). It does not remove the cache entries and leaves no change-history record (see Drift D1). It can also be run manually by an operator.
+- **SL-17** There is no start date / "go live at" scheduling. "Scheduling" in the README and landing page means the scheduled expiry of SL-15.
+- **SL-18** An owner cannot deactivate or reactivate a link. A link becomes active again only through: an admin toggling it active; being marked safe (by the safety check or an admin), which reactivates it unless it is past its expiry; or an account deletion being cancelled, which restores links deactivated within 10 minutes of the account pause.
+- **SL-19** Deactivating an account (also done when deletion is requested) removes the cache entry and marks every active link of that account inactive. See [accounts-and-auth](accounts-and-auth.md).
+- **SL-20** Updating an inactive link never touches the cache, so editing its URL or expiry does not reactivate it — except through SL-18 when the URL changes and the safety check answers safe.
 
 ### URL safety
 
-- **SL-21** When `ENABLE_GOOGLE_SAFE_LINK` is present, `SafetyUrlJob` (queue `safety`) is enqueued after create commit and after an update that changes `original_url` (REST and MCP). Without it no check runs and every link stays `safe = true`. — `backend/app/models/shortlink.rb:73`, `:161-163`, `shortlinks_controller.rb:52-54`, `backend/app/services/mcp/tools/update_shortlink.rb:25`; test `backend/spec/requests/api/me/shortlinks_update_spec.rb:85`, `:126`.
-- **SL-22** The provider is Google Safe Browsing v4 `threatMatches:find` with key `GOOGLE_SAFE_LINK_KEY`, threat types `MALWARE` and `SOCIAL_ENGINEERING`, platform `WINDOWS`, entry type `URL`, client id `kurz`. — `backend/lib/google_lib.rb:32-56`.
-- **SL-23** `check_url` returns safe when the response has no `matches`; any raised exception (network, missing key) returns unsafe. An HTTP error with a JSON body has no `matches` either, so it reads as safe (inferred from code). — `backend/lib/google_lib.rb:12-16`.
-- **SL-24** On a hit, `mark_as_dangerous!` deletes the cache key and sets `safe = false`, `safe_checked_at`, `inactive_at = now`; the edge then answers `/404`. On a pass, `mark_as_safe!` sets `safe = true`, `safe_checked_at`, clears `inactive_at` unless expired, and rewrites the cache if servable. — `backend/app/jobs/safety_url_job.rb:12-18`, `backend/app/models/shortlink.rb:113-122`. Rationale: "if the URL is not safe, we remove from cache … we can reactivate it later" (`backend/app/jobs/safety_url_job.rb:9-10`, `b29e882`, #4).
-- **SL-25** A new link is written to the cache before the check finishes, so it redirects until `SafetyUrlJob` runs. — `backend/app/models/shortlink.rb:73`.
-- **SL-26** There is no periodic re-check of short links (bio page links have `RecheckPageLinksSafetyJob`; see [bio-pages](bio-pages.md)). Admins can flip `safe` with `toggle_safe`. — `backend/config/recurring.yml:48-51`, `backend/app/controllers/api/admin/shortlinks_controller.rb:14-26`.
+- **SL-21** When the safety check is enabled, a link is checked after it is created and after an update that changes its URL (dashboard/API and MCP). Without it no check runs and every link stays marked safe.
+- **SL-22** The check uses Google Safe Browsing, looking for malware and social-engineering (phishing) threats.
+- **SL-23** A link is considered safe when Safe Browsing reports no match. If the check itself fails (network error, missing key) the link is treated as unsafe. An HTTP error answer from the provider that carries a body but no matches reads as safe.
+- **SL-24** When a URL is flagged, the cache entry is removed and the link is marked unsafe and inactive; visitors then see the "not found" page. When a URL passes, the link is marked safe and checked-at is recorded; it is reactivated unless it is past its expiry, and its cache entry is rewritten if it is servable. The reason for removing rather than deleting: an unsafe link can be reactivated later.
+- **SL-25** A new link is cached before the check finishes, so it redirects until the check completes.
+- **SL-26** Short links are not re-checked periodically (bio page links are; see [bio-pages](bio-pages.md)). Admins can flip a link's safe flag.
 
 ### Password lock
 
-- **SL-27** A password is optional, 4 to 72 characters (contract and model), hashed with bcrypt by `has_secure_password validations: false` (default cost). `nil` or `""` removes it; an omitted key keeps it. — `backend/app/models/shortlink.rb:60-61`, `backend/app/contracts/shortlink_contract.rb:6`, `:12-14`, `shortlinks_controller.rb:88-92`; test `backend/spec/requests/api/me/shortlinks_password_expiration_spec.rb:17`, `:27`, `:33`, `:46`.
-- **SL-28** The digest is never serialized, never audited and never exported; the API exposes only `password_protected`. — `backend/app/models/shortlink.rb:34`, `backend/app/serializers/shortlink_serializer.rb:44`, `backend/app/services/users/data_export.rb:49-62`.
-- **SL-29** The destination of a locked link never reaches Valkey: the cache value is `{"t":"locked"}`, and the edge redirects to `FRONTEND_URL/s/<escaped code>` without publishing a click. — `backend/app/models/shortlink.rb:128-130`, `edge-function/Cache.cs:67-70`; test `backend/spec/models/shortlink_cache_spec.rb:19`, `edge-function/Edge.Tests/CacheTests.cs:21`, `edge-function/Edge.Tests/IntegrationTests.cs:79`.
-- **SL-30** `GET /api/public/shortlinks/:code` answers `{short_code, locked: true}` only for a locked, servable link, otherwise 404; it does not reveal the destination. — `backend/app/controllers/api/public/shortlink_unlocks_controller.rb:18-20`, `:34-37`; test `backend/spec/requests/api/public/shortlink_unlocks_spec.rb:12`, `:19`.
-- **SL-31** `POST /api/public/shortlinks/:code/unlock` with the right password returns `{original_url}` and records one `Event`; a wrong one returns 401 `"Wrong password"` and records nothing; inactive, unsafe or expired links return 404. — `backend/app/controllers/api/public/shortlink_unlocks_controller.rb:23-30`; test `backend/spec/requests/api/public/shortlink_unlocks_spec.rb:29`, `:39`, `:47`.
-- **SL-32** Unlock attempts are limited to 10 per 5 minutes per `short_code:client_ip` (`rate_limit name: "shortlink_unlock"`), 429 `"Too many attempts, please try again later"`. `client_ip` is the SSR-forwarded `X-Visitor-Ip` (with `SSR_FORWARD_SECRET`), else `CF-Connecting-IP`, else the socket address; `X-Forwarded-For` is ignored. — `backend/app/controllers/api/public/shortlink_unlocks_controller.rb:8-13`, `backend/app/controllers/concerns/client_ip.rb:6-26`; test `backend/spec/requests/api/public/shortlink_unlocks_spec.rb:55`. Rationale: "slows down guessing one link's password without letting one visitor lock everybody else out of it" (code comment).
-- **SL-33** There is no unlock token, cookie or session: every visit asks for the password again. The browser follows `original_url` only if it matches `^https?://`. The page sends `noindex, nofollow`, `frame-ancestors 'none'` and `X-Frame-Options: DENY`. — `frontend/app/routes/unlock/$shortCode.tsx:21-33`, `:53-57`.
+- **SL-27** A password is optional, 4 to 72 characters, and stored hashed. Sending an empty password removes it; omitting the password on an update keeps it.
+- **SL-28** The password is never shown, never recorded in the change history and never exported; the API exposes only whether a link is password-protected.
+- **SL-29** The destination of a locked link is never given to the redirect service: it only knows the link is locked and sends the visitor to the password page, without recording a click.
+- **SL-30** The password page first asks whether the link is locked; the answer is yes only for a locked, servable link and "not found" otherwise. It never reveals the destination.
+- **SL-31** Submitting the right password returns the destination and records one click; a wrong password returns "Wrong password" and records nothing; inactive, unsafe or expired links answer "not found".
+- **SL-32** Unlock attempts are limited to 10 per 5 minutes per combination of link and visitor address; beyond that the visitor gets "Too many attempts, please try again later". The visitor address is the one forwarded by the website, else the one reported by the CDN, else the connection's address; client-supplied forwarding headers are ignored. The reason: it slows down guessing one link's password without letting one visitor lock everybody else out of it.
+- **SL-33** There is no unlock token, cookie or session: every visit asks for the password again. The browser follows the returned address only if it is http(s). The password page is excluded from search engines and cannot be shown inside another site's frame.
 
-### Edge redirect contract
+### Redirect behaviour
 
-- **SL-34** The edge looks up `shortlink:` + the percent-decoded path without its leading `/` (so `/a/b` looks up `a/b`). `/` and `/404` return the bundled `404.html` with status 404 and `Content-Length` (also on HEAD). An empty key, a missing key or an unreadable value returns `302 Location: /404` (relative). — `edge-function/Program.cs:47-87`, `edge-function/Cache.cs:15-26`; test `edge-function/Edge.Tests/IntegrationTests.cs:93`, `:106`, `edge-function/Edge.Tests/LookupTests.cs:30`.
-- **SL-35** Recognised values: `{"t":"url","v":<http(s) string>}` → 302 to `v`, tracked; `{"t":"locked"}` → 302 to the password page, untracked; a raw http(s) string (legacy format) → 302, tracked. Anything else (unknown `t`, wrong types, other schemes) is not found. — `edge-function/Cache.cs:38-74`; test `edge-function/Edge.Tests/CacheTests.cs:9`, `:15`, `:57`.
-- **SL-36** A Valkey error or a read slower than 2000 ms answers 503, `Retry-After: 5`, `Cache-Control: no-store`, plain-text body; never `/404`. Connection uses `BacklogPolicy.FailFast` and reconnects on its own. — `edge-function/Cache.cs:8-9`, `:28-36`, `:87`, `edge-function/Program.cs:71-76`; test `edge-function/Edge.Tests/LookupTests.cs:42`, `:49`, `:53`, `edge-function/Edge.Tests/IntegrationTests.cs:157`, `:183`. Rationale: an outage looked like "link not found" and was invisible to monitors (`50ab882`, #295).
-- **SL-37** Redirects are plain 302 with no `Cache-Control` header, for every method (GET, HEAD, POST); the edge sends no `Server` header. Valkey keys have no TTL: the edge never decides expiry itself. — `edge-function/Program.cs:29`, `:86`; test `edge-function/Edge.Tests/IntegrationTests.cs:208`.
-- **SL-38** The edge reads `REDIS_URL` (default `redis://127.0.0.1:6379`, `rediss` = TLS), `FRONTEND_URL` (default `https://kurz.fyi`), `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_DEFAULT_USER`, `RABBITMQ_DEFAULT_PASS`. Healthcheck: `/app/Edge --healthcheck` GETs `localhost:8000/404`, healthy when status < 500. — `edge-function/Program.cs:4-16`, `:37`, `:40`, `edge-function/Analytics.cs:30-37`, `.ci/stack.yml:162-183`.
+- **SL-34** The redirect service looks up the code taken from the path (percent-decoded, without the leading `/`, so `/a/b` looks up `a/b`). The bare root and `/404` show the "not found" page with status 404 (also for HEAD requests). An empty code, an unknown code or an unreadable cache entry redirects to `/404`.
+- **SL-35** A cache entry means one of: redirect to this http(s) URL (tracked); this link is locked, go to the password page (untracked); or, for entries written by older releases, a raw http(s) URL (tracked). Anything else (unknown kind, wrong types, other schemes) is treated as not found.
+- **SL-36** If the cache fails or does not answer within 2 seconds, the redirect service answers 503 "service unavailable" with a retry hint of 5 seconds and no caching — never "not found" — and reconnects on its own. The reason: an outage used to look like "link not found" and was invisible to monitors.
+- **SL-37** Redirects are plain 302 responses with no cache headers, for every method (GET, HEAD, POST). Cache entries have no time limit: the redirect service never decides expiry itself. Very long request lines (over 8 KB) are rejected with 414.
+- **SL-38** The redirect service is configured with the address of the cache, the frontend address (default `https://kurz.fyi`, used for the password page) and the message queue connection. It has a healthcheck that asks for the "not found" page and is healthy when the answer is not a server error.
 
 ### Click events
 
-- **SL-39** For tracked redirects the edge enqueues a click in an in-memory bounded channel (10 000) and redirects without waiting; when the channel is full the click is dropped. One background reader publishes each click to queue `analytics` with `content_type: application/json` and default (non-persistent) delivery mode; publish failures are logged and the click is lost; connection retries back off 1 s → 30 s. Queued clicks are drained on SIGTERM (10 s shutdown timeout, 20 s `stop_grace_period`). — `edge-function/Analytics.cs:25-28`, `:41`, `:49-74`, `:76-106`, `edge-function/Program.cs:33`; test `edge-function/Edge.Tests/IntegrationTests.cs:51`, `:226`.
-- **SL-40** Message format (snake_case, exactly these 9 keys, in this order): `country_code` (string or null), `region` (string or null), `browser`, `ip_address`, `platform`, `referer`, `user_agent`, `shortlink_code`, `timestamp` (`yyyy-MM-ddTHH:mm:ss.fffZ`, UTC). Missing headers become `""`, not null. — `edge-function/Analytics.cs:6-17`, `edge-function/Headers.cs:7-21`; test `edge-function/Edge.Tests/HeadersTests.cs:59`, `:76`, `edge-function/Edge.Tests/IntegrationTests.cs:65-67`.
-- **SL-41** Field derivation: IP = `CF-Connecting-IP` (trimmed) else the socket address (IPv4-mapped IPv6 unwrapped); country = `CF-IPCountry` trimmed, upper-cased, `XX` and `T1` (unknown, Tor) → null; region = `CF-Region` trimmed; `User-Agent` and `Referer` cut at 4096 characters; browser and platform detected from the full user agent. — `edge-function/Headers.cs:23-40`; test `edge-function/Edge.Tests/HeadersTests.cs:33`, `:51`, `:66`.
-- **SL-42** Browser buckets, first match wins: `Edg(e|A|iOS)?/` → Edge; `Firefox`/`FxiOS` → Firefox; `Chrome`/`CriOS` → Chrome; `Safari` → Safari; else Unknown. Platform: `Android` (case-insensitive) → Android; `iPhone|iPad|iPod` → iOS; `Windows`; `Mac OS` → macOS; `Linux`; else Unknown. `UserAgentParser` mirrors this for unlock clicks and bio page clicks. — `edge-function/Headers.cs:42-61`, `backend/app/services/user_agent_parser.rb:8-28`; test `edge-function/Edge.Tests/HeadersTests.cs:17`.
-- **SL-43** `AnalyticsWorker` (Sneakers, 5 worker processes × 1 thread, prefetch 10, manual ack, job timeout 60 s) finds the link by `shortlink_code` among non-deleted links; unknown code → `reject!` (dropped). It creates the `Event` with `clicked_at = timestamp` and acks. On any error it reports to Sentry, requeues once, and rejects a redelivered message. It does not check whether the link is still servable. — `backend/app/workers/analytics_worker.rb:7-33`, `backend/config/initializers/sneakers.rb:3-13`. Rationale for requeue-once: "a poison message can't loop forever" (code comment).
-- **SL-44** `Event` validates each string column at ≤ 255 characters; `clicked_at` defaults to now. After commit it sets `shortlink.last_accessed_at = clicked_at`; counter_culture maintains `events_count`. — `backend/app/models/event.rb:29`, `:34-36`, `:41-51`.
-- **SL-45** An unlock click is recorded synchronously by Rails with the same derivation (client IP per SL-32, `CF-IPCountry` minus `XX`/`T1`, `CF-Region`, user agent and referer cut to 255, blank → null; `referer` comes from the page's `document.referrer`). — `backend/app/controllers/api/public/shortlink_unlocks_controller.rb:40-54`.
-- **SL-46** No third party is asked about visitor IPs; `IpaddrJob` (ip-api.com over HTTP) was removed. — `409fc06` (#82); test `backend/spec/requests/security/injection_spec.rb:119`.
+- **SL-39** For tracked redirects the redirect service puts the click in a bounded in-memory buffer (10 000) and redirects without waiting; when the buffer is full the click is dropped. A background reader sends each click to the message queue; if sending fails the click is lost, and connection retries back off from 1 s to 30 s. Buffered clicks are sent out when the service shuts down (10 s allowed, 20 s grace from the platform).
+- **SL-40** A click message carries exactly: country, region, browser, IP address, platform, referer, user agent, link code and a UTC timestamp. Country and region may be empty; any other missing header is sent as an empty string.
+- **SL-41** Click fields are derived as follows: the IP address is the one reported by the CDN (trimmed), else the connection's address; the country is the CDN's country code, upper-cased, with unknown (`XX`) and Tor (`T1`) treated as no country; the region is the CDN's region; user agent and referer are cut at 4096 characters; browser and platform are detected from the full user agent.
+- **SL-42** Browsers are grouped, first match wins: Edge, Firefox, Chrome, Safari, otherwise Unknown. Platforms are Android, iOS (iPhone, iPad, iPod), Windows, macOS, Linux, otherwise Unknown. The same grouping is used for unlock clicks and for bio page clicks.
+- **SL-43** A background worker (several in parallel) turns each queued click into an event for the link with that code among non-deleted links; an unknown code is dropped. On any error it reports the problem, retries the message once, and drops it if it fails again, so a poisonous message cannot loop forever. It does not check whether the link is still servable.
+- **SL-44** Each text field of an event is limited to 255 characters; the click time defaults to now. Recording an event updates the link's click count and its "last accessed" time to the click time.
+- **SL-45** An unlock click is recorded immediately by the main application with the same derivation (visitor address per SL-32, country without `XX`/`T1`, region, user agent and referer cut to 255, blank values stored as empty; the referer is the page the visitor came from).
+- **SL-46** No third party is asked about visitor IPs; the former external IP-geolocation lookup was removed.
 
 ### Retention
 
-- **SL-47** `PurgeOldIpAddressesJob` runs daily at 04:15 and sets `ip_address`, `user_agent` and `referer` to NULL on events with `clicked_at` older than 90 days, in batches of 5 000 (same for page link clicks and audit `remote_address`). Country, region, platform, browser and counts stay, so statistics do not change. — `backend/app/jobs/purge_old_ip_addresses_job.rb:4-18`, `backend/config/recurring.yml:28-31`; test `backend/spec/jobs/purge_old_ip_addresses_job_spec.rb:11`, `:38`, `:49`. Rationale: RGPD; a full UA plus referrer can identify someone (`a8f555f` #89, `c82075c` #91).
+- **SL-47** A daily job at 04:15 erases the IP address, user agent and referer of events older than 90 days (the same applies to page link clicks and to the address recorded in the change history). Country, region, platform, browser and counts stay, so statistics do not change. The reason: privacy (GDPR); a full user agent plus referrer can identify someone.
 - **SL-48** Events have no other expiry: they live until the link is purged.
 
 ### Statistics
 
-- **SL-49** `GET /api/me/shortlinks/:id/statistics` (and MCP `get_shortlink_statistics`) returns all-time counts for one link owned by the caller, from two queries: `GROUP BY country_code, region, browser` and `GROUP BY platform`. Response keys: `browser_statistics` `[{name, value}]`, `country_statistics` `[{country, count, color: "violet.6"}]`, `region_statistics` `[{region, count, color: "teal.6"}]`, `device_statistics` `[{name, value}]` ordered by count desc. Blank browser/country/region become `"Unknown"`; a null platform stays `null`. No date range, no time series, no unique visitors, no referrer breakdown. — `backend/app/services/events/statistics_service.rb:12-119`; test `backend/spec/requests/api/me/shortlinks_statistics_spec.rb:52`, `:92`, `:114`, `:128`, `:217`, `:250`.
-- **SL-50** `events_count` and `last_accessed_at` on the link row are the dashboard's click count and "last accessed". — `backend/app/serializers/shortlink_serializer.rb:38`.
+- **SL-49** The owner (dashboard or an AI app) sees all-time statistics for one of their links: clicks by browser, by country, by region and by device platform, ordered by count, highest first. A blank browser, country or region shows as "Unknown"; a missing platform stays empty. There is no date range, no time series, no unique visitors and no referrer breakdown.
+- **SL-50** The click count and "last accessed" time shown on the dashboard come from the link itself, kept up to date as events are recorded.
 
 ### QR codes
 
-- **SL-51** `GET /api/me/shortlinks/:id/qr_code` returns an SVG (`rqrcode`, error correction M, module size 8, black on white, `viewBox`) encoding `short_url`, inline, filename `<code>.svg`, with `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox` and `nosniff`. Owner only. The QR encodes the short URL, so it survives destination changes. — `shortlinks_controller.rb:80-83`, `backend/app/services/qr_code_service.rb:8-17`, `backend/app/controllers/application_controller.rb:65-68`; test `backend/spec/requests/api/me/qr_codes_spec.rb:10`, `:33`. Rationale for fixed colours: "low-contrast QR codes fail on cheaper phone cameras" (code comment).
+- **SL-51** The owner can download a QR code for a link as an SVG, black on white, encoding the short URL, named after the short code. Only the owner can get it. Because it encodes the short URL it survives destination changes. The fixed colours are deliberate: low-contrast QR codes fail on cheaper phone cameras.
 
 ### Deletion
 
-- **SL-52** `DELETE /api/me/shortlinks/:id` (or MCP `delete_shortlink` with `confirm = short_code`) runs `soft_delete!`: delete the cache key, set `deleted_at`, enqueue `PurgeShortlinkJob`; answers 204. The link disappears from every default-scoped read and from `users.shortlinks_count`. — `backend/app/models/shortlink.rb:107-111`, `shortlinks_controller.rb:64-72`, `backend/app/services/mcp/tools/delete_shortlink.rb:11-15`; test `backend/spec/requests/api/me/shortlinks_destroy_spec.rb:27`, `:36`, `backend/spec/models/shortlink_count_spec.rb:14`.
-- **SL-53** `PurgeShortlinkJob` deletes events in batches of 5 000, then the row with `delete` (no callbacks); it is a no-op unless `deleted_at` is set. There is no restore UI. — `backend/app/jobs/purge_shortlink_job.rb:4-21`; test `backend/spec/jobs/purge_shortlink_job_spec.rb:6`, `:16`, `:26`, `:32`. Rationale: thousands of events must not lock the table (code comment).
-- **SL-54** Account purge calls `destroy!` on every link (soft-deleted ones too): `after_destroy` deletes the cache key, the DB cascade deletes events, and audits of the links are deleted. — `backend/app/models/user.rb:129-148`, `backend/app/models/shortlink.rb:74`.
+- **SL-52** An owner can delete a link (dashboard/API, or an AI app with the short code as confirmation). The cache entry is removed, the link is soft-deleted and a background purge is queued. The link disappears from every list and from the user's link count.
+- **SL-53** The purge deletes the link's events in batches of 5 000, then the link itself; it does nothing if the link is not soft-deleted. There is no restore. Batching keeps thousands of events from locking the database.
+- **SL-54** Purging an account deletes every link of the user (soft-deleted ones too): the cache entry, the events and the link's change history are all removed.
 
 ### Cache maintenance
 
-- **SL-55** Every write path that changes servability must write or delete the key itself: create (`after_commit`), update of URL/password/expiry (REST) or URL/expiry (MCP), `expire!`, `mark_as_dangerous!`, `mark_as_safe!`, `soft_delete!`, `destroy`, admin `toggle_active`, `User#deactivate!`, `User#cancel_deletion!`. A title-only update does not touch the cache. — see the rules above; test `backend/spec/requests/api/me/shortlinks_update_spec.rb:73`, `:113`.
-- **SL-56** `rake shortlink:update_cache` rewrites every key in place (servable → `save_cache`, otherwise `remove_cache`, soft-deleted included), migrating legacy raw values to JSON; it never flushes, so redirects keep working and `kurz:*` keys survive. — `backend/lib/tasks/shortlink.rake:12-20`; test `backend/spec/tasks/shortlink_update_cache_task_spec.rb:18`.
-- **SL-57** Cache write failures are logged and swallowed (`false`); the DB change still happens. — `backend/app/models/shortlink.rb:85-87`, `:99-101`.
-- **SL-58** `Rails.cache.clear` must not remove `shortlink:*`: the Rails store is namespaced `kurz`. — `backend/config/application.rb:46-52`; test `backend/spec/models/shortlink_cache_spec.rb:35`. Rationale: without the namespace `clear` ran FLUSHDB and dropped every short link at the edge (`68ccb25`, #297).
+- **SL-55** Every change that affects whether a link redirects must write or remove its cache entry: creation, an update of URL, password or expiry (dashboard/API) or URL or expiry (MCP), expiry, a safety ban, marking safe, deletion, admin toggling active, account deactivation and cancelling an account deletion. A title-only update does not touch the cache.
+- **SL-56** An operator can rewrite every cache entry in place: servable links get an entry, all others have it removed (soft-deleted ones included), and old-format entries are migrated. It never flushes the cache, so redirects keep working.
+- **SL-57** A failure to write the cache is logged and ignored; the change to the link itself still happens.
+- **SL-58** Clearing the application's own cache must never remove short link entries: the application cache is kept in a separate namespace. The reason: without it, a clear once wiped every short link at the redirect service.
 
 ## Flows
 
-### Create (REST)
+### Create
 
-1. Dashboard `QuickCreate` posts `{original_url, title}` to `POST /api/me/shortlinks` (top-level params, not nested).
-2. `rate_limit` (SL-11) → `ShortlinkContract` (422 `{errors: {field: [...]}}`) → `current_user.shortlinks.new(...)`; blank password → nil.
-3. `before_validation` generates the code; save; counter_culture bumps `users.shortlinks_count`; audited writes a create audit.
-4. `after_commit on: :create`: `save_cache` (SET `shortlink:<code>`, no TTL), then `SafetyUrlJob.perform_later` if enabled.
-5. 201 with `{shortlink: {...}}`. The frontend invalidates `get-shortlinks`.
+1. The user submits the URL and a title from the dashboard.
+2. The creation rate limit (SL-11) and the validation (SL-05, SL-08, SL-14, SL-27) are applied; errors are reported per field. A blank password means no password.
+3. A code is generated (SL-01, SL-02), the link is saved, the user's link count goes up and the creation is recorded in the change history.
+4. The cache entry is written (no time limit), then the URL safety check is queued if enabled.
+5. The user sees the new link in the dashboard list.
 
 ### Redirect and click
 
-1. Visitor → Cloudflare → edge `GET /<code>`.
-2. GET `shortlink:<code>` (2 s timeout). Error → 503. Miss → 302 `/404` → 404 page.
-3. `url` → enqueue click, 302 to destination. `locked` → 302 `FRONTEND_URL/s/<code>`.
-4. Background: publish JSON to `analytics`. Sneakers worker → `Event.create!` → `events_count += 1`, `last_accessed_at = clicked_at` → ack.
+1. A visitor opens a short URL; the request reaches the redirect service through the CDN.
+2. The service reads the cache entry (2 s limit). On failure it answers 503; on a miss it redirects to the "not found" page.
+3. A URL entry: the click is queued and the visitor is redirected to the destination. A locked entry: the visitor is redirected to the password page.
+4. In the background the click is sent to the queue and a worker records the event, which raises the click count and updates "last accessed".
 
 ### Locked link
 
-1. Edge 302 → `/s/:code` (SSR). The loader calls `GET /api/public/shortlinks/:code` with forwarded visitor headers; 404 → "not found" page.
-2. Visitor submits the password → `POST /api/public/shortlinks/:code/unlock {password, referer}`.
-3. Rate limit → `authenticate` → `Event.create!` synchronously → `{original_url}` → `window.location.replace`.
+1. The redirect service sends the visitor to the password page, which first checks the link is locked; otherwise it shows "not found".
+2. The visitor submits the password.
+3. After the rate limit, a right password records the click immediately and the browser is sent to the destination.
 
-### Update (REST)
+### Update
 
-1. Edit modal sends `title`, `original_url`, `expires_at` (always; empty = null) and `password` only when set or removed.
-2. `ShortlinkUpdateContract` → `update`. URL changed → `SafetyUrlJob` (if enabled). URL, digest or expiry changed and link active → `save_cache` if servable, else `remove_cache`.
+1. The edit form sends title, URL and expiry (always; empty means none) and a password only when it is set or removed.
+2. If the URL changed, the safety check is queued (if enabled). If URL, password or expiry changed and the link is active, the cache entry is rewritten when the link is servable and removed otherwise.
 
 ### Expire, ban, delete
 
@@ -189,22 +156,22 @@ See SL-15, SL-16, SL-24, SL-52, SL-53.
 
 ## States and transitions
 
-There is no status column. A link's state is derived from `deleted_at`, `inactive_at`, `safe`, `expires_at` and `password_digest`. The serializer exposes `is_active = inactive_at.nil?`.
+There is no stored status. A link's state is derived from whether it is deleted, inactive, marked safe, past its expiry and password-protected. The dashboard shows a link as active when it is not inactive.
 
-| From | Event | To | Guard | Side effects |
+| From | Event | To | Guard | Effect |
 |---|---|---|---|---|
-| (none) | create | active (`inactive_at` nil, `safe` true) | contract | SET cache, `SafetyUrlJob` |
-| active | Safe Browsing hit / admin `toggle_safe` | banned (`safe` false, inactive) | — | DEL cache |
-| banned or inactive | Safe Browsing pass / admin `toggle_safe` | active | not past `expires_at` | SET cache if servable |
-| active | `expires_at` passed, 5-min job | inactive | `expires_at <= now` | DEL cache, audited |
-| active | 30 days without clicks, daily job | inactive | `COALESCE(last_accessed_at, created_at) < now-30d` | none (cache kept, not audited) |
-| active | admin `toggle_active` | inactive | admin | DEL cache |
-| inactive | admin `toggle_active` | active | admin | SET cache if `safe` (expiry ignored) |
-| active | account deactivated | inactive | — | DEL cache |
-| inactive | account deletion cancelled | active | inactivated within 10 min of the pause | SET cache if servable |
-| any | owner delete | soft-deleted | owner | DEL cache, `PurgeShortlinkJob` |
-| soft-deleted | `PurgeShortlinkJob` | gone | `deleted_at` set | events deleted |
-| unlocked ↔ locked | owner sets / clears password | — | 4..72 chars | SET cache with new `t` (if active) |
+| (none) | create | active (safe) | valid input | cache entry written, safety check queued |
+| active | safety hit / admin marks unsafe | banned (unsafe, inactive) | — | stops redirecting |
+| banned or inactive | safety pass / admin marks safe | active | not past expiry | redirects again if servable |
+| active | expiry passed (5-minute job) | inactive | expiry ≤ now | stops redirecting, recorded in change history |
+| active | 30 days without clicks (daily job) | inactive | no click since 30 days (or creation) | marked inactive only; cache entry kept, no history (D1) |
+| active | admin toggles inactive | inactive | admin | stops redirecting |
+| inactive | admin toggles active | active | admin | redirects again if safe (expiry ignored) |
+| active | account deactivated | inactive | — | stops redirecting |
+| inactive | account deletion cancelled | active | deactivated within 10 min of the pause | redirects again if servable |
+| any | owner deletes | soft-deleted | owner | stops redirecting, hidden from lists, purge queued |
+| soft-deleted | purge | gone | deleted | events deleted |
+| unlocked ↔ locked | owner sets / clears password | — | 4–72 characters | redirect behaviour changes (if active) |
 
 ```mermaid
 stateDiagram-v2
@@ -216,150 +183,120 @@ stateDiagram-v2
   Active --> SoftDeleted: delete
   Inactive --> SoftDeleted: delete
   Banned --> SoftDeleted: delete
-  SoftDeleted --> [*]: PurgeShortlinkJob
+  SoftDeleted --> [*]: purge
 ```
 
 ## Limits and configuration
 
-| Name | Value | Where | Notes |
-|---|---|---|---|
-| Code length / alphabet | 6, `[A-Za-z0-9]` | `backend/app/models/shortlink.rb:167` | case-sensitive |
-| `original_url` max | 2048 | `backend/app/contracts/shortlink_contract.rb:3` | also MCP schema |
-| `title` max | 255 REST, 120 MCP create | `backend/app/contracts/shortlink_contract.rb:4`, `backend/app/services/mcp/tools/create_shortlink.rb:4` | MCP update allows 255 |
-| Password length | 4..72 chars | `backend/app/contracts/shortlink_contract.rb:13`, `backend/app/models/shortlink.rb:61` | characters, not bytes |
-| Create rate limit | 60 / 10 min / user | `shortlinks_controller.rb:5` | `shortlink_create` |
-| MCP create | 20/h, 100/day | `backend/app/services/mcp/tools/create_shortlink.rb:19` | |
-| MCP update | 60/h, scope `account:full` | `backend/app/services/mcp/tools/update_shortlink.rb:18` | no password field |
-| MCP delete | 10/h, 30/day, `account:full` | `backend/app/services/mcp/tools/delete_shortlink.rb:9` | `confirm` = short code |
-| Unlock rate limit | 10 / 5 min / code+IP | `backend/app/controllers/api/public/shortlink_unlocks_controller.rb:8` | `shortlink_unlock` |
-| List page size | default 20, clamp 1..100 | `shortlinks_controller.rb:19-20` | MCP max 50 |
-| Inactivity period | 30 days | `backend/app/jobs/expire_inactive_shortlinks_job.rb:4` | daily 03:00 |
-| Expiry job | every 5 min | `backend/config/recurring.yml:40-43` | |
-| IP/UA/referer retention | 90 days, batch 5 000 | `backend/app/jobs/purge_old_ip_addresses_job.rb:4-5` | daily 04:15 |
-| Purge batch | 5 000 events | `backend/app/jobs/purge_shortlink_job.rb:4` | |
-| Valkey key TTL | none | `backend/app/models/shortlink.rb:97` | |
-| Edge Valkey timeout | 2000 ms | `edge-function/Cache.cs:8` | then 503 |
-| Edge `Retry-After` | 5 s | `edge-function/Cache.cs:9` | |
-| Edge click buffer | 10 000, drop when full | `edge-function/Analytics.cs:27-28` | |
-| Edge header cap | 4096 chars (UA, referer) | `edge-function/Headers.cs:23` | |
-| Event column cap | 255 chars | `backend/app/models/event.rb:36` | |
-| Edge shutdown | 10 s; swarm grace 20 s | `edge-function/Program.cs:33`, `.ci/stack.yml:180` | |
-| Edge request line | > 8 KB → 414 | Kestrel default (`206c134`) | |
-| Sneakers | 5 workers, 1 thread, prefetch 10, timeout 60 s | `backend/config/initializers/sneakers.rb:6-10` | `SNEAKERS_LOG_LEVEL` (default `error`) |
-| `EDGE_API` | public edge base URL | `backend/app/models/shortlink.rb:153`, `.ci/stack.yml:58` | web service only |
-| `ENABLE_GOOGLE_SAFE_LINK`, `GOOGLE_SAFE_LINK_KEY` | presence enables the check | `backend/app/models/shortlink.rb:162`, `backend/lib/google_lib.rb:34` | |
-| `REDIS_URL`, `RABBITMQ_HOST/PORT/DEFAULT_USER/DEFAULT_PASS`, `FRONTEND_URL` | | edge and Rails | |
-| `SSR_FORWARD_SECRET` | trusts `X-Visitor-Ip` | `backend/app/controllers/concerns/client_ip.rb:15` | |
+| Name | Value | Notes |
+|---|---|---|
+| Code length / alphabet | 6, A–Z a–z 0–9 | case-sensitive |
+| Original URL max | 2048 characters | also for MCP |
+| Title max | 255 (120 for MCP create) | MCP update allows 255 |
+| Password length | 4–72 characters | |
+| Creation rate limit | 60 per 10 min per user | dashboard/API |
+| MCP create | 20/hour, 100/day | |
+| MCP update | 60/hour | needs full account access; no password field |
+| MCP delete | 10/hour, 30/day | needs full account access; confirmation = short code |
+| Unlock rate limit | 10 per 5 min per link and visitor address | |
+| List page size | default 20, between 1 and 100 | MCP max 50 |
+| Inactivity period | 30 days | daily check at 03:00 |
+| Expiry check | every 5 minutes | |
+| IP / user agent / referer retention | 90 days | daily at 04:15, batches of 5 000 |
+| Purge batch | 5 000 events | |
+| Cache entry lifetime | none | removed explicitly |
+| Redirect cache timeout | 2000 ms | then 503 |
+| Retry hint on 503 | 5 s | |
+| Click buffer | 10 000, drops when full | |
+| User agent / referer cap on click | 4096 characters | |
+| Event text field cap | 255 characters | see D3 |
+| Redirect service shutdown | 10 s (platform grace 20 s) | |
+| Request line | over 8 KB rejected with 414 | |
+| Click workers | several in parallel, 60 s per click | |
+| Safety check | enabled by configuration | off means every link stays safe |
 
 ## Authorization and privacy
 
-- Anonymous: follow links at the edge; `GET`/`POST` the unlock endpoints for locked links. Nothing else.
-- Owner (`authenticate_user!`, scoped by `current_user.shortlinks.find`, so another user's id is 404): list, show, create, update, delete, statistics, QR. — `shortlinks_controller.rb:104-107`; test `backend/spec/requests/api/me/shortlinks_update_spec.rb:21`, `backend/spec/requests/api/me/shortlinks_statistics_spec.rb:21`, `backend/spec/requests/api/me/qr_codes_spec.rb:33`.
-- Admin (`ShortlinkPolicy#list_all?`, `modify_shortlink_safety?`, `modify_shortlink_active?` = `user.admin?`): list all links with owner and `safe_checked_at`, toggle safe, toggle active. See [admin-and-moderation](admin-and-moderation.md). — `backend/app/policies/shortlink_policy.rb:2-12`.
-- MCP: `shortlinks:read` (list, statistics), `shortlinks:write` (create), `account:full` (update, delete). See [mcp-and-oauth](mcp-and-oauth.md). MCP output cleans `original_url` and `title` as untrusted. — `backend/app/services/mcp/tools.rb:69-81`.
-- Personal data: visitor IP, user agent and referer (erased after 90 days), country/region from Cloudflare (kept), derived browser/platform (kept). The owner sees aggregates only; no endpoint returns raw events. The data export lists links and click counts, not events. — `backend/app/services/users/data_export.rb:49-62`, `frontend/app/routes/privacy.tsx:18`, `:65-69`.
-- Audits: link changes are audited except `short_code`, `events_count`, `last_accessed_at`, `deleted_at`, `password_digest`. — `backend/app/models/shortlink.rb:34`; test `backend/spec/models/shortlink_audit_spec.rb:6`, `:13`, `:22`, `:31`.
+- Anonymous visitors can follow links and use the password page and unlock step for locked links. Nothing else.
+- Owners see and manage only their own links (another user's link looks like "not found"): list, show, create, update, delete, statistics, QR.
+- Admins can list all links with owner and last safety-check time, flip the safe flag and flip active. See [admin-and-moderation](admin-and-moderation.md).
+- MCP: read permission (list, statistics), write permission (create), full account access (update, delete). See [mcp-and-oauth](mcp-and-oauth.md). MCP output treats the URL and title as untrusted text.
+- Personal data: visitor IP, user agent and referer (erased after 90 days); country and region from the CDN (kept); derived browser and platform (kept). The owner sees aggregates only; no one gets raw events. The data export lists links and click counts, not events.
+- Change history: link changes are recorded, except the short code, click count, last accessed time, deletion time and password.
 
 ## API and UI surface
 
-| Endpoint | Action | Notes |
-|---|---|---|
-| `GET /api/me/shortlinks` | `api/me/shortlinks#index` | `page`, `per_page`; meta `total, page, per_page` |
-| `POST /api/me/shortlinks` | `#create` | 201 / 422 / 429 |
-| `GET /api/me/shortlinks/:id` | `#show` | |
-| `PATCH/PUT /api/me/shortlinks/:id` | `#update` | |
-| `DELETE /api/me/shortlinks/:id` | `#destroy` | 204 / 404 |
-| `GET /api/me/shortlinks/:id/statistics` | `#statistics` | |
-| `GET /api/me/shortlinks/:id/qr_code` | `#qr_code` | SVG |
-| `GET /api/public/shortlinks/:short_code` | `api/public/shortlink_unlocks#show` | locked links only |
-| `POST /api/public/shortlinks/:short_code/unlock` | `#create` | |
-| `GET /api/admin/shortlinks` | `api/admin/shortlinks#index` | `status=active|inactive`, `q` (pg_search over title, URL, code, owner e-mail) |
-| `POST /api/admin/shortlinks/:id/toggle_safe` / `toggle_active` | admin | |
-
-Routes: `backend/config/routes.rb:40-43`, `:59-61`, `:151-152`. Serializer fields: `id, original_url, title, events_count, last_accessed_at, short_code, short_url, inactive_at, safe, is_active, password_protected, expires_at, created_at` (+ `user`, `safe_checked_at` for admin), root `shortlink` / `shortlinks` (`backend/app/serializers/shortlink_serializer.rb:31-54`).
-
-MCP tools: `list_shortlinks`, `get_shortlink_statistics`, `create_shortlink`, `update_shortlink`, `delete_shortlink` (`backend/app/services/mcp/tools/`).
-
-Frontend routes: `/app` dashboard (list, 20 per page, client-side search within the page, quick create; `frontend/app/routes/dashboard/index.tsx:18`), `/app/links/:id` (details, statistics, QR; client-only), `/s/:shortCode` (password page, SSR; `frontend/app/routes.ts:18`), `/app/admin/shortlinks`. `/status/success` is routed but nothing navigates to it.
-
-Jobs: `ExpireScheduledShortlinksJob` (every 5 min), `ExpireInactiveShortlinksJob` (03:00), `PurgeOldIpAddressesJob` (04:15), `PurgeShortlinkJob` (on delete), `SafetyUrlJob` (on create / URL change, queue `safety`). Worker: `AnalyticsWorker` via `bundle exec rake workers:run` (service `workers`, healthcheck `bin/workers-healthcheck` checks an AMQP connection and at least one consumer on `analytics`; `.ci/stack.yml:91-105`). Rake: `shortlink:clear_policy`, `shortlink:update_cache`, `workers:run`.
+- **Owners (dashboard, API)**: list links (paged, default 20), create, view, edit (title, URL, expiry, password), delete, view statistics, download QR code. The dashboard offers quick create, search within the current page and a link detail page with statistics and QR code.
+- **Visitors**: follow a short URL; for a locked link, use the public password page (check lock status, submit password).
+- **Admins**: list all links (filter by active/inactive, search by title, URL, code or owner e-mail; no pagination, see D16), flip safe, flip active.
+- **AI apps (MCP)**: list links, view statistics, and create, update and delete links.
+- **What a link shows**: original URL, title, click count, last accessed, short code and short URL, active and safe flags, whether it is password-protected, expiry and creation time (admins also see the owner and last safety check).
+- **Background jobs**: expiry every 5 minutes; 30-day inactivity daily at 03:00; erasure of old visitor data daily at 04:15; purge after deletion; safety check after create or URL change. A click worker processes the queue; it has its own healthcheck that confirms the queue connection and an active consumer.
+- **Operator actions**: run the inactivity job now; rewrite all cache entries.
+- A success page is routed in the frontend but nothing navigates to it.
 
 ## Decisions
 
-### D-SL-01 The edge reads only Valkey
-**Decision.** Redirects are answered by a separate low-latency service that reads one key and never calls Rails or Postgres. **Why.** "The most important thing here is that we have a low-latency worker, and also a low-latency KV"; aggregation need not be real time (`README.md:20-29`). **Consequence.** Every state change in Rails must update the key explicitly (SL-55); the edge cannot enforce expiry or safety on its own.
+### D-SL-01 Redirects are served by a separate fast service
+**Decision.** Redirects are answered by a dedicated low-latency service that looks up a single cached entry, not the main application or its database. **Why.** Redirects must be fast and always available; click aggregation need not be real time. **Consequence.** Every change to a link's state must update that cached entry (SL-55); the redirect service cannot decide expiry or safety on its own.
 
-### D-SL-02 Cache value is a typed JSON document
-**Decision.** `{"t":"url","v":...}` / `{"t":"locked"}` instead of a raw URL. **Why.** "New link states only add a new `t`, instead of magic strings mixed with URLs" (`backend/app/models/shortlink.rb:90-94`; introduced in `5a12219`, no body). **Consequence.** Unknown `t` is not-found at the edge, so a new state needs the edge deployed first; raw legacy values are still accepted.
+### D-SL-02 The cache entry is a typed document
+**Decision.** The cache entry says what kind of entry it is ("redirect to URL" or "locked") instead of being a raw URL. **Why.** New link states only add a new kind, instead of special strings mixed with URLs. **Consequence.** An unknown kind is not found at the redirect service, so a new state needs the redirect service deployed first; old raw entries are still accepted.
 
-### D-SL-03 Locked links never put the destination in Valkey
-**Decision.** The edge only knows that a link is locked; the destination comes from Rails after the password check. **Why.** Inferred from `backend/app/controllers/api/public/shortlink_unlocks_controller.rb:1-2` and test `backend/spec/models/shortlink_cache_spec.rb:19` ("never stores the destination"). **Consequence.** Locked clicks are recorded by Rails, not the queue.
+### D-SL-03 Locked links never put the destination in the cache
+**Decision.** The redirect service only knows that a link is locked; the destination comes from the main application after the password check. **Why.** The destination of a locked link must never be reachable without the password. **Consequence.** Locked clicks are recorded by the main application, not through the queue.
 
-### D-SL-04 503 on Valkey failure
-**Decision.** Valkey errors and timeouts are 503 with `Retry-After`, never `/404`. **Why.** An outage looked like "link not found" and was invisible to uptime monitors (`50ab882`, #295). **Consequence.** Only a genuine miss or unreadable value is a 404.
+### D-SL-04 503 when the cache fails
+**Decision.** Cache errors and timeouts answer 503 with a retry hint, never "not found". **Why.** An outage looked like "link not found" and was invisible to uptime monitors. **Consequence.** Only a genuine miss or unreadable entry is a 404.
 
-### D-SL-05 Edge rewritten in .NET 10
-**Decision.** Deno → .NET 10 minimal API with the same contracts. **Why.** The Deno edge never recovered after Valkey was recreated; clicks queued in memory were lost on shutdown (`206c134`, #318). **Consequence.** UA/referer capped at 4096; `System.Uri` normalisation (SL-07).
+### D-SL-05 Redirect service rewritten on a new platform
+**Decision.** The redirect service was rebuilt on a new platform with the same behaviour. **Why.** The previous version never recovered after the cache was recreated, and clicks held in memory were lost on shutdown. **Consequence.** User agent and referer are capped at 4096 characters and URLs are normalised as in SL-07.
 
-### D-SL-06 Soft delete then background purge
-**Decision.** Delete returns at once; events are removed in batches later. **Why.** Avoid locking `events` and memory spikes (`backend/app/jobs/purge_shortlink_job.rb:6-8`, `backend/app/models/shortlink.rb:104-106`). **Consequence.** Codes of soft-deleted links stay reserved until purge (SL-02).
+### D-SL-06 Soft delete, then background purge
+**Decision.** Delete returns at once; events are removed in batches later. **Why.** Avoid locking the database and memory spikes. **Consequence.** Codes of soft-deleted links stay reserved until purge (SL-02).
 
 ### D-SL-07 Two separate expiry jobs
-**Decision.** Owner-set expiry and inactivity are separate jobs. **Why.** "Different rule and cadence, and each reason for deactivation stays auditable on its own" (`backend/app/jobs/expire_scheduled_shortlinks_job.rb:1-3`). Scheduled expiry goes one by one "so each cache entry is removed right away" (`:8-9`). **Consequence.** See Drift D1/D2: the inactivity job does neither.
+**Decision.** Owner-set expiry and inactivity are separate jobs. **Why.** They have different rules and cadence, and each reason for deactivation should stay auditable on its own; scheduled expiry goes one link at a time so each cache entry is removed right away. **Consequence.** See Drift D1/D2: the inactivity job does neither.
 
 ### D-SL-08 Signed-in creation only
-**Decision.** Anonymous creation removed. **Why.** Rationale: not recorded (`2de5270`, "feat: security package", no body); the same commit made `user_id` required. **Consequence.** The anonymous frontend action and `/status/success` are dead code.
+**Decision.** Anonymous creation was removed and every link needs an owner. **Why.** Not recorded; it was part of a security-hardening change. **Consequence.** The old anonymous frontend flow and success page are dead code.
 
 ### D-SL-09 Visitor IP privacy
-**Decision.** No third-party geolocation; IP, UA and referer erased after 90 days. **Why.** RGPD; country and region already come from Cloudflare (`409fc06` #82, `a8f555f` #89, `c82075c` #91).
+**Decision.** No third-party geolocation; IP, user agent and referer are erased after 90 days. **Why.** Privacy (GDPR); country and region already come from the CDN.
 
-### D-SL-10 Raw Valkey keys beside a namespaced Rails cache
-**Decision.** `shortlink:*` is written through `Rails.cache.redis` without namespace; Rails cache entries live under `kurz:`. **Why.** `Rails.cache.clear` ran FLUSHDB and dropped every link (`68ccb25`, #297).
+### D-SL-10 Short link entries live apart from the application cache
+**Decision.** Short link cache entries are written outside the application cache's namespace, so clearing the application cache cannot touch them. **Why.** A clear once wiped the whole cache and dropped every link at the redirect service.
 
 ## Change impact
 
-- Cache key or value format (`Shortlink#cache_key`, `#cache_value`) → `edge-function/Cache.cs` (`LookupAsync`, `Resolve`), `CacheTests.cs`, `LookupTests.cs`, `IntegrationTests.cs`, `shortlink_cache_spec.rb`, `rake shortlink:update_cache`. Deploy the edge that understands the new value first, then Rails, then run `update_cache`.
-- New link state that must stop or alter redirects → add the cache write/delete in every path of SL-55, the MCP `update_shortlink.refresh_cache`, `User#deactivate!`/`cancel_deletion!`, admin toggles, the rake task.
-- Password page path `/s/:code` → `edge-function/Cache.cs:67-70`, `frontend/app/routes.ts:18`, `FRONTEND_URL` on the edge.
-- Click payload keys, queue name or durability → `edge-function/Analytics.cs`, `Headers.cs`, `AnalyticsWorker`, `sneakers.rb`, `bin/workers-healthcheck`, `edge-function/Edge.Tests/HeadersTests.cs:76`, `edge-function/Edge.Tests/IntegrationTests.cs:51`. Redeclaring `analytics` with other arguments fails on a live broker (inferred: RabbitMQ rejects a declare with different properties).
-- Browser/platform buckets → `Headers.cs` and `user_agent_parser.rb` together (bio page and form statistics use the Ruby copy; see [bio-pages](bio-pages.md)).
-- Country `XX`/`T1` handling → `Headers.Location` and `ShortlinkUnlocksController#record_click`.
-- `Event` length caps or new columns → edge caps (`edge-function/Headers.cs:23`), `PurgeOldIpAddressesJob::TARGETS`, privacy page `frontend/app/routes/privacy.tsx`, data export.
-- URL validation (`http_url` macro) → edge `HttpHref` (they must accept the same set), MCP `create_shortlink`/`update_shortlink`, bio page links (same macro; see [bio-pages](bio-pages.md)), frontend zod schemas.
-- Short code length/alphabet → edge path handling (`/`, `/404`, percent-decoding, `Uri.EscapeDataString`), the unique index, MCP `confirm` max 64.
-- `Rails.cache` configuration → keep the `kurz` namespace (D-SL-10).
-- Expiry/inactivity thresholds → `ExpirationAlert` copy, dashboard `inactive_shortlink_message`, privacy page, `shortlink_task_spec.rb`.
-- `Shortlink` default scope or soft delete → `Form#ensure_shortlink!` / `Form` `before_destroy` (see [forms](forms.md)), `users.shortlinks_count` counter, `User#purge!`, `AnalyticsWorker` lookup.
-- Migrations on `shortlinks`/`events`: the edge does not read Postgres, but the previous Rails release, the worker and the 5-minute job do; follow the add → backfill → drop-later rule in `CLAUDE.md`. Large `events` indexes go `algorithm: :concurrently` (precedent `20261006010000_add_partial_indexes_for_ip_retention.rb`).
-- New env var for the edge → `.ci/stack.yml` `serveless.environment` (it does not share `x-env-base`) and `docker-compose.yml`.
-
-## Tests that pin this behaviour
-
-- Create / validation / rate limit: `backend/spec/requests/api/me/shortlinks_create_spec.rb`, `backend/spec/requests/api/shortlinks_spec.rb` (anonymous route gone).
-- Update / cache refresh / safety re-check: `backend/spec/requests/api/me/shortlinks_update_spec.rb`.
-- Password and expiry: `backend/spec/requests/api/me/shortlinks_password_expiration_spec.rb`, `backend/spec/requests/api/public/shortlink_unlocks_spec.rb`, `backend/spec/requests/client_ip_spec.rb`.
-- Cache contract: `backend/spec/models/shortlink_cache_spec.rb`, `backend/spec/tasks/shortlink_update_cache_task_spec.rb`, `edge-function/Edge.Tests/CacheTests.cs`, `LookupTests.cs`, `IntegrationTests.cs`.
-- Click payload and headers: `edge-function/Edge.Tests/HeadersTests.cs`, `edge-function/Edge.Tests/IntegrationTests.cs:51`, `backend/spec/requests/security/injection_spec.rb:119`.
-- Jobs: `backend/spec/jobs/expire_scheduled_shortlinks_job_spec.rb`, `backend/spec/tasks/shortlink_task_spec.rb` (inactivity), `backend/spec/jobs/purge_shortlink_job_spec.rb`, `backend/spec/jobs/purge_old_ip_addresses_job_spec.rb`.
-- Delete and counters: `backend/spec/requests/api/me/shortlinks_destroy_spec.rb`, `backend/spec/models/shortlink_count_spec.rb`, `backend/spec/db/recount_user_shortlinks_migration_spec.rb`.
-- Statistics: `backend/spec/requests/api/me/shortlinks_statistics_spec.rb`. QR: `backend/spec/requests/api/me/qr_codes_spec.rb`.
-- Audits: `backend/spec/models/shortlink_audit_spec.rb`. Admin: `backend/spec/requests/api/admin/shortlinks_spec.rb`, `bfla_spec.rb`.
-- Form short links: `backend/spec/requests/api/me/forms_spec.rb:108`, `e2e/tests/publish.spec.ts:52`, `:78`.
-- Not covered: `AnalyticsWorker` (no spec), `SafetyUrlJob` (no job spec), `ExpireInactiveShortlinksJob` cache behaviour, admin `toggle_active` on expired links, no e2e test of the redirect or unlock path.
+- Cache entry format → redirect service, the operator cache rewrite (SL-56) and SL-35. Deploy the redirect service that understands the new format first, then the main application, then rewrite the entries.
+- New link state that must stop or alter redirects → add the cache write/remove to every path in SL-55, including MCP update, account deactivation/cancellation, admin toggles and the operator rewrite.
+- Password page address → redirect service redirect (SL-29, SL-35), frontend password page, the configured frontend address (SL-38).
+- Click message fields, queue name or durability → redirect service (SL-39–SL-41), click worker (SL-43) and its healthcheck; redeclaring the queue with different properties fails on a live broker.
+- Browser/platform grouping (SL-42) → apply to both the redirect service and the main application's copy (bio page and form statistics use the latter; see [bio-pages](bio-pages.md)).
+- Country `XX`/`T1` handling → SL-41 and SL-45 together.
+- Event length caps or new event fields → redirect service caps (SL-41), D3, the retention erasure (SL-47), the privacy page and the data export.
+- URL validation (SL-05) → redirect service URL handling (SL-07; both must accept the same set), MCP create/update, bio page links (same validation; see [bio-pages](bio-pages.md)), frontend checks (SL-09).
+- Code length or alphabet (SL-01) → redirect path handling (SL-34), uniqueness guarantee (SL-02), MCP confirmation length for delete.
+- Cache namespace → keep short link entries separate (D-SL-10, SL-58).
+- Expiry/inactivity thresholds (SL-15, SL-16) → expiry alert copy, dashboard inactivity message, privacy page.
+- Soft delete behaviour (SL-52) → forms (SL-12; see [forms](forms.md)), the user's link count, account purge (SL-54), click worker lookup (SL-43).
+- Database changes touching links or events: the redirect service does not read the database, but the previous release, the click worker and the 5-minute job do; follow the add → backfill → drop-later rule so the previous release survives.
+- New configuration for the redirect service → it must be added to the redirect service's own deployment settings, which are not shared with the main application.
 
 ## Drift and open questions
 
-- **D1 (high)** `ExpireInactiveShortlinksJob` sets `inactive_at` with `update_all` and never deletes `shortlink:<code>`, so a link "deactivated due to inactivity" keeps redirecting at the edge, keeps recording clicks (the worker does not check `inactive_at`), and stays inactive in the dashboard with no owner way back. Every other deactivation path deletes the key. — `backend/app/jobs/expire_inactive_shortlinks_job.rb:10-12` vs `backend/app/jobs/expire_scheduled_shortlinks_job.rb:8-10`.
-- **D2 (low)** The same `update_all` skips audits, contradicting "each reason for deactivation stays auditable on its own". — `backend/app/jobs/expire_scheduled_shortlinks_job.rb:1-3`.
-- **D3 (medium)** The edge publishes `user_agent` and `referer` up to 4096 characters and `region` uncapped, but `Event` rejects anything over 255; `Event.create!` raises, the worker requeues once and then drops the click (Sentry error). Long in-app browser UAs and long referrer URLs lose their clicks. — `edge-function/Headers.cs:23` vs `backend/app/models/event.rb:36`, `backend/app/workers/analytics_worker.rb:26-33`.
-- **D4 (medium)** The edge publishes with the default (transient) delivery mode into a durable queue, and drops clicks when its 10 000 buffer is full; clicks are lost on a broker restart. Rationale: not recorded. — `edge-function/Analytics.cs:25`, `:27-28`.
-- **D8 (low)** "Hard deadline … the edge stops redirecting at the moment the link expires" (`backend/app/models/shortlink.rb:140-141`) is up to 5 minutes late (job cadence); the key has no `EXPIREAT`.
-- **D9 (low)** Dead frontend code: `create-public-shortlink` action posts to the removed `POST /api/shortlinks`; `/status/success`, `modules/success-alerts/*` and `frontend/app/modules/shortlink-form/email-field.tsx` are unreachable. `ExpirationAlert` says links are "automatically deleted after 30 days without access"; the code deactivates (and, per D1, does not stop) them. — `frontend/packages/core/actions/create-public-shortlink/create-public-shortlink.service.ts:12`, `frontend/app/modules/success-alerts/expiration-alert.tsx:24-25`.
-- **D10 (low)** The dashboard shows "deactivated due to inactivity" for any inactive safe link, including expired, admin-deactivated and paused-account links (no reason column). — `frontend/app/components/shortlink-card/index.tsx:184-191`, `frontend/app/i18n/en/dashboard.json:32`.
-- **D11 (low)** README lists "scheduling" for short links; only scheduled expiry exists. — `README.md:39`.
-- **D13 (low)** Frontend error toasts read `error.error`, but contract failures return `{errors: {...}}`, so users see a generic message for 422s. — `frontend/app/modules/quick-create/use-quick-create.tsx:31`, `frontend/app/components/shortlink-card/edit-shortlink-form.tsx:78`.
-- **D14 (low)** Edge clicks store missing UA/referer/IP as `""`, unlock clicks as `NULL`; `device_statistics` returns `name: null` for a null platform while the other groups say `"Unknown"`. — `edge-function/Headers.cs:17-18`, `backend/app/controllers/api/public/shortlink_unlocks_controller.rb:48`, `statistics_service.rb:62-69`.
-- **D15 (low)** MCP `create_shortlink` caps titles at 120, REST and MCP `update_shortlink` at 255. — `backend/app/services/mcp/tools/create_shortlink.rb:4`, `backend/app/services/mcp/tools/update_shortlink.rb:12`.
-- **D16 (low)** Admin `GET /api/admin/shortlinks` has no pagination and its `meta.total` ignores the filters. — `backend/app/controllers/api/admin/shortlinks_controller.rb:8-10`.
-- **D17 (low)** `original_url` is stored unstripped although validated stripped; the edge's `Uri.TryCreate` trims, so it still redirects (inferred). — `backend/app/contracts/application_contract.rb:19`.
-- **D18 (low)** No spec covers `AnalyticsWorker` or `SafetyUrlJob`.
+- **D1 (high)** The 30-day inactivity job marks links inactive but never removes their cache entry, so a link "deactivated due to inactivity" keeps redirecting, keeps recording clicks (the worker does not check inactivity), and shows as inactive in the dashboard with no owner way back. Every other deactivation path removes the entry.
+- **D2 (low)** The same inactivity job records nothing in the change history, contradicting the intent that each reason for deactivation stays auditable on its own.
+- **D3 (medium)** The redirect service sends user agent and referer up to 4096 characters and region uncapped, but an event rejects any field over 255; the worker retries once and then drops the click (reported as an error). Long in-app browser user agents and long referrer URLs lose their clicks.
+- **D4 (medium)** The redirect service publishes with transient delivery into a durable queue and drops clicks when its 10 000 buffer is full; clicks are lost when the message broker restarts.
+- **D8 (low)** Expiry is expected to be immediate ("the link stops redirecting at the moment it expires"), but in practice it can be up to 5 minutes late because it is applied on a schedule rather than instantly.
+- **D9 (low)** Dead frontend code: the anonymous-creation action posts to a removed endpoint; the success page and its alerts and an e-mail field are unreachable. The expiry alert says links are "automatically deleted after 30 days without access"; the product deactivates them (and, per D1, does not stop them).
+- **D10 (low)** The dashboard shows "deactivated due to inactivity" for any inactive safe link, including expired, admin-deactivated and paused-account links (the reason is not stored).
+- **D11 (low)** The README lists "scheduling" for short links; only scheduled expiry exists.
+- **D13 (low)** Frontend error messages read a single error field, but validation failures return per-field errors, so users see a generic message for validation errors.
+- **D14 (low)** Redirect-service clicks store missing user agent/referer/IP as empty text, unlock clicks as empty values; the device statistics show a missing platform as empty while the other breakdowns say "Unknown".
+- **D15 (low)** MCP link creation caps titles at 120 characters; the dashboard/API and MCP update cap them at 255.
+- **D16 (low)** The admin link list has no pagination and its total ignores the filters.
+- **D17 (low)** The original URL is stored with surrounding whitespace although validated without it; the redirect service trims it, so it still redirects.
+- **D18 (low)** Click recording and the URL safety check have no dedicated automated verification.
