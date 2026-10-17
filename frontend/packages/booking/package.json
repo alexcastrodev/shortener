@@ -9,6 +9,6 @@
   "sideEffects": false,
   "dependencies": {
     "@internal/core": "0.0.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   }
 }
