@@ -11,7 +11,8 @@ Use it before implementing a feature, to know what the app does today, which rul
 2. **Check the [impact map](#cross-domain-impact-map)** below for couplings with other domains. Most impact misses in this codebase come from a rule that exists in two places (Rails and the edge function, the dashboard and the MCP tools, the backend and `@internal/booking`).
 3. **Cite rule ids in PRs and plans** ("changes BK-12, adds FO-63"). Ids are stable: a removed rule keeps its id, marked as removed.
 4. **Update the page in the same PR** that changes the behaviour, and move the state line (`State as of commit ...`) of the pages you touched.
-5. **Rationale** comes from code comments, `docs/`, commit messages and PRs. `Rationale: not recorded.` means none was found; `(inferred)` marks a reading of the code, not a recorded decision.
+5. **Security findings are not listed here.** A weakness found while reading the code is reported privately, as described in [`SECURITY.md`](../SECURITY.md), and stays out of these pages until it is fixed.
+6. **Rationale** comes from code comments, `docs/`, commit messages and PRs. `Rationale: not recorded.` means none was found; `(inferred)` marks a reading of the code, not a recorded decision.
 
 Each page has the same sections: Summary, Glossary, Data, Business rules, Flows, States and transitions, Limits and configuration, Authorization and privacy, API and UI surface, Decisions, Change impact, Tests that pin this behaviour, Drift and open questions.
 

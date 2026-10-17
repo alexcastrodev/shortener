@@ -234,7 +234,7 @@ Avatar: `none` -> (upload) `processing` (raw `avatar_upload` attached) -> (job o
 | Safe Browsing batch | 500 URLs | `backend/lib/google_lib.rb:10` | |
 | Link recheck | daily 4am, older than 1 day | `backend/config/recurring.yml:48`, `backend/app/jobs/recheck_page_links_safety_job.rb:6` | |
 | Account purge grace | 30 days | `backend/app/models/user.rb:37` | |
-| `ENABLE_GOOGLE_SAFE_LINK`, `GOOGLE_SAFE_LINK_KEY` | env, any non-empty value enables | `backend/app/models/page_link.rb:106`, `backend/lib/google_lib.rb:34` | Not listed in `.ci/stack.yml` (see Drift) |
+| `ENABLE_GOOGLE_SAFE_LINK`, `GOOGLE_SAFE_LINK_KEY` | env, any non-empty value enables | `backend/app/models/page_link.rb:106`, `backend/lib/google_lib.rb:34` | |
 | `FRONTEND_URL` | base of `public_url` and QR | `backend/app/models/page.rb:109` | |
 | `SSR_FORWARD_SECRET` | trusts `X-Visitor-Ip` from SSR | `backend/app/controllers/concerns/client_ip.rb:15` | |
 | `IMGPROC_URL`, `S3_BUCKET` | imgproc address; picks `seaweedfs` storage | `backend/app/services/imgproc.rb:13`, `backend/config/environments/production.rb:24` | Imgproc is not used by bio pages |
@@ -341,18 +341,14 @@ Full schedule: [platform-and-operations](platform-and-operations.md).
 
 ## Drift and open questions
 
-- **Safety checks are probably off in production (high).** `PageLink#verify_safety` and `RecheckPageLinksSafetyJob` need `ENABLE_GOOGLE_SAFE_LINK`, and the job needs `GOOGLE_SAFE_LINK_KEY`. Neither name appears in `.ci/stack.yml` (`web`, `jobs`), only in `.env.development` (empty) and in `spec_helper.rb`. If the deployed environment is exactly that file, no bio link is ever checked, although `README.md:40` says "a safety check on every link". Could not verify the real production environment.
 - **New dashboard pages are public immediately (medium).** `published` defaults to true and the create form does not send it (BP-08), unlike MCP drafts. Not recorded whether intended.
-- **Slug rename frees the old slug with no redirect (medium).** Printed QR codes and shared links break and a third party can claim the old slug (BP-05). Template `author_label` keeps the old slug text.
 - **Applying a template deletes click history (medium).** BP-34; the API does not warn, only the dashboard confirms when items exist.
-- **Link flag lifecycle gaps (medium).** New and edited links stay `safe` until the job runs (BP-51); the owner cannot clear a false positive and is not told; the job retries only the Google client error, not network exceptions raised by HTTParty (inferred from `retry_on`).
 - **Recheck cadence (low, inferred).** Daily at 4am with a "older than 1 day" cutoff means a link checked a few seconds after the previous run is skipped by the next run, so some links are rechecked every second day.
 - **Contracts do not enforce lengths (low).** Title, bio, label and URL maximums exist only in the model, so error shapes differ between contract errors (hash) and model errors (array); `pages#create` rescues `RecordInvalid` and renders the page's errors even when the failing record is an item from a template (`pages_controller.rb:64-66`).
 - **Social icon vs URL is a frontend-only rule (low).** A client can store `icon: "instagram"` with any http(s) URL (BP-21).
 - **Whitespace in URLs (low).** The `http_url` macro validates the stripped value but the stored value is not stripped; the public view then fails the `^https?://` test and renders no `href` (BP-17).
 - **Expired page cannot be saved without changing `expires_at` (low, inferred for the UI).** The update contract rejects a past `expires_at` even if unchanged and the editor always sends the field.
 - **Hardcoded host in meta (low).** `frontend/app/routes/bio/$username.tsx:34` builds the canonical and `og:url` as `https://kurz.fyi/u/<param>` (raw URL param, not the normalized slug) while `Page#public_url` uses `FRONTEND_URL`; `frontend/app/routes/pages/index.tsx:101` also prints `kurz.fyi/u/`.
-- **Avatars bypass the imgproc sandbox (low, inferred from chronology).** Avatars (since `6e4b4ce`, 2026-09-23) decode 50 MB / 100 MP files in the jobs container, while forms use the sandbox that limits 10 MB / 50 MP (`433073f`, 2026-10-05). `AvatarUpload` was refactored but not moved. Not recorded whether intentional.
 - **Silent avatar failure (low).** A corrupt but header-valid file is dropped without telling the owner (BP-56).
 - **Hidden template stays hidden through unpublish and republish (low),** and the owner is not told it is hidden except by the flag in their list (BP-40, BP-45).
 - **Unpublish consumes the publish rate limit (low).** The 5 per day limit applies to the whole `update` action (BP-40).

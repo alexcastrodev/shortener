@@ -404,13 +404,8 @@ Note: `backend/lib/google_lib.rb` is the Google Safe Browsing client, not sign-i
 
 ## Drift and open questions
 
-- **Staged-password race (medium).** `LoginCodeRequest` stages the sign-up password before the cooldown check (`backend/app/services/login_code_request.rb:39-40`). A second sign-up within 1 minute of the first overwrites `pending_password_digest` without sending a new e-mail. If the real owner then confirms the first code with purpose `sign_up`, the second requester's password becomes active. This needs the attacker to sign up for the same address within that minute; Turnstile and `signup_ip` apply.
-- **Codes are not bound to a purpose (low/medium).** A sign-in code works for `password/reset`, and `purpose` on `login_verify` is chosen by the client (AU-15). This is consistent with "the code proves the address", but nothing records it as intended.
-- **Plaintext login code in the DB (low).** `users.login_token` is stored unhashed for 15 minutes.
-- **No Turnstile on `login_verify`, `password/reset` or `login/google` (low).** These rely on per-e-mail rate limits and the 5-attempt burn. The `Turnstile` header comment says "for the sign-in form" but the check also covers sign-up and reset (`backend/app/services/turnstile.rb:1`).
 - **The frontend depends on an English message string (medium).** `api.ts` detects deactivation by comparing `message === 'Your account has been deactivated'` rather than an error code. Translating or rewording `errors.account_deactivated` breaks the redirect. The login endpoints answer `{error: <same text>}`, not `{message}`, and those calls go through `publicApi`, which has no interceptor.
 - **Admin reactivation does not restore links (low).** `reactivate!` leaves `inactive_at` on every link that `deactivate!` paused, unlike `cancel_deletion!`. This may be intended; it is not documented.
-- **A ban does not revoke sessions or OAuth grants (low).** Requests are refused while the ban lasts (403, MCP checks `active?`). After reactivation, old tokens younger than 2 days and old grants work again.
 - **Possible 409 on Google linking (low, inferred).** When the user with the matching e-mail already has a different Google identity (`(user_id, provider)` unique), `identities.create!` raises `RecordNotUnique`, which answers `409 Conflict`, not a Google error.
 - **`RESTORE_WINDOW` heuristic (low).** Restoration picks links whose `inactive_at` falls in a 10-minute window after deactivation. A link that the expiry jobs deactivated in that window would be revived.
 - **Revocation is a no-op without the cache (low).** In development or test without `REDIS_URL`, logout does not revoke the token (documented in code).

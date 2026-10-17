@@ -360,7 +360,6 @@ Routes: `backend/config/routes.rb:34-52`. Frontend routes in AD-100. Frontend cl
 - **Admin link actions ignore the owner state** (medium). `toggle_active`/`toggle_safe` can write the Valkey key for a link whose owner is deactivated (AD-43, AD-48).
 - **Unbounded admin lists** (medium). Users, short links and audits are returned in full on every request; the audits table also never shrinks (AD-24, AD-26). The audit user filter loads the full users list too.
 - **Page signals never reopen** (low/medium). A dismissed `same_text`/`same_links` signal absorbs later waves silently (AD-66).
-- **`verify_authorized` not used** (medium). Authorization depends on each controller remembering to call it (AD-15).
 - **Admin template and signal actions are not audited** (low). No trace of who hid a template or dismissed a signal (AD-21).
 - **Deactivated owners' community templates stay listed** (low). `PageTemplate.listed` has no owner filter (AD-36).
 - **Reactivating a pending-deletion user** (low). Leaves `deletion_requested_at` set on an active user; see States and transitions.

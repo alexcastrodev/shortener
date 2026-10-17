@@ -431,4 +431,3 @@ Routes: `backend/config/routes.rb:14-22`, `:66-67`. Frontend: `/oauth/authorize`
 16. **Low.** No purge for expired or used codes, access tokens, rotated refresh tokens, revoked grants or clients; `oauth_clients` grows with open registration (10/h per IP).
 17. **Low.** Refresh with a narrower `scope` is accepted but the issued token keeps all grant scopes; the response's `scope` shows that.
 18. **Low.** The consent screen rules (defaults, full-access lock) are frontend only; the server enforces only MC-15/MC-16. Not covered by frontend tests.
-19. **Unverified.** Origin and Host handling is delegated to the `mcp` gem 1.7.0, whose source is not installed here: whether a request without an `Origin` header is accepted was taken from the spec behaviour only.
