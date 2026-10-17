@@ -160,8 +160,8 @@ A booking answer can be one of: a single-service answer with sessions (date, tim
 ### Reservation
 
 - **BK-52** A booking is created in the same all-or-nothing operation as the saved response, after it; any failure also cancels the saved response. There is no separate public way to create an appointment.
-- **BK-53** A submission made against a form version other than the published one is refused (409, the form changed) before any place is touched.
-- **BK-54** With a per-day limit, the booking first locks each local day of the request, in date order, and recounts the day's booked places; going over the limit refuses the booking as full (409).
+- **BK-53** A submission made against a form version other than the published one is refused (the form changed) before any place is touched.
+- **BK-54** With a per-day limit, the booking first locks each local day of the request, in date order, and recounts the day's booked places; going over the limit refuses the booking as full.
 - **BK-55** Items are reserved one after the other, ordered by their earliest start; within an item, distinct times in ascending order, all as one step that can be undone as a unit.
 - **BK-56** For each time, the slot is opened if needed and one place is taken in a single conditional step: it succeeds only when the slot is held by the same service or is empty and, with a capacity, when booked plus held places are below the capacity (the capacity of the current published service, not the stored one). Otherwise the time is full. A successful step adds one booked place and records the holder and the capacity, and — only when the slot was empty — its length and end.
 - **BK-57** A waiting-list claim converts one held place of the same service into a booked one instead.
@@ -169,7 +169,7 @@ A booking answer can be one of: a single-service answer with sessions (date, tim
 - **BK-59** Concurrency guarantees: capacity cannot be exceeded; a slot has one holder; sessions on an explicit resource cannot overlap; the per-day limit holds. Not guarded against simultaneous bookings: the buffer, and overlaps between different starts of a service that is its own resource (checked only when free times are computed, before the reservation).
 - **BK-60** Releasing a place lowers the booked count (never below 0); the length and end stay until the next first booking overwrites them; the slot stops counting for shared-resource overlap once no place is booked or held.
 - **BK-61** Status at creation: pending with manual approval (always, or only when the first session starts within the approval-only-for-near-sessions window), unverified with automatic approval, e-mail verification and an e-mail address, otherwise confirmed. Expiry is the approval timeout from now (default 1440 minutes) or 15 minutes for verification. One group identifier is shared by the whole request. Details in [appointments-lifecycle](appointments-lifecycle.md).
-- **BK-62** Refusals: an answer that cannot be accepted is refused (422) per question as blank, invalid or unavailable, with the service, date and time named when applicable; a reservation that fails is refused (409) as full, with the start time.
+- **BK-62** Refusals: an answer that cannot be accepted is refused per question as blank, invalid or unavailable, with the service, date and time named when applicable; a reservation that fails is refused as full, with the start time.
 
 ### Impact
 
@@ -178,7 +178,7 @@ A booking answer can be one of: a single-service answer with sessions (date, tim
 
 ### Start-time generator
 
-- **BK-65** A signed-in owner can generate a list of start times from a start time, an end time and a step (all required), with an optional session duration (default 60 minutes), a lunch break and further blocked ranges. Errors: a time not in `HH:MM` form, a step outside 5–600 minutes (the presets 30/60/90/120 are inside), a duration that is not a positive whole number, an end not after the start, and no times produced. It lists a start every step while the session still ends by the end time, skipping a start whose session overlaps lunch or a block, and warns when the duration is longer than the step (overlapping sessions). The request is refused (422) when there are errors.
+- **BK-65** A signed-in owner can generate a list of start times from a start time, an end time and a step (all required), with an optional session duration (default 60 minutes), a lunch break and further blocked ranges. Errors: a time not in `HH:MM` form, a step outside 5–600 minutes (the presets 30/60/90/120 are inside), a duration that is not a positive whole number, an end not after the start, and no times produced. It lists a start every step while the session still ends by the end time, skipping a start whose session overlaps lunch or a block, and warns when the duration is longer than the step (overlapping sessions). The request is refused when there are errors.
 - **BK-66** The generator does not cap the result at 96 times nor the duration at 600: a list longer than 96 is refused when the service is saved.
 
 ### Frontend consistency
@@ -216,11 +216,11 @@ Where checks happen:
 
 ### Submitting a booking (anonymous)
 
-1. The visitor submits the form: rate limits (30 per 10 minutes per IP; 5 per 10 minutes when the bot check is unavailable), a hidden trap field, a closed form (410) and the bot check.
-2. The submission is checked: duplicate-submission key, stale form version (409, BK-53), every answer is cast; the booking answer goes through BK-39 to BK-47. Errors return 422 with details.
+1. The visitor submits the form: rate limits (30 per 10 minutes per IP; 5 per 10 minutes when the bot check is unavailable), a hidden trap field, a closed form and the bot check.
+2. The submission is checked: duplicate-submission key, stale form version (BK-53), every answer is cast; the booking answer goes through BK-39 to BK-47. Errors are returned with details.
 3. One all-or-nothing operation: save the response, claim uploads, lock the days (BK-54), reserve each item (BK-55 to BK-58), create one appointment per session and queue notifications (see [notifications-and-email](notifications-and-email.md)).
-4. A full time rolls everything back and the visitor is told the time is full (409).
-5. Success returns (201) the appointments (start, service, status, duration), a link to manage the booking (valid until 7 days after the last session), whether the e-mail was sent, the price and the skipped dates.
+4. A full time rolls everything back and the visitor is told the time is full.
+5. Success returns the appointments (start, service, status, duration), a link to manage the booking (valid until 7 days after the last session), whether the e-mail was sent, the price and the skipped dates.
 
 ### Editing a published booking question
 

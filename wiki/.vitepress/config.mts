@@ -36,6 +36,7 @@ export default defineConfig({
           { text: 'Forms', link: '/forms' },
           { text: 'Booking engine', link: '/booking-engine' },
           { text: 'Appointments lifecycle', link: '/appointments-lifecycle' },
+          { text: 'Use cases: form and agenda', link: '/use-cases' },
           { text: 'Notifications and e-mail', link: '/notifications-and-email' },
           { text: 'MCP and OAuth', link: '/mcp-and-oauth' },
           { text: 'Admin and moderation', link: '/admin-and-moderation' },

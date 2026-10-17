@@ -56,7 +56,7 @@ A short code pointing to a URL.
 - **Fields:** the code (unique across all rows including soft-deleted ones), the destination URL, an optional title, an optional password hash (4 to 72 characters when set), an expiry time, an "inactive since" time (set by expiry, deactivation or danger marking), a soft-deletion time, the last-accessed time, a safe flag (default true) with its last safety-check time, and a count of clicks.
 - **Relationships:** belongs to a user (required; the user cannot be deleted while links exist, so the purge path removes them first). Its clicks cascade with it. A form that uses the link as its public address has the link cleared when the link is deleted.
 - **Audit:** changes are recorded except for the code, click count, last-accessed time, deletion time and password hash.
-- **Retrieval aid:** the expiry sweep relies on a partial index over links that have an expiry and are still active.
+- **Retrieval aid:** the expiry sweep relies on a lookup aid covering only links that have an expiry and are still active.
 
 #### Click event
 One record per click on a short link, for statistics.
@@ -229,7 +229,7 @@ Two layers act. The database layer runs for any delete, including bulk and raw d
 | **Form** destroy | The form's short link is soft-deleted. Uploads are destroyed first (removing their files), then responses, waitlist entries and daily statistics are deleted in bulk. The database cascades slots and appointments (and through them tokens and notifications). Slot counters are not released because the slots go too. | application + database |
 | **Form response** destroy | Releases the slot places of its holding appointments, destroys its uploads, and decrements the form's response count. The database cascades its appointments and their tokens and notifications; appointments that were replaced by those are cleared. | application + database |
 | Bulk "delete all responses" (dashboard bulk action and MCP) | No cleanup: slot places are NOT released, uploads are NOT destroyed (the database clears their response and the orphan sweep later removes them), and the response count is not decremented. Appointments, tokens and notifications cascade at the database. | database only (see Drift) |
-| **Appointment slot** | Cannot be deleted while any appointment references it. No application path deletes a slot; slots disappear only with their form. | database (blocks) |
+| **Appointment slot** | Cannot be deleted while any appointment is booked on it. No application path deletes a slot; slots disappear only with their form. | database (blocks) |
 | **Appointment** | No application delete path. Through cascades its tokens and notifications are deleted; appointments it replaced keep existing with the link cleared. | database |
 | **OAuth grant** destroy | Codes and tokens are removed by the application; tool-call logs by the database cascade only. Deleting a client destroys its grants. | application + database |
 | **Page template** destroy | Its reports are removed. | application + database |
@@ -256,7 +256,7 @@ Retention deletes (not cascades): IP address, user agent and referer of clicks a
 
 ### How schema changes are made
 - Index creation on a table that can be large is done without blocking writes; older indexes on some large tables were created the plain way before this became the practice.
-- Foreign keys on live tables are added unvalidated and validated in a later change. Making a column required follows the same path: add an unvalidated check, backfill, validate, make the column required, then remove the helper check.
+- Relationships between large live tables are first added without checking existing data and validated in a later change. Making a column required follows the same path: add an unchecked requirement, backfill, validate, make the column required, then remove the helper check.
 - Backfills are repeatable and batched, and work on raw data rather than application models.
 - Data fixes can only be applied, not undone, and each is covered by automated checks.
 - New constraints are named explicitly. Status fields added in October 2026 have value checks; older ones do not.
@@ -272,7 +272,7 @@ Deployment migrates the database first, then replaces services one at a time, st
 
 ### Notable schema evolution
 - **Counters:** click counting moved from a single click count to a per-event counter maintained by the application; counters were reset when this changed. A user's short-link counter was added later, first counting soft-deleted links, and was corrected to count only visible links.
-- **Ownership of short links:** links were once allowed without a user (anonymous links); user ownership was later made required again, with a foreign key added unvalidated and then validated.
+- **Ownership of short links:** links were once allowed without a user (anonymous links); user ownership was later made required again, with the relationship first added without checking existing data and then validated.
 - **E-mail uniqueness:** unique e-mail became unique case-insensitively.
 - **Click cleanup:** clicks now cascade when their short link is deleted.
 - **Verification:** the verification time was introduced with existing accounts treated as verified so none were purged.
@@ -300,8 +300,8 @@ Seeding: the only seed data is an example user with one short link, created on d
 - **DM-09** Deleting a short link deletes its click events in the database.
 - **DM-10** A user's short-link counter counts only links that are not soft-deleted. It is maintained by the application, so raw database deletes or direct edits desynchronise it.
 - **DM-11** The click, page-link click and form-response counters are maintained by the application (required, default 0). Bulk inserts and bulk deletes bypass them.
-- **DM-12** The partial index on short-link expiry only covers links that have an expiry and are still active; expiry queries must use the same condition to benefit from it.
-- **DM-13** IP address, user agent and referer of click events and page-link clicks, and the remote address of audit entries, are cleared after 90 days; partial indexes over the rows that still hold an address serve this job.
+- **DM-12** The lookup aid for short-link expiry only covers links that have an expiry and are still active; expiry queries must use the same condition to benefit from it.
+- **DM-13** IP address, user agent and referer of click events and page-link clicks, and the remote address of audit entries, are cleared after 90 days; lookup aids covering only the rows that still hold an address serve this job.
 
 ### Bio pages
 - **DM-14** A page slug is unique across live and soft-deleted pages.
@@ -330,7 +330,7 @@ Seeding: the only seed data is an example user with one short link, created on d
 - **DM-33** Appointment token purposes are manage, approve, decline, decide and verify; digests are unique. Adding a purpose needs a migration that recreates the purpose check.
 - **DM-34** Deleting a form response deletes its appointments, their tokens and their notifications.
 - **DM-35** A person can wait only once per (form, service, start) while waiting or offered (e-mail compared case-insensitively); the status is one of waiting, offered, claimed, expired or left.
-- **DM-36** Pending-expiry sweeps use the appointment expiry time filtered to pending or unverified; a new waiting status needs that partial index changed.
+- **DM-36** Pending-expiry sweeps use the appointment expiry time filtered to pending or unverified; a new waiting status needs that lookup aid changed.
 
 ### Notifications, OAuth, MCP
 - **DM-37** A notification needs an owner user or a client e-mail, matching its recipient kind.
@@ -346,14 +346,14 @@ Seeding: the only seed data is an example user with one short link, created on d
 
 ### Migrations
 - **DM-45** A migration must leave the previous release working: add and backfill first; drop, rename or make required in a later release.
-- **DM-46** Add a foreign key to a populated table unvalidated and validate it in a separate migration; build indexes without blocking writes. Convention only; no tool enforces it.
+- **DM-46** Add a relationship to a populated table without checking existing data and validate it in a separate migration; build indexes without blocking writes. Convention only; no tool enforces it.
 - **DM-47** Data migrations are repeatable, work on raw data or local model stand-ins rather than application models, and are covered by automated checks that run them twice where relevant.
 - **DM-48** Migrations run as the owner role, never as the application role. See the Postgres roles guide.
 
 ## Decisions
 
 ### D-DM-01 Constraints in the database for money-like counters
-**Decision.** Slot capacity, the held count, token purposes, actor fields and notification shape are database value checks, and the overlap rule is an exclusion constraint. **Why.** The reservation path updates counters in the database; it is the last guard when two requests race, and it refuses overlapping time of a teacher (see the appointments guide). **Consequence.** Adding a status, purpose or channel is a migration that recreates the check.
+**Decision.** Slot capacity, the held count, token purposes, actor fields and notification shape are database value checks, and the overlap rule is a database-level exclusion rule. **Why.** The reservation path updates counters in the database; it is the last guard when two requests race, and it refuses overlapping time of a teacher (see the appointments guide). **Consequence.** Adding a status, purpose or channel is a migration that recreates the check.
 
 ### D-DM-02 Soft delete for short links and pages only
 **Decision.** Short links and pages are hidden by a deletion time; everything else is hard-deleted. **Why.** A link with thousands of clicks must answer the delete at once and be purged in the background; pages keep their slug reserved. **Consequence.** Every relationship to these tables is blocked or relies on paths that include soft-deleted records, and the account purge must walk them.
@@ -374,16 +374,16 @@ Seeding: the only seed data is an example user with one short link, created on d
 **Decision.** Jobs are stored in the same database as the application data. **Why.** No reason was recorded. **Consequence.** Job tables are part of the schema; a job-table migration needs the same rollout care; old jobs can be deleted by a data migration.
 
 ## Change impact
-- Add a status value (appointment, notification, waitlist, token purpose, actor): update the database check if the field has one (DM-32, DM-33, DM-35, DM-39), the application's list of valid values, the frontend types, the MCP tool schemas and any partial index with a status condition (DM-36). The old release must still accept the new value, so ship the widened check first.
+- Add a status value (appointment, notification, waitlist, token purpose, actor): update the database check if the field has one (DM-32, DM-33, DM-35, DM-39), the application's list of valid values, the frontend types, the MCP tool schemas and any lookup aid restricted by a status condition (DM-36). The old release must still accept the new value, so ship the widened check first.
 - Change the shape of a form's fields: update the field and booking validation, the snapshot and already-published forms (stored copies are not re-validated), response submission, the form export and summary, the frontend editor and the MCP form tools, and write a data migration that rewrites both the fields and the published snapshot and its digest. See [forms](forms.md).
 - Change the appointment snapshot's content: old rows keep the old shape; receipts, calendar files, notification e-mails and the agenda must tolerate both. See [appointments-lifecycle](appointments-lifecycle.md).
-- Add a table that references users, forms, pages or short links: choose the delete behaviour, add the application-level cleanup if the database does not cascade, extend the deletion cascade map, and check the account purge and the account export ([accounts-and-auth](accounts-and-auth.md)). A blocking relationship to users makes the purge fail until the application deletes the rows first.
+- Add an entity that belongs to users, forms, pages or short links: choose the delete behaviour, add the application-level cleanup if the database does not cascade, extend the deletion cascade map, and check the account purge and the account export ([accounts-and-auth](accounts-and-auth.md)). A blocking relationship to users makes the purge fail until the application deletes the rows first.
 - Add a soft delete elsewhere: every relationship to it needs the handling of soft-deleted records that the account purge has.
 - Delete responses in bulk: use the path that releases slots and destroys uploads, or accept the gaps in Drift (item 4). See [booking-engine](booking-engine.md).
 - Add or change a field used by the redirect path (short links): the redirect service and the cached link entry read it; see [shortlinks](shortlinks.md).
 - Add an index on a large table (clicks, page-link clicks, audit entries, form responses, notifications): build it without blocking writes (DM-46).
 - Drop or rename a field: two releases (stop reading and writing, then drop). The previous release runs against the new schema during the deploy and after a rollback (DM-45).
-- Make a field required or add a relationship to a populated table: add the unvalidated constraint, backfill, validate, then finish (DM-45, DM-46).
+- Make a field required or add a relationship to a populated table: add the unchecked rule, backfill, validate, then finish (DM-45, DM-46).
 - Change the overlap guard: the reservation logic converts its violation and deadlocks into "full"; see [booking-engine](booking-engine.md) (DM-30).
 - New roles or privileges: review the Postgres roles guide, the deployment procedure and the security check that the application role cannot alter the schema (DM-48).
 
@@ -391,7 +391,7 @@ Seeding: the only seed data is an example user with one short link, created on d
 | # | Finding | Severity |
 |---|---|---|
 | 1 | The Postgres roles guide says tables created by future migrations are readable and writable by default privileges; this holds only if migrations run as the owner role. Deployment is consistent with it, but nothing checks that the configured migration user is the owner. | low |
-| 2 | Schema annotation headers on models are incomplete: about two thirds of the models (all added from October 2026) have none, and the user model's header lacks time zone and language. A development migration would rewrite them; they are not checked in CI. | low |
+| 2 | Schema documentation attached to the data objects is incomplete: about two thirds of them (all added from October 2026) have none, and the user's description lacks time zone and language. It is regenerated during development and not checked automatically. | low |
 | 3 | The database cache table and the message table exist but are unused (the cache is Valkey, no cable adapter). Dead tables. | low |
 | 4 | Bulk response deletion (dashboard and MCP) skips slot release, upload destruction and the response counter. A form's response count and a slot's booked count can disagree with reality afterwards. Confirm whether slot release happens elsewhere in those paths. | medium |
 | 5 | Appointment status, form layout, themes, abuse-signal kind and status, page-link kind, notification kind and MCP call status have no database check, unlike the other October 2026 status fields. Values are guarded only in the application. | medium |
@@ -401,6 +401,6 @@ Seeding: the only seed data is an example user with one short link, created on d
 | 9 | The calendar feed is the only user-owned entity that is blocked rather than cascaded on user delete; only the application clears it. A user delete that bypasses the application fails. | low |
 | 10 | Notifications depend entirely on the database cascade; the application does not declare them as dependents of users or appointments. | low |
 | 11 | Audit ids are 4-byte integers and unconstrained; audit entries have no retention beyond address clearing, only the explicit deletion during the account purge. | low |
-| 12 | No tool enforces safe-migration rules; the non-blocking index and validate-later conventions were applied from October 2026 on, but earlier large-table migrations did not use them. Any new migration relies on the author knowing the rule. | medium |
+| 12 | No tool enforces safe-migration rules; the non-blocking build and validate-later conventions were applied from October 2026 on, but earlier large-table migrations did not use them. Any new migration relies on the author knowing the rule. | medium |
 | 13 | A user's short-link counter was first backfilled including soft-deleted links and fixed three months later; the same trap exists for any new counter on a soft-deleted parent. | low |
 | 14 | The appointments guide describes the overlap guard as covering "booked rows"; the rule counts booked plus held places, so held places (waitlist offers) also block overlap. | low |

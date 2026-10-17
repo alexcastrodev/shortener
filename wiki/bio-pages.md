@@ -231,9 +231,9 @@ Avatar: none → (upload) processing → (optimized) ready; processing → (corr
 **Visitors** open `/u/:slug` (a standalone page without the site header or footer), can use the "Report" link to flag a page, and trigger click tracking by following links.
 
 **Owners (dashboard)**
-- Page list and create (`/app/pages`), with template choice.
-- Page editor (`/app/pages/:id`): phone preview, add, edit, hide, delete and reorder items, theme picker with custom colors and saved palettes, avatar upload and removal, expiry, publish and unpublish, template gallery (built-in, own, Community), save and publish own templates, report Community templates, QR code modal.
-- Statistics screen (`/app/pages/:id/stats`) with a 7 / 30 / 90 day selector.
+- Page list and create, with template choice.
+- Page editor: phone preview, add, edit, hide, delete and reorder items, theme picker with custom colors and saved palettes, avatar upload and removal, expiry, publish and unpublish, template gallery (built-in, own, Community), save and publish own templates, report Community templates, QR code modal.
+- Statistics screen with a 7 / 30 / 90 day selector.
 - The same capabilities are available through the owner API.
 
 **Admins** review reported and hidden Community templates and hide or unhide them (moderation screen, see [admin-and-moderation](admin-and-moderation.md)).

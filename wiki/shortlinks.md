@@ -78,10 +78,10 @@ Expiry, deactivation, safety bans and deletion all work by removing the link's c
 
 ### Redirect behaviour
 
-- **SL-34** The redirect service looks up the code taken from the path (percent-decoded, without the leading `/`, so `/a/b` looks up `a/b`). The bare root and `/404` show the "not found" page with status 404 (also for HEAD requests). An empty code, an unknown code or an unreadable cache entry redirects to `/404`.
+- **SL-34** The redirect service looks up the code taken from the path (percent-decoded, without the leading `/`, so `/a/b` looks up `a/b`). The bare root and `/404` show the "not found" page (also for HEAD requests). An empty code, an unknown code or an unreadable cache entry redirects to `/404`.
 - **SL-35** A cache entry means one of: redirect to this http(s) URL (tracked); this link is locked, go to the password page (untracked); or, for entries written by older releases, a raw http(s) URL (tracked). Anything else (unknown kind, wrong types, other schemes) is treated as not found.
-- **SL-36** If the cache fails or does not answer within 2 seconds, the redirect service answers 503 "service unavailable" with a retry hint of 5 seconds and no caching — never "not found" — and reconnects on its own. The reason: an outage used to look like "link not found" and was invisible to monitors.
-- **SL-37** Redirects are plain 302 responses with no cache headers, for every method (GET, HEAD, POST). Cache entries have no time limit: the redirect service never decides expiry itself. Very long request lines (over 8 KB) are rejected with 414.
+- **SL-36** If the cache fails or does not answer within 2 seconds, the redirect service answers "service unavailable" with a retry hint of 5 seconds and no caching — never "not found" — and reconnects on its own. The reason: an outage used to look like "link not found" and was invisible to monitors.
+- **SL-37** Redirects are plain redirects with no cache headers, for every method (GET, HEAD, POST). Cache entries have no time limit: the redirect service never decides expiry itself. Very long request lines (over 8 KB) are rejected.
 - **SL-38** The redirect service is configured with the address of the cache, the frontend address (default `https://kurz.fyi`, used for the password page) and the message queue connection. It has a healthcheck that asks for the "not found" page and is healthy when the answer is not a server error.
 
 ### Click events
@@ -135,7 +135,7 @@ Expiry, deactivation, safety bans and deletion all work by removing the link's c
 ### Redirect and click
 
 1. A visitor opens a short URL; the request reaches the redirect service through the CDN.
-2. The service reads the cache entry (2 s limit). On failure it answers 503; on a miss it redirects to the "not found" page.
+2. The service reads the cache entry (2 s limit). On failure it answers "service unavailable"; on a miss it redirects to the "not found" page.
 3. A URL entry: the click is queued and the visitor is redirected to the destination. A locked entry: the visitor is redirected to the password page.
 4. In the background the click is sent to the queue and a worker records the event, which raises the click count and updates "last accessed".
 
@@ -205,13 +205,13 @@ stateDiagram-v2
 | IP / user agent / referer retention | 90 days | daily at 04:15, batches of 5 000 |
 | Purge batch | 5 000 events | |
 | Cache entry lifetime | none | removed explicitly |
-| Redirect cache timeout | 2000 ms | then 503 |
-| Retry hint on 503 | 5 s | |
+| Redirect cache timeout | 2000 ms | then "service unavailable" |
+| Retry hint when unavailable | 5 s | |
 | Click buffer | 10 000, drops when full | |
 | User agent / referer cap on click | 4096 characters | |
 | Event text field cap | 255 characters | see D3 |
 | Redirect service shutdown | 10 s (platform grace 20 s) | |
-| Request line | over 8 KB rejected with 414 | |
+| Request line | over 8 KB rejected | |
 | Click workers | several in parallel, 60 s per click | |
 | Safety check | enabled by configuration | off means every link stays safe |
 
@@ -246,8 +246,8 @@ stateDiagram-v2
 ### D-SL-03 Locked links never put the destination in the cache
 **Decision.** The redirect service only knows that a link is locked; the destination comes from the main application after the password check. **Why.** The destination of a locked link must never be reachable without the password. **Consequence.** Locked clicks are recorded by the main application, not through the queue.
 
-### D-SL-04 503 when the cache fails
-**Decision.** Cache errors and timeouts answer 503 with a retry hint, never "not found". **Why.** An outage looked like "link not found" and was invisible to uptime monitors. **Consequence.** Only a genuine miss or unreadable entry is a 404.
+### D-SL-04 "Service unavailable" when the cache fails
+**Decision.** Cache errors and timeouts answer "service unavailable" with a retry hint, never "not found". **Why.** An outage looked like "link not found" and was invisible to uptime monitors. **Consequence.** Only a genuine miss or unreadable entry is a "not found".
 
 ### D-SL-05 Redirect service rewritten on a new platform
 **Decision.** The redirect service was rebuilt on a new platform with the same behaviour. **Why.** The previous version never recovered after the cache was recreated, and clicks held in memory were lost on shutdown. **Consequence.** User agent and referer are capped at 4096 characters and URLs are normalised as in SL-07.

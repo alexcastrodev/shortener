@@ -25,7 +25,7 @@ There is no way to become an admin from inside the app (see [AD-01](#who-is-an-a
 
 ### Who is an admin
 
-- **AD-01** The admin role is a single flag on the user and nothing else. No screen, API, AI-app tool, script, seed or credential sets it. An admin is made by an operator editing the user record directly in the database. Only automated tests and the CI security check create admins otherwise.
+- **AD-01** The admin role is a single flag on the user and nothing else. No screen, API, AI-app tool, script, seed or credential sets it. An admin is made by an operator editing the user record directly in the database. There is no in-product way to grant it.
 - **AD-02** A change of the admin flag is audited, but when an operator does it directly in the database there is no signed-in actor, so the audit record has no actor.
 - **AD-03** Admin user lists show each user's admin flag, and the signed-in user's own profile carries it so the app can show the admin menu.
 - **AD-04** Nothing promotes or demotes an admin through the app. The admin users screen shows an "Admin"/"User" badge only.
@@ -37,39 +37,39 @@ There is no way to become an admin from inside the app (see [AD-01](#who-is-an-a
 - **AD-11** These actions are admin-only: listing all users, listing all short links, flagging a link as safe or unsafe, switching a link on or off, reading the audit log, moderating abuse signals, moderating community templates, and viewing the appointment health overview.
 - **AD-12** An admin cannot deactivate or reactivate themselves. The admin screen hides the button on the admin's own row, but the rule is enforced by the backend, which refuses the request.
 - **AD-13** Ownership is enforced by scoping: bio pages and forms are filtered to the signed-in owner, and every other resource (short links, page templates, colour palettes, push subscriptions, OAuth grants, appointments) is looked up only among the signed-in user's own records.
-- **AD-14** A refused action answers "You are not authorized to perform this action" (403); a missing record answers "Resource not found" (404). Because owner resources are looked up through the owner's own records, another user's record looks like a missing one (404, not 403), so nobody can learn whether it exists.
-- **AD-15** Nothing forces a new feature to declare who may use it: a new endpoint that forgets its access check is open to any signed-in user. The only automated safety net is a CI security check that requires every route to be classified (public, signed-in, owner, admin, infrastructure, storage or internal) and requires owner, admin and AI-app routes to refuse anonymous callers.
-- **AD-16** For admin actions on a specific record, the admin permission is checked before the record is looked up. A non-admin therefore gets the same refusal (403) whether the id exists or not, while an admin gets "not found" (404) for a missing id. The reason is that non-admins must not be able to tell which ids exist.
-- **AD-17** Every admin request is checked in this order: a sign-in token is present (401 "Missing token"), it is valid and not revoked (401 "Invalid or expired token"), the account is not deactivated (403 "Your account has been deactivated"), and finally the caller is an admin (403). A deactivated admin is therefore locked out of the admin area.
-- **AD-18** Browser sessions must send an "X-Requested-With: XMLHttpRequest" marker on every request that changes data (refused with 403 otherwise); API-token callers are exempt. This also covers every admin action.
+- **AD-14** A refused action answers "You are not authorized to perform this action"; a missing record answers "Resource not found". Because owner resources are looked up through the owner's own records, another user's record looks like a missing one (answered as "not found", not "not allowed"), so nobody can learn whether it exists.
+- **AD-15** Nothing forces a new feature to declare who may use it: a new action that forgets its access check is open to any signed-in user. The safety net is a rule that every route is classified (public, signed-in, owner, admin, infrastructure, storage or internal) and that owner, admin and AI-app routes must refuse anonymous callers.
+- **AD-16** For admin actions on a specific record, the admin permission is checked before the record is looked up. A non-admin therefore gets the same "not allowed" refusal whether the id exists or not, while an admin gets "not found" for a missing id. The reason is that non-admins must not be able to tell which ids exist.
+- **AD-17** Every admin request is checked in this order: a sign-in token is present ("Missing token"), it is valid and not revoked ("Invalid or expired token"), the account is not deactivated ("Your account has been deactivated"), and finally the caller is an admin. A deactivated admin is therefore locked out of the admin area.
+- **AD-18** Browser sessions must identify themselves as an in-app request on every request that changes data (refused otherwise); API-token callers are exempt. This also covers every admin action.
 - **AD-19** Admin actions are not available to AI apps. No MCP tool checks the admin role; MCP acts only as the grant's owner within the grant's scopes. See [mcp-and-oauth](mcp-and-oauth.md).
 
 ### Permission matrix
 
-Legend: Y = allowed; own = only the owner's records. Refusals: anonymous 401, deactivated user 403, non-admin on an admin action 403, another user's owner resource 404.
+Legend: Y = allowed; own = only the owner's records. Refusals: anonymous → not signed in; deactivated user → not allowed; non-admin on an admin action → not allowed; another user's owner resource → not found.
 
 | Capability | Anonymous | Owner | Other user | Admin | Deactivated user |
 |---|---|---|---|---|---|
-| View a public bio page | Y only if the page is published, not expired and the owner is active | same | same | same | page hidden (404) |
-| Click a link on a public bio page | Y under the same visibility rule | same | same | same | 404 |
-| Open, submit, upload to, book slots on or join the waitlist of a public form | Y only if the form is published and the owner is active | same | same | same | 404 |
+| View a public bio page | Y only if the page is published, not expired and the owner is active | same | same | same | page hidden (not found) |
+| Click a link on a public bio page | Y under the same visibility rule | same | same | same | not found |
+| Open, submit, upload to, book slots on or join the waitlist of a public form | Y only if the form is published and the owner is active | same | same | same | not found |
 | Follow a short link | Y only if the link is currently served | same | same | same | links stop redirecting on deactivation |
-| Manage short links | 401 | own | 404 | own only (no override) | 403 |
-| Manage bio pages and forms | 401 | own | 404 | own only | 403 |
-| Manage custom page templates | 401 | own | 404 | own only | 403 |
-| Browse the Community template gallery | 401 | Y (listed templates only) | Y | Y | 403 |
-| Report a community template | 401 | refused (own template, 422) | Y once per template, 20 per hour | Y (same rules; an admin may report) | 403 |
-| List all users | 401 | 403 | 403 | Y | 403 |
-| Deactivate or reactivate a user | 401 | 403 | 403 | Y for others; refused for self | 403 |
-| List all short links | 401 | 403 | 403 | Y | 403 |
-| Flag a short link safe or unsafe | 401 | 403 | 403 | Y | 403 |
-| Switch a short link on or off | 401 | 403 | 403 | Y | 403 |
-| Read the audit log | 401 | 403 | 403 | Y | 403 |
-| Review and hide or unhide community templates | 401 | 403 | 403 | Y | 403 |
-| Review and dismiss abuse signals | 401 | 403 | 403 | Y | 403 |
-| View the appointment health overview | 401 | 403 | 403 | Y | 403 |
-| Read another user's statistics, responses, appointments or pages | 401 | own | 404 | 404 (no override) | 403 |
-| Use AI-app (MCP) tools | 401 sign-in challenge | own grant | n/a | own grant (no admin tools) | 401 challenge (the grant's user is inactive) |
+| Manage short links | not signed in | own | not found | own only (no override) | not allowed |
+| Manage bio pages and forms | not signed in | own | not found | own only | not allowed |
+| Manage custom page templates | not signed in | own | not found | own only | not allowed |
+| Browse the Community template gallery | not signed in | Y (listed templates only) | Y | Y | not allowed |
+| Report a community template | not signed in | refused (own template) | Y once per template, 20 per hour | Y (same rules; an admin may report) | not allowed |
+| List all users | not signed in | not allowed | not allowed | Y | not allowed |
+| Deactivate or reactivate a user | not signed in | not allowed | not allowed | Y for others; refused for self | not allowed |
+| List all short links | not signed in | not allowed | not allowed | Y | not allowed |
+| Flag a short link safe or unsafe | not signed in | not allowed | not allowed | Y | not allowed |
+| Switch a short link on or off | not signed in | not allowed | not allowed | Y | not allowed |
+| Read the audit log | not signed in | not allowed | not allowed | Y | not allowed |
+| Review and hide or unhide community templates | not signed in | not allowed | not allowed | Y | not allowed |
+| Review and dismiss abuse signals | not signed in | not allowed | not allowed | Y | not allowed |
+| View the appointment health overview | not signed in | not allowed | not allowed | Y | not allowed |
+| Read another user's statistics, responses, appointments or pages | not signed in | own | not found | not found (no override) | not allowed |
+| Use AI-app (MCP) tools | not-signed-in challenge | own grant | n/a | own grant (no admin tools) | challenge (the grant's user is inactive) |
 
 ### Auditing
 
@@ -97,9 +97,9 @@ Legend: Y = allowed; own = only the owner's records. Refusals: anonymous 401, de
 - **AD-30** An admin switches a user on or off with one action: an active user is deactivated, a deactivated one is reactivated. The result shows the updated user.
 - **AD-31** Deactivating a user does this in one step: the account is marked deactivated, a pending self-deletion request is cancelled (an admin deactivation cancels a pending deletion, so the purge sweep never deletes an account an admin banned), and each of the owner's active short links is removed from redirecting and marked inactive, one by one, each change audited. It is not atomic: a failure midway can leave the user deactivated with some links still served. Reason: an admin deactivation must not be confused with a self-requested deletion.
 - **AD-32** Reactivating a user only clears the deactivation. It does not restore the short links that were switched off, and does not make them redirect again. The admin must reactivate each link through the short links screen (see AD-47). Contrast: when a user cancels their own deletion, links paused in the 10 minutes around the pause are restored automatically.
-- **AD-33** Deactivation does not revoke sessions or OAuth grants (contrast a self-requested deletion, which does both). It works by making every request check the account state: web sessions stop working with a 403, and AI-app grants stop working because the MCP endpoint and the OAuth token step require an active user. After reactivation the old session and AI-app grants work again.
-- **AD-34** Sign-in is refused for a deactivated user on every path with 403 "Your account has been deactivated": e-mail code verification, password login (shown as the generic invalid-credentials 401), Google sign-in and password reset. Requesting a login code for a deactivated address answers "sent" but sends no e-mail. The "pending deletion" exception cannot apply after an admin deactivation because AD-31 cancels the deletion request. Details in [accounts-and-auth](accounts-and-auth.md).
-- **AD-35** Public surfaces that disappear for a deactivated owner: bio pages (published, not expired, owner active) and their link clicks; public forms and their responses, uploads, covers, slots, events and waitlist; the calendar feed; and the e-mail lookups of client notifications. All answer 404. Data is kept; nothing is deleted.
+- **AD-33** Deactivation does not revoke sessions or OAuth grants (contrast a self-requested deletion, which does both). It works by making every request check the account state: web sessions stop working (not allowed), and AI-app grants stop working because the MCP endpoint and the OAuth token step require an active user. After reactivation the old session and AI-app grants work again.
+- **AD-34** Sign-in is refused for a deactivated user on every path with "Your account has been deactivated": e-mail code verification, password login (shown as the generic invalid-credentials message), Google sign-in and password reset. Requesting a login code for a deactivated address answers "sent" but sends no e-mail. The "pending deletion" exception cannot apply after an admin deactivation because AD-31 cancels the deletion request. Details in [accounts-and-auth](accounts-and-auth.md).
+- **AD-35** Public surfaces that disappear for a deactivated owner: bio pages (published, not expired, owner active) and their link clicks; public forms and their responses, uploads, covers, slots, events and waitlist; the calendar feed; and the e-mail lookups of client notifications. All answer "not found". Data is kept; nothing is deleted.
 - **AD-36** Things that keep running for a deactivated owner (no active-user check exists): appointment links held by clients, reminder and notification sending for the owner's appointments, community templates the user published, and short links that an admin later reactivates or re-marks safe (AD-47, AD-48). The first two are not confirmed by an explicit rule; verify before relying on them.
 - **AD-37** The user list can be searched by e-mail (full-text, prefix matching) and filtered by status: active, inactive, or all otherwise. Newest first; no pagination; the total count of users is returned.
 
@@ -110,8 +110,8 @@ Legend: Y = allowed; own = only the owner's records. Refusals: anonymous 401, de
 - **AD-42** Flagging a safe link as unsafe stops it redirecting, marks it unsafe, records the check time and switches it off. Flagging an unsafe link as safe marks it safe, records the check time, switches it on again unless it has expired (an already switched-off expired link stays off), and makes it redirect again if it is servable (switched on, safe and not expired).
 - **AD-43** Marking a link safe clears every kind of "switched off" (admin deactivation, 30-day inactivity, owner deactivation, scheduled expiry) unless the link is past its expiry. So marking a link safe re-activates it and makes it redirect again, even when its owner is deactivated (no owner check).
 - **AD-44** Switching a link off stops it redirecting and marks it inactive. Switching it on makes it redirect again only if it is safe. Expiry is not checked: an expired but reactivated link redirects until the five-minute expiry sweep switches it off again; a link idle for more than 30 days is switched off again by the daily 03:00 inactivity sweep unless it was accessed. The second part follows from the sweep's conditions rather than an explicit rule.
-- **AD-45** Effect on redirects: the redirect service does not talk to the database; it looks up a cached entry per short code. If the entry is missing it redirects to the "not found" page; if the cache fails it answers 503 with a retry hint of 5 seconds. Removing the cached entry is therefore what takes a link down; the inactive and safe states are the record the main app uses to decide whether to write it.
-- **AD-46** Effect on password-protected links: the unlock page and the unlock submission answer 404 unless the link is password-protected and servable, so a deactivated, unsafe or expired locked link cannot be unlocked either.
+- **AD-45** Effect on redirects: the redirect service does not talk to the database; it looks up a cached entry per short code. If the entry is missing it redirects to the "not found" page; if the cache fails it answers "service unavailable" with a retry hint of 5 seconds. Removing the cached entry is therefore what takes a link down; the inactive and safe states are the record the main app uses to decide whether to write it.
+- **AD-46** Effect on password-protected links: the unlock page and the unlock submission answer "not found" unless the link is password-protected and servable, so a deactivated, unsafe or expired locked link cannot be unlocked either.
 - **AD-47** The states that matter here are: switched off (for any reason), safe/unsafe and expiry. A link is servable when it is not switched off, is safe and has not expired. The cache rebuild task writes an entry only for non-deleted servable links and removes it for the rest.
 - **AD-48** Switching a link on or off and flagging it safe or unsafe do not look at the owner's state, so an admin can serve a link of a deactivated owner. No other safeguard exists. See Drift.
 - **AD-49** Reactivating an unsafe link clears its switched-off state without making it redirect: the link shows "active" in the admin list but is not served.
@@ -136,12 +136,12 @@ Legend: Y = allowed; own = only the owner's records. Refusals: anonymous 401, de
 
 ### Community template reports
 
-- **AD-80** Any signed-in user may report a listed community template (public and not hidden) with a reason: spam, offensive, impersonation or other. Other reasons are rejected (422). Rate limit: 20 reports per hour per user, then 429 "Too many reports, please try again later". A report on a hidden, private or unknown template is a 404. Success has no content (204).
-- **AD-81** One report per user and template ("already reported this template") and no reports on one's own template ("You cannot report your own template"); both come back as 422 with an error message.
+- **AD-80** Any signed-in user may report a listed community template (public and not hidden) with a reason: spam, offensive, impersonation or other. Other reasons are rejected. Rate limit: 20 reports per hour per user, then "Too many reports, please try again later". A report on a hidden, private or unknown template answers "not found". Success has no content.
+- **AD-81** One report per user and template ("already reported this template") and no reports on one's own template ("You cannot report your own template"); both come back rejected with an error message.
 - **AD-82** Auto-hide: each report is counted, and when a template reaches 3 reports and is not yet hidden it is hidden, all in one step. Reports are not weighted by reporter age or reason.
-- **AD-83** Hidden means: not in the Community gallery, not usable (using a hidden template is a 404) and not reportable. It does not change pages already created from the template (they keep their copies) and does not touch the owner's private original.
+- **AD-83** Hidden means: not in the Community gallery, not usable (using a hidden template answers "not found") and not reportable. It does not change pages already created from the template (they keep their copies) and does not touch the owner's private original.
 - **AD-84** The admin template list always starts from public templates and filters by status: hidden, listed, or (default, shown as "Reported") any template that has reports or is hidden. Order: most reports first, then most recently published; limit 200. Each item shows the original content and the placeholder version, owner, author label and author page, counts, and the reports tallied by reason. The author page is empty only when it no longer exists; unpublished or expired author pages still show. Admins see the originals; everyone else never does.
-- **AD-85** Hiding a public template as admin sets it hidden and keeps its reports. Unhiding it clears the hidden state, zeroes the report count and deletes every report ("unhiding clears the reports: the template starts over"). A private template is a 404 for the admin action.
+- **AD-85** Hiding a public template as admin sets it hidden and keeps its reports. Unhiding it clears the hidden state, zeroes the report count and deletes every report ("unhiding clears the reports: the template starts over"). A private template answers "not found" for the admin action.
 - **AD-86** Consequences of clearing on unhide: users who reported can report the same template again; a template can be hidden again by three new reports. There is no permanent ban and no way to hide a private template. The owner can unpublish and republish; the hidden state survives both, so republishing does not evade moderation.
 - **AD-87** Deleting a template (by its owner) or the owner's account removes its reports.
 
@@ -156,7 +156,7 @@ Legend: Y = allowed; own = only the owner's records. Refusals: anonymous 401, de
 ### Admin screens
 
 - **AD-100** Admin screens: the hub, Users, Short links, Audit logs, Moderation (templates) and Moderation › Abuse. They are rendered only in the browser, not pre-rendered.
-- **AD-101** The guard is cosmetic: the "Admin" entry in the header and sidebar is hidden for non-admins, and each screen shows an "Access denied" alert when the signed-in user is not an admin or when loading fails. While the user is still loading, the screen renders normally and fires its admin requests, which the backend refuses (403). Authorization is only the backend's.
+- **AD-101** The guard is cosmetic: the "Admin" entry in the header and sidebar is hidden for non-admins, and each screen shows an "Access denied" alert when the signed-in user is not an admin or when loading fails. While the user is still loading, the screen renders normally and fires its admin requests, which the backend refuses (not allowed). Authorization is only the backend's.
 - **AD-102** The hub shows a badge with the number of open abuse signals plus reported templates.
 - **AD-103** Users screen: default filter "Active", search by e-mail (debounced 300 ms), "Deactivate"/"Reactivate" button without confirmation, none on the admin's own row. Short links screen: default "Active", two switches per row (Safe, Active), each behind a confirmation. Audit screen: user selector fed by the full user list. Templates screen: tabs Reported / Hidden / Listed, button "Hide from Community" or "Unhide and clear reports". Abuse screen: tabs Open / Dismissed, per-owner Deactivate/Reactivate, Dismiss (only on open signals).
 - **AD-104** The abuse screen help text states thresholds in prose ("three or more new accounts publishing the same page within a day (checked hourly)... checked every 10 minutes") and the template screen says "Three reports hide a template until it is reviewed". These repeat the real thresholds by hand and are not generated from them.
@@ -169,7 +169,7 @@ Legend: Y = allowed; own = only the owner's records. Refusals: anonymous 401, de
 1. The admin presses "Deactivate" on the Users screen.
 2. The backend checks sign-in, the admin role, that the user exists and that the target is not the admin themselves.
 3. The account is marked deactivated, any pending deletion request is cancelled, and each active short link of the user is taken offline and marked inactive (all audited).
-4. From now on that user's requests get 403, AI-app tokens get 401, public bio pages, forms and the calendar answer 404, and redirects for their links go to the "not found" page.
+4. From now on that user's requests are refused as not allowed, AI-app tokens are refused as not signed in, public bio pages, forms and the calendar answer "not found", and redirects for their links go to the "not found" page.
 
 **Reactivating a user.** Same checks; the deactivation is cleared. Sessions and AI-app grants work again; links stay inactive until the admin switches each one back on.
 
@@ -251,7 +251,7 @@ Community template:
 | Form detection schedule | every 10 minutes, production only | |
 | Auto-hide threshold | 3 reports | |
 | Report reasons | spam, offensive, impersonation, other | |
-| Report rate limit | 20 per hour per user | then 429 |
+| Report rate limit | 20 per hour per user | then "too many requests" |
 | Admin signal list | 100 rows | |
 | Admin template list | 200 rows | |
 | Admin users, short links, audits lists | unlimited | no pagination |
@@ -292,7 +292,7 @@ Background sweeps: page-abuse detection, form-abuse detection and the daily clea
 ## Decisions
 
 ### D-AD-01 Check the admin role before looking up the record
-**Decision.** Admin actions on a specific record check the admin permission before looking the record up, then check again on the record. **Why.** So a non-admin cannot tell whether an id exists (403 either way). **Consequence.** New admin actions on specific records must follow the same pattern and be added to the automated security checks.
+**Decision.** Admin actions on a specific record check the admin permission before looking the record up, then check again on the record. **Why.** So a non-admin cannot tell whether an id exists ("not allowed" either way). **Consequence.** New admin actions on specific records must follow the same pattern and be added to the automated security checks.
 
 ### D-AD-02 Admins have no override on owner data
 **Decision.** Admin endpoints are separate from the owner's own endpoints, and owner endpoints scope strictly to the signed-in user. **Why.** Privacy of bio pages, forms and responses. **Consequence.** An admin cannot edit a user's page or form; moderation of pages works only by deactivating the owner.

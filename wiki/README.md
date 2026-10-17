@@ -10,7 +10,7 @@ Use it before shaping a feature, to know what the app does today, which rule gov
 2. **Check the [impact map](#cross-domain-impact-map)** below for couplings with other areas. Most missed impacts come from a rule that lives in two places at once.
 3. **Cite rule ids in plans and reviews** ("changes BK-12, adds FO-63"). Ids are stable: a removed rule keeps its id, marked as removed.
 4. **Update the page in the same change** that changes the behaviour, and move the page's state line to the current date.
-5. **Security findings are not listed here.** A weakness is reported privately, as described in [`SECURITY.md`](../SECURITY.md), and stays out of these pages until it is fixed.
+5. **Security findings are not listed here.** A weakness is reported privately through the project's security policy, and stays out of these pages until it is fixed.
 6. **Rationale** comes from recorded product decisions and design docs. Where none was found, a reading is marked as an inference rather than a recorded decision.
 
 Each page has the same sections: Summary, Glossary, Business rules, Flows, States and transitions, Limits and configuration, Authorization and privacy, API and UI surface, Decisions, Change impact, and Drift and open questions. The architecture pages (accounts, MCP, data model, platform, frontend) also carry a conceptual Data section.
@@ -25,11 +25,12 @@ Each page has the same sections: Summary, Glossary, Business rules, Flows, State
 | [Forms](forms.md) | FO, D-FO | Fields, layouts, draft and published versions, submission pipeline, uploads, covers, events, summary, export, templates |
 | [Booking engine](booking-engine.md) | BK, D-BK | The booking question, modes, availability and slot computation, durations, prices, resources, reservation and concurrency, monthly plans, impact |
 | [Appointments lifecycle](appointments-lifecycle.md) | AP, D-AP | Statuses, approval, verification, cancel, reschedule, reminders, expiry, waitlist, calendar feed, agenda, tokens, health |
+| [Use cases: form and agenda](use-cases.md) | UC | Every scenario of the public form, the booking and the agenda, by actor, with the rules that decide it |
 | [Notifications and e-mail](notifications-and-email.md) | NT, D-NT | In-app, e-mail and push notifications, preferences, delivery, mail budget, catalogue of every e-mail |
 | [MCP and OAuth](mcp-and-oauth.md) | MC, D-MC | OAuth 2.1 server, scopes, grants, the MCP tool catalogue, guards, budgets, logging |
 | [Admin and moderation](admin-and-moderation.md) | AD, D-AD | Roles and the permission matrix, admin screens, audits, abuse signals and their detection, template reports |
 | [Data model](data-model.md) | DM, D-DM | Every entity and relationship, the deletion cascade map, stored JSON shapes, data conventions |
-| [Platform and operations](platform-and-operations.md) | OP, D-OP | Topology, deploy, CI, security harness, testing, queues and the job schedule, rate limits, environment variables, observability |
+| [Platform and operations](platform-and-operations.md) | OP, D-OP | Topology, deploy and rollout, background queues and the job schedule, rate limits, configuration and observability |
 | [Frontend architecture](frontend-architecture.md) | FE, D-FE | Rendering modes, route map, auth guards, API conventions, i18n, CSP, packages, service worker |
 
 A few topics also have standalone guides — appointments, language, the AI-app (MCP) interface and database roles. The wiki pages summarise them and note where they disagree with current behaviour.
@@ -76,9 +77,9 @@ flowchart LR
 | Revoking sessions (for example on a password change) | OAuth grants and MCP | Revoking sessions also disconnects MCP clients | [AU](accounts-and-auth.md), [MC](mcp-and-oauth.md) |
 | Add a new route | Who is allowed to reach it, and for admin routes the access-control rules | A new route cannot ship until it declares who may reach it | [OP](platform-and-operations.md), [AD](admin-and-moderation.md) |
 | Add a recurring job or queue | The production schedule and the queue workers | Some queues need their own worker, and jobs only run in production | [OP](platform-and-operations.md) |
-| Add an environment variable | The stack, compose and development configuration | A variable missing from the stack is silently off in production | [OP](platform-and-operations.md) |
-| A migration | That the previous release survives the new schema | During a deploy the previous release runs briefly against the new schema | [DM](data-model.md), [OP](platform-and-operations.md) |
-| The session cookie, CORS origins or request headers | How /app is gated and how cookie writes are protected | The session cookie is host-only on the API host, so the app is gated on the client | [FE](frontend-architecture.md), [AU](accounts-and-auth.md) |
+| Add a configuration setting | The deployment and development configuration | A setting missing from the deployment is silently off in production | [OP](platform-and-operations.md) |
+| A data-model change | That the previous release survives the new structure | During a deploy the previous release briefly runs against the new structure | [DM](data-model.md), [OP](platform-and-operations.md) |
+| The session cookie, cross-site origin rules or request markers | How the app is gated and how cookie writes are protected | The session cookie is tied to the API host, so the app is gated in the browser | [FE](frontend-architecture.md), [AU](accounts-and-auth.md) |
 | Rate limits | How the visitor's IP is forwarded and trusted | The forwarded IP decides the rate-limit key | [OP](platform-and-operations.md), [FE](frontend-architecture.md) |
 | A theme or custom colours | Pages, forms and page templates | One theme list and one custom-colour rule are shared by all three | [BP](bio-pages.md), [FO](forms.md) |
 | A user-visible string | Both languages | A missing translation blocks the release | [FE](frontend-architecture.md) |
@@ -122,4 +123,4 @@ Terms used across pages. Each page has its own glossary for its domain.
 
 - A change that alters a rule updates the rule on its page, keeps its id, and moves the page's state line to the current date.
 - A new area gets its own page with the same sections and a new two-letter prefix, and a row in the tables above.
-- The site is built with VitePress and published to GitHub Pages. The build fails on a dead link between pages, so keep cross-page links valid.
+- The wiki is a static site. The build fails on a dead link between pages, so keep cross-page links valid.
